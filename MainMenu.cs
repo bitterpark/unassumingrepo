@@ -3,8 +3,6 @@ using System.Collections;
 
 public class MainMenu
 {
-
-
 	public bool DrawMainMenu()
 	{
 		bool resBool=false;
@@ -12,5 +10,4 @@ public class MainMenu
 		{resBool=true;}
 		return resBool;
 	}
-
 }

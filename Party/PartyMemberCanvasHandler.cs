@@ -10,6 +10,7 @@ public class PartyMemberCanvasHandler : MonoBehaviour {
 	public Text healthText;
 	public Text staminaText;
 	public Text hungerText;
+	public Text moraleText;
 	public Button memberSelector;
 	Dictionary<StatusEffect,StatusEffectImageHandler> statusEffectTokens=new Dictionary<StatusEffect, StatusEffectImageHandler>();
 	public StatusEffectImageHandler tokenPrefab;
@@ -31,7 +32,11 @@ public class PartyMemberCanvasHandler : MonoBehaviour {
 	}
 	
 	
-	void Start() {memberSelector.onClick.AddListener(()=>InventoryScreenHandler.mainISHandler.AssignSelectedMember(assignedMember));}//PartyScreenManager.mainPSManager.MemberClicked(assignedMember));}
+	void Start() 
+	{
+		memberSelector.GetComponent<Image>().color=assignedMember.color;
+		memberSelector.onClick.AddListener(()=>InventoryScreenHandler.mainISHandler.AssignSelectedMember(assignedMember));
+	}//PartyScreenManager.mainPSManager.MemberClicked(assignedMember));}
 	
 	void Update()
 	{
@@ -39,5 +44,6 @@ public class PartyMemberCanvasHandler : MonoBehaviour {
 		healthText.text="Health:"+assignedMember.health;
 		staminaText.text="Stamina:"+assignedMember.stamina;
 		hungerText.text="Hunger:"+assignedMember.hunger;
+		moraleText.text="Morale:"+assignedMember.morale;
 	}
 }

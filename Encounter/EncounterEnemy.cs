@@ -1,174 +1,368 @@
 ﻿using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
 
 public abstract class EncounterEnemy 
 {
-	public abstract string name {get;}
-	public abstract int health {get; set;}
-	public abstract int damage {get;}
-	public abstract float moveChance {get;}
+	public string name;
+	public int health;
+	public int minDamage;
+	public int maxDamage;
+	public float moveChance=0.27f;
+	public List<StatusEffect> activeEffects=new List<StatusEffect>();
+	public bool seesMember=false;
+	int xCoord;
+	int yCoord;
+	int visionRange=2;
+	
+	public delegate void StatusEffectDel();
+	public event StatusEffectDel StatusEffectsChanged;
+	public delegate void HealthChangeDel();
+	public event HealthChangeDel HealthChanged;
+	
+	public string GetDamageString() {return minDamage+"-"+maxDamage;}
+	
+	public Sprite GetSprite() {return SpriteBase.mainSpriteBase.genericEnemySprite;}
+	
+	public enum EnemyTypes {Flesh,Quick,Slime,Muscle,Transient,Gasser,Spindler};
+	
+	public Vector2 GetCoords() {return new Vector2(xCoord,yCoord);}
+	
+	protected void AddStatusEffect(StatusEffect newEffect)
+	{
+		activeEffects.Add(newEffect);
+		if (StatusEffectsChanged!=null) StatusEffectsChanged();
+	}
+	protected void RemoveStatusEffect(StatusEffect removedEffect)
+	{
+		activeEffects.Remove(removedEffect);
+		if (StatusEffectsChanged!=null) StatusEffectsChanged();
+	}
 	
 	public virtual int TakeDamage(int dmgTaken, bool isRanged)
 	{
 		health-=dmgTaken;
+		if (HealthChanged!=null) {HealthChanged();}
 		return dmgTaken;
 	}
 	
-	public virtual void TurnAction()
+	public virtual PartyMember RoundAction(List<PartyMember> membersInRoom)//Dictionary<PartyMember,Vector2> memberCoords)
 	{
-		//actionMsg=null;
-		//return damage;
-		EncounterManager manager=EncounterManager.mainEncounterManager;
-		//int targetedPCIndex=manager.selectedMember;
-		//manager.DamagePlayerCharacter(manager.selectedMember,damage);
-		int realDmg=manager.selectedMember.TakeDamage(damage);
-		manager.DisplayNewMessage(name+" hits "+manager.selectedMember.name+" for "+realDmg+"!");
+		/*List<PartyMember> membersInRoom=new List<PartyMember>();
+		foreach (PartyMember key in memberCoords.Keys) 
+		{
+			if (memberCoords[key]==new Vector2(xCoord,yCoord)) membersInRoom.Add(key);
+		}*/
+		PartyMember attackedMember=null;
+		if (membersInRoom.Count>0)
+		{
+			
+			//actionMsg=null;
+			//return damage;
+			EncounterCanvasHandler manager=EncounterCanvasHandler.main;//EncounterCanvasHandler.main;
+			attackedMember=membersInRoom[Random.Range(0,membersInRoom.Count)];
+			//PartyMember attackedMember=manager.selectedMember;
+			//int targetedPCIndex=manager.selectedMember;
+			//manager.DamagePlayerCharacter(manager.selectedMember,damage);
+			int myDamageRoll=Random.Range(minDamage,maxDamage+1);
+			int realDmg=attackedMember.TakeDamage(myDamageRoll);
+			
+			//manager.DisplayNewMessage(name+" hits "+attackedMember.name+" for "+realDmg+"!");
+			manager.StartDamageNumber(realDmg,attackedMember,this);
+		} 
+		else {throw new System.Exception("EncounterEnemy attack called while in an empty room!");}
+		return attackedMember;
 	}
-	public virtual void RoundAction() {}
-	/*
-	public EncounterEnemy(string enemyName, int enemyHealth, int enemyDamage, float enemyMoveChance)
+	public virtual void TurnAction() {}
+	
+	public static string GetMapDescription(EnemyTypes enemyType)
 	{
-		name=enemyName;
-		health=enemyHealth;
-		damage=enemyDamage;
-		moveChance=enemyMoveChance;
-	}*/
+		string description=null;
+		switch(enemyType)
+		{
+			case EnemyTypes.Gasser: {description="gas sacs"; break;}
+			case EnemyTypes.Spindler: {description="spindlers"; break;}
+			case EnemyTypes.Flesh: {description="flesh masses"; break;}
+			case EnemyTypes.Muscle: {description="muscle masses"; break;}
+			case EnemyTypes.Transient: {description="transients"; break;}
+			case EnemyTypes.Quick: {description="quick masses"; break;}
+			case EnemyTypes.Slime: {description="slime masses"; break;}
+		}
+		return description;
+	}
+	
+	public static EncounterEnemy GetEnemy(EnemyTypes enemyType, Vector2 coords)
+	{
+		EncounterEnemy enemy=null;
+		switch(enemyType)
+		{
+		case EnemyTypes.Gasser: {enemy=new Gasser(coords); break;}
+		case EnemyTypes.Spindler: {enemy=new Spindler(coords); break;}
+		case EnemyTypes.Flesh: {enemy=new FleshMass(coords); break;}
+		case EnemyTypes.Muscle: {enemy=new MuscleMass(coords); break;}
+		case EnemyTypes.Transient: {enemy=new Transient(coords); break;}
+		case EnemyTypes.Quick: {enemy=new QuickMass(coords); break;}
+		case EnemyTypes.Slime: {enemy=new SlimeMass(coords); break;}
+		}
+		return enemy;
+	}
+	
+	//Updates token visual if any members are seen
+	public void VisionUpdate()
+	{
+		Dictionary<Vector2,EncounterRoom> encounterMap=EncounterCanvasHandler.main.currentEncounter.encounterMap;
+		Dictionary<PartyMember,Vector2> memberCoords=EncounterCanvasHandler.main.memberCoords;
+		if (VisionCheck(encounterMap,memberCoords).Count>0) {seesMember=true;}
+		else {seesMember=false;}
+	}
+	//Returns a list of currently visible members
+	List<PartyMember> VisionCheck(Dictionary<Vector2,EncounterRoom> encounterMap, Dictionary<PartyMember,Vector2> memberCoords)
+	{
+		//First - find members within vision range
+		List<PartyMember> visibleMembers=new List<PartyMember>();
+		foreach (PartyMember key in memberCoords.Keys)
+		{
+			//See if member passes vision range check
+			if (Mathf.Abs(memberCoords[key].x-xCoord)+Mathf.Abs(memberCoords[key].y-yCoord)
+			 <=Mathf.Max(visionRange+key.visibilityMod,1)) 
+			{
+				bool memberVisible=true;
+				//Second - see if any walls are blocking member
+				BresenhamLines.Line(xCoord,yCoord,(int)memberCoords[key].x,(int)memberCoords[key].y
+				 ,(int x, int y)=>
+				 {
+					 //bool visionClear=true;
+					 if (encounterMap[new Vector2(x,y)].isWall) {memberVisible=false;}
+					 return memberVisible;
+				 });
+				 if (memberVisible) {visibleMembers.Add (key);}
+			}
+		}
+		return visibleMembers;
+	}
+	
+	//Used for both move and attack actions "acting, the enemy uses its "move" for the turn
+	public void Move(Dictionary<PartyMember, Dictionary<Vector2,int>> masks, Dictionary<PartyMember,Vector2> memberCoords)
+	{
+		//Ensure enemies don't move after EncounterCanvasHandler shut down encounter render
+		if (EncounterCanvasHandler.main.encounterOngoing)
+		{
+			//make sure the party didn't move into your coord
+			Dictionary<Vector2,EncounterRoom> map=EncounterCanvasHandler.main.currentEncounter.encounterMap;
+			//if (!(EncounterCanvasHandler.main.encounterPlayerX==xCoord && EncounterCanvasHandler.main.encounterPlayerY==yCoord))
+			//Make sure no party members are in the room with you
+			List<PartyMember> presentMembers=new List<PartyMember>();
+			//bool membersPresent=false;
+			foreach (PartyMember key in memberCoords.Keys)
+			{
+				if (memberCoords[key].x==xCoord && memberCoords[key].y==yCoord) {presentMembers.Add (key);}//{membersPresent=true; break;}
+			}
+			//If no member present in my room
+			if (presentMembers.Count==0)//!membersPresent)
+			{	
+				Vector2 moveCoords=new Vector2(xCoord,yCoord);
+				Vector2 startCoords=new Vector2(xCoord,yCoord);
+				
+				//Find if any members are visible
+				List<PartyMember> visibleMembers=VisionCheck(map,memberCoords);
+				
+				//Step towards visible party
+				if (visibleMembers.Count>0) 
+				{
+					//Determine which member to target (in this case based on shortest route)
+					Dictionary<Vector2,int> targetMemberMask=masks[visibleMembers[0]];//Vector2 closestMemberCoords=memberCoords[visibleMembers[0]];
+					foreach (PartyMember visibleMember in visibleMembers)
+					{
+						if (masks[visibleMember][new Vector2(xCoord,yCoord)]<targetMemberMask[new Vector2(xCoord,yCoord)]) 
+							targetMemberMask=masks[visibleMember];
+						/*
+					if (Mathf.Abs(memberCoords[visibleMember].x-xCoord)+Mathf.Abs(memberCoords[visibleMember].y-yCoord)
+					 <Mathf.Abs(closestMemberCoords.x-xCoord)+Mathf.Abs(closestMemberCoords.y-yCoord)) 
+					{
+						closestMemberCoords=memberCoords[visibleMember];
+					}*/
+					}
+					
+					//check nearby cells to find shortest route to player
+					//Vector2 startCoords=new Vector2(xCoord,yCoord);
+					Vector2 minCoords=startCoords;
+					//Up
+					Vector2 cursor=startCoords+new Vector2(0,-1);
+					if (targetMemberMask.ContainsKey(cursor)) 
+					{
+						if (targetMemberMask[minCoords]>targetMemberMask[cursor]) {minCoords=cursor;}
+					}
+					//Down
+					cursor=startCoords+new Vector2(0,1);
+					if (targetMemberMask.ContainsKey(cursor)) 
+					{
+						if (targetMemberMask[minCoords]>targetMemberMask[cursor]) {minCoords=cursor;}
+					}
+					//Left
+					cursor=startCoords+new Vector2(-1,0);
+					if (targetMemberMask.ContainsKey(cursor)) 
+					{
+						if (targetMemberMask[minCoords]>targetMemberMask[cursor]) {minCoords=cursor;}
+					}
+					//Right
+					cursor=startCoords+new Vector2(1,0);
+					if (targetMemberMask.ContainsKey(cursor)) 
+					{
+						if (targetMemberMask[minCoords]>targetMemberMask[cursor]) {minCoords=cursor;}
+					}
+					moveCoords=minCoords;
+					//seesMember=true;
+				}
+				else
+				{
+					//a) determine rooms available for move
+					//List<EncounterRoom> availableRooms=new List<EncounterRoom>();
+					List<Vector2> availableCoords=new List<Vector2>();
+					//up
+					Vector2 upCoords=new Vector2(xCoord,yCoord-1);
+					if (map.ContainsKey(upCoords)) 
+					{
+						EncounterRoom upRoom=map[upCoords];
+						if (!upRoom.isWall) {availableCoords.Add(upCoords);}
+					}
+					//down
+					Vector2 downCoords=new Vector2(xCoord,yCoord+1);
+					if (map.ContainsKey(downCoords)) 
+					{
+						EncounterRoom downRoom=map[downCoords];
+						if (!downRoom.isWall) {availableCoords.Add(downCoords);}
+					}
+					//left
+					Vector2 leftCoords=new Vector2(xCoord-1,yCoord);
+					if (map.ContainsKey(leftCoords)) 
+					{
+						EncounterRoom leftRoom=map[leftCoords];
+						if (!leftRoom.isWall) {availableCoords.Add(leftCoords);}
+					}
+					//right
+					Vector2 rightCoords=new Vector2(xCoord+1,yCoord);
+					if (map.ContainsKey(rightCoords)) 
+					{
+						EncounterRoom rightRoom=map[rightCoords];
+						if (!rightRoom.isWall) {availableCoords.Add(rightCoords);}
+					}
+					//b) randomly pick one to move to
+					if (availableCoords.Count>0 && Random.value<moveChance) 
+					{
+						/*
+					EncounterRoom destRoom=availableRooms[Random.Range(0,availableRooms.Count)];
+					hasEnemies=false;
+					destRoom.hasEnemies=true;
+					destRoom.enemyInRoom=enemyInRoom;
+					enemyInRoom=null;
+					*/
+						moveCoords=availableCoords[Random.Range(0,availableCoords.Count)];
+					}
+					//seesMember=false;	
+				}
+				if (moveCoords!=startCoords)
+				{
+					/*
+					EncounterRoom moveRoom=map[moveCoords];
+					EncounterRoom startRoom=map[startCoords];
+					startRoom.MoveEnemyOut(this);
+					moveRoom.MoveEnemyIn(this);
+					*/
+					RoomButtonHandler moveRoom=EncounterCanvasHandler.main.roomButtons[moveCoords];
+					RoomButtonHandler startRoom=EncounterCanvasHandler.main.roomButtons[startCoords];
+					startRoom.MoveEnemyOutOfRoom(this);
+					moveRoom.MoveEnemyInRoom(this);
+					xCoord=(int)moveCoords.x;
+					yCoord=(int)moveCoords.y;
+					//GameManager.DebugPrint("Moved from:"+new Vector2(startRoom.xCoord,startRoom.yCoord)+"to"+new Vector2(xCoord,yCoord));
+				}
+				//update post-move vision
+				VisionUpdate();
+			}
+			else
+			{
+				seesMember=true;
+				RoundAction(presentMembers);
+			}
+		}
+	}
+	
+	public EncounterEnemy(Vector2 coords) 
+	{
+		xCoord=(int)coords.x;
+		yCoord=(int)coords.y;
+	}
+	
 }
 
 public class FleshMass:EncounterEnemy
 {
-	public override string name
+	public FleshMass(Vector2 coords) : base(coords)
 	{
-		get {return _name;}
+		name="Flesh mass";
+		health=10;
+		minDamage=5;
+		maxDamage=10;
 	}
-	string _name="Flesh mass";
-	public override int health
-	{
-		get {return _health;}
-		set {_health=value;}
-	}
-	int _health=8;
-	public override int damage
-	{
-		get {return _damage;}
-	}
-	int _damage=10;
-	public override float moveChance
-	{
-		get {return _moveChance;}
-	}
-	float _moveChance=0.27f;
-	
 }
 
 public class MuscleMass:EncounterEnemy
 {
-	public override string name
+	public MuscleMass(Vector2 coords) : base(coords)
 	{
-		get {return _name;}
+		name="Muscle mass";
+		health=15;
+		minDamage=15;
+		maxDamage=20;
 	}
-	string _name="Muscle mass";
-	public override int health
-	{
-		get {return _health;}
-		set {_health=value;}
-	}
-	int _health=15;
-	public override int damage
-	{
-		get {return _damage;}
-	}
-	int _damage=20;
-	public override float moveChance
-	{
-		get {return _moveChance;}
-	}
-	float _moveChance=0.27f;
 }
 
 public class QuickMass:EncounterEnemy
 {
-	public override string name
+	public QuickMass(Vector2 coords) : base(coords)
 	{
-		get {return _name;}
+		name="Quick mass";
+		health=8;
+		minDamage=10;
+		maxDamage=15;
+		moveChance=0.5f;
 	}
-	string _name="Quick mass";
-	public override int health
-	{
-		get {return _health;}
-		set {_health=value;}
-	}
-	int _health=5;
-	public override int damage
-	{
-		get {return _damage;}
-	}
-	int _damage=15;
-	public override float moveChance
-	{
-		get {return _moveChance;}
-	}
-	float _moveChance=0.5f;
-
 }
 
 public class SlimeMass:EncounterEnemy
-{
-	public override string name
+{	
+	public SlimeMass(Vector2 coords) : base(coords)
 	{
-		get {return _name;}
+		name="Slime mass";
+		health=15;
+		minDamage=5;
+		maxDamage=10;
 	}
-	string _name="Slime mass";
-	public override int health
-	{
-		get {return _health;}
-		set {_health=value;}
-	}
-	int _health=12;
-	public override int damage
-	{
-		get {return _damage;}
-	}
-	int _damage=10;
-	public override float moveChance
-	{
-		get {return _moveChance;}
-	}
-	float _moveChance=0.27f;
+	
 	//int rangedResistance=3;
 	float rangedDamageMultiplier=0.5f;
 	
 	public override int TakeDamage (int dmgTaken, bool isRanged)
 	{
-		if (isRanged) {dmgTaken=Mathf.FloorToInt(dmgTaken*rangedDamageMultiplier);}
-		EncounterManager.mainEncounterManager.DisplayNewMessage("Shots pass clean through the slime!");
+		if (isRanged) 
+		{
+			dmgTaken=Mathf.FloorToInt(dmgTaken*rangedDamageMultiplier);
+			//EncounterCanvasHandler.main.DisplayNewMessage("Shots pass clean through the slime!");
+		}
 		return base.TakeDamage (dmgTaken, isRanged);
 	}
 }
 
 public class Transient:EncounterEnemy
 {
-	public override string name
+	public Transient(Vector2 coords) : base(coords)
 	{
-		get {return _name;}
+		name="Transient";
+		health=5;
+		minDamage=5;
+		maxDamage=10;
 	}
-	string _name="Transient";
-	public override int health
-	{
-		get {return _health;}
-		set {_health=value;}
-	}
-	int _health=5;
-	public override int damage
-	{
-		get {return _damage;}
-	}
-	int _damage=10;
-	public override float moveChance
-	{
-		get {return _moveChance;}
-	}
-	float _moveChance=0.27f;
+	
 	bool phasedIn=true;
 	PhasedOut myEffect;
 	
@@ -177,117 +371,105 @@ public class Transient:EncounterEnemy
 		int realDmg=0;
 		if (phasedIn) 
 		{
+			phasedIn=false;
 			realDmg=dmgTaken;
+			myEffect=new PhasedOut();
+			AddStatusEffect(myEffect);//activeEffects.Add(myEffect);
+			//EncounterCanvasHandler.main.DisplayNewMessage(name+" phases out!");
 		}
-		else {EncounterManager.mainEncounterManager.DisplayNewMessage("Attacks pass through air!");}
+		else 
+		{
+			//EncounterCanvasHandler.main.DisplayNewMessage("Attack passes through air!");
+		}
 		return base.TakeDamage(realDmg, isRanged);
 	}
 	
-	public override void TurnAction()
+	public override PartyMember RoundAction(List<PartyMember> presentMembers)//Dictionary<PartyMember,Vector2> memberCoords)
 	{
 		phasedIn=true;
-		EncounterManager.mainEncounterManager.RemoveEnemyStatusEffect(myEffect);
-		if (_health>0)
+		//EncounterCanvasHandler.main.RemoveEnemyStatusEffect(myEffect);
+		RemoveStatusEffect(myEffect);//activeEffects.Remove(myEffect);
+		if (health>0)
 		{
-			EncounterManager.mainEncounterManager.DisplayNewMessage(name+" phases in!");			
+			//EncounterCanvasHandler.main.DisplayNewMessage(name+" phases in!");			
 		}
-		base.TurnAction();
+		return base.RoundAction(presentMembers);
 	}
-	
-	public override void RoundAction()
+	/*
+	public override void TurnAction()
 	{
+		
 		if (phasedIn)
 		{
 			phasedIn=false;
 			myEffect=new PhasedOut();
-			EncounterManager.mainEncounterManager.AddEnemyStatusEffect(myEffect);
-			EncounterManager.mainEncounterManager.DisplayNewMessage(name+" phases out!");
+			activeEffects.Add(myEffect);
+			//EncounterCanvasHandler.main.AddEnemyStatusEffect(myEffect);
+			EncounterCanvasHandler.main.DisplayNewMessage(name+" phases out!");
 		}
-	}
+	}*/
 }
 
 public class Gasser:EncounterEnemy
 {
-	public override string name
+	public Gasser(Vector2 coords) : base(coords)
 	{
-		get {return _name;}
+		name="Gas sac";
+		health=12;
+		minDamage=2;
+		maxDamage=3;
 	}
-	string _name="Gassy sac";
-	public override int health
-	{
-		get {return _health;}
-		set {_health=value;}
-	}
-	int _health=12;
-	public override int damage
-	{
-		get {return _damage;}
-	}
-	int _damage=3;
-	public override float moveChance
-	{
-		get {return _moveChance;}
-	}
-	float _moveChance=0.27f;
 	
 	int retaliationDamage=15;
-	int retaliationDamageThreshold=5;
-	int damageGainedThisTurn=0;
+	int retaliationDamageThreshold=7;
+	int damageGainedThisRound=0;
 	
 	public override int TakeDamage(int dmgTaken, bool isRanged)
 	{
 		int recievedDamage=base.TakeDamage(dmgTaken, isRanged);
 		
-		damageGainedThisTurn+=recievedDamage;
-		if (damageGainedThisTurn>=retaliationDamageThreshold && health>0)
+		damageGainedThisRound+=recievedDamage;
+		if (damageGainedThisRound>=retaliationDamageThreshold && health>0)
 		{
-			//EncounterManager.mainEncounterManager.DamagePlayerCharacter(EncounterManager.mainEncounterManager.selectedMember,retaliationDamage);
-			PartyMember attackedMember=EncounterManager.mainEncounterManager.selectedMember;
+			PartyMember attackedMember=EncounterCanvasHandler.main.selectedMember;
 			int realRetaliationDmg=attackedMember.TakeDamage(retaliationDamage,false);
-			EncounterManager.mainEncounterManager.DisplayNewMessage(name+" releases gas!");
-			EncounterManager.mainEncounterManager.DisplayNewMessage(
-			 attackedMember.name+" takes"+realRetaliationDmg+"damage!");
-			damageGainedThisTurn=0;
+			/*
+			EncounterCanvasHandler.main.DisplayNewMessage(name+" releases gas!");
+			EncounterCanvasHandler.main.DisplayNewMessage(
+			 attackedMember.name+" takes"+realRetaliationDmg+"damage!");*/
+			EncounterCanvasHandler.main.StartDamageNumber(realRetaliationDmg,attackedMember,this);
+			damageGainedThisRound=0;
 		}
 		return recievedDamage;
 	}
 	
-	public override void TurnAction ()
+	public override PartyMember RoundAction (List<PartyMember> presentMembers)//Dictionary<PartyMember,Vector2> memberCoords)
 	{
-		damageGainedThisTurn=0;
-		base.TurnAction ();
+		damageGainedThisRound=0;
+		return base.RoundAction (presentMembers);
 	}
 }
 
 public class Spindler:EncounterEnemy
 {
-	public override string name
+	public Spindler(Vector2 coords) : base(coords)
 	{
-		get {return _name;}
+		name="Spindler";
+		health=7;
+		minDamage=5;
+		maxDamage=10;
 	}
-	string _name="Spindler";
-	public override int health
-	{
-		get {return _health;}
-		set {_health=value;}
-	}
-	int _health=7;
-	public override int damage
-	{
-		get {return _damage;}
-	}
-	int _damage=10;
-	public override float moveChance
-	{
-		get {return _moveChance;}
-	}
-	float _moveChance=0.27f;
 	
-	public override void TurnAction ()
+	public override PartyMember RoundAction (List<PartyMember> presentMembers)//Dictionary<PartyMember,Vector2> memberCoords)
 	{
-		base.TurnAction ();
-		EncounterManager manager=EncounterManager.mainEncounterManager;
-		PartyManager.mainPartyManager.AddPartyMemberStatusEffect(manager.selectedMember,new Bleed(manager.selectedMember));
-		manager.DisplayNewMessage(_name+" causes "+manager.selectedMember.name+" to bleed!");
+		PartyMember targetMember=base.RoundAction (presentMembers);//memberCoords);
+		if (targetMember!=null)
+		{
+			//EncounterCanvasHandler manager=EncounterCanvasHandler.main;
+			PartyManager.mainPartyManager.AddPartyMemberStatusEffect(targetMember,new Bleed(targetMember));
+			//EncounterCanvasHandler.main.DisplayNewMessage(name+" causes "+targetMember.name+" to bleed!");
+		} 
+		else {throw new System.Exception("Spindler tried to assign bleed to null PartyMember");}
+		return targetMember;
 	}
 }

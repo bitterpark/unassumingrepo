@@ -9,6 +9,7 @@ public abstract class StatusEffect
 	public abstract string GetMouseoverDescription();
 	public virtual void TurnOverEffect() {}
 	public virtual void TimePassEffect(int hoursPassed) {}
+	public virtual void CleanupEffect() {}
 }
 
 public class Bleed:StatusEffect
@@ -48,8 +49,14 @@ public class Bleed:StatusEffect
 	
 	public void CureBleed()
 	{
-		PartyManager.TimePassed-=TimePassEffect;
+		PartyStatusCanvasHandler.main.NewNotification(affectedMember.name+" has stopped bleeding");
 		PartyManager.mainPartyManager.RemovePartyMemberStatusEffect(affectedMember,this);
+		CleanupEffect();
+	}
+	
+	public override void CleanupEffect()
+	{
+		PartyManager.TimePassed-=TimePassEffect;
 	}
 	
 	public override string GetMouseoverDescription ()

@@ -11,15 +11,13 @@ public class PerkTextHandler : MonoBehaviour {
 	public void AssignPerk(Perk newPerk)
 	{
 		assignedPerk=newPerk;
-		nameText.text=newPerk.GetName();
+		nameText.text=newPerk.name;
 	}
 	
-	public void DrawMouseoverText()
-	{
-		drawMouseoverText=true;
-	}
-	public void StopMouseoverText() {drawMouseoverText=false;}
+	public void DrawMouseoverText() {TooltipManager.main.CreateTooltip(assignedPerk.GetMouseoverDescription(),transform);}
+	public void StopMouseoverText() {TooltipManager.main.StopAllTooltips();}//drawMouseoverText=false;}
 	
+	/*
 	void OnGUI()
 	{
 		if (drawMouseoverText && assignedPerk!=null)
@@ -30,5 +28,5 @@ public class PerkTextHandler : MonoBehaviour {
 			GUI.Box(textRect,assignedPerk.GetMouseoverDescription());
 		}
 		//drawMouseoverText=false;
-	}
+	}*/
 }

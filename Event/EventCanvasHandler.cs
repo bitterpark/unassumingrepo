@@ -13,6 +13,7 @@ public class EventCanvasHandler : MonoBehaviour
 	
 	public void AssignEvent(GameEvent newEvent)
 	{
+		GameEventManager.mainEventManager.drawingEvent=true;
 		assignedEvent=newEvent;
 		descriptionText.text=newEvent.GetDescription();
 		//decisionMade=false;
@@ -45,6 +46,12 @@ public class EventCanvasHandler : MonoBehaviour
 	
 	public void CloseChoiceScreen() 
 	{
+		GameEventManager.mainEventManager.EndEventDraw();
 		GameObject.Destroy(this.gameObject);
+	}
+	
+	void Start()
+	{
+		//GetComponent<Canvas>().worldCamera=GameObject.Find("GUI Cam").GetComponent<Camera>();
 	}
 }

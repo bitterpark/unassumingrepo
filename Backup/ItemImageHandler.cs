@@ -36,6 +36,5 @@ public class ItemImageHandler : MonoBehaviour
 			Rect textRect=new Rect(myScreenPos.x+20,Screen.height-myScreenPos.y-height*0.5f,200,height);
 			GUI.Box(textRect,assignedItem.GetMouseoverDescription());
 		}
-		//drawMouseoverText=false;
 	}
 }

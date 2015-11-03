@@ -4,145 +4,220 @@ using System.Collections.Generic;
 
 public class Encounter 
 {
+	public int minX=0;
+	public int minY=0;
+	public int maxX=0;
+	public int maxY=0;
+	
 	public string lootDescription="";
 	public string enemyDescription="";
 	
-	public int encounterSizeX=3;
-	public int encounterSizeY=3;
-	
-	public enum LootTypes {Apartment,Warehouse,Store,Police,Hospital};
+	public enum LootTypes {Apartment,Warehouse,Store,Police,Hospital,Endgame,Horde};
 	public LootTypes encounterLootType;
-	public enum LootItems {Ammo,Medkits,Food,Knife,NineM,AssaultRifle,Axe,ArmorVest,Flashlight};
 	
 	//key is dropchance percentage
-	public Dictionary<float,LootItems> lootChances;
+	public Dictionary<float,InventoryItem.LootItems> lootChances;
 	
-	public enum EnemyTypes {Flesh,Quick,Slime,Muscle,Transient,Gasser,Spindler};
-	public EnemyTypes encounterEnemyType;  
+	//Used by Horde
+	public static Dictionary<float,InventoryItem.LootItems> GetLootChancesList(LootTypes areaType)
+	{
+		string emptyString=null;
+		return GetLootChancesList(areaType,out emptyString);
+	}
+	//Not used by Horde
+	public static Dictionary<float,InventoryItem.LootItems> GetLootChancesList(LootTypes areaType, out string areaDescription)
+	{
+		Dictionary<float, InventoryItem.LootItems>lootChances=new Dictionary<float, InventoryItem.LootItems>();
+		areaDescription="";
+		switch (areaType)
+		{
+			case LootTypes.Apartment:
+			{
+				areaDescription="An apartment building";
+				//Add largest number first	
+				lootChances.Add (0.35f,InventoryItem.LootItems.Shotgun);
+				lootChances.Add (0.3f,InventoryItem.LootItems.Knife);
+				//one per level - 0.2-0.4
+				//one per level - 0-0.2
+				lootChances.Add (0.2f,InventoryItem.LootItems.Food);
+				lootChances.Add (0.1f, InventoryItem.LootItems.PerishableFood);
+				break;
+			}
+			case LootTypes.Hospital:
+			{
+				areaDescription="An empty clinic";
+				lootChances.Add (0.5f,InventoryItem.LootItems.Medkits);
+				lootChances.Add (0.2f, InventoryItem.LootItems.Bandages);
+				break;
+			}
+			case LootTypes.Store:
+			{
+				areaDescription="An abandoned store";
+				lootChances.Add (0.6f,InventoryItem.LootItems.Food);
+				lootChances.Add (0.4f,InventoryItem.LootItems.PerishableFood);
+				break;
+			}
+			case LootTypes.Warehouse:
+			{
+				areaDescription="A warehouse";
+				lootChances.Add (0.85f,InventoryItem.LootItems.ArmorVest);
+				lootChances.Add (0.75f,InventoryItem.LootItems.Axe);
+				lootChances.Add (0.65f,InventoryItem.LootItems.Knife);
+				lootChances.Add (0.5f,InventoryItem.LootItems.Flashlight);
+				lootChances.Add (0.3f,InventoryItem.LootItems.Food);
+				lootChances.Add (0.1f,InventoryItem.LootItems.PerishableFood);
+				break;
+			}
+			case LootTypes.Police:
+			{
+				areaDescription="A deserted police station";
+				lootChances.Add (0.5f,InventoryItem.LootItems.Ammo);
+				lootChances.Add (0.2f,InventoryItem.LootItems.NineM);
+				lootChances.Add (0.1f,InventoryItem.LootItems.AssaultRifle);
+				break;
+			}
+			case LootTypes.Endgame:
+			{
+				areaDescription="An overrun radio station";
+				lootChances.Add (1f,InventoryItem.LootItems.Radio);
+				break;
+			}
+			//case LootTypes.Horde: {break;}
+		}
+		return lootChances;
+	}
+	
+	//public enum EnemyTypes {Flesh,Quick,Slime,Muscle,Transient,Gasser,Spindler};
+	public EncounterEnemy.EnemyTypes encounterEnemyType;  
 	
 	public Dictionary<Vector2,EncounterRoom> encounterMap=new Dictionary<Vector2,EncounterRoom>();
 	
+	//empty constructor for Horde (it will always call at least one base constructor from the derived class constructor)
+	public Encounter (int emptyInt) {}
 	
-	
-	
-	
+	//for endgame
+	public Encounter (bool isEndgame)
+	{
+		encounterLootType=LootTypes.Endgame;
+		lootChances=Encounter.GetLootChancesList(encounterLootType,out lootDescription);
+		encounterEnemyType=EncounterEnemy.EnemyTypes.Muscle; enemyDescription="muscle masses";
+		GenerateEncounterFromPrefabMap(PrefabAssembler.assembler.SetupEncounterMap(this,encounterLootType),0.25f);
+	}
+	//regular constructor
 	public Encounter ()
 	{
+		//determine area loot type
 		float lootRoll=Random.Range(0f,5f);
-		if (lootRoll<=5)
-		{
-			encounterLootType=LootTypes.Hospital; lootDescription="An empty clinic";
-			lootChances=new Dictionary<float, LootItems>();
-			lootChances.Add (0.4f,LootItems.Medkits);
-		}
-		if (lootRoll<=4)
-		{
-			encounterLootType=LootTypes.Police; lootDescription="A deserted police station";
-			lootChances=new Dictionary<float, LootItems>();
-			lootChances.Add (0.5f,LootItems.Ammo);
-			lootChances.Add (0.2f,LootItems.NineM);
-			lootChances.Add (0.1f,LootItems.AssaultRifle);
-		}
-		if (lootRoll<=3) 
-		{
-			encounterLootType=LootTypes.Apartment; lootDescription="An apartment building";
-			lootChances=new Dictionary<float, LootItems>();
-			//Add largest number first
-			lootChances.Add (0.3f,LootItems.Knife);
-			//one per level - 0.2-0.4
-			//lootChances.Add (0.4f,LootItems.Medkits);
-			//one per level - 0-0.2
-			lootChances.Add (0.2f,LootItems.Food);
-			//lootChances.Add (0.5f,LootItems.Medkits);
-		}
-		if (lootRoll<=2) 
-		{
-			encounterLootType=LootTypes.Store; lootDescription="An abandoned store";
-			lootChances=new Dictionary<float, LootItems>();
-			lootChances.Add (0.6f,LootItems.Food);
-		}
-		if (lootRoll<=1) 
-		{
-			encounterLootType=LootTypes.Warehouse; lootDescription="A warehouse";
-			lootChances=new Dictionary<float, LootItems>();
-			//lootChances.Add (0.7f,LootItems.NineM);
-			lootChances.Add (0.85f,LootItems.ArmorVest);
-			lootChances.Add (0.75f,LootItems.Axe);
-			lootChances.Add (0.65f,LootItems.Knife);
-			//0.4-0.6 range
-			lootChances.Add (0.5f,LootItems.Flashlight);
-			// 00-0.4 range
-			lootChances.Add (0.3f,LootItems.Food);
-			
-		}
+		if (lootRoll<=5){encounterLootType=LootTypes.Hospital;}
+		if (lootRoll<=4){encounterLootType=LootTypes.Police;}
+		if (lootRoll<=3) {encounterLootType=LootTypes.Apartment;}
+		if (lootRoll<=2) {encounterLootType=LootTypes.Store;}
+		if (lootRoll<=1) {encounterLootType=LootTypes.Warehouse;}
 		
+		lootChances=Encounter.GetLootChancesList(encounterLootType,out lootDescription);
+		
+		//determine area enemy type
 		float enemiesRoll=Random.Range(0f,7f);
-		if (enemiesRoll<=7) {encounterEnemyType=EnemyTypes.Spindler; enemyDescription="spindlers";}
-		if (enemiesRoll<=6) {encounterEnemyType=EnemyTypes.Gasser; enemyDescription="gas sacs";}
-		if (enemiesRoll<=5) {encounterEnemyType=EnemyTypes.Transient; enemyDescription="transients";}
-		if (enemiesRoll<=4) {encounterEnemyType=EnemyTypes.Muscle; enemyDescription="muscle masses";}
-		if (enemiesRoll<=3) {encounterEnemyType=EnemyTypes.Flesh; enemyDescription="flesh masses";}
-		if (enemiesRoll<=2) {encounterEnemyType=EnemyTypes.Quick; enemyDescription="quick masses";}
-		if (enemiesRoll<=1) {encounterEnemyType=EnemyTypes.Slime; enemyDescription="slime masses";}
-		
-		//description="Zombie-infested warehouse";
+		if (enemiesRoll<=7) {encounterEnemyType=EncounterEnemy.EnemyTypes.Spindler;}
+		if (enemiesRoll<=6) {encounterEnemyType=EncounterEnemy.EnemyTypes.Gasser;}
+		if (enemiesRoll<=5) {encounterEnemyType=EncounterEnemy.EnemyTypes.Transient;}
+		if (enemiesRoll<=4) {encounterEnemyType=EncounterEnemy.EnemyTypes.Muscle;}
+		if (enemiesRoll<=3) {encounterEnemyType=EncounterEnemy.EnemyTypes.Flesh;}
+		if (enemiesRoll<=2) {encounterEnemyType=EncounterEnemy.EnemyTypes.Quick;}
+		if (enemiesRoll<=1) {encounterEnemyType=EncounterEnemy.EnemyTypes.Slime;}
+		enemyDescription=EncounterEnemy.GetMapDescription(encounterEnemyType);
 		//GenerateEncounter();
-		GenerateEncounterFromPrefabMap(PrefabAssembler.assembler.SetupEncounterMap(this,encounterLootType));
+		GenerateEncounterFromPrefabMap(PrefabAssembler.assembler.SetupEncounterMap(this,encounterLootType),0.15f);//0.15f);//0.3f);
+		//GameManager.DebugPrint("New encounter added, maxX:"+maxX);
 	}
 	
-	void GenerateEncounterFromPrefabMap(List<EncounterRoom> prefabMap)
+	protected void GenerateEncounterFromPrefabMap(List<EncounterRoom> prefabMap, float monsterSpawnChance)
 	{
 		encounterMap.Clear();
 		foreach (EncounterRoom room in prefabMap)
 		{
 			encounterMap.Add (new Vector2(room.xCoord,room.yCoord),room);
-			//newRoom.xCoord=j;
-			//newRoom.yCoord=i;
-			if (Random.value<0.3f) 
+			//find coordinate range within map
+			minX=Mathf.Min(minX,room.xCoord);
+			minY=Mathf.Min(minY,room.yCoord);
+			maxX=Mathf.Max(maxX,room.xCoord);
+			maxY=Mathf.Max(maxY,room.yCoord);
+			
+			if (!room.isWall)
 			{
-				room.hasEnemies=true;
-			} else {room.hasEnemies=false;}
+				if (Random.value<monsterSpawnChance) 
+				{room.GenerateEnemy();}
+				//else {room.hasEnemies=false;}
+			}
+		}
+	}
+}
+
+public class Hive:Encounter
+{
+	public MapRegion hiveRegion;
+	int enemyCount=0;
+	public void DeadEnemyReport() 
+	{
+		enemyCount-=1;
+		if (enemyCount<=0) 
+		{
+			lootDescription=lootDescription.Remove(lootDescription.IndexOf(" hive"));
+			PartyStatusCanvasHandler.main.NewNotification("Hive cleared!");
+			hiveRegion.isHive=false;
 		}
 	}
 	
-	void GenerateEncounter()
-	{	
-		encounterMap.Clear();
+	public Hive(MapRegion myRegion,LootTypes lootType, EncounterEnemy.EnemyTypes enemyType):base(0)
+	{
+		hiveRegion=myRegion;
+		encounterLootType=lootType;
+		lootChances=Encounter.GetLootChancesList(lootType,out lootDescription);
+		lootDescription+=" hive";
 		
-		int encounterSizeX=3;
-		int encounterSizeY=3;
-		
-		//Vector2 encounterMapTopLeft=Camera.main.ScreenToWorldPoint(new Vector2(encounterBoxRect.x+50,Screen.height-(encounterBoxRect.y+300)));//(GUIUtility.GUIToScreenPoint(new Vector2(encounterBoxRect.x,encounterBoxRect.y)));
-		float elementSizeX=20;
-		float elementSizeY=20;
-		float elementGapX=3;
-		float elementGapY=3;
-		
-		
-		for (int i=0; i<encounterSizeY; i++)
-		{
-			for (int j=0; j<encounterSizeX;j++)
-			{
-				//Vector2 newRoomPos=encounterMapTopLeft+new Vector2((elementSizeX+elementGapX)*j,-(elementSizeY+elementGapY)*i);
-				EncounterRoom newRoom=new EncounterRoom(this);//Instantiate(encounterRoomPrefab,newRoomPos,Quaternion.identity) as EncounterRoom;
-				encounterMap.Add (new Vector2(j,i),newRoom);
-				newRoom.xCoord=j;
-				newRoom.yCoord=i;
-				if (Random.value<0.5) 
-				{
-					newRoom.hasEnemies=true;
-				} else {newRoom.hasEnemies=false;}
-				/*
-				if (j==encounterPlayerX && i==encounterPlayerY) 
-				{
-					//if (encounterPlayerToken!=null) {}
-					encounterPlayerToken=Instantiate(encounterPlayerTokenPrefab,newRoom.transform.position+new Vector3(0,0,-2),Quaternion.identity) as GameObject;
-				}*/
-			}
-		}
-		
-		//Add exit last
-		encounterMap[new Vector2(0,0)].isExit=true;
-		
+		encounterEnemyType=enemyType;
+		enemyDescription=EncounterEnemy.GetMapDescription(encounterEnemyType);
+		GenerateEncounterFromPrefabMap(PrefabAssembler.assembler.SetupEncounterMap(this,lootType),0.25f);
+		foreach (EncounterRoom room in encounterMap.Values) 
+		{if (room.hasEnemies) {enemyCount++;}}
 	}
+}
+
+public class Horde:Encounter
+{
+	public int mapX;
+	public int mapY;
+	public int lifespan=3;
+	public HordeTokenDrawer token;
+	
+	int enemyCount=0;
+	
+	public void ReduceLifespan()
+	{
+		lifespan--;
+		if (lifespan<=0) {MapManager.mainMapManager.RemoveHorde(this);}
+	}
+	
+	public void DeadEnemyReport() 
+	{
+		enemyCount-=1;
+		if (enemyCount<=0) {MapManager.mainMapManager.RemoveHorde(this);}
+	}
+	//for hordes
+	public Horde (EncounterEnemy.EnemyTypes enemyType, int mapCoordX, int mapCoordY) : base(0)
+	{
+		mapX=mapCoordX;
+		mapY=mapCoordY;
+		//lootChances=new Dictionary<float, InventoryItem.LootItems>();
+		encounterEnemyType=enemyType;
+		encounterLootType=LootTypes.Horde;
+		lootChances=Encounter.GetLootChancesList(encounterLootType);
+		string enemyDesc=EncounterEnemy.GetMapDescription(encounterEnemyType);
+		lootDescription="A horde of "+enemyDesc+" !";
+		GenerateEncounterFromPrefabMap(PrefabAssembler.assembler.SetupEncounterMap(this,encounterLootType),0.2f);
+		//assign enemy count
+		foreach (EncounterRoom room in encounterMap.Values) 
+		{if (room.hasEnemies) {enemyCount++;}}
+	}
+
 }

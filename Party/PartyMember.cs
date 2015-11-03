@@ -5,6 +5,20 @@ using System.Collections.Generic;
 public class PartyMember 
 {
 	public string name;
+	public Color color;
+	
+	static List<Color> GetColors() 
+	{
+		List<Color> possibleColors=new List<Color>();
+		//possibleColors.Add(Color.gray);
+		//Blue and gray are reserved, black is too dark
+		possibleColors.Add(Color.red);
+		possibleColors.Add(Color.cyan);
+		possibleColors.Add(Color.green);
+		possibleColors.Add(Color.yellow);
+		possibleColors.Add(Color.magenta);
+		return possibleColors;
+	}
 	
 	public int health
 	{
@@ -28,8 +42,10 @@ public class PartyMember
 		get {return _stamina;}
 		set 
 		{
-			if (value>0) {_stamina=value;}
-			else {_stamina=0;}
+			_stamina=value;
+			if (_stamina<0) {_stamina=0;}
+			if (_stamina>maxStamina) {_stamina=maxStamina;}
+			
 		}
 	}
 	public int _stamina; 
@@ -48,25 +64,128 @@ public class PartyMember
 	int _hunger;
 	public int hungerIncreasePerHour;
 	
-	public bool hasLight=false;
+	public int morale
+	{
+		get {return _morale;}
+		set 
+		{
+			_morale=value;
+			if (_morale>100) {_morale=100;}
+			if (_morale<0) {_morale=0;}
+		}
+	}
+	int _morale;
+	int baseMorale;
+	public int moraleRestorePerHour;
+	public int moraleDecayPerHour;
+	//per point above/below 50
+	public float moraleDamageMod;
+	public int moraleChangeFromKills;
+	
+	public float friendshipChance;
+	
+	public bool hasLight;
+	public bool isCook;
+	public bool isLockExpert;
+	public bool isMedic;
 	public int armorValue;
+	public int maxCarryCapacity;
+	public int currentCarryCapacity;
+	public int visibilityMod;
 	
 	public RangedWeapon equippedRangedWeapon;
+	public int rangedDamageMod;
 	public MeleeWeapon equippedMeleeWeapon;
+	int minUnarmedDamage=0;
+	int maxUnarmedDamage=4;
+	public int meleeDamageMod;
 	public List<InventoryItem> equippedItems=new List<InventoryItem>();
+	public List<InventoryItem> carriedItems=new List<InventoryItem>();
 	
 	public List<StatusEffect> activeStatusEffects=new List<StatusEffect>();
 	public List<Perk> perks=new List<Perk>();
+	public Dictionary<PartyMember,Relationship> relationships=new Dictionary<PartyMember, Relationship>();
 	
-	
-	public PartyMember(string memberName, params Perk[] assignedPerks)
+	public PartyMember ()
 	{
+		GeneratePartyMember(GenerateName());
+	}
+	
+	public PartyMember(string memberName)//, params Perk[] assignedPerks)
+	{
+		GeneratePartyMember(memberName);
+	}
+	
+	string GenerateName()
+	{
+		List<string> namesList=new List<string>();
+		namesList.Add("Ivan");
+		namesList.Add("Misha");
+		namesList.Add("Sasha");
+		namesList.Add("Vadim");
+		namesList.Add("Pyotr");
+		namesList.Add("Timur");
+		namesList.Add ("Kolya");
+		namesList.Add ("Maxim");
+		
+		return namesList[Random.Range(0,namesList.Count)];
+	}
+	
+	void GeneratePartyMember(string memberName)
+	{
+		//Pick color out of ones left
+		color=Color.white;
+		foreach (Color c in GetColors())
+		{
+			bool colorFound=false;
+			foreach (PartyMember member in PartyManager.mainPartyManager.partyMembers)
+			{
+				if (member.color==c) {colorFound=true; break;}	
+			}
+			if (!colorFound) {color=c; break;}
+		}
+		
+		//Randomly pick out perks
+		int necessaryPerkCount=3;
+		List<Perk> possiblePerks=Perk.GetPerkList();
+		while (perks.Count<necessaryPerkCount)
+		{
+			Perk newPerk=possiblePerks[Random.Range(0,possiblePerks.Count)];
+			perks.Add(newPerk);
+			possiblePerks.Remove(newPerk);
+			if (newPerk.oppositePerk!=null) 
+			{
+				foreach (Perk possiblePerk in possiblePerks) 
+				{
+					if (possiblePerk.GetType()==newPerk.oppositePerk) {possiblePerks.Remove(possiblePerk); break;}
+				}
+			}
+		}
+		
+		//debug
+		//if (memberName=="Jimbo") {perks.Clear(); perks.Add(new WeakArm());}
+		
+		///////
 		name=memberName;
 		maxStamina=10;
+		baseMorale=50;
+		//moraleChangePerHour=10;
+		moraleRestorePerHour=1;
+		moraleDecayPerHour=1;
 		hunger=0;
 		hungerIncreasePerHour=10;
 		armorValue=0;
-		if (assignedPerks!=null) perks.AddRange(assignedPerks);
+		maxCarryCapacity=2;//
+		visibilityMod=0;
+		moraleDamageMod=0.02f;
+		moraleChangeFromKills=0;
+		friendshipChance=0.6f;
+		rangedDamageMod=0;
+		meleeDamageMod=0;
+		hasLight=false;
+		isCook=false;
+		isMedic=false;
+		isLockExpert=false;
 		foreach (Perk myPerk in perks)
 		{
 			myPerk.ActivatePerk(this);
@@ -74,21 +193,117 @@ public class PartyMember
 		//make sure perks trigger before these to properly use modified values of maxHealth and maxStamina
 		health=maxHealth;
 		stamina=maxStamina;
+		morale=baseMorale;
+		currentCarryCapacity=maxCarryCapacity;
 		
-		equippedMeleeWeapon=new Pipe();
-		equippedRangedWeapon=null;//new NineM();//null;
+		EquipWeapon(new Pipe());
+		//equippedMeleeWeapon=new Pipe();
+		equippedRangedWeapon=null;//new AssaultRifle();//null;
 		PartyManager.TimePassed+=TimePassEffect;
 	}
 	
 	void DisposePartyMember()
 	{
+		//GameManager.DebugPrint("member disposed!");
 		PartyManager.TimePassed-=TimePassEffect;
 		PartyManager.mainPartyManager.RemovePartyMember(this);
+		foreach (StatusEffect effect in activeStatusEffects) {effect.CleanupEffect();}
+		activeStatusEffects=null;
+		PartyStatusCanvasHandler.main.NewNotification(name+" has died!");
 	}
+	
+	void RollRelationships()
+	{
+		if (Random.value<0.1f)
+		{
+			PartyMember newRelationGuy=PartyManager.mainPartyManager.partyMembers[Random.Range(0,PartyManager.mainPartyManager.partyMembers.Count)];
+			if (newRelationGuy!=this & !relationships.ContainsKey(newRelationGuy)) 
+			{
+				if (Random.value<friendshipChance) 
+				{
+					SetRelationship(newRelationGuy,Relationship.RelationTypes.Friend);
+					//newRelationGuy.SetRelationship(this,Relationship.RelationTypes.Friend);
+				}
+				else 
+				{
+					SetRelationship(newRelationGuy,Relationship.RelationTypes.Enemy);
+					//newRelationGuy.SetRelationship(this,Relationship.RelationTypes.Enemy);
+				}
+			}
+		}
+	}
+	
+	public void SetRelationship(PartyMember member, Relationship.RelationTypes type)
+	{
+		relationships.Add(member,new Relationship(member,type));
+		string typeDesc="";
+		if (type==Relationship.RelationTypes.Friend){ typeDesc="friends";}
+		else {typeDesc="enemies";}
+		PartyStatusCanvasHandler.main.NewNotification(name+" became "+typeDesc+" with "+member.name);
+	}
+	public void RemoveRelatonship(PartyMember removedMember) {relationships.Remove(removedMember);}
 	
 	public void TimePassEffect(int hoursPassed)
 	{
-		hunger+=hungerIncreasePerHour*hoursPassed;
+		float maxStamReductionPerHungerPoint=0.1f;
+		int hungerIncreasePerStamPoint=10;
+		
+		int newStaminaValue=maxStamina-(int)(hunger*maxStamReductionPerHungerPoint);
+		//Restore stamina according to current hunger
+		stamina=newStaminaValue;
+		//Increase hunger for restoring stamina
+		if (newStaminaValue-stamina>0) 
+		{hunger+=(newStaminaValue-stamina)*hungerIncreasePerStamPoint;}
+		
+		//REGEN/LOSE HEALTH
+		if (hunger<100){health+=2;}
+		else{health-=2;}
+		
+		//DO MORALE
+		//if party is starving, morale drops
+		if (hunger>=100) {morale-=moraleDecayPerHour*hoursPassed;}
+		else
+		{
+			if (morale!=baseMorale)
+			{
+				//find morale decay direction
+				int decaySign=(int)Mathf.Sign(baseMorale-morale);
+				int moraleChange;//=moraleChangePerHour*decaySign*hoursPassed;
+				//if morale is increasing (from <base)
+				if (decaySign>0)
+				{
+					moraleChange=moraleRestorePerHour*hoursPassed*decaySign;
+					if (morale+moraleChange>baseMorale) {morale=baseMorale;}
+					else {morale+=moraleChange;}
+				}
+				//if morale is lowering (from >base)
+				if (decaySign<0)
+				{
+					moraleChange=moraleDecayPerHour*hoursPassed*decaySign;
+					if (morale+moraleChange<baseMorale) {morale=baseMorale;}
+					else {morale+=moraleChange;}
+				}
+			}
+		}
+		
+		//DO HUNGER INCREASE
+		float cookMult=1;
+		foreach (PartyMember member in PartyManager.mainPartyManager.partyMembers)
+		{
+			if (member.isCook) {cookMult=Cook.hungerIncreaseMult; break;}
+		}	
+		hunger+=(int)(hungerIncreasePerHour*cookMult)*hoursPassed;
+		
+		//DO RELATIONSHIPS
+		RollRelationships();
+	}
+	
+	public void EncounterStartTrigger(List<PartyMember> team)
+	{
+		foreach (PartyMember member in team) 
+		{
+			if (relationships.ContainsKey(member)) morale+=relationships[member].OnMissionTogether();
+		}
 	}
 	
 	public bool Heal(int amountHealed)
@@ -96,34 +311,143 @@ public class PartyMember
 		bool healed=false;
 		if (health<maxHealth)
 		{
+			//if member is in encounter
+			if (EncounterCanvasHandler.main.encounterOngoing)
+			{
+				foreach (PartyMember member in EncounterCanvasHandler.main.encounterMembers)
+				{
+					if (member.isMedic) {amountHealed+=Medic.healBonus; break;}
+				}	
+			}
+			else
+			{
+				//if healing is done outside of encounter
+				foreach (PartyMember member in PartyManager.mainPartyManager.partyMembers)
+				{
+					if (member.isMedic) {amountHealed+=Medic.healBonus; break;}
+				}	
+			}
 			health+=amountHealed;
 			healed=true;
 		}
 		return healed;
 	}
-	
-	public int MeleeAttack()
+	//for debug purposes
+	public void GetMeleeAttackDamage()
 	{
-		int damage=1;
-		if (stamina>0) 
+		int damage=0;
+		if (equippedMeleeWeapon!=null)
 		{
-			stamina-=equippedMeleeWeapon.GetStaminaUse();
-			damage=equippedMeleeWeapon.GetDamage();
+			//if (stamina<equippedMeleeWeapon.GetStaminaUse()) {EncounterCanvasHandler.main.DisplayNewMessage(name+"'s attack is weak!");}
+			//if (stamina>0) 
+			//{
+			//stamina-=equippedMeleeWeapon.GetStaminaUse();
+			damage=equippedMeleeWeapon.GetDamageRoll((morale-baseMorale)*moraleDamageMod);
+			//GameManager.DebugPrint("Modifier is:(morale "+morale+"- baseMorale "+baseMorale+")*moraleDamageMod "+moraleDamageMod);
+			//GameManager.DebugPrint("Modifier="+(morale-baseMorale)*moraleDamageMod);
+			GameManager.DebugPrint("Final damage="+damage);
 		}
 		else
 		{
-			damage=1;
-			EncounterManager.mainEncounterManager.DisplayNewMessage(name+"'s attack is weak!");
+			//int minUnarmedDamage=0;
+			//int maxUnarmedDamage=4;
+			int unarmedAttackStaminaUse=1;
+			
+			if (stamina<unarmedAttackStaminaUse) 
+			{
+				//EncounterCanvasHandler.main.DisplayNewMessage(name+"'s attack is weak!");
+				stamina-=unarmedAttackStaminaUse;
+				damage=minUnarmedDamage;
+			}
+			else {damage=Random.Range(minUnarmedDamage,maxUnarmedDamage+1);}
 		}
-		return damage;
+	}
+	
+	public string GetMeleeDamageString()
+	{
+		string res="";
+		if (equippedMeleeWeapon!=null) 
+		{res=(equippedMeleeWeapon.GetMinDamage()+meleeDamageMod)+"-"+(equippedMeleeWeapon.GetMaxDamage()+meleeDamageMod);}
+		else {res=(Mathf.Max(minUnarmedDamage+meleeDamageMod,0))+"-"+(maxUnarmedDamage+meleeDamageMod);}
+		return res;
+	}
+	
+	public string GetMeleeAttackDescription()
+	{
+		string res="Hit for ";
+		if (equippedMeleeWeapon!=null) 
+		{res+=(equippedMeleeWeapon.GetMinDamage()+meleeDamageMod)+"-"+(equippedMeleeWeapon.GetMaxDamage()+meleeDamageMod);}
+		else {res+=(Mathf.Max(minUnarmedDamage+meleeDamageMod,0))+"-"+(maxUnarmedDamage+meleeDamageMod);}
+		res+=" damage";
+		return res;
+	}
+	
+	public int MeleeAttack()
+	{
+		int damage=0;
+		if (equippedMeleeWeapon!=null)
+		{
+		//if (stamina<equippedMeleeWeapon.GetStaminaUse()) {EncounterCanvasHandler.main.DisplayNewMessage(name+"'s attack is weak!");}
+		//if (stamina>0) 
+		//{
+			stamina-=equippedMeleeWeapon.GetStaminaUse();
+			damage=equippedMeleeWeapon.GetDamage((morale-baseMorale)*moraleDamageMod);
+		}
+		else
+		{
+			//int minUnarmedDamage=0;
+			//int maxUnarmedDamage=4;
+			int unarmedAttackStaminaUse=1;
+			
+			if (stamina<unarmedAttackStaminaUse) 
+			{
+				//EncounterCanvasHandler.main.DisplayNewMessage(name+"'s attack is weak!");
+				stamina-=unarmedAttackStaminaUse;
+				damage=minUnarmedDamage;
+			}
+			else {damage=Random.Range(minUnarmedDamage,maxUnarmedDamage+1);}
+		}
+		//}
+		//else
+		//{
+			//damage=1;
+		
+		//}
+		return damage+meleeDamageMod;
 	}
 	
 	public int RangedAttack()
 	{
-		int damage=equippedRangedWeapon.GetDamage();
+		int damage=equippedRangedWeapon.GetDamage((morale-baseMorale)*moraleDamageMod);
 		PartyManager.mainPartyManager.ammo-=equippedRangedWeapon.GetAmmoUsePerShot();
-		return damage;
+		return damage+rangedDamageMod;
 	}
+	
+	public string GetRangedAttackDescription()
+	{
+		string res="Shoot for";
+		if (equippedRangedWeapon!=null) 
+		{
+			//int roundedMod=Mathf.FloorToInt((morale-baseMorale)*moraleDamageMod)+rangedDamageMod;
+			res+=(equippedRangedWeapon.GetMinDamage()+rangedDamageMod)+"-"+(equippedRangedWeapon.GetMaxDamage()+rangedDamageMod);
+		}
+		else {res+="no ranged weapon!";}
+		return res;
+	}
+	
+	public string GetRangedDamage()
+	{
+		string res="";
+		if (equippedRangedWeapon!=null) 
+		{
+			//int roundedMod=Mathf.FloorToInt((morale-baseMorale)*moraleDamageMod)+rangedDamageMod;
+			res=(equippedRangedWeapon.GetMinDamage()+rangedDamageMod)+"-"+(equippedRangedWeapon.GetMaxDamage()+rangedDamageMod);
+		}
+		else {res="0";}
+		return res;
+	}
+	
+	public void ReactToKill() {morale+=moraleChangeFromKills;}
 	
 	public bool Eat(int amountFed)
 	{
@@ -142,86 +466,98 @@ public class PartyMember
 	}
 	public int TakeDamage(int dmgTaken, bool armorHelps)
 	{
+		//check for bleed chaseups and other post member delete nonsense
 		int realDmg=dmgTaken;
 		if (armorHelps) 
 		{
 			realDmg-=armorValue;
 			if (realDmg<0) realDmg=0;
 		}
-		health-=realDmg;
-		if (health<=0) {DisposePartyMember();}
+		if (health>0)
+		{
+			health-=realDmg;
+			if (health<=0) {DisposePartyMember();}
+		}
 		return realDmg;
 	}
-	///
-	public bool EquipmentItemToggle(InventoryItem equipmentItem)
+	
+	public bool CanPickUpItem()//InventoryItem pickedUpItem)
 	{
-		bool itemEquipped=false;
-		if (!equippedItems.Contains(equipmentItem)) 
+		bool pickedUp=false;
+		if (carriedItems.Count<currentCarryCapacity)
 		{
-			//check to see if a similar item is already equipped
-			bool stackingEquipment=false;
-			foreach (InventoryItem item in equippedItems)
-			{
-				if (item.GetType()==equipmentItem.GetType()) {stackingEquipment=true; break;}
-			}
-			if (!stackingEquipment)
-			{
-				equippedItems.Add(equipmentItem);
-				PartyManager.mainPartyManager.RemoveItems(equipmentItem);
-				itemEquipped=true;
-			}
+			//carriedItems.Add(pickedUpItem);
+			pickedUp=true;
 		}
-		else
-		{
-			equippedItems.Remove(equipmentItem);
-			PartyManager.mainPartyManager.GainItems(equipmentItem);
-		}
-		return itemEquipped;
+		return pickedUp;
 	}
 	
-	public void UnequipItem(InventoryItem unequippedItem)
+	public void DropItem(InventoryItem item)
+	{
+		if (carriedItems.Contains(item))
+		{
+			carriedItems.Remove(item);
+			
+			EncounterCanvasHandler encounterHdlr=EncounterCanvasHandler.main;
+			if (encounterHdlr.encounterOngoing)
+			{
+				if (encounterHdlr.encounterMembers.Contains(this)) 
+				{
+					encounterHdlr.roomButtons[encounterHdlr.memberCoords[this]].DropItemOnFloor(item);	
+				} else {throw new System.Exception("Dropping items as a non-member of encounter!");}
+			}
+			else {PartyManager.mainPartyManager.GainItems(item);}
+			
+		} else {throw new System.Exception("Dropped item does not exist in member's carriedItems!");}
+	}
+	
+	public bool CanEquipItem(EquippableItem equippedItem)
+	{
+		bool allowEquip=true;
+		foreach (EquippableItem item in equippedItems)
+		{
+			if (item.GetType()==equippedItem.GetType()) {allowEquip=false; break;}
+		}
+		return allowEquip;
+	}
+	
+	public void EquipItem(EquippableItem equippedItem)
+	{
+		if (CanEquipItem(equippedItem))
+		{
+			equippedItem.EquipEffect(this);
+			equippedItems.Add(equippedItem);
+		}
+		else {throw new System.Exception("Trying t equip an item that's already equipped twice");}
+	}
+	
+	public void UnequipItem(EquippableItem unequippedItem)
 	{
 		if (equippedItems.Contains(unequippedItem)) 
 		{
+			unequippedItem.UnequipEffect(this);
 			equippedItems.Remove(unequippedItem);
-			PartyManager.mainPartyManager.GainItems(unequippedItem);
+			//PartyManager.mainPartyManager.GainItems(unequippedItem);
 		}
 	}
 	
 	public void EquipWeapon(Weapon newWeapon)
 	{
 		//check if melee
-		if (newWeapon.GetType().BaseType==typeof(MeleeWeapon))
-		{
-			//Must be in this order for item refresh to work correctly
-			if (equippedMeleeWeapon!=null) PartyManager.mainPartyManager.GainItems(equippedMeleeWeapon);
-			equippedMeleeWeapon=newWeapon as MeleeWeapon;
-			PartyManager.mainPartyManager.RemoveItems(newWeapon);
-				
-		}
-
+		if (newWeapon.GetType().BaseType==typeof(MeleeWeapon)){equippedMeleeWeapon=newWeapon as MeleeWeapon;}
 		//check if ranged
-		if (newWeapon.GetType().BaseType==typeof(RangedWeapon))
+		if (newWeapon.GetType().BaseType==typeof(RangedWeapon)){equippedRangedWeapon=newWeapon as RangedWeapon;}
+		currentCarryCapacity=Mathf.Max(0,currentCarryCapacity-newWeapon.GetWeight());
+		while (carriedItems.Count>currentCarryCapacity)
 		{
-			//Must be in this order for item refresh to work correctly
-			if (equippedRangedWeapon!=null) PartyManager.mainPartyManager.GainItems(equippedRangedWeapon);
-			equippedRangedWeapon=newWeapon as RangedWeapon;
-			PartyManager.mainPartyManager.RemoveItems(newWeapon);
+			DropItem(carriedItems[0]);
 		}
 	}
 	
 	public void UnequipWeapon(Weapon uneqippedWeapon)
 	{
-		if (equippedMeleeWeapon==uneqippedWeapon) 
-		{
-			equippedMeleeWeapon=null;
-			PartyManager.mainPartyManager.GainItems(uneqippedWeapon);
-		}
-		
-		if (equippedRangedWeapon==uneqippedWeapon) 
-		{
-			equippedRangedWeapon=null;
-			PartyManager.mainPartyManager.GainItems(uneqippedWeapon);
-		}
+		if (equippedMeleeWeapon==uneqippedWeapon) {equippedMeleeWeapon=null;}
+		if (equippedRangedWeapon==uneqippedWeapon) {equippedRangedWeapon=null;}
+		currentCarryCapacity=Mathf.Min(maxCarryCapacity,currentCarryCapacity+uneqippedWeapon.GetWeight());
 	}
 }

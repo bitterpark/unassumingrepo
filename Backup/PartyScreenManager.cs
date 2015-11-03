@@ -29,7 +29,14 @@ public class PartyScreenManager : MonoBehaviour
 		if (clickedMember==selectedMember) {StopDrawingPartyScreen();}
 		else 
 		{
-			if (!EncounterManager.mainEncounterManager.combatOngoing)
+			bool enableMember=true;
+			//Disable if combat is happening
+			//if (!EncounterCanvasHandler.main.combatOngoing){enableMember=false;}
+			//Disable if encounter is ongoing and member is not in it
+			if (EncounterCanvasHandler.main.encounterOngoing && !EncounterCanvasHandler.main.encounterMembers.Contains(clickedMember)) 
+			{enableMember=false;}
+			
+			if (enableMember)
 			{
 				StopDrawingPartyScreen();
 				selectedMember=clickedMember;
@@ -49,7 +56,7 @@ public class PartyScreenManager : MonoBehaviour
 	
 	void CreateItemTokens()
 	{
-		foreach(InventoryItem item in PartyManager.mainPartyManager.partyInventory) 
+		foreach(InventoryItem item in PartyManager.mainPartyManager.GetPartyInventory()) 
 		{
 			InventoryItemToken newToken=Instantiate(itemTokenPrefab) as InventoryItemToken;
 			newToken.myItem=item;
@@ -162,10 +169,10 @@ public class PartyScreenManager : MonoBehaviour
 	
 	void OnGUI()
 	{
-		if (GameManager.mainGameManager.gameStarted && showScreen)
+		if (GameManager.main.gameStarted && showScreen)
 		{
-			if (EncounterManager.mainEncounterManager.combatOngoing) {StopDrawingPartyScreen();}
-			else {DrawPartyScreen();}
+			//if (EncounterCanvasHandler.main.combatOngoing) {StopDrawingPartyScreen();}
+			//else {DrawPartyScreen();}
 		}
 	}
 }

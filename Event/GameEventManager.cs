@@ -11,7 +11,7 @@ public class GameEventManager : MonoBehaviour
 	
 	GameEvent drawnEvent=null;
 	string currentDescription=null;
-	bool drawingEvent=false;
+	public bool drawingEvent=false;
 	bool choiceMade=false;
 	
 	public EventCanvasHandler eventScreenPrefab;
@@ -49,7 +49,7 @@ public class GameEventManager : MonoBehaviour
 	{
 		public float chance;
 		public GameEvent myEvent;
-		public EventChance(float newChance,GameEvent newEvent)
+		public EventChance(GameEvent newEvent,float newChance)
 		{
 			chance=newChance;
 			myEvent=newEvent;
@@ -76,22 +76,29 @@ public class GameEventManager : MonoBehaviour
 		float eventPositiveProbabilitySpace=0;
 		foreach (EventChance chance in eligibleEvents) {eventPositiveProbabilitySpace+=chance.chance;}
 		
-		Dictionary<float,GameEvent> intervalDict=new Dictionary<float, GameEvent>();
+		Dictionary<float,EventChance> intervalDict=new Dictionary<float, EventChance>();
 		foreach (EventChance chance in eligibleEvents)
 		{
-			intervalDict.Add (eventPositiveProbabilitySpace,chance.myEvent);
+			intervalDict.Add (eventPositiveProbabilitySpace,chance);
 			eventPositiveProbabilitySpace-=chance.chance;
 		}
 		
 		//roll on resulting intervals	
 		float roll=Random.value;
 		GameEvent resEvent=null;
+		//Compiler made me assign this, should be null
+		EventChance eventRecord=new EventChance();
 		foreach (float chance in intervalDict.Keys)
 		{
-			if (roll<chance) {resEvent=intervalDict[chance];}
+			if (roll<chance) 
+			{
+				resEvent=intervalDict[chance].myEvent;
+				eventRecord=intervalDict[chance];
+			}
 		}
 		if (resEvent!=null) 
 		{
+			possibleEvents.Remove(eventRecord);
 			StartEventDraw(resEvent);
 			return resEvent.AllowMapMove();
 		}
@@ -107,6 +114,7 @@ public class GameEventManager : MonoBehaviour
 		//FormatEventDecription(newDrawnEvent.GetDescription());
 		currentDescription=newDrawnEvent.GetDescription();*/
 		//currentDescription=
+		drawingEvent=true;
 		EventCanvasHandler newEventScreen=Instantiate(eventScreenPrefab);
 		newEventScreen.AssignEvent(newDrawnEvent);
 	}
@@ -159,20 +167,29 @@ public class GameEventManager : MonoBehaviour
 		}
 	}
 	
-	void EndEventDraw()
+	public void EndEventDraw()
 	{
+		/*
 		drawnEvent=null;
 		drawingEvent=false;
-		choiceMade=false;
+		choiceMade=false;*/
+		drawingEvent=false;
 	}
 	
 	void Start()
 	{
 		mainEventManager=this;
-		possibleEvents.Add (new EventChance(0.04f,new FoodSpoilage()));
-		possibleEvents.Add (new EventChance(0.04f,new MonsterAttack()));
-		possibleEvents.Add (new EventChance(0.04f,new CacheInAnomaly()));
-		possibleEvents.Add (new EventChance(0.04f,new LostInAnomaly()));
+		possibleEvents.Add (new EventChance(new FoodSpoilage(),0.04f));
+		possibleEvents.Add (new EventChance(new MonsterAttack(),0.04f));
+		possibleEvents.Add (new EventChance(new CacheInAnomaly(),0.04f));
+		possibleEvents.Add (new EventChance(new LostInAnomaly(),0.04f));
+		possibleEvents.Add( new EventChance(new NewSurvivor(),0.04f));
+		possibleEvents.Add( new EventChance(new MedicalCache(),0.04f));
+		possibleEvents.Add (new EventChance(new SurvivorRescue(),0.04f));
+		possibleEvents.Add(new EventChance(new SearchForSurvivor(),0.04f));
+		possibleEvents.Add (new EventChance(new LowMoraleSpiral(),0.04f));
+		possibleEvents.Add (new EventChance(new LowMoraleFight(),0.04f));
+		possibleEvents.Add (new EventChance(new LowMoraleEnmity(),0.04f));
 		/*
 		//Add highest first for proper rolling
 		eventPossibilities.Add (0.16f,new LostInAnomaly());
@@ -183,9 +200,9 @@ public class GameEventManager : MonoBehaviour
 		//eventPossibilities.Add (0.05f,new NewSurvivor());
 		
 	}	
-	
+	/*
 	void OnGUI()
 	{
 		if (drawingEvent) {DrawEvent();}
-	}
+	}*/
 }

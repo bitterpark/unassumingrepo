@@ -8,7 +8,7 @@ public class GameManager : MonoBehaviour {
 	MainMenu mainMenu;
 	MapManager myMapManager;
 	
-	public static GameManager mainGameManager;
+	public static GameManager main;
 	
 	public delegate void GameOverDeleg();
 	public static event GameOverDeleg GameOver;
@@ -18,12 +18,15 @@ public class GameManager : MonoBehaviour {
 	
 	public Canvas startMenuCanvas;
 	
+	bool gameOver=false;
+	bool gameWin=false;
+	
 	public static void DebugPrint(string printed) {print (printed);}
 	//public Canvas partyStatusCanvas;
 	// Use this for initialization
 	void Start () 
 	{
-		mainGameManager=this;
+		main=this;
 		mainMenu=new MainMenu();
 		myMapManager=gameObject.GetComponent<MapManager>();
 		Button startButton=startMenuCanvas.transform.FindChild("Start Game Button").GetComponent<Button>();
@@ -43,7 +46,7 @@ public class GameManager : MonoBehaviour {
 		StartNewGame();
 	}
 	
-	void Update() {if (Input.GetKeyDown(KeyCode.N)) EndCurrentGame();}
+	void Update() {if (Input.GetKeyDown(KeyCode.N)) EndCurrentGame(true);}
 	/*
 	void OnGUI()
 	{
@@ -59,13 +62,37 @@ public class GameManager : MonoBehaviour {
 		if (GameStart!=null) {GameStart();}
 	}
 	
-	public void EndCurrentGame()
+	public void EndCurrentGame(bool win)
 	{
 		gameStarted=false;
 		if (GameOver!=null) {GameOver();}
 		startMenuCanvas.gameObject.SetActive(true);
+		StartCoroutine(DoGameOver(win));
 		//partyStatusCanvas.gameObject.SetActive(false);
 		//startMenuCanvas.enabled=true;
 		//partyStatusCanvas.enabled=false;
+	}
+	
+	IEnumerator DoGameOver(bool win)
+	{
+		//Rect messageRect=new Rect();
+		gameOver=true;
+		gameWin=win;
+		//partyStatusCanvas.gameObject.SetActive(false);
+		//EndCurrentGame();
+		yield return new WaitForSeconds(2);
+		gameOver=false;	
+		gameWin=false;
+		yield break;
+	}
+	
+	void OnGUI()
+	{
+		if (gameOver)
+		{
+			string endMessage="Your party died";
+			if (gameWin) {endMessage="You were rescued!";}
+			GUI.Box(new Rect(Screen.width*0.5f-25f,Screen.height*0.5f-50f,120,40),endMessage);
+		}
 	}
 }

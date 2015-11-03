@@ -1,18 +1,19 @@
 ﻿using UnityEngine;
 using System.Collections;
 using UnityEngine.UI;
-public class StatusEffectImageHandler : MonoBehaviour 
-{
 
-	StatusEffect assignedEffect;
-	bool drawMouseoverText=false;
+public class RelationTextHandler : MonoBehaviour 
+{
+	//Relationship assignedRelation;
+	public Text relationText;
+	//bool drawMouseoverText=false;
 	
-	public void AssignStatusEffect(StatusEffect effect) 
+	public void AssignRelation(Relationship relation)
 	{
-		assignedEffect=effect;
-		GetComponent<Image>().sprite=assignedEffect.effectSprite;
-	}	
-	
+		//assignedRelation=relation;
+		relationText.text=relation.GetText();
+	}
+	/*
 	public void DrawMouseoverText()
 	{
 		drawMouseoverText=true;
@@ -21,13 +22,14 @@ public class StatusEffectImageHandler : MonoBehaviour
 	
 	void OnGUI()
 	{
-		if (drawMouseoverText)
+		if (drawMouseoverText && assignedPerk!=null)
 		{
 			float height=60;
 			Vector3 myScreenPos=transform.position;//Camera.main.WorldToScreenPoint(transform.position);
 			Rect textRect=new Rect(myScreenPos.x+20,Screen.height-myScreenPos.y-height*0.5f,200,height);
-			GUI.Box(textRect,assignedEffect.GetMouseoverDescription());
+			GUI.Box(textRect,assignedPerk.GetMouseoverDescription());
 		}
 		//drawMouseoverText=false;
-	}
+	}*/
+	
 }

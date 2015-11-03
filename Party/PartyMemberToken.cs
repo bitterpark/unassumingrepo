@@ -38,7 +38,7 @@ public class PartyMemberToken : MonoBehaviour {
 	
 	void OnMouseDown()
 	{
-		if (!turnTaken) {EncounterManager.mainEncounterManager.PartyTokenClicked(drawnMember);}
+		//if (!turnTaken) {EncounterManager.mainEncounterManager.PartyTokenClicked(drawnMember);}
 		//print ("Selected:"+drawnMemberIndex);
 	}
 	
