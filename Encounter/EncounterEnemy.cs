@@ -149,7 +149,6 @@ public abstract class EncounterEnemy
 		{
 			//make sure the party didn't move into your coord
 			Dictionary<Vector2,EncounterRoom> map=EncounterCanvasHandler.main.currentEncounter.encounterMap;
-			//if (!(EncounterCanvasHandler.main.encounterPlayerX==xCoord && EncounterCanvasHandler.main.encounterPlayerY==yCoord))
 			//Make sure no party members are in the room with you
 			List<PartyMember> presentMembers=new List<PartyMember>();
 			//bool membersPresent=false;
@@ -157,7 +156,7 @@ public abstract class EncounterEnemy
 			{
 				if (memberCoords[key].x==xCoord && memberCoords[key].y==yCoord) {presentMembers.Add (key);}//{membersPresent=true; break;}
 			}
-			//If no member present in my room
+			//If no member present in my room do the move, otherwise do RoundAction
 			if (presentMembers.Count==0)//!membersPresent)
 			{	
 				Vector2 moveCoords=new Vector2(xCoord,yCoord);
@@ -166,115 +165,125 @@ public abstract class EncounterEnemy
 				//Find if any members are visible
 				List<PartyMember> visibleMembers=VisionCheck(map,memberCoords);
 				
-				//Step towards visible party
+				//If some members are visible
 				if (visibleMembers.Count>0) 
 				{
+					//see if any of the visible members are "free" and not currently fighting
+					List<PartyMember> freeVisibleMembers=new List<PartyMember>();
+					foreach (PartyMember member in visibleMembers) 
+					{
+						if (!map[memberCoords[member]].hasEnemies) 
+						{
+							freeVisibleMembers.Add(member);
+						}
+					}
+					//IF FREE VISIBLE MEMBERS EXIST, CHOOSE TARGET FROM THE SET OF FREE MEMBERS, ELSE CHOOSE FROM THE NON-FREE SET
+					if (freeVisibleMembers.Count>0) {visibleMembers=freeVisibleMembers;}
+					
 					//Determine which member to target (in this case based on shortest route)
 					Dictionary<Vector2,int> targetMemberMask=masks[visibleMembers[0]];//Vector2 closestMemberCoords=memberCoords[visibleMembers[0]];
 					foreach (PartyMember visibleMember in visibleMembers)
 					{
+						//If my position in cycled member's mask is closer than in the previous one, make cycled member closest
 						if (masks[visibleMember][new Vector2(xCoord,yCoord)]<targetMemberMask[new Vector2(xCoord,yCoord)]) 
 							targetMemberMask=masks[visibleMember];
-						/*
-					if (Mathf.Abs(memberCoords[visibleMember].x-xCoord)+Mathf.Abs(memberCoords[visibleMember].y-yCoord)
-					 <Mathf.Abs(closestMemberCoords.x-xCoord)+Mathf.Abs(closestMemberCoords.y-yCoord)) 
-					{
-						closestMemberCoords=memberCoords[visibleMember];
-					}*/
 					}
-					
+					//!!! CHANGE THIS TO COLLECT A LIST OF POSSIBLE MOVES AND PICK ONE OUT OF IT !!!
 					//check nearby cells to find shortest route to player
-					//Vector2 startCoords=new Vector2(xCoord,yCoord);
 					Vector2 minCoords=startCoords;
+					float minValue=Mathf.Infinity;
+					
+					//Incapsulated check for position applicability
+					System.Action<Vector2> pursuitCheck=(Vector2 cursorPos)=>
+					{
+						if (targetMemberMask.ContainsKey(cursorPos)) 
+						{
+							if (minValue>targetMemberMask[cursorPos] && !map[cursorPos].hasEnemies) 
+							{
+								minCoords=cursorPos;
+								minValue=targetMemberMask[cursorPos];
+							}
+						}
+					
+					};
+					
 					//Up
-					Vector2 cursor=startCoords+new Vector2(0,-1);
-					if (targetMemberMask.ContainsKey(cursor)) 
-					{
-						if (targetMemberMask[minCoords]>targetMemberMask[cursor]) {minCoords=cursor;}
-					}
+					pursuitCheck.Invoke(startCoords+new Vector2(0,-1));
 					//Down
-					cursor=startCoords+new Vector2(0,1);
-					if (targetMemberMask.ContainsKey(cursor)) 
-					{
-						if (targetMemberMask[minCoords]>targetMemberMask[cursor]) {minCoords=cursor;}
-					}
+					pursuitCheck.Invoke(startCoords+new Vector2(0,1));
 					//Left
-					cursor=startCoords+new Vector2(-1,0);
-					if (targetMemberMask.ContainsKey(cursor)) 
-					{
-						if (targetMemberMask[minCoords]>targetMemberMask[cursor]) {minCoords=cursor;}
-					}
+					pursuitCheck.Invoke(startCoords+new Vector2(-1,0));
 					//Right
-					cursor=startCoords+new Vector2(1,0);
-					if (targetMemberMask.ContainsKey(cursor)) 
-					{
-						if (targetMemberMask[minCoords]>targetMemberMask[cursor]) {minCoords=cursor;}
-					}
+					pursuitCheck.Invoke(startCoords+new Vector2(1,0));
 					moveCoords=minCoords;
-					//seesMember=true;
 				}
 				else
 				{
 					//a) determine rooms available for move
-					//List<EncounterRoom> availableRooms=new List<EncounterRoom>();
+					
+					//Incapsulated check for position applicability and add to available pool
 					List<Vector2> availableCoords=new List<Vector2>();
-					//up
+					System.Action<Vector2> roamCheck=(Vector2 cursorPos)=>
+					{
+						if (map.ContainsKey(cursorPos)) 
+						{
+							EncounterRoom upRoom=map[cursorPos];
+							if (!upRoom.isWall && !upRoom.hasEnemies) {availableCoords.Add(cursorPos);}
+						}
+						
+					};
+					
+					//List<EncounterRoom> availableRooms=new List<EncounterRoom>();
+					//UP
+					roamCheck.Invoke(new Vector2(xCoord,yCoord-1));
+					/*
 					Vector2 upCoords=new Vector2(xCoord,yCoord-1);
 					if (map.ContainsKey(upCoords)) 
 					{
 						EncounterRoom upRoom=map[upCoords];
 						if (!upRoom.isWall) {availableCoords.Add(upCoords);}
-					}
-					//down
+					}*/
+					//DOWN
+					roamCheck.Invoke(new Vector2(xCoord,yCoord+1));
+					/*
 					Vector2 downCoords=new Vector2(xCoord,yCoord+1);
 					if (map.ContainsKey(downCoords)) 
 					{
 						EncounterRoom downRoom=map[downCoords];
 						if (!downRoom.isWall) {availableCoords.Add(downCoords);}
-					}
-					//left
+					}*/
+					//LEFT
+					roamCheck.Invoke(new Vector2(xCoord-1,yCoord));
+					/*
 					Vector2 leftCoords=new Vector2(xCoord-1,yCoord);
 					if (map.ContainsKey(leftCoords)) 
 					{
 						EncounterRoom leftRoom=map[leftCoords];
 						if (!leftRoom.isWall) {availableCoords.Add(leftCoords);}
-					}
-					//right
+					}*/
+					//RIGHT
+					roamCheck.Invoke(new Vector2(xCoord+1,yCoord));
+					/*
 					Vector2 rightCoords=new Vector2(xCoord+1,yCoord);
 					if (map.ContainsKey(rightCoords)) 
 					{
 						EncounterRoom rightRoom=map[rightCoords];
 						if (!rightRoom.isWall) {availableCoords.Add(rightCoords);}
-					}
+					}*/
 					//b) randomly pick one to move to
 					if (availableCoords.Count>0 && Random.value<moveChance) 
 					{
-						/*
-					EncounterRoom destRoom=availableRooms[Random.Range(0,availableRooms.Count)];
-					hasEnemies=false;
-					destRoom.hasEnemies=true;
-					destRoom.enemyInRoom=enemyInRoom;
-					enemyInRoom=null;
-					*/
 						moveCoords=availableCoords[Random.Range(0,availableCoords.Count)];
 					}
-					//seesMember=false;	
 				}
 				if (moveCoords!=startCoords)
 				{
-					/*
-					EncounterRoom moveRoom=map[moveCoords];
-					EncounterRoom startRoom=map[startCoords];
-					startRoom.MoveEnemyOut(this);
-					moveRoom.MoveEnemyIn(this);
-					*/
 					RoomButtonHandler moveRoom=EncounterCanvasHandler.main.roomButtons[moveCoords];
 					RoomButtonHandler startRoom=EncounterCanvasHandler.main.roomButtons[startCoords];
 					startRoom.MoveEnemyOutOfRoom(this);
 					moveRoom.MoveEnemyInRoom(this);
 					xCoord=(int)moveCoords.x;
 					yCoord=(int)moveCoords.y;
-					//GameManager.DebugPrint("Moved from:"+new Vector2(startRoom.xCoord,startRoom.yCoord)+"to"+new Vector2(xCoord,yCoord));
 				}
 				//update post-move vision
 				VisionUpdate();
@@ -284,7 +293,7 @@ public abstract class EncounterEnemy
 				seesMember=true;
 				RoundAction(presentMembers);
 			}
-		}
+		} //else {GameManager.DebugPrint("skipping turn!");}
 	}
 	
 	public EncounterEnemy(Vector2 coords) 

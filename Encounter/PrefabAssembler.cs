@@ -21,20 +21,6 @@ public class PrefabAssembler : MonoBehaviour
 		//int encounterSizeY=newEncounter.encounterSizeY;//3;
 		GameObject copyBuffer=null;
 		
-		/*
-		if (areaType==Encounter.LootTypes.Warehouse) 
-		{
-			copyBuffer=Instantiate(warehousePreset,new Vector3(0,0,-2),Quaternion.identity) as GameObject;
-		}
-		if (areaType==Encounter.LootTypes.Apartment) 
-		{
-			copyBuffer=Instantiate(apartmentPreset,new Vector3(0,0,-2),Quaternion.identity) as GameObject;
-		}
-		if (areaType==Encounter.LootTypes.Store) 
-		{
-			copyBuffer=Instantiate(storePreset,new Vector3(0,0,-2),Quaternion.identity) as GameObject;
-		}*/
-		
 		switch (areaType)
 		{
 			case Encounter.LootTypes.Warehouse: 
@@ -87,11 +73,15 @@ public class PrefabAssembler : MonoBehaviour
 		List<Vector2> coordsList=new List<Vector2>();
 		int xMax=0;
 		int yMax=0;
+		int xMin=0;
+		int yMin=0;
 		
 		foreach (EncounterRoomDrawer child in copyBuffer.GetComponentsInChildren<EncounterRoomDrawer>())
 		{
 			xMax=Mathf.Max(xMax,child.presetX);
 			yMax=Mathf.Max(yMax,child.presetY);
+			xMin=Mathf.Min (xMin,child.presetX);
+			yMin=Mathf.Min (yMin,child.presetY);
 			EncounterRoom newRoom=new EncounterRoom(mappedEncounter,child.presetX,child.presetY);
 			roomList.Add(newRoom);
 			coordsList.Add(new Vector2(child.presetX,child.presetY));
@@ -101,9 +91,9 @@ public class PrefabAssembler : MonoBehaviour
 			if (child.hasLoot){newRoom.hasLoot=true;}
 		}
 		//fill in empty spaces
-		for (int i=-1; i<=yMax+1; i++)
+		for (int i=yMin-1; i<=yMax+1; i++)
 		{
-			for (int j=-1; j<=xMax+1; j++)
+			for (int j=xMin-1; j<=xMax+1; j++)
 			{
 				Vector2 coords=new Vector2(j,i);
 				if (!coordsList.Contains(coords))

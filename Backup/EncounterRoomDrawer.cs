@@ -1,84 +1,47 @@
 ﻿using UnityEngine;
+using UnityEditor;
 using System.Collections;
 
+[ExecuteInEditMode]
 public class EncounterRoomDrawer : MonoBehaviour 
 {
+	public Material normalMat;
+	public Material exitMat;
+	public Material entranceMat;
+	public Material lootMat;
 	
 	public int presetX;
 	public int presetY;
 	
-	public bool isWall
-	{
-		get {return _isWall;}
-		set 
-		{
-			_isWall=value;
-			//SetColor();
-		}
-	}
-	bool _isWall;
-	
-	public bool isExit
-	{
-		get {return _isExit;}
-		set 
-		{
-			if (_isExit!=value)
-			{
-				_isExit=value;
-				//SetColor();
-			}
-		}
-	}
-	
-	public bool _isExit;
-	
+	public bool isExit;
 	public bool isEntrance;
+	public bool hasLoot;
+	bool cachedIsExit=false;
+	bool cachedIsEntrance=false;
+	bool cachedHasLoot=false;
 	
-	public bool isVisible
+	void Start() 
 	{
-		get {return _isVisible;}
-		set
-		{
-			if (_isVisible!=value)
-			{
-				_isVisible=value;
-				//SetColor();
-			}
-		}
+		cachedIsExit=isExit;
+		cachedIsEntrance=isEntrance;
+		cachedHasLoot=hasLoot;
+		SetColor();
 	}
 	
-	public bool _isVisible;
-	
-	public bool hasEnemies
+	void SetColor()
 	{
-		get {return _hasEnemies;}
-		set 
-		{
-			if (_hasEnemies!=value)
-			{
-					_hasEnemies=value;
-					//SetColor();
-			}
-		}
-		
+		if (isExit) {GetComponent<Renderer>().material=exitMat;}
+		if (isEntrance) {GetComponent<Renderer>().material=entranceMat;}
+		if (hasLoot) {GetComponent<Renderer>().material=lootMat;}
+		if (!isExit && !isEntrance && !hasLoot) {GetComponent<Renderer>().material=normalMat;}
 	}
-	public bool _hasEnemies;
 	
-	public bool hasLoot
+	void Update() 
 	{
-		get {return _hasLoot;}
-		set 
-		{
-			if (_hasLoot!=value)
-			{
-				_hasLoot=value;
-				//SetColor();
-			}
-		}
-		
+		if (cachedIsExit!=isExit) {cachedIsExit=isExit; SetColor();}
+		if (cachedIsEntrance!=isEntrance) {cachedIsEntrance=isEntrance; SetColor();}
+		if (cachedHasLoot!=hasLoot) {cachedHasLoot=hasLoot; SetColor();}
 	}
-	public bool _hasLoot;
 	
 	//public EncounterRoom roomInfo=null;
 	/*

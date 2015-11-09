@@ -7,6 +7,27 @@ public class PartyMember
 	public string name;
 	public Color color;
 	
+	static List<string> occupiedNames=new List<string>();
+	static string GenerateName()
+	{
+		List<string> namesList=new List<string>();
+		namesList.Add("Ivan");
+		namesList.Add("Misha");
+		namesList.Add("Sasha");
+		namesList.Add("Vadim");
+		namesList.Add("Pyotr");
+		namesList.Add("Timur");
+		namesList.Add ("Kolya");
+		namesList.Add ("Max");
+		foreach (string name in occupiedNames) {namesList.Remove(name);}
+		if (namesList.Count==0) {throw new System.Exception("All names are occupied!");}
+		
+		string finalName=namesList[Random.Range(0,namesList.Count)];
+		occupiedNames.Add(finalName);
+		
+		return finalName;
+	}
+	
 	static List<Color> GetColors() 
 	{
 		List<Color> possibleColors=new List<Color>();
@@ -116,21 +137,6 @@ public class PartyMember
 		GeneratePartyMember(memberName);
 	}
 	
-	string GenerateName()
-	{
-		List<string> namesList=new List<string>();
-		namesList.Add("Ivan");
-		namesList.Add("Misha");
-		namesList.Add("Sasha");
-		namesList.Add("Vadim");
-		namesList.Add("Pyotr");
-		namesList.Add("Timur");
-		namesList.Add ("Kolya");
-		namesList.Add ("Maxim");
-		
-		return namesList[Random.Range(0,namesList.Count)];
-	}
-	
 	void GeneratePartyMember(string memberName)
 	{
 		//Pick color out of ones left
@@ -205,6 +211,7 @@ public class PartyMember
 	void DisposePartyMember()
 	{
 		//GameManager.DebugPrint("member disposed!");
+		occupiedNames.Remove(name);
 		PartyManager.TimePassed-=TimePassEffect;
 		PartyManager.mainPartyManager.RemovePartyMember(this);
 		foreach (StatusEffect effect in activeStatusEffects) {effect.CleanupEffect();}

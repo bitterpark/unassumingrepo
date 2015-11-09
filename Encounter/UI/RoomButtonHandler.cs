@@ -5,8 +5,9 @@ using UnityEngine.UI;
 
 public class RoomButtonHandler : MonoBehaviour {
 
-	public int presetX;
-	public int presetY;
+	public int roomX;
+	public int roomY;
+	public Vector2 GetRoomCoords() {return new Vector2(roomX,roomY);}
 	
 	public GameObject lootToken;
 	public GameObject lockToken;
@@ -118,18 +119,38 @@ public class RoomButtonHandler : MonoBehaviour {
 	
 	public Transform enemiesGroup;
 	public Transform membersGroup;
+
 	
-	//refactor this later to happen at enemy movein stage
 	public void AttachEnemyToken(Transform tokenTransform)
 	{
 		enemiesGroup.gameObject.SetActive(true);
-		if (membersGroup.childCount==0) {membersGroup.gameObject.SetActive(false);}
+		//If an enemy moves into a room with no members present - center the token, else - set up token anchoring for battle mode
+		if (membersGroup.childCount==0) 
+		{
+			membersGroup.gameObject.SetActive(false);
+			//enemiesGroup.GetComponent<VerticalLayoutGroup>().childAlignment=TextAnchor.MiddleCenter;
+		}
+		else
+		{
+			//enemiesGroup.GetComponent<VerticalLayoutGroup>().childAlignment=TextAnchor.LowerCenter;
+			//membersGroup.GetComponent<VerticalLayoutGroup>().childAlignment=TextAnchor.UpperCenter;
+		}
 		tokenTransform.SetParent(enemiesGroup,false);
 	}
 	public void AttachMemberToken(Transform tokenTransform)
 	{
 		membersGroup.gameObject.SetActive(true);
-		if (enemiesGroup.childCount==0) {enemiesGroup.gameObject.SetActive(false);}
+		//If a member moves into a room with no enemies present - center the token, else - set up token anchoring for battle mode
+		if (enemiesGroup.childCount==0) 
+		{
+			enemiesGroup.gameObject.SetActive(false);
+			//membersGroup.GetComponent<VerticalLayoutGroup>().childAlignment=TextAnchor.MiddleCenter;
+		}
+		else
+		{
+			//enemiesGroup.GetComponent<VerticalLayoutGroup>().childAlignment=TextAnchor.LowerCenter;
+			//membersGroup.GetComponent<VerticalLayoutGroup>().childAlignment=TextAnchor.UpperCenter;
+		}
 		tokenTransform.SetParent(membersGroup,false);
 	}
 	
@@ -144,11 +165,11 @@ public class RoomButtonHandler : MonoBehaviour {
 		lootIsLocked=assignedRoom.lootIsLocked;
 		
 		//this is FOR DEBUG PURPOSES ONLY!!!
-		presetX=newRoom.xCoord;
-		presetY=newRoom.yCoord;
+		roomX=newRoom.xCoord;
+		roomY=newRoom.yCoord;
 		
 		//isVisible=assignedRoom.isVisible;
-		GetComponent<Button>().onClick.AddListener(()=>EncounterCanvasHandler.main.RoomClicked(assignedRoom));
+		GetComponent<Button>().onClick.AddListener(()=>EncounterCanvasHandler.main.RoomClicked(this));
 		
 		foreach (InventoryItem item in newRoom.floorItems) {AddFloorItem(item);}
 	}
@@ -157,6 +178,11 @@ public class RoomButtonHandler : MonoBehaviour {
 	{
 		isVisible=visible;
 		UpdateVisuals();
+	}
+	
+	public int AttackEnemyInRoom(int damage, EncounterEnemy attackedEnemy, bool isRanged)
+	{
+		return assignedRoom.DamageEnemy(damage,attackedEnemy,isRanged);
 	}
 	
 	//These methods are the go-between to external scripts and assigned EncounterRoom

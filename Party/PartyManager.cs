@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using UnityEngine.UI;
 using System.Collections;
 using System.Collections.Generic;
 
@@ -68,13 +69,15 @@ public class PartyManager : MonoBehaviour {
 		
 		AddNewPartyMember(new PartyMember());
 		AddNewPartyMember(new PartyMember());
-		
+		//AddNewPartyMember(new PartyMember());
+		//AddNewPartyMember(new PartyMember());
+		//AddNewPartyMember(new PartyMember());
 		partyInventory=new List<InventoryItem>();
 		partyInventory.Add(new Food());
 		partyInventory.Add (new Food());
 		//partyInventory.Add(new AmmoBox());
-		partyInventory.Add (new AssaultRifle());
-		partyInventory.Add (new AssaultRifle());
+		//partyInventory.Add (new AssaultRifle());
+		//partyInventory.Add (new AssaultRifle());
 		//partyInventory.Add (new Flashlight());
 		//Do this to setup proper background color
 		PassTime(1);
@@ -95,17 +98,19 @@ public class PartyManager : MonoBehaviour {
 	}
 	
 	//Debug
-	/*
+	
 	void Update() 
 	{
 		if (Input.GetKeyDown(KeyCode.M)) 
 		{
+			RemovePartyMember(partyMembers[2]);
+			/*
 			for (int i=0; i<30; i++)
 			{
 			partyMembers[0].GetMeleeAttackDamage();
-			}
+			}*/
 		}
-	}*/
+	}
 	
 	public int PartyMemberCount() {return partyMembers.Count;}
 	public PartyMember GetPartyMember(int index) {return partyMembers[index];}
@@ -129,6 +134,13 @@ public class PartyManager : MonoBehaviour {
 		if (partyMembers.Count==0) {GameManager.main.EndCurrentGame(false);}//StartCoroutine(DoGameOver(false));}
 		else
 		{
+			//this is required for the vertical layout formation to update on time (damn bugs)
+			foreach (PartyMemberCanvasHandler memberCanvas in partyMemberCanvases.Values) 
+			{
+				memberCanvas.GetComponent<Canvas>().enabled=false;
+				memberCanvas.GetComponent<Canvas>().enabled=true;
+			}
+			
 			foreach (PartyMember member in partyMembers) 
 			{
 				if (member.relationships.ContainsKey(removedMember))
