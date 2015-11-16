@@ -30,6 +30,7 @@ public class EncounterRoom
 	public bool _isExit=false;
 	
 	public bool isEntrance=false;
+	public bool isDiscovered=false;
 	
 	public bool hasEnemies
 	{
@@ -64,6 +65,7 @@ public class EncounterRoom
 			{
 				if (Random.value<0.5f) {lootIsLocked=true;}
 			}
+			else {lootIsLocked=false;}
 		}
 	
 	}
@@ -100,6 +102,8 @@ public class EncounterRoom
 	public int xCoord=0;
 	public int yCoord=0;
 	
+	public Vector2 GetCoords() {return new Vector2(xCoord,yCoord);}
+	
 	public EncounterRoom(Encounter parent, int x, int y)
 	{
 		xCoord=x;
@@ -111,13 +115,13 @@ public class EncounterRoom
 	
 	//ENEMY METHODS
 	
-	public void GenerateEnemy()
+	public void GenerateEnemy(EncounterEnemy.EnemyTypes enemyType)
 	{
-		enemiesInRoom.Add(EncounterEnemy.GetEnemy(parentEncounter.encounterEnemyType, new Vector2(xCoord,yCoord)));
+		enemiesInRoom.Add(EncounterEnemy.GetEnemy(enemyType, new Vector2(xCoord,yCoord)));
 		hasEnemies=true;
 	}
 	
-	//These two methods are only called from the corresponding RoomButton, the button is called first, and then it updates the assignedRoom
+	//These two methods are called from the corresponding RoomButton, the button is called first, and then it updates the assignedRoom
 	public void MoveEnemyIn(EncounterEnemy newEnemy)
 	{
 		enemiesInRoom.Add(newEnemy);

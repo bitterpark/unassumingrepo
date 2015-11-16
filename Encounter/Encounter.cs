@@ -9,6 +9,8 @@ public class Encounter
 	public int maxX=0;
 	public int maxY=0;
 	
+	protected const int safeDistanceFromEntrance=2;
+	
 	public string lootDescription="";
 	public string enemyDescription="";
 	
@@ -73,7 +75,7 @@ public class Encounter
 				areaDescription="A deserted police station";
 				lootChances.Add (0.5f,InventoryItem.LootItems.Ammo);
 				lootChances.Add (0.2f,InventoryItem.LootItems.NineM);
-				lootChances.Add (0.1f,InventoryItem.LootItems.AssaultRifle);
+				lootChances.Add (0.05f,InventoryItem.LootItems.AssaultRifle);
 				break;
 			}
 			case LootTypes.Endgame:
@@ -101,7 +103,7 @@ public class Encounter
 		encounterLootType=LootTypes.Endgame;
 		lootChances=Encounter.GetLootChancesList(encounterLootType,out lootDescription);
 		encounterEnemyType=EncounterEnemy.EnemyTypes.Muscle; enemyDescription="muscle masses";
-		GenerateEncounterFromPrefabMap(PrefabAssembler.assembler.SetupEncounterMap(this,encounterLootType),0.25f);
+		GenerateEncounterFromPrefabMap(PrefabAssembler.assembler.SetupEncounterMap(this,encounterLootType),1.5f);
 	}
 	//regular constructor
 	public Encounter ()
@@ -127,13 +129,17 @@ public class Encounter
 		if (enemiesRoll<=1) {encounterEnemyType=EncounterEnemy.EnemyTypes.Slime;}
 		enemyDescription=EncounterEnemy.GetMapDescription(encounterEnemyType);
 		//GenerateEncounter();
-		GenerateEncounterFromPrefabMap(PrefabAssembler.assembler.SetupEncounterMap(this,encounterLootType),0.15f);//0.15f);//0.3f);
+		GenerateEncounterFromPrefabMap(PrefabAssembler.assembler.SetupEncounterMap(this,encounterLootType),1f);//0.15f);//0.3f);
 		//GameManager.DebugPrint("New encounter added, maxX:"+maxX);
 	}
 	
-	protected void GenerateEncounterFromPrefabMap(List<EncounterRoom> prefabMap, float monsterSpawnChance)
+	protected void GenerateEncounterFromPrefabMap(List<EncounterRoom> prefabMap, float enemyCountModifier)
 	{
+		
 		encounterMap.Clear();
+		List<EncounterRoom> roomsEligibleForEnemyPlacement=new List<EncounterRoom>();
+		List<EncounterRoom> roomsEligibleForLootPlacement=new List<EncounterRoom>();
+		EncounterRoom entranceRoom=null;
 		foreach (EncounterRoom room in prefabMap)
 		{
 			encounterMap.Add (new Vector2(room.xCoord,room.yCoord),room);
@@ -143,12 +149,82 @@ public class Encounter
 			maxX=Mathf.Max(maxX,room.xCoord);
 			maxY=Mathf.Max(maxY,room.yCoord);
 			
+			
 			if (!room.isWall)
 			{
-				if (Random.value<monsterSpawnChance) 
-				{room.GenerateEnemy();}
-				//else {room.hasEnemies=false;}
+				if (room.isEntrance) {entranceRoom=room;}
+				else {roomsEligibleForEnemyPlacement.Add (room);}
+				if (room.hasLoot) 
+				{
+					room.hasLoot=false;
+					roomsEligibleForLootPlacement.Add (room); 
+				}
 			}
+		}
+		
+		//Generate loot placement
+		int requiredLootCount=5;
+		int currentLootCount=0;
+		while (currentLootCount<requiredLootCount && roomsEligibleForLootPlacement.Count>0)
+		{
+			EncounterRoom randomlySelectedRoom=roomsEligibleForLootPlacement[Random.Range(0,roomsEligibleForLootPlacement.Count)];
+			randomlySelectedRoom.hasLoot=true;
+			currentLootCount++;
+			roomsEligibleForLootPlacement.Remove(randomlySelectedRoom);//
+		}
+		
+		//Generate enemy placement
+		List<EncounterRoom> cachedList=new List<EncounterRoom> (roomsEligibleForEnemyPlacement);
+		foreach (EncounterRoom room in cachedList)
+		{
+			if (Mathf.Abs(entranceRoom.xCoord-room.xCoord)+Mathf.Abs(entranceRoom.yCoord-room.yCoord)<=safeDistanceFromEntrance)
+			roomsEligibleForEnemyPlacement.Remove(room);
+		}
+		
+		int currentEnemyCount=0;
+		while (currentEnemyCount<EncounterEnemy.GetEnemyCount(encounterEnemyType)*enemyCountModifier && roomsEligibleForEnemyPlacement.Count>0)
+		{
+			EncounterRoom randomlySelectedRoom=roomsEligibleForEnemyPlacement[Random.Range(0,roomsEligibleForEnemyPlacement.Count)];
+			randomlySelectedRoom.GenerateEnemy(encounterEnemyType);
+			currentEnemyCount++;
+			roomsEligibleForEnemyPlacement.Remove(randomlySelectedRoom);
+		}
+		
+	}
+	//Called after an encounter finishes to reshuffle enemies and simulate the passing of time
+	public void RandomizeEnemyPositions()
+	{
+		List<EncounterRoom> emptyRooms=new List<EncounterRoom>();
+		List<EncounterRoom> roomsWithEnemies=new List<EncounterRoom>();
+		
+		EncounterRoom entranceRoom=null;
+		foreach (EncounterRoom room in encounterMap.Values)
+		{
+			if (room.isEntrance) {entranceRoom=room;}
+			if (room.hasEnemies) {roomsWithEnemies.Add(room);}
+			else emptyRooms.Add(room);
+		}
+		
+		
+		foreach (EncounterRoom emptyRoom in new List<EncounterRoom>(emptyRooms))
+		{
+			if (Mathf.Abs(emptyRoom.xCoord-entranceRoom.xCoord)+Mathf.Abs(emptyRoom.yCoord-entranceRoom.yCoord)<=safeDistanceFromEntrance)
+			{
+				emptyRooms.Remove(emptyRoom);
+			}
+		}
+		
+		while (emptyRooms.Count>0 && roomsWithEnemies.Count>0)
+		{
+			EncounterRoom startRoom=roomsWithEnemies[Random.Range(0,roomsWithEnemies.Count)];
+			EncounterRoom endRoom=emptyRooms[Random.Range(0,emptyRooms.Count)];
+			
+			endRoom.MoveEnemyIn(startRoom.enemiesInRoom[0]);
+			startRoom.MoveEnemyOut(startRoom.enemiesInRoom[0]);
+			endRoom.enemiesInRoom[0].SetCoords(endRoom.GetCoords());
+			
+			roomsWithEnemies.Remove(startRoom);
+			emptyRooms.Remove(endRoom);
 		}
 	}
 }
@@ -177,7 +253,7 @@ public class Hive:Encounter
 		
 		encounterEnemyType=enemyType;
 		enemyDescription=EncounterEnemy.GetMapDescription(encounterEnemyType);
-		GenerateEncounterFromPrefabMap(PrefabAssembler.assembler.SetupEncounterMap(this,lootType),0.25f);
+		GenerateEncounterFromPrefabMap(PrefabAssembler.assembler.SetupEncounterMap(this,lootType),1.5f);
 		foreach (EncounterRoom room in encounterMap.Values) 
 		{if (room.hasEnemies) {enemyCount++;}}
 	}
@@ -214,7 +290,7 @@ public class Horde:Encounter
 		lootChances=Encounter.GetLootChancesList(encounterLootType);
 		string enemyDesc=EncounterEnemy.GetMapDescription(encounterEnemyType);
 		lootDescription="A horde of "+enemyDesc+" !";
-		GenerateEncounterFromPrefabMap(PrefabAssembler.assembler.SetupEncounterMap(this,encounterLootType),0.2f);
+		GenerateEncounterFromPrefabMap(PrefabAssembler.assembler.SetupEncounterMap(this,encounterLootType),1.5f);
 		//assign enemy count
 		foreach (EncounterRoom room in encounterMap.Values) 
 		{if (room.hasEnemies) {enemyCount++;}}

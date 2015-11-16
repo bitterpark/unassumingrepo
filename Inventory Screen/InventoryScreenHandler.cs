@@ -31,14 +31,6 @@ public class InventoryScreenHandler : MonoBehaviour
 	public Transform inventoryGroup;
 	public Transform memberInventoryGroup;
 	
-	void Start() 
-	{
-		mainISHandler=this;
-		//PartyManager.InventoryChanged+=InventoryChangeHandler;
-		GameManager.GameOver+=GameEndHandler;
-		selectedMember=null;
-	}
-	
 	
 	/*
 	public void InventoryChangeHandler() 
@@ -231,7 +223,7 @@ public class InventoryScreenHandler : MonoBehaviour
 				if (encounterHandler.encounterOngoing) 
 				{
 					//EncounterCanvasHandler.main.displayedRoom.RemoveFloorItem(clickedItem);
-					encounterHandler.roomButtons[encounterHandler.memberCoords[encounterHandler.selectedMember]].PickUpFloorItem(clickedItem);
+					encounterHandler.roomButtons[encounterHandler.memberCoords[selectedMember]].PickUpFloorItem(clickedItem);
 				}
 				else {PartyManager.mainPartyManager.RemoveItems(clickedItem);}
 				
@@ -245,9 +237,32 @@ public class InventoryScreenHandler : MonoBehaviour
 		} 
 	}
 	
+	void Start() 
+	{
+		mainISHandler=this;
+		//PartyManager.InventoryChanged+=InventoryChangeHandler;
+		GameManager.GameOver+=GameEndHandler;
+		selectedMember=null;
+	}
+	
 	void OnDestroy() 
 	{
 		//PartyManager.InventoryChanged-=InventoryChangeHandler;
 		GameManager.GameOver-=GameEndHandler;
+	}
+	
+	void Update()
+	{
+		if (Input.GetKeyDown(KeyCode.I))
+		{
+			if (GameManager.main.gameStarted && EncounterCanvasHandler.main.GetComponent<CanvasGroup>().interactable)
+			{
+				if (EncounterCanvasHandler.main.encounterOngoing)
+				{
+					AssignSelectedMember(EncounterCanvasHandler.main.selectedMember);
+				}
+				else {AssignSelectedMember(PartyManager.mainPartyManager.partyMembers[0]);}
+			}
+		}
 	}
 }

@@ -37,19 +37,6 @@ public class MapRegion : MonoBehaviour
 		{
 			_scouted=value;
 			SetSprite();
-			/*
-			if (_scouted)
-			{
-				if (hasEncounter)
-				{
-					switch (regionalEncounter.encounterLootType)
-					{
-						case Encounter.LootTypes.Apartment: {GetComponent<SpriteRenderer>().sprite=apartmentSprite; break;}
-						case Encounter.LootTypes.Store: {GetComponent<SpriteRenderer>().sprite=storeSprite; break;}
-						case Encounter.LootTypes.Warehouse:{GetComponent<SpriteRenderer>().sprite=warehouseSprite; break;}
-					}
-				}
-			}*/
 		}
 	}
 	
@@ -78,7 +65,7 @@ public class MapRegion : MonoBehaviour
 				regionalEncounter=new Encounter();
 				if (regionalEncounter.encounterLootType!=Encounter.LootTypes.Endgame)
 				{
-					if (Random.value<0.1f) {isHive=true;}
+					if (Random.value<0f) {isHive=true;}
 				}
 			}
 			//else {GetComponent<SpriteRenderer>().sprite=emptyLocSprite;}//.material.color=Color.gray;}

@@ -61,12 +61,13 @@ public class PartyManager : MonoBehaviour {
 		mapCoordY=0;
 		//partyVisibilityMod=0;
 		//foodSupply=0;//2;
-		ammo=0;//500;//5;
+		ammo=500;//500;//5;
 		
 		partyMembers=new List<PartyMember>();
 		selectors=new List<PartyMemberSelector>();
 		//statusEffectTokens=new Dictionary<int, List<StatusEffectDrawer>>();
 		
+		AddNewPartyMember(new PartyMember());
 		AddNewPartyMember(new PartyMember());
 		AddNewPartyMember(new PartyMember());
 		//AddNewPartyMember(new PartyMember());
@@ -76,8 +77,8 @@ public class PartyManager : MonoBehaviour {
 		partyInventory.Add(new Food());
 		partyInventory.Add (new Food());
 		//partyInventory.Add(new AmmoBox());
-		//partyInventory.Add (new AssaultRifle());
-		//partyInventory.Add (new AssaultRifle());
+		partyInventory.Add (new AssaultRifle());
+		partyInventory.Add (new AssaultRifle());
 		//partyInventory.Add (new Flashlight());
 		//Do this to setup proper background color
 		PassTime(1);

@@ -49,6 +49,7 @@ public class RoomButtonHandler : MonoBehaviour {
 	bool isExit;
 	bool isEntrance;
 	bool isVisible;
+	bool isDiscovered;
 	bool hasEnemies;
 	bool hasLoot;
 	bool lootIsLocked;
@@ -160,6 +161,7 @@ public class RoomButtonHandler : MonoBehaviour {
 		//because unassigned bool==false, this is necessary
 		isWall=assignedRoom.isWall;
 		isExit=assignedRoom.isExit;
+		isDiscovered=assignedRoom.isDiscovered;
 		hasEnemies=assignedRoom.hasEnemies;
 		hasLoot=assignedRoom.hasLoot;
 		lootIsLocked=assignedRoom.lootIsLocked;
@@ -177,6 +179,11 @@ public class RoomButtonHandler : MonoBehaviour {
 	public void SetVisibility(bool visible)
 	{
 		isVisible=visible;
+		if (isVisible) 
+		{
+			assignedRoom.isDiscovered=true;
+			isDiscovered=true;
+		}
 		UpdateVisuals();
 	}
 	
@@ -261,6 +268,17 @@ public class RoomButtonHandler : MonoBehaviour {
 		Image newFloorItem=Instantiate(floorItemPrefab);
 		newFloorItem.sprite=item.GetItemSprite();
 		newFloorItem.transform.SetParent(itemsGroup,false);
+		newFloorItem.GetComponent<Button>().onClick.AddListener(()=>
+		{
+			EncounterCanvasHandler encounterHandler=EncounterCanvasHandler.main;
+			if (GetRoomCoords()==encounterHandler.memberCoords[encounterHandler.selectedMember] && encounterHandler.selectedMember.CanPickUpItem())
+			{
+				encounterHandler.selectedMember.carriedItems.Add(item);
+				PickUpFloorItem(item);
+			} 
+		}
+		);
+		
 		floorItemTokens.Add (item,newFloorItem.gameObject);
 	}
 	void RemoveFloorItem(InventoryItem item)
@@ -295,15 +313,21 @@ public class RoomButtonHandler : MonoBehaviour {
 			
 			if (!isVisible) 
 			{
-				GetComponent<Button>().image.color=Color.gray;
 				//switch off Enemy Group and Member Group to hide enemies in fog of war
 				actorsGroup.gameObject.SetActive(false);
+				if (!isDiscovered) 
+				{
+					GetComponent<Button>().image.color=Color.gray;
+					itemsGroup.gameObject.SetActive(false);
+				}
+				else {GetComponent<Button>().image.color=new Color32(172,172,172,255);}
 			}
 			else
 			{
 				GetComponent<Button>().image.color=Color.white;
 				//Switch on Enemy Group and Member Group
 				actorsGroup.gameObject.SetActive(true);
+				itemsGroup.gameObject.SetActive(true);
 			}	
 			if (isExit) {exitToken.SetActive(true);}//GetComponent<Button>().image.color=Color.green;}
 		}

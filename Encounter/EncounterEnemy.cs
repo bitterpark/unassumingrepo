@@ -8,7 +8,8 @@ public abstract class EncounterEnemy
 	public int health;
 	public int minDamage;
 	public int maxDamage;
-	public float moveChance=0.27f;
+	//public int encounterCount=5;
+	public float moveChance=0.4f;
 	public List<StatusEffect> activeEffects=new List<StatusEffect>();
 	public bool seesMember=false;
 	int xCoord;
@@ -27,6 +28,7 @@ public abstract class EncounterEnemy
 	public enum EnemyTypes {Flesh,Quick,Slime,Muscle,Transient,Gasser,Spindler};
 	
 	public Vector2 GetCoords() {return new Vector2(xCoord,yCoord);}
+	public void SetCoords(Vector2 newCoords) {xCoord=(int)newCoords.x; yCoord=(int)newCoords.y;}
 	
 	protected void AddStatusEffect(StatusEffect newEffect)
 	{
@@ -56,7 +58,6 @@ public abstract class EncounterEnemy
 		PartyMember attackedMember=null;
 		if (membersInRoom.Count>0)
 		{
-			
 			//actionMsg=null;
 			//return damage;
 			EncounterCanvasHandler manager=EncounterCanvasHandler.main;//EncounterCanvasHandler.main;
@@ -89,6 +90,22 @@ public abstract class EncounterEnemy
 			case EnemyTypes.Slime: {description="slime masses"; break;}
 		}
 		return description;
+	}
+	
+	public static int GetEnemyCount(EnemyTypes enemyType)
+	{
+		int count=0;
+		switch(enemyType)
+		{
+		case EnemyTypes.Gasser: {count=8; break;}
+		case EnemyTypes.Spindler: {count=3; break;}
+		case EnemyTypes.Flesh: {count=8; break;}
+		case EnemyTypes.Muscle: {count=8; break;}
+		case EnemyTypes.Transient: {count=8; break;}
+		case EnemyTypes.Quick: {count=8; break;}
+		case EnemyTypes.Slime: {count=16; break;}
+		}
+		return count;
 	}
 	
 	public static EncounterEnemy GetEnemy(EnemyTypes enemyType, Vector2 coords)
@@ -309,9 +326,9 @@ public class FleshMass:EncounterEnemy
 	public FleshMass(Vector2 coords) : base(coords)
 	{
 		name="Flesh mass";
-		health=10;
-		minDamage=5;
-		maxDamage=10;
+		health=4;
+		minDamage=3;
+		maxDamage=5;
 	}
 }
 
@@ -320,9 +337,9 @@ public class MuscleMass:EncounterEnemy
 	public MuscleMass(Vector2 coords) : base(coords)
 	{
 		name="Muscle mass";
-		health=15;
-		minDamage=15;
-		maxDamage=20;
+		health=14;
+		minDamage=5;
+		maxDamage=10;
 	}
 }
 
@@ -331,10 +348,10 @@ public class QuickMass:EncounterEnemy
 	public QuickMass(Vector2 coords) : base(coords)
 	{
 		name="Quick mass";
-		health=8;
-		minDamage=10;
-		maxDamage=15;
-		moveChance=0.5f;
+		health=3;
+		minDamage=4;
+		maxDamage=8;
+		moveChance=1f;
 	}
 }
 
@@ -343,9 +360,9 @@ public class SlimeMass:EncounterEnemy
 	public SlimeMass(Vector2 coords) : base(coords)
 	{
 		name="Slime mass";
-		health=15;
-		minDamage=5;
-		maxDamage=10;
+		health=6;
+		minDamage=3;
+		maxDamage=5;
 	}
 	
 	//int rangedResistance=3;
@@ -367,8 +384,8 @@ public class Transient:EncounterEnemy
 	public Transient(Vector2 coords) : base(coords)
 	{
 		name="Transient";
-		health=5;
-		minDamage=5;
+		health=6;
+		minDamage=1;
 		maxDamage=10;
 	}
 	
@@ -382,8 +399,8 @@ public class Transient:EncounterEnemy
 		{
 			phasedIn=false;
 			realDmg=dmgTaken;
-			myEffect=new PhasedOut();
-			AddStatusEffect(myEffect);//activeEffects.Add(myEffect);
+			//myEffect=new PhasedOut();
+			//AddStatusEffect(myEffect);//activeEffects.Add(myEffect);
 			//EncounterCanvasHandler.main.DisplayNewMessage(name+" phases out!");
 		}
 		else 
@@ -424,13 +441,14 @@ public class Gasser:EncounterEnemy
 	public Gasser(Vector2 coords) : base(coords)
 	{
 		name="Gas sac";
-		health=12;
-		minDamage=2;
-		maxDamage=3;
+		health=10;
+		minDamage=4;
+		maxDamage=6;
 	}
 	
+	//Potentially deprecate this mechanic later
 	int retaliationDamage=15;
-	int retaliationDamageThreshold=7;
+	int retaliationDamageThreshold=70;
 	int damageGainedThisRound=0;
 	
 	public override int TakeDamage(int dmgTaken, bool isRanged)
@@ -464,9 +482,9 @@ public class Spindler:EncounterEnemy
 	public Spindler(Vector2 coords) : base(coords)
 	{
 		name="Spindler";
-		health=7;
-		minDamage=5;
-		maxDamage=10;
+		health=5;
+		minDamage=3;
+		maxDamage=5;
 	}
 	
 	public override PartyMember RoundAction (List<PartyMember> presentMembers)//Dictionary<PartyMember,Vector2> memberCoords)

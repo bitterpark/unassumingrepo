@@ -554,8 +554,8 @@ public class PartyMember
 		if (newWeapon.GetType().BaseType==typeof(MeleeWeapon)){equippedMeleeWeapon=newWeapon as MeleeWeapon;}
 		//check if ranged
 		if (newWeapon.GetType().BaseType==typeof(RangedWeapon)){equippedRangedWeapon=newWeapon as RangedWeapon;}
-		currentCarryCapacity=Mathf.Max(0,currentCarryCapacity-newWeapon.GetWeight());
-		while (carriedItems.Count>currentCarryCapacity)
+		currentCarryCapacity=currentCarryCapacity-newWeapon.GetWeight();//Mathf.Max(0,currentCarryCapacity-newWeapon.GetWeight());
+		while (carriedItems.Count>Mathf.Max(currentCarryCapacity,0))
 		{
 			DropItem(carriedItems[0]);
 		}

@@ -119,6 +119,7 @@ public class EncounterCanvasHandler : MonoBehaviour
 	
 	void EndEncounter()
 	{
+		currentEncounter.RandomizeEnemyPositions();
 		DisableRender();
 		encounterOngoing=false;
 	}
@@ -138,8 +139,9 @@ public class EncounterCanvasHandler : MonoBehaviour
 				//Enemies get a free swipe if you move out of their spot
 				List<PartyMember> argumentListOfOne=new List<PartyMember>();
 				argumentListOfOne.Add(selectedMember);
-				foreach (EncounterEnemy enemy in startingRoom.enemiesInRoom) {enemy.RoundAction(argumentListOfOne);}//attack equivalentenemy.Move();}
-				MovePartyMemberToRoom(selectedMember,roomHandler,true);
+				foreach (EncounterEnemy enemy in startingRoom.enemiesInRoom) {enemy.RoundAction(argumentListOfOne);}//attack equivalent enemy.Move();}
+				//if last party member didn't die moving away
+				if (encounterOngoing) MovePartyMemberToRoom(selectedMember,roomHandler,true);
 			}
 			else
 			{
@@ -207,7 +209,7 @@ public class EncounterCanvasHandler : MonoBehaviour
 	void UpdateMemberMoveMask(PartyMember member)
 	{
 		memberMoveMasks[member].Clear();
-		Dictionary<Vector2,int> moveMask=memberMoveMasks[member];
+		//Dictionary<Vector2,int> moveMask=memberMoveMasks[member];
 		memberMoveMasks[member]=IterativeGrassfireMapper(memberCoords[member]);
 	}
 	
@@ -274,7 +276,34 @@ public class EncounterCanvasHandler : MonoBehaviour
 			foreach (EncounterEnemy enemy in room.enemiesInRoom) {enemy.TurnAction();}
 			DeadMemberCleanupCheck();
 		}
-		AdvanceToNextMember();
+		
+		//select next member that hasn't acted yet, if one exists, else do turnover
+		bool allActionsTaken=true;
+		foreach (MemberTokenHandler token in memberTokens.Values)//CombatSelectorHandler selector in selectors.Values) 
+		{
+			if (!token.actionTaken) 
+			{
+				allActionsTaken=false; 
+				SelectMember(token);
+				break;
+			}
+		}
+		//if all members acted (none available to move current selection to)
+		if (allActionsTaken) 
+		{
+			foreach (MemberTokenHandler token in memberTokens.Values)//CombatSelectorHandler selector in selectors.Values) 
+			{
+				token.actionTaken=false;
+			}
+			//Do roundover
+			RoundOver();
+			DeadMemberCleanupCheck();
+			//Make sure this doesn't update after the encounter is finished (from a TPK)
+			if (encounterOngoing)
+			{
+				SelectMember(memberTokens[encounterMembers[0]]);//selectors[encounterMembers[0]]);
+			}
+		}
 	}
 	
 	void RoundOver()
@@ -707,6 +736,7 @@ public class EncounterCanvasHandler : MonoBehaviour
 			
 			if (encounterMembers.Count>0) 
 			{
+				RevealPartyVision();
 				TurnOver(selectedMember,exitRoom);
 			}
 			else
@@ -764,7 +794,7 @@ public class EncounterCanvasHandler : MonoBehaviour
 	}
 	
 	//against enemies
-	void StartDamageNumber(int dmg, EncounterEnemy attackedEnemy, PartyMember attackingMember)
+	IEnumerator VisualizeMemberAttack(int dmg, EncounterEnemy attackedEnemy, PartyMember attackingMember)
 	{
 		DamageNumberHandler newHandler=Instantiate(damageNumberPrefab);
 		newHandler.AssignNumber(dmg);
@@ -773,9 +803,21 @@ public class EncounterCanvasHandler : MonoBehaviour
 		{
 			newHandler.GetComponent<Text>().color=Color.magenta;
 			newHandler.transform.SetParent(enemyTokens[attackedEnemy].transform,false);
-			memberTokens[attackingMember].AnimateAttack();
+			GetComponent<CanvasGroup>().interactable=false;
+			yield return StartCoroutine(memberTokens[attackingMember].AttackAnimation());
+			GetComponent<CanvasGroup>().interactable=true;
+			//memberTokens[attackingMember].AnimateAttack();
 		}
 	}
+	/*
+	IEnumerator LockButtonsUntilAnimationFinishes(IEnumerator animationRoutine)
+	{
+		GetComponent<CanvasGroup>().interactable=false;
+		yield return StartCoroutine(animationRoutine());
+		GetComponent<CanvasGroup>().interactable=true;
+		yield break;
+	}*/
+	
 	//against party members
 	struct DamageToParty
 	{
@@ -815,13 +857,13 @@ public class EncounterCanvasHandler : MonoBehaviour
 		yield break;
 	}
 	
-	void RegisterDamage(int damage, string message, bool isRanged,EncounterEnemy attackedEnemy, PartyMember attackingMember)
+	void RegisterDamage(int damage, bool isRanged,EncounterEnemy attackedEnemy, PartyMember attackingMember)
 	{
 		//EncounterRoom currentRoom=currentEncounter.encounterMap[memberCoords[selectedMember]];
 		//int actualDmg=currentRoom.DamageEnemy(damage,attackedEnemy,isRanged);
-		int actualDmg=roomButtons[memberCoords[selectedMember]].AttackEnemyInRoom(damage,attackedEnemy,isRanged);
+		int actualDmg=roomButtons[attackedEnemy.GetCoords()].AttackEnemyInRoom(damage,attackedEnemy,isRanged);
 		
-		StartDamageNumber(actualDmg,attackedEnemy, attackingMember);
+		StartCoroutine(VisualizeMemberAttack(actualDmg,attackedEnemy, attackingMember));
 		if (attackedEnemy.health<=0) 
 		{
 			selectedMember.ReactToKill();
@@ -835,23 +877,65 @@ public class EncounterCanvasHandler : MonoBehaviour
 		TurnOver(selectedMember,currentEncounter.encounterMap[memberCoords[selectedMember]]);
 	}
 	
-	//For now only works for melee
 	public void EnemyPressed(EncounterEnemy enemy)
 	{
+		/*
 		//int distance=Mathf.Max(Mathf.Abs(memberCoords[selectedMember].x-enemy.GetCoords().x)
 		//,Mathf.Abs(memberCoords[selectedMember].y-enemy.GetCoords().y));
+		bool ranged=memberTokens[selectedMember].rangedMode;
+		int attackRange;
+		if (ranged) {attackRange=100;}
+		else {attackRange=0;}
+
+		//See if clicked enemy passes attack range check
+		if (Mathf.Abs(memberCoords[selectedMember].x-enemy.GetCoords().x)+Mathf.Abs(memberCoords[selectedMember].y-enemy.GetCoords().y)
+		<=attackRange) 
+		{
+			bool memberReachable=true;
+			//Second - see if any walls are blocking member (for ranged attacks)
+			if (attackRange>0)
+			{
+				BresenhamLines.Line((int)memberCoords[selectedMember].x,(int)memberCoords[selectedMember].y
+				,(int)enemy.GetCoords().x,(int)enemy.GetCoords().y,(int x, int y)=>
+				{
+					//bool visionClear=true;
+					if (currentEncounter.encounterMap[new Vector2(x,y)].isWall) {memberReachable=false;}
+					return memberReachable;
+				});
+			}
+			
+			if (memberReachable) 
+			{
+				int actualDmg=0;
+				if (ranged) {actualDmg=selectedMember.RangedAttack();}
+				else {actualDmg=selectedMember.MeleeAttack();}
+				RegisterDamage(actualDmg,ranged,enemy,selectedMember);
+			}
+		}*/
+		bool ranged=false;
+		bool enemyReachable=memberTokens[selectedMember].AttackIsPossible(ref ranged,enemy);
+		
+		if (enemyReachable)
+		{
+			int actualDmg=0;
+			if (ranged) {actualDmg=selectedMember.RangedAttack();}
+			else {actualDmg=selectedMember.MeleeAttack();}
+			RegisterDamage(actualDmg,ranged,enemy,selectedMember);
+		}
+		
+		/*
 		if (memberCoords[selectedMember]==enemy.GetCoords())//distance==0)
 		{
 			int actualDmg=0;
 			//Member token does the check to see if ranged attack is possible
-			bool ranged=memberTokens[selectedMember].rangedMode;
+			
 			if (ranged) {actualDmg=selectedMember.RangedAttack();}
 			else actualDmg=selectedMember.MeleeAttack();
 			string msg="";//selectedMember.name+" hits the "+enemy.name+" for "+actualDmg+"!";
 			RegisterDamage(actualDmg,msg,ranged,enemy,selectedMember);
-		}
+		}*/
 	}
-
+	/*
 	//MOVE THIS TO THE ONLY PLACE IT IS USED IN LATER
 	void AdvanceToNextMember()
 	{
@@ -882,11 +966,79 @@ public class EncounterCanvasHandler : MonoBehaviour
 				SelectMember(memberTokens[encounterMembers[0]]);//selectors[encounterMembers[0]]);
 			}
 		}
-	}
+	}*/
 	
 	void Start() 
 	{
 		main=this;
 		GameManager.GameOver+=EndEncounter;
+	}
+	
+	void Update()
+	{
+		if (encounterOngoing && GetComponent<CanvasGroup>().interactable)
+		{
+			Vector2 cursor=memberCoords[selectedMember];
+			if (Input.GetKeyDown(KeyCode.W)) 
+			{
+				cursor=memberCoords[selectedMember]+Vector2.down;
+				if (roomButtons.ContainsKey(cursor))
+				{
+					if (!roomButtons[cursor].assignedRoom.isWall)
+					RoomClicked(roomButtons[cursor]);
+				}
+			}
+			if (Input.GetKeyDown(KeyCode.A)) 
+			{
+				cursor=memberCoords[selectedMember]+Vector2.left;
+				if (roomButtons.ContainsKey(cursor))
+				{
+					if (!roomButtons[cursor].assignedRoom.isWall)
+						RoomClicked(roomButtons[cursor]);
+				}
+			}
+			if (Input.GetKeyDown(KeyCode.S)) 
+			{
+				cursor=memberCoords[selectedMember]+Vector2.up;
+				if (roomButtons.ContainsKey(cursor))
+				{
+					if (!roomButtons[cursor].assignedRoom.isWall)
+						RoomClicked(roomButtons[cursor]);
+				}
+			}
+			if (Input.GetKeyDown(KeyCode.D)) 
+			{
+				cursor=memberCoords[selectedMember]+Vector2.right;
+				if (roomButtons.ContainsKey(cursor))
+				{
+					if (!roomButtons[cursor].assignedRoom.isWall)
+						RoomClicked(roomButtons[cursor]);
+				}
+			}
+			if (Input.GetKeyDown(KeyCode.Space)) {TurnOver(selectedMember,roomButtons[memberCoords[selectedMember]].assignedRoom);}
+			
+			if (Input.GetKeyDown(KeyCode.Q)) 
+			{
+				List<PartyMember> cyclableMembers=new List<PartyMember>(encounterMembers);
+				foreach (MemberTokenHandler token in memberTokens.Values)
+				{
+					if (token.actionTaken) {cyclableMembers.Remove(token.myMember);}
+				}
+				
+				SelectMember(memberTokens[cyclableMembers[(int)Mathf.Repeat(encounterMembers.IndexOf(selectedMember)+1,encounterMembers.Count)]]);
+				/*
+				bool allActionsTaken=true;
+				foreach (MemberTokenHandler token in memberTokens.Values)//CombatSelectorHandler selector in selectors.Values) 
+				{
+					if (!token.actionTaken) 
+					{
+						allActionsTaken=false; 
+						if (token.myMember!=selectedMember) {SelectMember(token); break;}
+					}
+				}
+				if (allActionsTaken) {throw new System.Exception("Toggling next member when all members have acted!");}*/
+			}
+			
+		}
 	}
 }

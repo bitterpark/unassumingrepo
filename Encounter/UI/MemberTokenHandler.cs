@@ -111,20 +111,65 @@ public class MemberTokenHandler : MonoBehaviour
 		newRoomHandler.AttachMemberToken(transform);
 	}
 	
+	//Check to see if this member can attack a specific enemy in encounter
+	public bool AttackIsPossible(ref bool isRanged, EncounterEnemy targetEnemy)
+	{
+		isRanged=rangedMode;
+		int attackRange;
+		if (isRanged) {attackRange=100;}
+		else {attackRange=0;}
+		
+		int myX=(int)EncounterCanvasHandler.main.memberCoords[myMember].x;
+		int myY=(int)EncounterCanvasHandler.main.memberCoords[myMember].y;
+		int enemyX=(int)targetEnemy.GetCoords().x;
+		int enemyY=(int)targetEnemy.GetCoords().y;
+		
+		bool enemyReachable=false;
+		//See if clicked enemy passes attack range check
+		if (Mathf.Abs(myX-enemyX)+Mathf.Abs(myY-enemyY)
+		    <=attackRange) 
+		{
+			enemyReachable=true;
+			//Second - see if any walls are blocking member (for ranged attacks)
+			if (attackRange>0)
+			{
+				
+				BresenhamLines.Line(myX,myY,enemyX,enemyY,(int x, int y)=>
+				{
+					//bool visionClear=true;
+					if (EncounterCanvasHandler.main.currentEncounter.encounterMap[new Vector2(x,y)].isWall) {enemyReachable=false;}
+					return enemyReachable;
+				});
+			}
+		}
+		return enemyReachable;
+	}
+	
+	/*
 	public void AnimateAttack() 
 	{
 		StartCoroutine(AttackAnimation());
 	}
 	
-	IEnumerator AttackAnimation()
+	IEnumerator DebugTest()
+	{
+		print ("test started, finish in 2 seconds");
+		yield return new WaitForSeconds(2f);
+		print ("test finished successfully");
+		yield break;
+	}
+	*/
+	public IEnumerator AttackAnimation()
 	{
 		/*
 		foreach (Text child in GetComponentsInChildren<Text>())
 		{
 			child.transform.
 		}*/
+		//print ("starting attack animation!");
 		myImage.transform.localScale=new Vector3(1.6f,1.6f,1f);
 		yield return new WaitForSeconds(0.6f);
+		//print ("yielding attack animation!");
 		myImage.transform.localScale=new Vector3(1f,1f,1f);
 		yield break;
 	}

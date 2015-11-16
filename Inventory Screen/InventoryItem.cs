@@ -302,8 +302,8 @@ public abstract class RangedWeapon:Weapon
 public class NineM:RangedWeapon
 {
 	string name="9mm Pistol";
-	int weaponMaxDamage=5;
-	int weaponMinDamage=4;
+	int weaponMaxDamage=6;
+	int weaponMinDamage=5;
 	int ammoPerShot=1;
 	
 	public override int GetMaxDamage() {return weaponMaxDamage;}
@@ -422,7 +422,7 @@ public class Pipe:MeleeWeapon
 {
 	public int weaponMaxDamage=5;
 	public int weaponMinDamage=1;
-	int staminaUse=1;
+	int staminaUse=0;
 	public string name="Pipe";
 	
 	public override int GetMaxDamage() {return weaponMaxDamage;}
@@ -448,7 +448,7 @@ public class Knife:MeleeWeapon
 	public int weaponMinDamage=2;
 	
 	public string name="Knife";
-	int staminaUse=1;
+	int staminaUse=0;
 	
 	public override int GetMaxDamage() {return weaponMaxDamage;}
 	public override int GetMinDamage() {return weaponMinDamage;}
@@ -472,7 +472,7 @@ public class Axe:MeleeWeapon
 	public int weaponMinDamage=3;
 	//int weakDamage=3;
 	public string name="Axe";
-	int staminaUse=2;
+	int staminaUse=0;
 	
 	public override int GetMaxDamage() {return weaponMaxDamage;}
 	public override int GetMinDamage() {return weaponMinDamage;}

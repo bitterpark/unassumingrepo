@@ -75,17 +75,54 @@ public class EnemyTokenHandler : MonoBehaviour
 	
 	public void MouseOverStart() 
 	{
+		StartCoroutine("MouseoverTextRoutine");
+		/*
 		string tooltipText=assignedEnemy.name;
 		EncounterCanvasHandler encounterHandler=EncounterCanvasHandler.main;
-		if (encounterHandler.memberCoords[encounterHandler.selectedMember]==assignedEnemy.GetCoords()) 
+		bool textForRangedAttack=false;
+		bool attackPossible=encounterHandler.memberTokens[encounterHandler.selectedMember].AttackIsPossible(ref textForRangedAttack,assignedEnemy);
+		if (attackPossible)//encounterHandler.memberCoords[encounterHandler.selectedMember]==assignedEnemy.GetCoords()) 
 		{
-			if (encounterHandler.memberTokens[encounterHandler.selectedMember].rangedMode) 
+			if (textForRangedAttack)//encounterHandler.memberTokens[encounterHandler.selectedMember].rangedMode) 
 			{tooltipText+="\n\n"+encounterHandler.selectedMember.GetRangedAttackDescription();}
 			else tooltipText+="\n\n"+encounterHandler.selectedMember.GetMeleeAttackDescription();
 		}
-		TooltipManager.main.CreateTooltip(tooltipText,this.transform);
+		TooltipManager.main.CreateTooltip(tooltipText,this.transform);*/
 	}
-	public void MouseOverEnd() {TooltipManager.main.StopAllTooltips();}
+	
+	IEnumerator MouseoverTextRoutine()
+	{
+		PartyMember referencedMember=null;//EncounterCanvasHandler.main.selectedMember;
+		while (EncounterCanvasHandler.main.encounterOngoing)
+		{
+			if (EncounterCanvasHandler.main.selectedMember!=referencedMember)
+			{
+				//If selected member was switched during mouseover, update mouseover text to fit new selected member
+				referencedMember=EncounterCanvasHandler.main.selectedMember;
+				TooltipManager.main.StopAllTooltips();
+				//
+				string tooltipText=assignedEnemy.name;
+				EncounterCanvasHandler encounterHandler=EncounterCanvasHandler.main;
+				bool textForRangedAttack=false;
+				bool attackPossible=encounterHandler.memberTokens[encounterHandler.selectedMember].AttackIsPossible(ref textForRangedAttack,assignedEnemy);
+				if (attackPossible)//encounterHandler.memberCoords[encounterHandler.selectedMember]==assignedEnemy.GetCoords()) 
+				{
+					if (textForRangedAttack)//encounterHandler.memberTokens[encounterHandler.selectedMember].rangedMode) 
+					{tooltipText+="\n\n"+encounterHandler.selectedMember.GetRangedAttackDescription();}
+					else tooltipText+="\n\n"+encounterHandler.selectedMember.GetMeleeAttackDescription();
+				}
+				TooltipManager.main.CreateTooltip(tooltipText,this.transform);
+			}
+			yield return new WaitForFixedUpdate();
+		}
+	}
+	
+	
+	public void MouseOverEnd() 
+	{
+		StopCoroutine ("MouseoverTextRoutine");
+		TooltipManager.main.StopAllTooltips();
+	}
 	
 	void HealthChangeHandler()
 	{
