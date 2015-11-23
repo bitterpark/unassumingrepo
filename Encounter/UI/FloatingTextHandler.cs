@@ -2,7 +2,7 @@
 using System.Collections;
 using UnityEngine.UI;
 
-public class DamageNumberHandler : MonoBehaviour 
+public class FloatingTextHandler : MonoBehaviour 
 {
 	int damageNumber;
 	float lifeTime=1f;
@@ -11,6 +11,7 @@ public class DamageNumberHandler : MonoBehaviour
 	{
 		GetComponent<Text>().text=number.ToString();
 	}
+	public void AssignText(string newText) {GetComponent<Text>().text=newText;}
 	
 	void FixedUpdate()
 	{

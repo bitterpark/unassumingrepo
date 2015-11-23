@@ -1,9 +1,11 @@
-﻿using UnityEngine;
+using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine.UI;
+using UnityEngine.EventSystems;
 
-public class RoomButtonHandler : MonoBehaviour {
+public class RoomButtonHandler : MonoBehaviour, IDropHandler
+{
 
 	public int roomX;
 	public int roomY;
@@ -16,105 +18,21 @@ public class RoomButtonHandler : MonoBehaviour {
 	public Transform itemsGroup;
 	public Transform actorsGroup;
 	public Image floorItemPrefab;
+	public GameObject heardEnemyPrefab;
+	public TrapToken trapPrefab;
+	public BarricadeToken barricadePrefab;
 	
 	Dictionary<InventoryItem, GameObject> floorItemTokens=new Dictionary<InventoryItem, GameObject>();
 	
-	/*
-	public bool isWall
-	{
-		get {return _isWall;}
-		set 
-		{
-			_isWall=value;
-			UpdateVisuals();
-		}
-	}
-	bool _isWall;
-	
-	public bool isExit
-	{
-		get {return _isExit;}
-		set 
-		{
-			if (_isExit!=value)
-			{
-				_isExit=value;
-				UpdateVisuals();
-			}
-		}
-	}
-	public bool _isExit;
-	*/
 	bool isWall;
 	bool isExit;
 	bool isEntrance;
 	bool isVisible;
+	bool isWithinHearingRange;
 	bool isDiscovered;
 	bool hasEnemies;
 	bool hasLoot;
 	bool lootIsLocked;
-	/*
-	public bool isVisible
-	{
-		get {return _isVisible;}
-		set
-		{
-			if (_isVisible!=value)
-			{
-				_isVisible=value;
-				UpdateVisuals();
-			}
-		}
-	}
-	
-	public bool _isVisible;
-	
-	public bool hasEnemies
-	{
-		get {return _hasEnemies;}
-		set 
-		{
-			if (_hasEnemies!=value)
-			{
-				_hasEnemies=value;
-				//UpdateVisuals();
-			}
-		}
-		
-	}
-	public bool _hasEnemies;
-	
-	
-	public bool hasLoot
-	{
-		get {return _hasLoot;}
-		set 
-		{
-			if (_hasLoot!=value)
-			{
-				_hasLoot=value;
-				UpdateVisuals();
-			}
-		}
-		
-	}
-	public bool _hasLoot;
-	
-	public bool lootIsLocked
-	{
-		get {return _lootIsLocked;}
-		set 
-		{
-			if (_lootIsLocked!=value)
-			{
-				_lootIsLocked=value;
-				UpdateVisuals();
-			}
-		}
-		
-	}
-	bool _lootIsLocked;
-	*/
 	
 	public EncounterRoom assignedRoom=null;
 	
@@ -166,10 +84,14 @@ public class RoomButtonHandler : MonoBehaviour {
 		hasLoot=assignedRoom.hasLoot;
 		lootIsLocked=assignedRoom.lootIsLocked;
 		
+		if (assignedRoom.trapInRoom!=null) SetTrap(assignedRoom.trapInRoom,false);
+		if (assignedRoom.barricadeInRoom!=null) {SpawnNewBarricadeToken();}
 		//this is FOR DEBUG PURPOSES ONLY!!!
 		roomX=newRoom.xCoord;
 		roomY=newRoom.yCoord;
 		
+		isVisible=false;
+		isWithinHearingRange=false;
 		//isVisible=assignedRoom.isVisible;
 		GetComponent<Button>().onClick.AddListener(()=>EncounterCanvasHandler.main.RoomClicked(this));
 		
@@ -187,6 +109,34 @@ public class RoomButtonHandler : MonoBehaviour {
 		UpdateVisuals();
 	}
 	
+	public void SetHearing(bool inRange)
+	{
+		isWithinHearingRange=inRange;
+	}
+	
+	public void SpawnNewBarricadeToken()
+	{
+		BarricadeToken newToken=Instantiate(barricadePrefab);
+		newToken.transform.SetParent(this.transform,false);
+		newToken.transform.position=transform.position;
+		newToken.AssignBarricade(this);
+	}
+	
+	void DespawnBarricadeToken()
+	{
+		if (GetComponentInChildren<BarricadeToken>()!=null)
+		{
+			GameObject.Destroy(GetComponentInChildren<BarricadeToken>().gameObject);
+		}
+	}
+	
+	public void BashBarricade(int bashStrength)
+	{
+		assignedRoom.BashBarricade(bashStrength);
+		if (assignedRoom.barricadeInRoom==null) {DespawnBarricadeToken();}
+		else {GetComponentInChildren<BarricadeToken>().UpdateHealth(assignedRoom.barricadeInRoom.health);}
+	}
+	
 	public int AttackEnemyInRoom(int damage, EncounterEnemy attackedEnemy, bool isRanged)
 	{
 		return assignedRoom.DamageEnemy(damage,attackedEnemy,isRanged);
@@ -196,6 +146,22 @@ public class RoomButtonHandler : MonoBehaviour {
 	public void MoveEnemyInRoom(EncounterEnemy enemy)
 	{
 		assignedRoom.MoveEnemyIn(enemy);
+		//Set off traps
+		if (assignedRoom.trapInRoom!=null) 
+		{
+			assignedRoom.trapInRoom.SetOff();
+			//RemoveTrap(assignedRoom.trapInRoom);
+			//assignedRoom.trapInRoom=null;
+		}
+		
+		//Do hearing tokens
+		if (isWithinHearingRange && !isVisible)
+		{
+			GameObject newObject=Instantiate(heardEnemyPrefab) as GameObject;
+			newObject.transform.SetParent(this.transform,false);
+			newObject.transform.position=transform.position;
+		}
+		
 		if (assignedRoom.hasEnemies!=hasEnemies) 
 		{
 			hasEnemies=assignedRoom.hasEnemies;
@@ -209,6 +175,27 @@ public class RoomButtonHandler : MonoBehaviour {
 		{
 			hasEnemies=assignedRoom.hasEnemies;
 			UpdateVisuals();
+		}
+	}
+	
+	public void SetTrap(Trap trap, bool addToAssignedRoom)
+	{
+		if (addToAssignedRoom) assignedRoom.trapInRoom=trap;
+		TrapToken trapToken=Instantiate(trapPrefab);
+		trap.assignedToken=trapToken;
+		trapToken.transform.SetParent(transform,false);
+		trapToken.transform.position=transform.position;
+		trapToken.AssignTrap(trap,assignedRoom);
+	}
+	
+	public void RemoveTrap(Trap trap)
+	{
+		if (assignedRoom.trapInRoom!=trap) {throw new System.Exception("Attempting to remove trap that does not exist in room!");}
+		else
+		{
+			assignedRoom.trapInRoom=null;
+			TrapToken myChildTrapToken=GetComponentInChildren<TrapToken>();
+			if (myChildTrapToken!=null) GameObject.Destroy(myChildTrapToken.gameObject);
 		}
 	}
 	
@@ -313,6 +300,9 @@ public class RoomButtonHandler : MonoBehaviour {
 			
 			if (!isVisible) 
 			{
+				//Hide barricades
+				BarricadeToken assignedBarricadeToken=GetComponentInChildren<BarricadeToken>();
+				if (assignedBarricadeToken!=null) {assignedBarricadeToken.SetHidden(true);}
 				//switch off Enemy Group and Member Group to hide enemies in fog of war
 				actorsGroup.gameObject.SetActive(false);
 				if (!isDiscovered) 
@@ -324,6 +314,17 @@ public class RoomButtonHandler : MonoBehaviour {
 			}
 			else
 			{
+				//Remove hearing tokens upon entering vision
+				HearingTokenHandler attachedHaringToken=GetComponentInChildren<HearingTokenHandler>();
+				if (attachedHaringToken!=null)
+				{
+					attachedHaringToken.DisposeToken();
+				}
+				//Show barricades
+				BarricadeToken assignedBarricadeToken=GetComponentInChildren<BarricadeToken>();
+				if (assignedBarricadeToken!=null) {assignedBarricadeToken.SetHidden(false);}
+				//if (assignedBarricadeToken!=null) {assignedBarricadeToken.GetComponent<Image>(}
+				//Set color
 				GetComponent<Button>().image.color=Color.white;
 				//Switch on Enemy Group and Member Group
 				actorsGroup.gameObject.SetActive(true);
@@ -332,20 +333,36 @@ public class RoomButtonHandler : MonoBehaviour {
 			if (isExit) {exitToken.SetActive(true);}//GetComponent<Button>().image.color=Color.green;}
 		}
 	}
-	
-	/*
-	void Update()
+
+	#region IDropHandler implementation
+
+	public void OnDrop (PointerEventData eventData)
 	{
-		if (assignedRoom!=null) 
+		BarricadeToken droppedToken=BarricadeToken.barricadeTokenBeingDragged;
+		Vector2 draggingMemberCoords=EncounterCanvasHandler.main.memberCoords[EncounterCanvasHandler.main.selectedMember];
+		if (droppedToken!=null)
 		{
-			//print ("updating");
-			isWall=assignedRoom.isWall;
-			isExit=assignedRoom.isExit;
-			hasEnemies=assignedRoom.hasEnemies;
-			hasLoot=assignedRoom.hasLoot;
-			lootIsLocked=assignedRoom.lootIsLocked;
-			isVisible=assignedRoom.isVisible;
-			
+			/*
+			if (Mathf.Abs(droppedToken.assignedRoomButton.roomX-roomX)+Mathf.Abs(droppedToken.assignedRoomButton.roomY-roomY)==1
+			    && assignedRoom.barricadeInRoom==null)*/
+			//Only permit dropping into rooms adjacent to the player
+			float xDiff=Mathf.Abs(draggingMemberCoords.x-roomX);
+			float yDiff=Mathf.Abs(draggingMemberCoords.y-roomY);
+			if ((xDiff>0 || yDiff>0) && (xDiff<2 && yDiff<2)
+			&& !isWall 
+			&& assignedRoom.barricadeInRoom==null
+			&& !hasEnemies
+			&& !EncounterCanvasHandler.main.memberCoords.ContainsValue(GetRoomCoords()))
+			{
+				assignedRoom.barricadeInRoom=droppedToken.assignedRoomButton.assignedRoom.barricadeInRoom;
+				droppedToken.assignedRoomButton.assignedRoom.barricadeInRoom=null;
+				droppedToken.transform.SetParent(this.transform,false);
+				droppedToken.AssignNewRoomButton(this);
+				EncounterCanvasHandler.main.TurnoverSelectedMember();
+				EncounterCanvasHandler.main.MakeNoise(GetRoomCoords(),3);
+			}
 		}
-	}*/
+	}
+
+	#endregion
 }

@@ -12,9 +12,9 @@ public abstract class InventoryItem
 	
 	public virtual int GetWeight() {return 1;}
 	
-	public enum LootItems {Medkits,Bandages,Food,PerishableFood,Ammo,Flashlight,Radio,AssaultRifle,Shotgun,NineM,Pipe,Knife,Axe,ArmorVest}
+	public enum LootItems {Medkits,Bandages,Food,PerishableFood,Ammo,Flashlight,Radio,SettableTrap,AssaultRifle,Shotgun,NineM,Pipe,Knife,Axe,ArmorVest}
 	
-	//Deprecated, remove later
+	//Deprecated, remove later!!!
 	public static string GetLootingDescription(LootItems itemType)
 	{
 		string description=null;
@@ -34,6 +34,7 @@ public abstract class InventoryItem
 			case LootItems.Shotgun: {description="You find a shotgun"; break;}
 			case LootItems.AssaultRifle:{description="You find an assault rifle";break;}
 			case LootItems.Radio:{description="You find a radio";break;}
+			case LootItems.SettableTrap:{description="You find a settable trap"; break;}
 		}
 		return description;
 	}
@@ -62,9 +63,39 @@ public abstract class InventoryItem
 			case LootItems.Shotgun: {lootedItem=new Shotgun(); break;}
 			case LootItems.AssaultRifle:{lootedItem=new AssaultRifle(); break;}
 			//MISC
-			case LootItems.Radio:{lootedItem=new Radio(); ;break;}
+			case LootItems.Radio:{lootedItem=new Radio(); break;}
+			case LootItems.SettableTrap: {lootedItem=new SettableTrap(); break;}
 		}
 		return lootedItem;
+	}
+}
+
+public class SettableTrap: InventoryItem
+{
+	System.Type myTrapType=typeof(Trap);
+	
+	public override Sprite GetItemSprite() {return SpriteBase.mainSpriteBase.settableTrapSprite;}
+	
+	public override string GetMouseoverDescription ()
+	{
+		return "Settable trap\nAdds tarp";
+	}
+	
+	public override bool UseAction(PartyMember member)
+	{
+		bool trapSet=false;
+		EncounterCanvasHandler encounterHandler=EncounterCanvasHandler.main;
+		if (encounterHandler.encounterOngoing)
+		{
+			RoomButtonHandler trappedRoomButton=encounterHandler.roomButtons[encounterHandler.memberCoords[member]];
+			if (trappedRoomButton.assignedRoom.trapInRoom==null)
+			{
+				encounterHandler.roomButtons[encounterHandler.memberCoords[member]]
+				.SetTrap(new Trap(trappedRoomButton.assignedRoom),true);
+				trapSet=true;
+			}
+		}
+		return trapSet;
 	}
 }
 

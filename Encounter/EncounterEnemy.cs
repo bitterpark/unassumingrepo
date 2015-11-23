@@ -8,13 +8,14 @@ public abstract class EncounterEnemy
 	public int health;
 	public int minDamage;
 	public int maxDamage;
+	public int maxAttackRange=0;
 	//public int encounterCount=5;
 	public float moveChance=0.4f;
 	public List<StatusEffect> activeEffects=new List<StatusEffect>();
-	public bool seesMember=false;
 	int xCoord;
 	int yCoord;
-	int visionRange=2;
+	int visionRange=0;
+	int barricadeBashStrength=1;
 	
 	public delegate void StatusEffectDel();
 	public event StatusEffectDel StatusEffectsChanged;
@@ -48,7 +49,7 @@ public abstract class EncounterEnemy
 		return dmgTaken;
 	}
 	
-	public virtual PartyMember RoundAction(List<PartyMember> membersInRoom)//Dictionary<PartyMember,Vector2> memberCoords)
+	public virtual PartyMember RoundAction(List<PartyMember> membersWithinReach)//Dictionary<PartyMember,Vector2> memberCoords)
 	{
 		/*List<PartyMember> membersInRoom=new List<PartyMember>();
 		foreach (PartyMember key in memberCoords.Keys) 
@@ -56,12 +57,12 @@ public abstract class EncounterEnemy
 			if (memberCoords[key]==new Vector2(xCoord,yCoord)) membersInRoom.Add(key);
 		}*/
 		PartyMember attackedMember=null;
-		if (membersInRoom.Count>0)
+		if (membersWithinReach.Count>0)
 		{
 			//actionMsg=null;
 			//return damage;
 			EncounterCanvasHandler manager=EncounterCanvasHandler.main;//EncounterCanvasHandler.main;
-			attackedMember=membersInRoom[Random.Range(0,membersInRoom.Count)];
+			attackedMember=membersWithinReach[Random.Range(0,membersWithinReach.Count)];
 			//PartyMember attackedMember=manager.selectedMember;
 			//int targetedPCIndex=manager.selectedMember;
 			//manager.DamagePlayerCharacter(manager.selectedMember,damage);
@@ -69,9 +70,13 @@ public abstract class EncounterEnemy
 			int realDmg=attackedMember.TakeDamage(myDamageRoll);
 			
 			//manager.DisplayNewMessage(name+" hits "+attackedMember.name+" for "+realDmg+"!");
-			manager.StartDamageNumber(realDmg,attackedMember,this);
+			//GameManager.DebugPrint("calling visualize attack on"+manager.memberTokens[attackedMember].name);
+			manager.VisualizeDamageToMember(realDmg,attackedMember,this);
+			int attackNoiseIntensity=2;
+			manager.MakeNoise(GetCoords(),attackNoiseIntensity);
+			//StartCoroutine(manager.VisualizeAttack(realDmg,manager.enemyTokens[this],manager.memberTokens[attackedMember]));
 		} 
-		else {throw new System.Exception("EncounterEnemy attack called while in an empty room!");}
+		else {throw new System.Exception("EncounterEnemy attack called while no members are within reach!");}
 		return attackedMember;
 	}
 	public virtual void TurnAction() {}
@@ -97,13 +102,13 @@ public abstract class EncounterEnemy
 		int count=0;
 		switch(enemyType)
 		{
-		case EnemyTypes.Gasser: {count=8; break;}
-		case EnemyTypes.Spindler: {count=3; break;}
-		case EnemyTypes.Flesh: {count=8; break;}
-		case EnemyTypes.Muscle: {count=8; break;}
-		case EnemyTypes.Transient: {count=8; break;}
-		case EnemyTypes.Quick: {count=8; break;}
-		case EnemyTypes.Slime: {count=16; break;}
+		case EnemyTypes.Gasser: {count=14; break;}
+		case EnemyTypes.Spindler: {count=5; break;}
+		case EnemyTypes.Flesh: {count=14; break;}
+		case EnemyTypes.Muscle: {count=14; break;}
+		case EnemyTypes.Transient: {count=14; break;}
+		case EnemyTypes.Quick: {count=14; break;}
+		case EnemyTypes.Slime: {count=18; break;}
 		}
 		return count;
 	}
@@ -125,23 +130,25 @@ public abstract class EncounterEnemy
 	}
 	
 	//Updates token visual if any members are seen
+	/*
 	public void VisionUpdate()
 	{
 		Dictionary<Vector2,EncounterRoom> encounterMap=EncounterCanvasHandler.main.currentEncounter.encounterMap;
 		Dictionary<PartyMember,Vector2> memberCoords=EncounterCanvasHandler.main.memberCoords;
 		if (VisionCheck(encounterMap,memberCoords).Count>0) {seesMember=true;}
 		else {seesMember=false;}
-	}
+	}*/
 	//Returns a list of currently visible members
-	List<PartyMember> VisionCheck(Dictionary<Vector2,EncounterRoom> encounterMap, Dictionary<PartyMember,Vector2> memberCoords)
+	public List<PartyMember> VisionCheck(Dictionary<Vector2,EncounterRoom> encounterMap, Dictionary<PartyMember,Vector2> memberCoords)
 	{
 		//First - find members within vision range
 		List<PartyMember> visibleMembers=new List<PartyMember>();
 		foreach (PartyMember key in memberCoords.Keys)
 		{
 			//See if member passes vision range check
-			if (Mathf.Abs(memberCoords[key].x-xCoord)+Mathf.Abs(memberCoords[key].y-yCoord)
-			 <=Mathf.Max(visionRange+key.visibilityMod,1)) 
+			//if (Mathf.Abs(memberCoords[key].x-xCoord)+Mathf.Abs(memberCoords[key].y-yCoord)
+			// <=Mathf.Max(visionRange+key.visibilityMod,1))
+			if (Mathf.Abs(memberCoords[key].x-xCoord)<=visionRange && Mathf.Abs(memberCoords[key].y-yCoord)<=visionRange) 
 			{
 				bool memberVisible=true;
 				//Second - see if any walls are blocking member
@@ -159,13 +166,15 @@ public abstract class EncounterEnemy
 	}
 	
 	//Used for both move and attack actions "acting, the enemy uses its "move" for the turn
-	public void Move(Dictionary<PartyMember, Dictionary<Vector2,int>> masks, Dictionary<PartyMember,Vector2> memberCoords)
+	public void Move(Dictionary<PartyMember, Dictionary<Vector2,int>> masks, Dictionary<PartyMember,Vector2> memberCoords
+	, EnemyTokenHandler.PointOfInterest currentPOI)
 	{
 		//Ensure enemies don't move after EncounterCanvasHandler shut down encounter render
 		if (EncounterCanvasHandler.main.encounterOngoing)
 		{
 			//make sure the party didn't move into your coord
 			Dictionary<Vector2,EncounterRoom> map=EncounterCanvasHandler.main.currentEncounter.encounterMap;
+			/*
 			//Make sure no party members are in the room with you
 			List<PartyMember> presentMembers=new List<PartyMember>();
 			//bool membersPresent=false;
@@ -175,38 +184,82 @@ public abstract class EncounterEnemy
 			}
 			//If no member present in my room do the move, otherwise do RoundAction
 			if (presentMembers.Count==0)//!membersPresent)
-			{	
+			{*/	
 				Vector2 moveCoords=new Vector2(xCoord,yCoord);
 				Vector2 startCoords=new Vector2(xCoord,yCoord);
 				
-				//Find if any members are visible
+				//Find if any members are visible !!!CONSIDER CHANGING List<PartyMember> TO List<Vector2>!!!!!
 				List<PartyMember> visibleMembers=VisionCheck(map,memberCoords);
-				
-				//If some members are visible
-				if (visibleMembers.Count>0) 
+				List<PartyMember> membersWithinAttackRange=new List<PartyMember>();
+				//see if any of the visible members are within maximum attack range
+				foreach (PartyMember member in visibleMembers) 
 				{
-					//see if any of the visible members are "free" and not currently fighting
-					List<PartyMember> freeVisibleMembers=new List<PartyMember>();
-					foreach (PartyMember member in visibleMembers) 
+					if (Mathf.Abs(memberCoords[member].x-xCoord)+Mathf.Abs(memberCoords[member].y-yCoord)<=maxAttackRange)
 					{
-						if (!map[memberCoords[member]].hasEnemies) 
+						membersWithinAttackRange.Add(member);
+					}
+				}
+				//If any members are within attack range, attack, otherwise move on to the next fork
+				if (membersWithinAttackRange.Count>0)
+				{	
+					RoundAction(membersWithinAttackRange);		
+				}
+				else
+				{
+				//If some members are visible, or a Point of Interest exists
+				if (visibleMembers.Count>0 | currentPOI!=null) 
+				{
+					//Dictionary<Vector2,int> targetMemberMask=null;
+					Vector2 targetCoord=Vector2.zero;
+					//If the enemy is seeing members right now
+					if (visibleMembers.Count>0)
+					{
+						//see if any of the visible members are "free" and not currently fighting
+						List<PartyMember> freeVisibleMembers=new List<PartyMember>();
+						
+						foreach (PartyMember member in visibleMembers) 
 						{
-							freeVisibleMembers.Add(member);
+							if (!map[memberCoords[member]].hasEnemies) 
+							{
+								freeVisibleMembers.Add(member);
+							}
 						}
+						
+						//IF FREE VISIBLE MEMBERS EXIST, CHOOSE TARGET FROM THE SET OF FREE MEMBERS, ELSE CHOOSE FROM THE NON-FREE SET
+						if (freeVisibleMembers.Count>0) {visibleMembers=freeVisibleMembers;}
+						
+						//Determine which member to target (in this case based on nearest distance)
+						//targetMemberMask=masks[visibleMembers[0]];//Vector2 closestMemberCoords=memberCoords[visibleMembers[0]];
+						int minRange=int.MaxValue;
+						
+						foreach (PartyMember visibleMember in visibleMembers)
+						{
+							//Vector2 =EncounterCanvasHandler.main.memberCoords[visibleMember];
+							if (Mathf.Abs(memberCoords[visibleMember].x-xCoord)+Mathf.Abs(memberCoords[visibleMember].y-yCoord)<minRange)
+							{
+								targetCoord=memberCoords[visibleMember];
+								minRange=(int)(Mathf.Abs(memberCoords[visibleMember].x-xCoord)+Mathf.Abs(memberCoords[visibleMember].y-yCoord));
+							}
+							/*
+							//If my position in cycled member's mask is closer than in the previous one, make cycled member closest
+							if (masks[visibleMember][new Vector2(xCoord,yCoord)]<targetMemberMask[new Vector2(xCoord,yCoord)]) 
+								targetMemberMask=masks[visibleMember];*/
+						}
+						
 					}
-					//IF FREE VISIBLE MEMBERS EXIST, CHOOSE TARGET FROM THE SET OF FREE MEMBERS, ELSE CHOOSE FROM THE NON-FREE SET
-					if (freeVisibleMembers.Count>0) {visibleMembers=freeVisibleMembers;}
-					
-					//Determine which member to target (in this case based on shortest route)
-					Dictionary<Vector2,int> targetMemberMask=masks[visibleMembers[0]];//Vector2 closestMemberCoords=memberCoords[visibleMembers[0]];
-					foreach (PartyMember visibleMember in visibleMembers)
+					else
 					{
-						//If my position in cycled member's mask is closer than in the previous one, make cycled member closest
-						if (masks[visibleMember][new Vector2(xCoord,yCoord)]<targetMemberMask[new Vector2(xCoord,yCoord)]) 
-							targetMemberMask=masks[visibleMember];
+						//if no members are visible right now, but a POI to move towards exists
+						//targetMemberMask=currentPOI.pointMoveMask;
+						targetCoord=currentPOI.pointCoords;
+						
 					}
+					//This should ensure that the actor will pick next waypoint for a path longer than 1 node, and pick current node otherwise
+					var path=EncounterCanvasHandler.main.GetPathInCurrentEncounter(GetCoords(),targetCoord);
+					moveCoords=path[Mathf.Clamp(path.Count-1,0,1)];
 					//!!! CHANGE THIS TO COLLECT A LIST OF POSSIBLE MOVES AND PICK ONE OUT OF IT !!!
 					//check nearby cells to find shortest route to player
+					/*
 					Vector2 minCoords=startCoords;
 					float minValue=Mathf.Infinity;
 					
@@ -232,7 +285,8 @@ public abstract class EncounterEnemy
 					pursuitCheck.Invoke(startCoords+new Vector2(-1,0));
 					//Right
 					pursuitCheck.Invoke(startCoords+new Vector2(1,0));
-					moveCoords=minCoords;
+					moveCoords=minCoords;*/
+					
 				}
 				else
 				{
@@ -244,8 +298,9 @@ public abstract class EncounterEnemy
 					{
 						if (map.ContainsKey(cursorPos)) 
 						{
-							EncounterRoom upRoom=map[cursorPos];
-							if (!upRoom.isWall && !upRoom.hasEnemies) {availableCoords.Add(cursorPos);}
+							EncounterRoom checkedRoom=map[cursorPos];
+							if (!checkedRoom.isWall && !checkedRoom.hasEnemies && checkedRoom.barricadeInRoom==null) 
+							{availableCoords.Add(cursorPos);}
 						}
 						
 					};
@@ -297,20 +352,27 @@ public abstract class EncounterEnemy
 				{
 					RoomButtonHandler moveRoom=EncounterCanvasHandler.main.roomButtons[moveCoords];
 					RoomButtonHandler startRoom=EncounterCanvasHandler.main.roomButtons[startCoords];
-					startRoom.MoveEnemyOutOfRoom(this);
-					moveRoom.MoveEnemyInRoom(this);
-					xCoord=(int)moveCoords.x;
-					yCoord=(int)moveCoords.y;
+					if (moveRoom.assignedRoom.barricadeInRoom==null)
+					{
+						startRoom.MoveEnemyOutOfRoom(this);
+						//ORDER IS IMPORTANT!
+						SetCoords(moveCoords);
+						moveRoom.MoveEnemyInRoom(this);
+					}
+					else
+					{
+						moveRoom.BashBarricade(barricadeBashStrength);
+					}
+					
 				}
-				//update post-move vision
-				VisionUpdate();
+			}
+			/*
 			}
 			else
 			{
-				seesMember=true;
 				RoundAction(presentMembers);
-			}
-		} //else {GameManager.DebugPrint("skipping turn!");}
+			}*/
+		}
 	}
 	
 	public EncounterEnemy(Vector2 coords) 
@@ -454,19 +516,15 @@ public class Gasser:EncounterEnemy
 	public override int TakeDamage(int dmgTaken, bool isRanged)
 	{
 		int recievedDamage=base.TakeDamage(dmgTaken, isRanged);
-		
+		/*
 		damageGainedThisRound+=recievedDamage;
 		if (damageGainedThisRound>=retaliationDamageThreshold && health>0)
 		{
 			PartyMember attackedMember=EncounterCanvasHandler.main.selectedMember;
 			int realRetaliationDmg=attackedMember.TakeDamage(retaliationDamage,false);
-			/*
-			EncounterCanvasHandler.main.DisplayNewMessage(name+" releases gas!");
-			EncounterCanvasHandler.main.DisplayNewMessage(
-			 attackedMember.name+" takes"+realRetaliationDmg+"damage!");*/
 			EncounterCanvasHandler.main.StartDamageNumber(realRetaliationDmg,attackedMember,this);
 			damageGainedThisRound=0;
-		}
+		}*/
 		return recievedDamage;
 	}
 	

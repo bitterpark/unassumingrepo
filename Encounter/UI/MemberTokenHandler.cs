@@ -2,7 +2,12 @@
 using System.Collections;
 using UnityEngine.UI;
 
-public class MemberTokenHandler : MonoBehaviour 
+public interface IAttackAnimation
+{
+	IEnumerator AttackAnimation();
+}
+
+public class MemberTokenHandler : MonoBehaviour, IAttackAnimation 
 {
 	public PartyMember myMember;
 	public GameObject mySelectedArrow;
@@ -144,6 +149,25 @@ public class MemberTokenHandler : MonoBehaviour
 		}
 		return enemyReachable;
 	}
+
+	#region AttackAnimation implementation
+
+	public IEnumerator AttackAnimation()
+	{
+		/*
+		foreach (Text child in GetComponentsInChildren<Text>())
+		{
+			child.transform.
+		}*/
+		//print ("starting attack animation!");
+		myImage.transform.localScale=new Vector3(1.6f,1.6f,1f);
+		yield return new WaitForSeconds(0.6f);
+		//print ("yielding attack animation!");
+		myImage.transform.localScale=new Vector3(1f,1f,1f);
+		yield break;
+	}
+
+	#endregion
 	
 	/*
 	public void AnimateAttack() 
@@ -159,20 +183,7 @@ public class MemberTokenHandler : MonoBehaviour
 		yield break;
 	}
 	*/
-	public IEnumerator AttackAnimation()
-	{
-		/*
-		foreach (Text child in GetComponentsInChildren<Text>())
-		{
-			child.transform.
-		}*/
-		//print ("starting attack animation!");
-		myImage.transform.localScale=new Vector3(1.6f,1.6f,1f);
-		yield return new WaitForSeconds(0.6f);
-		//print ("yielding attack animation!");
-		myImage.transform.localScale=new Vector3(1f,1f,1f);
-		yield break;
-	}
+	
 	
 	public void ToggleRangedMode ()
 	{

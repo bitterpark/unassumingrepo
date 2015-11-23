@@ -3,6 +3,10 @@ using System.Collections;
 using System.Collections.Generic;
 //using System.Collections.Generic;
 
+public class Barricade
+{
+	public int health=10;
+}
 
 public class EncounterRoom
 {
@@ -95,6 +99,8 @@ public class EncounterRoom
 	}
 	int _lockStrength=0;
 	
+	public Trap trapInRoom=null;
+	public Barricade barricadeInRoom=null;
 	//public bool isVisible=false;
 	
 	public string description="";
@@ -198,6 +204,17 @@ public class EncounterRoom
 			if (randomRes<=chance) {item=parentEncounter.lootChances[chance]; lootFound=true;}
 		}
 		return lootFound;
+	}
+	
+	public void BashBarricade(int bashStrength)
+	{
+		//Currently, strength is uniformly 1
+		if (barricadeInRoom==null) throw new System.Exception("Trying to bash a barricade that doesn't exist in room!");
+		else
+		{
+			barricadeInRoom.health-=bashStrength;
+			if (barricadeInRoom.health<=0) {barricadeInRoom=null;}
+		}
 	}
 	
 }

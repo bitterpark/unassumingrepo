@@ -10,6 +10,7 @@ public class Encounter
 	public int maxY=0;
 	
 	protected const int safeDistanceFromEntrance=2;
+	const float barricadeChance=0.08f;
 	
 	public string lootDescription="";
 	public string enemyDescription="";
@@ -65,7 +66,7 @@ public class Encounter
 				lootChances.Add (0.85f,InventoryItem.LootItems.ArmorVest);
 				lootChances.Add (0.75f,InventoryItem.LootItems.Axe);
 				lootChances.Add (0.65f,InventoryItem.LootItems.Knife);
-				lootChances.Add (0.5f,InventoryItem.LootItems.Flashlight);
+				lootChances.Add (0.5f,InventoryItem.LootItems.SettableTrap);
 				lootChances.Add (0.3f,InventoryItem.LootItems.Food);
 				lootChances.Add (0.1f,InventoryItem.LootItems.PerishableFood);
 				break;
@@ -153,7 +154,11 @@ public class Encounter
 			if (!room.isWall)
 			{
 				if (room.isEntrance) {entranceRoom=room;}
-				else {roomsEligibleForEnemyPlacement.Add (room);}
+				else 
+				{
+					roomsEligibleForEnemyPlacement.Add (room);
+					if (!room.isExit && Random.value<barricadeChance) room.barricadeInRoom=new Barricade(); 
+				}
 				if (room.hasLoot) 
 				{
 					room.hasLoot=false;
@@ -175,9 +180,11 @@ public class Encounter
 		
 		//Generate enemy placement
 		List<EncounterRoom> cachedList=new List<EncounterRoom> (roomsEligibleForEnemyPlacement);
+		//Requires a second pass, when the exit is known
 		foreach (EncounterRoom room in cachedList)
 		{
-			if (Mathf.Abs(entranceRoom.xCoord-room.xCoord)+Mathf.Abs(entranceRoom.yCoord-room.yCoord)<=safeDistanceFromEntrance)
+			if (Mathf.Abs(entranceRoom.xCoord-room.xCoord)+Mathf.Abs(entranceRoom.yCoord-room.yCoord)<=safeDistanceFromEntrance
+			|| room.barricadeInRoom!=null)
 			roomsEligibleForEnemyPlacement.Remove(room);
 		}
 		
@@ -202,7 +209,10 @@ public class Encounter
 		{
 			if (room.isEntrance) {entranceRoom=room;}
 			if (room.hasEnemies) {roomsWithEnemies.Add(room);}
-			else emptyRooms.Add(room);
+			else 
+			{
+				if (!room.isWall) {emptyRooms.Add(room);}
+			}
 		}
 		
 		

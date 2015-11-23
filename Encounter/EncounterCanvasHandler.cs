@@ -11,16 +11,23 @@ public class EncounterCanvasHandler : MonoBehaviour
 	public bool encounterOngoing=false;
 
 	public Encounter currentEncounter=null;
+	EncounterMap currentMap=null;
 	
 	public PartyMember selectedMember=null;
 	//public EncounterEnemy selectedEnemy=null;
 	public List<PartyMember> encounterMembers=new List<PartyMember>();
-	Dictionary<PartyMember,Dictionary<Vector2,int>> memberMoveMasks;
+	public Dictionary<PartyMember,Dictionary<Vector2,int>> memberMoveMasks;
 	//public EncounterRoom displayedRoom;
 	public Dictionary<PartyMember,Vector2> memberCoords=new Dictionary<PartyMember, Vector2>();
 	
+	//This is for the old message system
+	/*
 	string lastMessage="";
 	int messageCount=0;
+	*/
+	//Debug var
+	int iterationCount=0;
+	
 	bool damageNumberOut=false;
 	
 	//public GameObject memberToken;
@@ -30,7 +37,7 @@ public class EncounterCanvasHandler : MonoBehaviour
 	public RoomButtonHandler roomPrefab;
 	//public CombatSelectorHandler selectorPrefab;
 	//public EnemySelectorHandler enemySelectorPrefab;
-	public DamageNumberHandler damageNumberPrefab;	
+	public FloatingTextHandler floatingTextPrefab;	
 	public EnemyTokenHandler enemyTokenPrefab;
 	public MemberTokenHandler memberTokenPrefab;
 	//REAL		
@@ -83,6 +90,9 @@ public class EncounterCanvasHandler : MonoBehaviour
 	delegate void MemberMovedDel ();
 	event MemberMovedDel EMemberMoved;
 	
+	public delegate void RoundoverDel();
+	public event RoundoverDel ERoundIsOver;
+	
 	void FocusViewOnRoom(RectTransform roomTransform)
 	{
 		Vector2 newPosition=roomTransform.localPosition;
@@ -114,7 +124,9 @@ public class EncounterCanvasHandler : MonoBehaviour
 			
 		}
 		currentEncounter=newEncounter;
+		currentMap=new EncounterMap(newEncounter.encounterMap);
 		EnableRender();
+		MakeNoise(memberCoords[encounterMembers[0]],100);
 	}
 	
 	void EndEncounter()
@@ -130,8 +142,8 @@ public class EncounterCanvasHandler : MonoBehaviour
 		int moveDistance=0;	
 		EncounterRoom startingRoom=currentEncounter.encounterMap[memberCoords[selectedMember]];
 		moveDistance=Mathf.Abs((int)startingRoom.xCoord-roomHandler.roomX)+Mathf.Abs((int)startingRoom.yCoord-roomHandler.roomY);//encounterPlayerX-room.xCoord)+Mathf.Abs(encounterPlayerY-room.yCoord);
-		
-		if (moveDistance==1 && !roomHandler.assignedRoom.isWall) //&& !currentEncounter.encounterMap[memberCoords[selectedMember]].hasEnemies)//new Vector2(encounterPlayerX,encounterPlayerY)].hasEnemies)
+
+		if (moveDistance==1 && !roomHandler.assignedRoom.isWall && roomHandler.assignedRoom.barricadeInRoom==null) //&& !currentEncounter.encounterMap[memberCoords[selectedMember]].hasEnemies)//new Vector2(encounterPlayerX,encounterPlayerY)].hasEnemies)
 		{
 			//If the room has no other party members move there regularly, else - do the swap
 			if (!memberCoords.ContainsValue(roomHandler.GetRoomCoords()))
@@ -158,6 +170,25 @@ public class EncounterCanvasHandler : MonoBehaviour
 				if (!memberTokens[memberAtDestination].actionTaken) {SwapMemberPlaces(selectedMember,memberAtDestination);}
 			}
 		}//
+		//var map=new EncounterMap(currentEncounter.encounterMap);
+		//Debug stuff starts here
+		//print ("Room cost to current member:"+memberMoveMasks[selectedMember][roomHandler.GetRoomCoords()]);
+		/*
+		var map=new EncounterMap(currentEncounter.encounterMap);//currentEncounter.maxX+Mathf.Abs(currentEncounter.minX),currentEncounter.maxY+Mathf.Abs(currentEncounter.minY));
+		
+		print ("Starting path list from"+memberCoords[selectedMember]+" to "+roomHandler.GetRoomCoords());
+		float startTime=Time.time;
+		var astar=new AStarSearch(map
+		,new Location((int)memberCoords[selectedMember].x,(int)memberCoords[selectedMember].y)
+		,new Location((int)roomHandler.roomX,(int)roomHandler.roomY));
+		Test.PrintPath(astar,new Location((int)roomHandler.roomX,(int)roomHandler.roomY));//astar.cameFrom,new Location((int)roomHandler.roomX,(int)roomHandler.roomY));
+		*/
+		//print ("Path Done. Calc time="+(Time.time-startTime));
+		//print ("Starting dijkstra");
+		//iterationCount=0;
+		//IterativeGrassfireMapper(memberCoords[selectedMember]);
+		//print ("Dijkstra done. Iteration count:"+iterationCount);
+		//print ("Dijkstra done. Calc time="+(Time.time-startTime));
 	}
 	
 	void SwapMemberPlaces(PartyMember member1, PartyMember member2)
@@ -197,49 +228,105 @@ public class EncounterCanvasHandler : MonoBehaviour
 		//update member token pos
 		memberTokens[member].UpdateTokenPos(roomButton);
 		//reveal party vision
-		UpdateMemberMoveMask(member);
-		RevealPartyVision();
+		//UpdateMemberMoveMask(member);
+		RevealPartySenses();
 		if (EMemberMoved!=null) EMemberMoved();
-		if (doTurnover) TurnOver(member,roomButton.assignedRoom);
+		//if (doTurnover) TurnOver(member,roomButton.assignedRoom);
 		//RefreshRoom(room);
 		//CheckRoomForEnemies(room);
 		//check for combat start
 	}
 	//called after member move or initial member placement - !!! CONSIDER MOVING THIS TO MOvePartyMemberToRoom !!!
+	//!!!!DEPRECATED!!!! remove this later
 	void UpdateMemberMoveMask(PartyMember member)
 	{
-		memberMoveMasks[member].Clear();
+		//memberMoveMasks[member].Clear();
 		//Dictionary<Vector2,int> moveMask=memberMoveMasks[member];
-		memberMoveMasks[member]=IterativeGrassfireMapper(memberCoords[member]);
+		//memberMoveMasks[member]=IterativeGrassfireMapper(memberCoords[member]);
+		Dictionary<Vector2,int> memberMoveMask=memberMoveMasks[member];
+		IterativeGrassfireMapper(memberCoords[member],ref memberMoveMask);
 	}
 	
 	//reveals stuff around current party room
-	void RevealPartyVision()
+	void RevealPartySenses()
 	{
 		//First - unreveal everything
-		foreach (RoomButtonHandler cycledRoom in roomButtons.Values) {cycledRoom.SetVisibility(false);}//EncounterRoom cycledRoom in currentEncounter.encounterMap.Values) {cycledRoom.isVisible=false;}
+		foreach (RoomButtonHandler cycledRoom in roomButtons.Values) 
+		{
+			cycledRoom.SetVisibility(false);
+			cycledRoom.SetHearing(false);
+		}
 		
 		//Iterate through every present player
 		foreach (PartyMember member in encounterMembers)
 		{
 			//Default daytime range
-			int visionRange=4;
+			int visionRange=3;
+			//int verticalVisionRange=3;
+			//int horizontalVisionRange=4;
 			if (PartyManager.mainPartyManager.dayTime<6 | PartyManager.mainPartyManager.dayTime>18) 
 			{
 				//Nighttime range
-				visionRange=1;
+				//visionRange=1;
 				//Nighttime range with flashlight
-				if (member.hasLight) {visionRange+=2;}
+				//if (member.hasLight) {visionRange+=2;}
 			}
 			//////
+			//Make sure this is >= to max of the visionrange values
+			int hearingRange=4;
+			int maxRange=Mathf.Max(visionRange,hearingRange);
 			
-		
-			//Do los-based reveal
-			for (int i=-visionRange; i<=visionRange; i++)
-			{
-				for (int j=-visionRange; j<=visionRange; j++)
+			for (int i=-maxRange; i<=maxRange; i++)//Mathf.Max(hearingRange,Mathf.Max(horizontalVisionRange,verticalVisionRange)); i++)
+			{	
+				for (int j=-maxRange; j<=maxRange; j++)//Mathf.Max(hearingRange,Mathf.Max(horizontalVisionRange,verticalVisionRange)); j++)
 				{
-					if (Mathf.Abs(i)+Mathf.Abs(j)==visionRange)
+					//int rangeToRoom=Mathf.Abs(i)+Mathf.Abs(j);
+					//Set up hearing reveal
+					//Currently set to reveal hearing in a square
+					//if (rangeToRoom<=hearingRange)
+					if (Mathf.Abs(i)<=hearingRange && Mathf.Abs(j)<=hearingRange)
+					{
+						Vector2 roomCoords=new Vector2(memberCoords[member].x+j,memberCoords[member].y+i);
+						if (roomButtons.ContainsKey(roomCoords)) roomButtons[roomCoords].SetHearing(true);
+					}
+					//Do los-based reveal
+					int rangeToRoom=Mathf.Abs(i)+Mathf.Abs(j);
+					//Set up vision reveal
+					if (rangeToRoom==visionRange)
+					{
+						//Bresenham vision line
+						List<Vector2> lineCoords=new List<Vector2>();
+						BresenhamLines.Line((int)memberCoords[member].x,(int)memberCoords[member].y
+						                    ,(int)memberCoords[member].x+j,(int)memberCoords[member].y+i,(int x, int y)=>//encounterPlayerX,encounterPlayerY,encounterPlayerX+j,encounterPlayerY+i,(int x, int y)=>
+						                    {
+							int storedX=x;
+							int storedY=y;
+							bool noBlock=true;
+							if (!currentEncounter.encounterMap.ContainsKey(new Vector2(x,y))) {noBlock=false;}	
+							else 
+							{
+								//disable the two lines below to remove wall-based los
+								if (currentEncounter.encounterMap[new Vector2(x,y)].isWall) {noBlock=false;}
+								else {noBlock=true;}
+								lineCoords.Add(new Vector2(storedX,storedY));
+							}
+							return noBlock;
+						});
+						foreach (Vector2 roomCoords in lineCoords) {roomButtons[roomCoords].SetVisibility(true);}//currentEncounter.encounterMap[roomCoords].isVisible=true;}
+					}
+				}
+				
+			}
+			//!! CONSIDER MOVING THIS TO HEARING RANGE CHECK
+			
+			/*
+			for (int i=-visionRange;i<=visionRange;i++)//verticalVisionRange; i<=verticalVisionRange; i++)
+			{	
+				for (int j=-visionRange;j<=visionRange;j++)//horizontalVisionRange; j<=horizontalVisionRange; j++)
+				{
+					int rangeToRoom=Mathf.Abs(i)+Mathf.Abs(j);
+					//Set up vision reveal
+					if (rangeToRoom==visionRange)
 					{
 						//Bresenham vision line
 						List<Vector2> lineCoords=new List<Vector2>();
@@ -262,7 +349,7 @@ public class EncounterCanvasHandler : MonoBehaviour
 						foreach (Vector2 roomCoords in lineCoords) {roomButtons[roomCoords].SetVisibility(true);}//currentEncounter.encounterMap[roomCoords].isVisible=true;}
 					}
 				}
-			}
+			}*/
 		}
 	}
 	
@@ -308,6 +395,7 @@ public class EncounterCanvasHandler : MonoBehaviour
 	
 	void RoundOver()
 	{
+		if (ERoundIsOver!=null) {ERoundIsOver();}
 		EnemiesMove();
 	}
 	
@@ -331,8 +419,8 @@ public class EncounterCanvasHandler : MonoBehaviour
 			if (encounterMembers.Count==0) {EndEncounter();}
 		}
 	}
-	
-	List<Vector2> CreateGrassfireMaskForEntrance(Vector2 entranceCoords)
+	//Consider moving this to the only place where it is used
+	List<Vector2> GetFreeRoomsNearEntrance(Vector2 entranceCoords)
 	{
 		//Dictionary<Vector2, int> rawCostsDictionary=new Dictionary<Vector2, int>();
 		//RecursiveGrassfireMapper(entranceCoords,ref rawCostsDictionary,0);
@@ -348,21 +436,41 @@ public class EncounterCanvasHandler : MonoBehaviour
 		return new List<Vector2>(items);	
 	}
 	
-	//For EnemiesMove only (currently updates on member move), based on djikstra maps (roguebasin)
+	public Dictionary<Vector2, int> IterativeGrassfireMapper(Vector2 goal)
+	{
+		Dictionary<Vector2,int> costs=new Dictionary<Vector2, int>();
+		IterativeGrassfireMapper(goal,ref costs);
+		return costs;
+	}
 	
-	Dictionary<Vector2, int> IterativeGrassfireMapper(Vector2 goal)
+	public List<Vector2> GetPathInCurrentEncounter(Vector2 startCoords, Vector2 endCoords)
+	{
+		//List<Vector2> path=
+		return new AStarSearch(currentMap,new Location((int)startCoords.x,(int)startCoords.y)
+		,new Location((int)endCoords.x,(int)endCoords.y)).path;
+	}
+	
+	//For EnemiesMove (currently updates on member move) and for enemyToken POIs, based on djikstra maps (roguebasin)
+	public void IterativeGrassfireMapper(Vector2 goal, ref Dictionary<Vector2,int> rewriteDictionary)
 	{
 		Dictionary<Vector2, EncounterRoom> map=currentEncounter.encounterMap;
 		if (!map.ContainsKey(goal)) {throw new System.Exception("Goal set for grassfire mapper doesn't exist in the map!");}
-		Dictionary<Vector2,int> costs=new Dictionary<Vector2, int>();
-		//iterationCount=0;
-		costs.Add(goal,0);
+		Dictionary<Vector2,int> costs=rewriteDictionary;//new Dictionary<Vector2, int>(rewriteDictionary);
+		if (costs.Count==0) {costs.Add(goal,0);} //print ("generating raw map");}
+		else 
+		{
+			costs[goal]=0; //print ("rewriting existing map");
+			//if (costs.ContainsKey(Vector2.zero)) print ("Old (0,0) cost:"+costs[Vector2.zero]);
+			//else print ("No (0,0) key found!");
+		}
+		iterationCount=0;
+		//costs.Add(goal,0);
 		bool changesMade=false;
 		//Vector2 currentRoomCoords=Vector2.zero;
 		
 		System.Action<Vector2> neighbourCheck=(Vector2 currentRoomCoords)=>
 		{
-			//iterationCount++;
+			iterationCount++;
 			int minNeighbourValue=999;
 			System.Action<Vector2>cursorCheck =(Vector2 neighbourCoords)=>
 			{
@@ -391,7 +499,7 @@ public class EncounterCanvasHandler : MonoBehaviour
 			}
 			else 
 			{
-				if (costs[currentRoomCoords]>minNeighbourValue+1) 
+				if (costs[currentRoomCoords]!=minNeighbourValue+1 && currentRoomCoords!=goal)//>minNeighbourValue+1 | (costs[currentRoomCoords]==0 && currentRoomCoords!=goal)) 
 				{
 					costs[currentRoomCoords]=minNeighbourValue+1;
 					changesMade=true;
@@ -407,7 +515,8 @@ public class EncounterCanvasHandler : MonoBehaviour
 				if (!map[roomCoords].isWall) neighbourCheck.Invoke(roomCoords);
 			}
 		} while (changesMade);
-		return costs;
+		//return costs;
+		rewriteDictionary=costs;//
 	}
 	
 	//CONSIDER MAKING THIS STATIC - currently unused, iterative mapper is more efficent
@@ -536,21 +645,8 @@ public class EncounterCanvasHandler : MonoBehaviour
 	}
 	
 	//used for Wait button callback, loot button, player move and other things
-	public void EnemiesMove()
+	void EnemiesMove()
 	{		
-		// enemy move block	
-		//////SETUP GRASSFIRE MOVE MASKS
-		/*
-		Dictionary<PartyMember,Dictionary<Vector2,int>> memberMoveMasks=new Dictionary<PartyMember, Dictionary<Vector2, int>>();
-		
-		foreach (PartyMember member in encounterMembers)
-		{
-			Dictionary<Vector2,int> newMemberMask=new Dictionary<Vector2, int>();
-			RecursiveGrassfireMapper(memberCoords[member],ref newMemberMask,0);
-			memberMoveMasks.Add(member,newMemberMask);
-		}*/
-		
-		///////END OF SETUP
 		if (EMoveEnemies!=null) EMoveEnemies(memberMoveMasks,memberCoords);
 	}
 	
@@ -636,9 +732,11 @@ public class EncounterCanvasHandler : MonoBehaviour
 			newMemberToken.AssignMember(member);
 			//newMemberToken.GetComponent<Image>().color=member.color;
 			memberTokens.Add(member,newMemberToken);
-			
-			memberMoveMasks.Add(member,new Dictionary<Vector2, int>());
-			
+			//TESTING
+			//print ("generating raw member movemask!");
+			iterationCount=0;
+			memberMoveMasks.Add(member,IterativeGrassfireMapper(entranceRoom.GetCoords()));//new Dictionary<Vector2, int>());
+			//print ("raw movemask generated! Iteration count:"+iterationCount);
 			//Add member selectors
 			/*
 			CombatSelectorHandler newSelector=Instantiate(selectorPrefab);
@@ -651,13 +749,14 @@ public class EncounterCanvasHandler : MonoBehaviour
 		}
 		
 		//Place all members at entrance
-		List<Vector2> roomsSortedByDistanceFromEntrance=CreateGrassfireMaskForEntrance(new Vector2(entranceRoom.xCoord,entranceRoom.yCoord));
+		List<Vector2> roomsSortedByDistanceFromEntrance=GetFreeRoomsNearEntrance(new Vector2(entranceRoom.xCoord,entranceRoom.yCoord));
 		foreach (PartyMember member in encounterMembers)
 		{
 			//MovePartyMemberToRoom(member,entranceRoom);
 			PlacePartyMemberAtEntrance(member,entranceRoom,roomsSortedByDistanceFromEntrance);
 		}
 		SelectMember(memberTokens[encounterMembers[0]]);
+		//Necessary for correct spawn sequencing 
 		StartCoroutine(EncounterStartViewFocus(roomButtons[memberCoords[encounterMembers[0]]].GetComponent<RectTransform>()));
 		
 		//MovePartyToRoom(entranceRoom);
@@ -666,6 +765,7 @@ public class EncounterCanvasHandler : MonoBehaviour
 	void DisableRender() 
 	{
 		GetComponent<Canvas>().enabled=false;
+		currentMap=null;
 		//memberToken.transform.SetParent(this.transform,false);
 		//memberToken.SetActive(false);
 		
@@ -736,7 +836,7 @@ public class EncounterCanvasHandler : MonoBehaviour
 			
 			if (encounterMembers.Count>0) 
 			{
-				RevealPartyVision();
+				RevealPartySenses();
 				TurnOver(selectedMember,exitRoom);
 			}
 			else
@@ -757,18 +857,29 @@ public class EncounterCanvasHandler : MonoBehaviour
 		}
 	}
 	
+	 
+	
 	public void BashClicked(RoomButtonHandler roomHandler)
 	{
-		if (!roomHandler.assignedRoom.hasEnemies && memberCoords[selectedMember]==new Vector2(roomHandler.assignedRoom.xCoord,roomHandler.assignedRoom.yCoord))
+		if (!roomHandler.assignedRoom.hasEnemies 
+		&& memberCoords[selectedMember]==new Vector2(roomHandler.assignedRoom.xCoord,roomHandler.assignedRoom.yCoord))
 		{
 			int bashStrength=1;
+			int bashNoiseDistance=5;
 			foreach (PartyMember member in encounterMembers)
 			{
-				if (member.isLockExpert) {bashStrength=3; break;}
+				if (member.isLockExpert) {bashNoiseDistance=0; break;}
 			}
 			roomHandler.BashLock(bashStrength);
+			//Do noise
+			if (bashNoiseDistance!=0) MakeNoise(roomHandler.GetRoomCoords(),bashNoiseDistance);
 			TurnOver(selectedMember,roomHandler.assignedRoom);
 		}
+	}
+	
+	public void TurnoverSelectedMember()
+	{
+		TurnOver(selectedMember,roomButtons[memberCoords[selectedMember]].assignedRoom);
 	}
 	
 	
@@ -783,6 +894,31 @@ public class EncounterCanvasHandler : MonoBehaviour
 		else TurnOver(selectedMember,roomButtons[memberCoords[selectedMember]].assignedRoom);
 	}
 	
+	public void MakeNoise(Vector2 originCoords, int carryDistance)
+	{
+		//Create text
+		SendFloatingMessage("Noise",roomButtons[originCoords].transform);
+		//Do effect
+		//Dictionary<Vector2,int> moveMaskToSource=IterativeGrassfireMapper(originCoords);
+		for (int i=-carryDistance; i<=carryDistance; i++)
+		{
+			for (int j=-carryDistance; j<=carryDistance; j++)
+			{
+				Vector2 cursorCoords=originCoords+new Vector2(j,i);
+				if (roomButtons.ContainsKey(cursorCoords))
+				{
+					if (roomButtons[cursorCoords].assignedRoom.hasEnemies)
+					{
+						foreach (EncounterEnemy enemy in roomButtons[cursorCoords].assignedRoom.enemiesInRoom)
+						{
+							enemyTokens[enemy].AddNewPOI(originCoords,null);//moveMaskToSource);
+						}		
+					}
+				}
+			}
+		}
+	}
+	
 	void SelectMember(MemberTokenHandler selectedHandler) 
 	{
 		selectedHandler.Select();
@@ -791,10 +927,11 @@ public class EncounterCanvasHandler : MonoBehaviour
 			if (handler!=selectedHandler) {handler.Deselect();}
 		}
 		selectedMember=selectedHandler.myMember;
+		//FocusViewOnRoom(roomButtons[memberCoords[selectedMember]].GetComponent<RectTransform>());
 	}
-	
+	/*
 	//against enemies
-	IEnumerator VisualizeMemberAttack(int dmg, EncounterEnemy attackedEnemy, PartyMember attackingMember)
+	IEnumerator VisualizeAttackOnEnemy(int dmg, EncounterEnemy attackedEnemy, IAttackAnimation attackingEntity)//, bool blockInteraction)//PartyMember attackingMember)
 	{
 		DamageNumberHandler newHandler=Instantiate(damageNumberPrefab);
 		newHandler.AssignNumber(dmg);
@@ -803,11 +940,61 @@ public class EncounterCanvasHandler : MonoBehaviour
 		{
 			newHandler.GetComponent<Text>().color=Color.magenta;
 			newHandler.transform.SetParent(enemyTokens[attackedEnemy].transform,false);
-			GetComponent<CanvasGroup>().interactable=false;
-			yield return StartCoroutine(memberTokens[attackingMember].AttackAnimation());
-			GetComponent<CanvasGroup>().interactable=true;
+			
+			//if (blockInteraction) 
+			//{
+				GetComponent<CanvasGroup>().interactable=false;
+				//print ("Encounter manager beginning wait on attack animation routine");
+				yield return StartCoroutine(attackingEntity.AttackAnimation());
+				//print ("Encounter manager resuming from attack animation routine");
+				GetComponent<CanvasGroup>().interactable=true;
+			//}
+			//else {StartCoroutine(attackingEntity.AttackAnimation());}
+			
 			//memberTokens[attackingMember].AnimateAttack();
 		}
+	}*/
+	
+	public void SendFloatingMessage(string text, Transform startTransform)
+	{
+		FloatingTextHandler newHandler=Instantiate(floatingTextPrefab);
+		newHandler.AssignText(text);
+		newHandler.transform.SetParent(startTransform,false);
+		newHandler.transform.position=startTransform.position;
+		
+		//newHandler.AssignNumber(dmg);
+	}
+	
+	IEnumerator VisualizeAttack(int dmg, IAttackAnimation attacker, MonoBehaviour defender)
+	{
+		FloatingTextHandler newHandler=Instantiate(floatingTextPrefab);
+		newHandler.AssignNumber(dmg);
+		//If attacking member
+		if (defender.GetType()==typeof(MemberTokenHandler))
+		{
+			MemberTokenHandler defenderToken=defender as MemberTokenHandler;
+			if (memberTokens.ContainsValue(defenderToken)) //selectors.ContainsKey(info.damagedMember)) 
+			{
+				newHandler.GetComponent<Text>().color=Color.red;
+				newHandler.transform.SetParent(defenderToken.transform,false);
+				newHandler.transform.position=defenderToken.transform.position;
+			}
+		}
+		if (defender.GetType()==typeof(EnemyTokenHandler))
+		{
+			EnemyTokenHandler defenderToken=defender as EnemyTokenHandler;
+			if (enemyTokens.ContainsValue(defenderToken))
+			{
+				newHandler.GetComponent<Text>().color=Color.magenta;
+				newHandler.transform.SetParent(defenderToken.transform,false);
+				newHandler.transform.position=defenderToken.transform.position;
+			}
+		}
+		GetComponent<CanvasGroup>().interactable=false;
+		yield return StartCoroutine(attacker.AttackAnimation());
+		GetComponent<CanvasGroup>().interactable=true;
+		//If attacking enemy
+		
 	}
 	/*
 	IEnumerator LockButtonsUntilAnimationFinishes(IEnumerator animationRoutine)
@@ -831,7 +1018,7 @@ public class EncounterCanvasHandler : MonoBehaviour
 			attackingEnemy=attacker;
 		} 
 	}
-	//Order of PartyMember and EncounterEnemy parameters is important!!!
+	/*
 	public void StartDamageNumber(int dmg, PartyMember damagedMember, EncounterEnemy attackingEnemy)
 	{
 		StartCoroutine("StaggerOutDamageNumbers",new DamageToParty(damagedMember,dmg, attackingEnemy));
@@ -849,18 +1036,16 @@ public class EncounterCanvasHandler : MonoBehaviour
 			newHandler.GetComponent<Text>().color=Color.red;
 			newHandler.AssignNumber(info.damage);
 			newHandler.transform.SetParent(memberTokens[info.damagedMember].transform,false);//selectors[info.damagedMember].transform,false);
-			enemyTokens[info.attackingEnemy].AnimateAttack();
+			//enemyTokens[info.attackingEnemy].AnimateAttack();
 			damageNumberOut=true;
 			yield return new WaitForSeconds(0.5f);
 			damageNumberOut=false;
 		}
 		yield break;
-	}
-	
-	void RegisterDamage(int damage, bool isRanged,EncounterEnemy attackedEnemy, PartyMember attackingMember)
+	}*/
+	/*
+	public void RegisterTrapDamage(int damage, EncounterEnemy attackedEnemy)
 	{
-		//EncounterRoom currentRoom=currentEncounter.encounterMap[memberCoords[selectedMember]];
-		//int actualDmg=currentRoom.DamageEnemy(damage,attackedEnemy,isRanged);
 		int actualDmg=roomButtons[attackedEnemy.GetCoords()].AttackEnemyInRoom(damage,attackedEnemy,isRanged);
 		
 		StartCoroutine(VisualizeMemberAttack(actualDmg,attackedEnemy, attackingMember));
@@ -874,7 +1059,61 @@ public class EncounterCanvasHandler : MonoBehaviour
 			GameObject.Destroy(enemyTokens[attackedEnemy].gameObject);
 			enemyTokens.Remove(attackedEnemy);
 		}
-		TurnOver(selectedMember,currentEncounter.encounterMap[memberCoords[selectedMember]]);
+	}*/
+	/*
+		//Order of PartyMember and EncounterEnemy parameters is important!!!
+	public void StartDamageNumber(int dmg, PartyMember damagedMember, EncounterEnemy attackingEnemy)
+	{
+		StartCoroutine("StaggerOutDamageNumbers",new DamageToParty(damagedMember,dmg, attackingEnemy));
+	}
+	*/
+	
+	
+	//Used by callbacks from member tokens and also by set off traps
+	public void RegisterDamage(int damage, bool isRanged,EncounterEnemy attackedEnemy, IAttackAnimation attackingEntity)//Object attackingEntity)//PartyMember attackingMember)
+	{
+		//EncounterRoom currentRoom=currentEncounter.encounterMap[memberCoords[selectedMember]];
+		//int actualDmg=currentRoom.DamageEnemy(damage,attackedEnemy,isRanged);
+		int actualDmg=roomButtons[attackedEnemy.GetCoords()].AttackEnemyInRoom(damage,attackedEnemy,isRanged);
+		
+		//bool blockInteraction=attackingEntity.GetType()==typeof(MemberTokenHandler);
+		StartCoroutine(VisualizeAttack(actualDmg,attackingEntity,enemyTokens[attackedEnemy]));//VisualizeAttackOnEnemy(actualDmg,attackedEnemy, attackingEntity));
+		if (attackedEnemy.health<=0) 
+		{
+			if (attackingEntity.GetType()==typeof(MemberTokenHandler)) 
+			{
+				MemberTokenHandler attackingMemberToken=attackingEntity as MemberTokenHandler;
+				attackingMemberToken.myMember.ReactToKill();
+				int attackSoundIntensity=2;
+				MakeNoise(memberCoords[attackingMemberToken.myMember],2);
+			}
+			//EMoveEnemies-=attackedEnemy.Move;
+			//EMemberMoved-=attackedEnemy.VisionUpdate;
+			EMoveEnemies-=enemyTokens[attackedEnemy].DoTokenMove;//enemy.Move;
+			EMemberMoved-=enemyTokens[attackedEnemy].UpdateTokenVision;//enemy.VisionUpdate;
+			GameObject.Destroy(enemyTokens[attackedEnemy].gameObject);
+			enemyTokens.Remove(attackedEnemy);
+		}
+	}
+	
+	public void VisualizeDamageToMember(int damage,PartyMember attackedMember, EncounterEnemy attackingEnemy)
+	{
+		StartCoroutine(AddEnemyAttackAnimationToQueue(damage,attackedMember,attackingEnemy));
+	}
+	
+	IEnumerator AddEnemyAttackAnimationToQueue(int damage,PartyMember attackedMember, EncounterEnemy attackingEnemy)
+	{
+		while (damageNumberOut)
+		{
+			yield return new WaitForFixedUpdate();
+		}
+		if (memberTokens.ContainsKey(attackedMember)) //selectors.ContainsKey(info.damagedMember)) 
+		{
+			damageNumberOut=true;
+			yield return StartCoroutine(VisualizeAttack(damage,enemyTokens[attackingEnemy],memberTokens[attackedMember]));
+			damageNumberOut=false;
+		}
+		yield break;
 	}
 	
 	public void EnemyPressed(EncounterEnemy enemy)
@@ -920,7 +1159,8 @@ public class EncounterCanvasHandler : MonoBehaviour
 			int actualDmg=0;
 			if (ranged) {actualDmg=selectedMember.RangedAttack();}
 			else {actualDmg=selectedMember.MeleeAttack();}
-			RegisterDamage(actualDmg,ranged,enemy,selectedMember);
+			RegisterDamage(actualDmg,ranged,enemy,memberTokens[selectedMember]);
+			TurnOver(selectedMember,roomButtons[memberCoords[selectedMember]].assignedRoom);
 		}
 		
 		/*

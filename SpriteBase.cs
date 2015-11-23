@@ -22,6 +22,7 @@ public class SpriteBase : MonoBehaviour {
 	public Sprite flashlightSprite;
 	public Sprite armorvestSprite;
 	public Sprite radioSprite;
+	public Sprite settableTrapSprite;
 	
 	
 	public Sprite genericEnemySprite;

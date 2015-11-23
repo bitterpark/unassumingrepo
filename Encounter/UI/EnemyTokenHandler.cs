@@ -3,11 +3,27 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine.UI;
 
-public class EnemyTokenHandler : MonoBehaviour 
+public class EnemyTokenHandler : MonoBehaviour, IAttackAnimation
 {
+	//because the coroutine is called from EncounterCanvasHandler, StopAllCoroutines called from this instance doesn't work. So, this is necessary
+	bool destroyed=false;
+	
 	public Text healthText;
 	EncounterEnemy assignedEnemy;
 	public Image myImage;
+	
+	public class PointOfInterest
+	{
+		public Vector2 pointCoords;
+		public Dictionary<Vector2, int> pointMoveMask;
+		public PointOfInterest (Vector2 coords,Dictionary<Vector2,int> mask)
+		{
+			pointCoords=coords;
+			pointMoveMask=mask;
+		}
+	}
+	PointOfInterest currentPOI=null;
+	List<PartyMember> lastSeenMembers=new List<PartyMember>();
 	
 	public StatusEffectImageHandler statusEffectPrefab;
 	public Transform statusEffectsGroup;
@@ -29,36 +45,63 @@ public class EnemyTokenHandler : MonoBehaviour
 		TooltipManager.main.StopAllTooltips();
 		EncounterCanvasHandler.main.EnemyPressed(assignedEnemy);
 	}
-	
+	/*
 	public void AnimateAttack() 
 	{
 		StartCoroutine(AttackAnimation());
+	}*/
+	
+	public IEnumerator AttackAnimation()
+	{
+		if (!destroyed) myImage.transform.localScale=new Vector3(1.5f,1.5f,1f);
+		else yield break;
+		yield return new WaitForSeconds(0.5f);
+		if (!destroyed) myImage.transform.localScale=new Vector3(1f,1f,1f);
+		yield break;
 	}
 	
-	IEnumerator AttackAnimation()
+	public void AddNewPOI(Vector2 pointCoords, Dictionary<Vector2,int> moveMask)
 	{
-		myImage.transform.localScale=new Vector3(1.5f,1.5f,1f);
-		yield return new WaitForSeconds(0.5f);
-		myImage.transform.localScale=new Vector3(1f,1f,1f);
-		yield break;
+		//Dictionary<Vector2,int> newMask=new Dictionary<Vector2, int>();
+		currentPOI=new PointOfInterest(pointCoords,moveMask);//EncounterCanvasHandler.main.IterativeGrassfireMapper(pointCoords));
 	}
 	
 	public void UpdateTokenVision()
 	{
-		assignedEnemy.VisionUpdate();
+		List<PartyMember> currentSeenMembers
+		=assignedEnemy.VisionCheck(EncounterCanvasHandler.main.currentEncounter.encounterMap,EncounterCanvasHandler.main.memberCoords);
+		//If some members were seen on the previous check, but stopped being seen on this check, set the POI to the last known coordinate of the member
+		//!!CAUTION!! - this actually sets the POI to the coordinates the member was at immediately after he got out of vision!
+		if (currentSeenMembers.Count==0 && lastSeenMembers.Count>0) 
+		{
+			if (EncounterCanvasHandler.main.encounterMembers.Contains(lastSeenMembers[0]))
+			{
+				Vector2 newPOICoords=EncounterCanvasHandler.main.memberCoords[lastSeenMembers[0]];
+				AddNewPOI(newPOICoords,null);//new Dictionary<Vector2, int>(EncounterCanvasHandler.main.memberMoveMasks[lastSeenMembers[0]]));//IterativeGrassfireMapper(newPOICoords));
+			}
+		}
+		//If some members are seen currently, forget the POI and start pursuing them instead
+		if (currentSeenMembers.Count>0) {currentPOI=null;}
+		lastSeenMembers=currentSeenMembers;
+		//assignedEnemy.VisionUpdate();
 		UpdateVisionStatusDisplay();
 	}
 	
 	public void DoTokenMove(Dictionary<PartyMember, Dictionary<Vector2,int>> masks, Dictionary<PartyMember,Vector2> memberCoords)
 	{
-		assignedEnemy.Move(masks,memberCoords);
+		if (currentPOI!=null) 
+		{
+			if (currentPOI.pointCoords==assignedEnemy.GetCoords()) currentPOI=null;
+		}
+		assignedEnemy.Move(masks,memberCoords,currentPOI);
 		EncounterCanvasHandler.main.roomButtons[assignedEnemy.GetCoords()].AttachEnemyToken(transform);
-		UpdateVisionStatusDisplay();
+		UpdateTokenVision();
+		//UpdateVisionStatusDisplay();
 	}
 	
 	void UpdateVisionStatusDisplay()
 	{
-		if (assignedEnemy.seesMember) {myImage.color=Color.red;}
+		if (lastSeenMembers.Count>0) {myImage.color=Color.red;}
 		else {myImage.color=Color.gray;}
 	}
 	
@@ -161,5 +204,6 @@ public class EnemyTokenHandler : MonoBehaviour
 	{
 		assignedEnemy.HealthChanged-=HealthChangeHandler;
 		assignedEnemy.StatusEffectsChanged-=StatusEffectChangeHandler;
+		destroyed=true;
 	}
 }
