@@ -88,7 +88,7 @@ public class EncounterMap:WeightedGraph<Location>
 	
 	public bool Passable(Location id)
 	{
-		return !(walls.Contains(id) || map[new Vector2(id.x,id.y)].hasEnemies);
+		return !walls.Contains(id); //|| map[new Vector2(id.x,id.y)].hasEnemies);
 	}
 	
 	public int Cost(Location a, Location b)

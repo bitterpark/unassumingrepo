@@ -9,8 +9,8 @@ public class Encounter
 	public int maxX=0;
 	public int maxY=0;
 	
-	protected const int safeDistanceFromEntrance=2;
-	const float barricadeChance=0.08f;
+	protected const int safeDistanceFromEntrance=1;
+	const float barricadeChance=0.1f;//0.08f;
 	
 	public string lootDescription="";
 	public string enemyDescription="";
@@ -157,7 +157,7 @@ public class Encounter
 				else 
 				{
 					roomsEligibleForEnemyPlacement.Add (room);
-					if (!room.isExit && Random.value<barricadeChance) room.barricadeInRoom=new Barricade(); 
+					if (!room.isExit && Random.value<barricadeChance) room.canBarricade=true;//barricadeInRoom=new Barricade(); 
 				}
 				if (room.hasLoot) 
 				{
@@ -194,7 +194,7 @@ public class Encounter
 			EncounterRoom randomlySelectedRoom=roomsEligibleForEnemyPlacement[Random.Range(0,roomsEligibleForEnemyPlacement.Count)];
 			randomlySelectedRoom.GenerateEnemy(encounterEnemyType);
 			currentEnemyCount++;
-			roomsEligibleForEnemyPlacement.Remove(randomlySelectedRoom);
+			//roomsEligibleForEnemyPlacement.Remove(randomlySelectedRoom);
 		}
 		
 	}
@@ -228,14 +228,27 @@ public class Encounter
 		{
 			EncounterRoom startRoom=roomsWithEnemies[Random.Range(0,roomsWithEnemies.Count)];
 			EncounterRoom endRoom=emptyRooms[Random.Range(0,emptyRooms.Count)];
-			
-			endRoom.MoveEnemyIn(startRoom.enemiesInRoom[0]);
-			startRoom.MoveEnemyOut(startRoom.enemiesInRoom[0]);
-			endRoom.enemiesInRoom[0].SetCoords(endRoom.GetCoords());
-			
+		
+			for (int i=0; i<startRoom.enemiesInRoom.Count; i++)
+			{
+				endRoom.MoveEnemyIn(startRoom.enemiesInRoom[i]);
+				startRoom.MoveEnemyOut(startRoom.enemiesInRoom[i]);
+				endRoom.enemiesInRoom[i].SetCoords(endRoom.GetCoords());
+			}	
 			roomsWithEnemies.Remove(startRoom);
 			emptyRooms.Remove(endRoom);
 		}
+	}
+}
+
+public class RandomAttack:Encounter
+{
+	public RandomAttack(EncounterEnemy.EnemyTypes enemyType):base(0)
+	{
+		encounterLootType=LootTypes.Horde;
+		lootChances=Encounter.GetLootChancesList(encounterLootType);
+		encounterEnemyType=enemyType; enemyDescription=EncounterEnemy.GetMapDescription(enemyType);
+		GenerateEncounterFromPrefabMap(PrefabAssembler.assembler.SetupEncounterMap(this,encounterLootType),1f);
 	}
 }
 

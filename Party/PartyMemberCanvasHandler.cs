@@ -11,6 +11,7 @@ public class PartyMemberCanvasHandler : MonoBehaviour {
 	public Text staminaText;
 	public Text hungerText;
 	public Text moraleText;
+	public Text fatigueText;
 	public Button memberSelector;
 	Dictionary<StatusEffect,StatusEffectImageHandler> statusEffectTokens=new Dictionary<StatusEffect, StatusEffectImageHandler>();
 	public StatusEffectImageHandler tokenPrefab;
@@ -45,5 +46,6 @@ public class PartyMemberCanvasHandler : MonoBehaviour {
 		staminaText.text="Stamina:"+assignedMember.stamina;
 		hungerText.text="Hunger:"+assignedMember.hunger;
 		moraleText.text="Morale:"+assignedMember.morale;
+		fatigueText.text="Fatigue:"+assignedMember.fatigue;//
 	}
 }

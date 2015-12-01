@@ -65,13 +65,14 @@ public class PartyMember
 		{
 			_stamina=value;
 			if (_stamina<0) {_stamina=0;}
-			if (_stamina>maxStamina) {_stamina=maxStamina;}
+			if (_stamina>currentMaxStamina) {_stamina=currentMaxStamina;}
 			
 		}
 	}
 	public int _stamina; 
-	public int maxStamina;
-	
+	public int baseMaxStamina;
+	public int currentMaxStamina;
+	//HUNGER
 	public int hunger
 	{
 		get {return _hunger;}
@@ -84,6 +85,21 @@ public class PartyMember
 	}
 	int _hunger;
 	public int hungerIncreasePerHour;
+	public int maxStaminaReductionFromHunger=5;
+	//FATIGUE
+	public int fatigue
+	{
+		get {return _fatigue;}
+		set 
+		{
+			_fatigue=value;
+			if (_fatigue<0) {_fatigue=0;}
+			if (_fatigue>100) {_fatigue=100;}
+		}
+	}
+	int _fatigue;
+	public int fatigueIncreasePerAction;
+	public int maxStaminaReductionFromFatigue=5;
 	
 	public int morale
 	{
@@ -173,13 +189,18 @@ public class PartyMember
 		
 		///////
 		name=memberName;
-		maxStamina=10;
+		baseMaxStamina=10;
 		baseMorale=50;
 		//moraleChangePerHour=10;
 		moraleRestorePerHour=1;
 		moraleDecayPerHour=1;
+		
 		hunger=0;
 		hungerIncreasePerHour=10;
+		
+		fatigue=0;
+		fatigueIncreasePerAction=10;
+		
 		armorValue=0;
 		maxCarryCapacity=2;//
 		visibilityMod=0;
@@ -198,7 +219,8 @@ public class PartyMember
 		}
 		//make sure perks trigger before these to properly use modified values of maxHealth and maxStamina
 		health=maxHealth;
-		stamina=maxStamina;
+		currentMaxStamina=baseMaxStamina;
+		stamina=currentMaxStamina;
 		morale=baseMorale;
 		currentCarryCapacity=maxCarryCapacity;
 		
@@ -252,20 +274,27 @@ public class PartyMember
 	
 	public void TimePassEffect(int hoursPassed)
 	{
+		/*
 		float maxStamReductionPerHungerPoint=0.1f;
 		int hungerIncreasePerStamPoint=10;
 		
-		int newStaminaValue=maxStamina-(int)(hunger*maxStamReductionPerHungerPoint);
+		int newStaminaValue=maxStamina;//-(int)(hunger*maxStamReductionPerHungerPoint);
 		//Restore stamina according to current hunger
-		stamina=newStaminaValue;
+		stamina=newStaminaValue;*/
 		//Increase hunger for restoring stamina
+		/*
 		if (newStaminaValue-stamina>0) 
-		{hunger+=(newStaminaValue-stamina)*hungerIncreasePerStamPoint;}
+		{hunger+=((newStaminaValue-stamina)*hungerIncreasePerStamPoint)*hoursPassed;}*/
 		
 		//REGEN/LOSE HEALTH
-		if (hunger<100){health+=2;}
-		else{health-=2;}
+		if (hunger<100){health+=2*hoursPassed;}
+		else{health-=2*hoursPassed;}
 		
+		//DO MAX STAMINA
+		
+		currentMaxStamina
+		=baseMaxStamina-Mathf.RoundToInt(maxStaminaReductionFromHunger*hunger*0.01f)-Mathf.RoundToInt(maxStaminaReductionFromFatigue*fatigue*0.01f);
+		stamina=currentMaxStamina;
 		//DO MORALE
 		//if party is starving, morale drops
 		if (hunger>=100) {morale-=moraleDecayPerHour*hoursPassed;}
@@ -303,6 +332,11 @@ public class PartyMember
 		
 		//DO RELATIONSHIPS
 		RollRelationships();
+	}
+	
+	public void RestEffect()
+	{
+		fatigue=0;
 	}
 	
 	public void EncounterStartTrigger(List<PartyMember> team)
@@ -397,8 +431,8 @@ public class PartyMember
 		//if (stamina<equippedMeleeWeapon.GetStaminaUse()) {EncounterCanvasHandler.main.DisplayNewMessage(name+"'s attack is weak!");}
 		//if (stamina>0) 
 		//{
-			stamina-=equippedMeleeWeapon.GetStaminaUse();
 			damage=equippedMeleeWeapon.GetDamage((morale-baseMorale)*moraleDamageMod);
+			stamina-=equippedMeleeWeapon.GetStaminaUse();
 		}
 		else
 		{
@@ -469,12 +503,13 @@ public class PartyMember
 	
 	public int TakeDamage(int dmgTaken)
 	{
-		return TakeDamage(dmgTaken,true);
+		return TakeDamage(dmgTaken,0,true);
 	}
-	public int TakeDamage(int dmgTaken, bool armorHelps)
+	public int TakeDamage(int dmgTaken, bool armorHelps) {return TakeDamage(dmgTaken,0,armorHelps);}
+	public int TakeDamage(int dmgTaken, int defenseMod, bool armorHelps)
 	{
 		//check for bleed chaseups and other post member delete nonsense
-		int realDmg=dmgTaken;
+		int realDmg=dmgTaken-defenseMod;
 		if (armorHelps) 
 		{
 			realDmg-=armorValue;

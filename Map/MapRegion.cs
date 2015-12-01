@@ -19,6 +19,8 @@ public class MapRegion : MonoBehaviour
 	
 	public Sprite hordeSprite;
 	
+	public GameObject campTokenPrefab;
+	
 	public bool discovered
 	{
 		get {return _discovered;}
@@ -53,7 +55,13 @@ public class MapRegion : MonoBehaviour
 	}
 	public bool _visible=false;
 	
-	public bool hasEncounter
+	public enum ThreatLevels {Low,Medium,High};
+	public ThreatLevels threatLevel=ThreatLevels.Low;
+	
+	public bool hasEncounter=false;
+	
+	public bool hasCamp=false;
+	/*
 	{
 		get {return _hasEncounter;}
 		set 
@@ -62,6 +70,7 @@ public class MapRegion : MonoBehaviour
 			if (_hasEncounter) 
 			{
 				//GetComponent<SpriteRenderer>().sprite=encounterSprite;//.material.color=Color.blue;
+				
 				regionalEncounter=new Encounter();
 				if (regionalEncounter.encounterLootType!=Encounter.LootTypes.Endgame)
 				{
@@ -72,7 +81,7 @@ public class MapRegion : MonoBehaviour
 			SetSprite();
 		}
 	}
-	public bool _hasEncounter=false;
+	public bool _hasEncounter=false;*/
 	public Encounter regionalEncounter;
 	
 	bool hasHorde=false;
@@ -164,6 +173,24 @@ public class MapRegion : MonoBehaviour
 		}
 	}
 	
+	public void GenerateEncounter(bool isEndgame)
+	{
+		hasEncounter=true;
+		if (isEndgame) 
+		{
+			regionalEncounter=new Encounter(true);
+			threatLevel=ThreatLevels.High;
+		}
+		else 
+		{
+			regionalEncounter=new Encounter();
+			float threatRoll=Random.value;
+			if (threatRoll<1f) threatLevel=ThreatLevels.Low;
+			if (threatRoll<0.7f) threatLevel=ThreatLevels.Medium;
+			if (threatRoll<0.3f) threatLevel=ThreatLevels.High;
+		}
+	}
+	
 	public void GenerateHorde(int emptySigVar)
 	{
 		if (Random.value<0.1f) 
@@ -171,6 +198,14 @@ public class MapRegion : MonoBehaviour
 			MapManager.mainMapManager.AddHorde(new Vector2(xCoord,yCoord),regionalEncounter.encounterEnemyType);
 			//GameManager.DebugPrint("New horde added, maxX:");
 		}
+	}
+	
+	public void SetUpCamp()
+	{
+		hasCamp=true;
+		GameObject campToken=Instantiate(campTokenPrefab);
+		//campToken.transform.SetParent(this,false);
+		campToken.transform.position=this.transform.position;
 	}
 	
 	//void Start() {transform.Rotate(new Vector3(-90,0,0));}
@@ -214,7 +249,8 @@ public class MapRegion : MonoBehaviour
 						else
 						{
 							areaDescription+=regionalEncounter.lootDescription+"\n";
-							areaDescription+="Enemies: "+regionalEncounter.enemyDescription;
+							areaDescription+="Enemies: "+regionalEncounter.enemyDescription+"\n";
+							areaDescription+="Threat level: "+threatLevel;
 							//if (isHive) {areaDescription+="\nHive";}
 						}
 					}

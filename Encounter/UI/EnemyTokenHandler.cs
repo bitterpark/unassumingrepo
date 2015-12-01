@@ -8,6 +8,8 @@ public class EnemyTokenHandler : MonoBehaviour, IAttackAnimation
 	//because the coroutine is called from EncounterCanvasHandler, StopAllCoroutines called from this instance doesn't work. So, this is necessary
 	bool destroyed=false;
 	
+	float attackAnimationTime=1f;
+	
 	public Text healthText;
 	EncounterEnemy assignedEnemy;
 	public Image myImage;
@@ -55,7 +57,7 @@ public class EnemyTokenHandler : MonoBehaviour, IAttackAnimation
 	{
 		if (!destroyed) myImage.transform.localScale=new Vector3(1.5f,1.5f,1f);
 		else yield break;
-		yield return new WaitForSeconds(0.5f);
+		yield return new WaitForSeconds(attackAnimationTime);
 		if (!destroyed) myImage.transform.localScale=new Vector3(1f,1f,1f);
 		yield break;
 	}

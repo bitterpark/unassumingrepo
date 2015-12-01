@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
 
-public class RoomButtonHandler : MonoBehaviour, IDropHandler
+public class RoomButtonHandler : MonoBehaviour//, IDropHandler
 {
 
 	public int roomX;
@@ -14,6 +14,7 @@ public class RoomButtonHandler : MonoBehaviour, IDropHandler
 	public GameObject lootToken;
 	public GameObject lockToken;
 	public GameObject exitToken;
+	public GameObject barricadeBuildToken;
 	
 	public Transform itemsGroup;
 	public Transform actorsGroup;
@@ -33,6 +34,7 @@ public class RoomButtonHandler : MonoBehaviour, IDropHandler
 	bool hasEnemies;
 	bool hasLoot;
 	bool lootIsLocked;
+	bool canBarricade;
 	
 	public EncounterRoom assignedRoom=null;
 	
@@ -83,6 +85,7 @@ public class RoomButtonHandler : MonoBehaviour, IDropHandler
 		hasEnemies=assignedRoom.hasEnemies;
 		hasLoot=assignedRoom.hasLoot;
 		lootIsLocked=assignedRoom.lootIsLocked;
+		canBarricade=assignedRoom.canBarricade;
 		
 		if (assignedRoom.trapInRoom!=null) SetTrap(assignedRoom.trapInRoom,false);
 		if (assignedRoom.barricadeInRoom!=null) {SpawnNewBarricadeToken();}
@@ -114,7 +117,7 @@ public class RoomButtonHandler : MonoBehaviour, IDropHandler
 		isWithinHearingRange=inRange;
 	}
 	
-	public void SpawnNewBarricadeToken()
+	void SpawnNewBarricadeToken()
 	{
 		BarricadeToken newToken=Instantiate(barricadePrefab);
 		newToken.transform.SetParent(this.transform,false);
@@ -155,7 +158,7 @@ public class RoomButtonHandler : MonoBehaviour, IDropHandler
 		}
 		
 		//Do hearing tokens
-		if (isWithinHearingRange && !isVisible)
+		if (isWithinHearingRange && !isVisible && GetComponentInChildren<HearingTokenHandler>()==null)
 		{
 			GameObject newObject=Instantiate(heardEnemyPrefab) as GameObject;
 			newObject.transform.SetParent(this.transform,false);
@@ -213,6 +216,23 @@ public class RoomButtonHandler : MonoBehaviour, IDropHandler
 	{
 		assignedRoom.BashLock(bashStrength);
 		if (assignedRoom.lootIsLocked==false){lootIsLocked=assignedRoom.lootIsLocked;}
+		UpdateVisuals();
+	}
+	
+	public void BarricadingTokenClicked()
+	{
+		EncounterCanvasHandler.main.BarricadeBuildClicked(this);
+	}
+	
+	public void BarricadeRoom()
+	{
+		bool spawnToken=false;
+		if (assignedRoom.barricadeInRoom==null) spawnToken=true;
+		assignedRoom.BuildBarricade();
+		//order is important
+		if (spawnToken) SpawnNewBarricadeToken();
+		GetComponentInChildren<BarricadeToken>().UpdateHealth(assignedRoom.barricadeInRoom.health);
+		canBarricade=assignedRoom.canBarricade;
 		UpdateVisuals();
 	}
 	
@@ -284,10 +304,11 @@ public class RoomButtonHandler : MonoBehaviour, IDropHandler
 			lootToken.SetActive(false);
 			lockToken.SetActive(false);
 			exitToken.SetActive(false);
+			barricadeBuildToken.SetActive(false);
 		}
 		else
 		{
-			if (hasLoot) {lootToken.SetActive(true);}
+			if (hasLoot) lootToken.SetActive(true);
 			else lootToken.SetActive(false);
 			if (lootIsLocked) 
 			{
@@ -297,6 +318,14 @@ public class RoomButtonHandler : MonoBehaviour, IDropHandler
 				lootToken.SetActive(false);
 			}
 			else lockToken.SetActive(false);
+			
+			if (canBarricade) 
+			{
+				barricadeBuildToken.SetActive(true);
+				Text barricadeMaterialsText=barricadeBuildToken.GetComponentInChildren<Text>();
+				if (barricadeMaterialsText!=null) barricadeMaterialsText.text=assignedRoom.barricadeMaterials.ToString();
+			}
+			else barricadeBuildToken.SetActive(false);
 			
 			if (!isVisible) 
 			{
@@ -315,14 +344,17 @@ public class RoomButtonHandler : MonoBehaviour, IDropHandler
 			else
 			{
 				//Remove hearing tokens upon entering vision
-				HearingTokenHandler attachedHaringToken=GetComponentInChildren<HearingTokenHandler>();
-				if (attachedHaringToken!=null)
+				HearingTokenHandler attachedHearingToken=GetComponentInChildren<HearingTokenHandler>();
+				if (attachedHearingToken!=null)
 				{
-					attachedHaringToken.DisposeToken();
+					attachedHearingToken.DisposeToken();
 				}
 				//Show barricades
 				BarricadeToken assignedBarricadeToken=GetComponentInChildren<BarricadeToken>();
-				if (assignedBarricadeToken!=null) {assignedBarricadeToken.SetHidden(false);}
+				if (assignedBarricadeToken!=null) 
+				{
+					assignedBarricadeToken.SetHidden(false);
+				}
 				//if (assignedBarricadeToken!=null) {assignedBarricadeToken.GetComponent<Image>(}
 				//Set color
 				GetComponent<Button>().image.color=Color.white;
@@ -333,7 +365,7 @@ public class RoomButtonHandler : MonoBehaviour, IDropHandler
 			if (isExit) {exitToken.SetActive(true);}//GetComponent<Button>().image.color=Color.green;}
 		}
 	}
-
+	/*
 	#region IDropHandler implementation
 
 	public void OnDrop (PointerEventData eventData)
@@ -342,9 +374,6 @@ public class RoomButtonHandler : MonoBehaviour, IDropHandler
 		Vector2 draggingMemberCoords=EncounterCanvasHandler.main.memberCoords[EncounterCanvasHandler.main.selectedMember];
 		if (droppedToken!=null)
 		{
-			/*
-			if (Mathf.Abs(droppedToken.assignedRoomButton.roomX-roomX)+Mathf.Abs(droppedToken.assignedRoomButton.roomY-roomY)==1
-			    && assignedRoom.barricadeInRoom==null)*/
 			//Only permit dropping into rooms adjacent to the player
 			float xDiff=Mathf.Abs(draggingMemberCoords.x-roomX);
 			float yDiff=Mathf.Abs(draggingMemberCoords.y-roomY);
@@ -364,5 +393,5 @@ public class RoomButtonHandler : MonoBehaviour, IDropHandler
 		}
 	}
 
-	#endregion
+	#endregion*/
 }

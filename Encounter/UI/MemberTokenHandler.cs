@@ -9,6 +9,8 @@ public interface IAttackAnimation
 
 public class MemberTokenHandler : MonoBehaviour, IAttackAnimation 
 {
+	const int defenseModifier=5;
+	
 	public PartyMember myMember;
 	public GameObject mySelectedArrow;
 	public Image myImage;
@@ -30,17 +32,21 @@ public class MemberTokenHandler : MonoBehaviour, IAttackAnimation
 	}	
 	bool _selected=false;
 	
-	public bool actionTaken
+	public bool moveTaken=false;
+	public bool turnTaken
 	{
-		get {return _actionTaken;}
+		get {return _turnTaken;}
 		set 
 		{
-			_actionTaken=value; 
-			if (_actionTaken) {Deselect();}
+			_turnTaken=value; 
+			if (_turnTaken) {Deselect();}
 			DetermineColor();
 		}
 	}
-	bool _actionTaken=false;
+	bool _turnTaken=false;
+	public bool defenseMode=false;
+	bool staminaRegenEnabled=true;
+	
 	
 	public bool rangedMode
 	{
@@ -71,9 +77,47 @@ public class MemberTokenHandler : MonoBehaviour, IAttackAnimation
 		myImage.color=member.color;
 	}
 	
+	public int DamageAssignedMember(int damage)
+	{
+		int extraArmorMod=0;
+		if (defenseMode) {extraArmorMod=defenseModifier;}
+		int realDmg=myMember.TakeDamage(damage,extraArmorMod,true);
+		return realDmg;
+	}
+	
+	public void FinishTurn(bool turnSkipped)
+	{
+		if (turnSkipped && !moveTaken) {defenseMode=true;}
+		turnTaken=true;
+	}
+	
+	public void NextTurn()
+	{
+		const int staminaRegenAmount=3;
+		if (staminaRegenEnabled) myMember.stamina+=staminaRegenAmount;
+		moveTaken=false;
+		turnTaken=false;
+		defenseMode=false;
+		staminaRegenEnabled=true;
+		//print ("next turn switched!");
+	}
+	
+	public bool TryMove()
+	{
+		const int moveStaminaCost=3;
+		if (myMember.stamina>=moveStaminaCost) 
+		{
+			myMember.stamina-=moveStaminaCost;
+			if (moveTaken) staminaRegenEnabled=false;
+			moveTaken=true;
+			return true;
+		}
+		else return false;
+	}
+	
 	public void Clicked()
 	{
-		if (!actionTaken) EncounterCanvasHandler.main.ClickMember(this);
+		if (!turnTaken) EncounterCanvasHandler.main.ClickMember(this);
 	}
 	
 	public void Select()
@@ -89,7 +133,7 @@ public class MemberTokenHandler : MonoBehaviour, IAttackAnimation
 	
 	void DetermineColor()
 	{
-		if (!actionTaken)
+		if (!turnTaken)
 		{
 			myImage.GetComponent<Button>().interactable=true;
 			if (_selected) 
@@ -119,32 +163,37 @@ public class MemberTokenHandler : MonoBehaviour, IAttackAnimation
 	//Check to see if this member can attack a specific enemy in encounter
 	public bool AttackIsPossible(ref bool isRanged, EncounterEnemy targetEnemy)
 	{
-		isRanged=rangedMode;
-		int attackRange;
-		if (isRanged) {attackRange=100;}
-		else {attackRange=0;}
-		
-		int myX=(int)EncounterCanvasHandler.main.memberCoords[myMember].x;
-		int myY=(int)EncounterCanvasHandler.main.memberCoords[myMember].y;
-		int enemyX=(int)targetEnemy.GetCoords().x;
-		int enemyY=(int)targetEnemy.GetCoords().y;
-		
 		bool enemyReachable=false;
-		//See if clicked enemy passes attack range check
-		if (Mathf.Abs(myX-enemyX)+Mathf.Abs(myY-enemyY)
-		    <=attackRange) 
+		
+		if (!moveTaken)
 		{
-			enemyReachable=true;
-			//Second - see if any walls are blocking member (for ranged attacks)
-			if (attackRange>0)
+			isRanged=rangedMode;
+			int attackRange;
+			if (isRanged) {attackRange=100;}
+			else {attackRange=0;}
+			
+			int myX=(int)EncounterCanvasHandler.main.memberCoords[myMember].x;
+			int myY=(int)EncounterCanvasHandler.main.memberCoords[myMember].y;
+			int enemyX=(int)targetEnemy.GetCoords().x;
+			int enemyY=(int)targetEnemy.GetCoords().y;
+			
+			
+			//See if clicked enemy passes attack range check
+			if (Mathf.Abs(myX-enemyX)+Mathf.Abs(myY-enemyY)
+			    <=attackRange) 
 			{
-				
-				BresenhamLines.Line(myX,myY,enemyX,enemyY,(int x, int y)=>
+				enemyReachable=true;
+				//Second - see if any walls are blocking member (for ranged attacks)
+				if (attackRange>0)
 				{
-					//bool visionClear=true;
-					if (EncounterCanvasHandler.main.currentEncounter.encounterMap[new Vector2(x,y)].isWall) {enemyReachable=false;}
-					return enemyReachable;
-				});
+					
+					BresenhamLines.Line(myX,myY,enemyX,enemyY,(int x, int y)=>
+					                    {
+						//bool visionClear=true;
+						if (EncounterCanvasHandler.main.currentEncounter.encounterMap[new Vector2(x,y)].isWall) {enemyReachable=false;}
+						return enemyReachable;
+					});
+				}
 			}
 		}
 		return enemyReachable;

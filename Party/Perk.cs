@@ -19,8 +19,8 @@ public abstract class Perk
 		allPerks.Add (new Slob());
 		allPerks.Add (new LeanEater());
 		allPerks.Add (new BigEater());
-		allPerks.Add (new Sneaky());
-		allPerks.Add (new Loud());
+		//allPerks.Add (new Sneaky());
+		//allPerks.Add (new Loud());
 		allPerks.Add (new ColdBlooded());
 		allPerks.Add (new Moody());
 		allPerks.Add (new Bloodthirsty());
@@ -81,7 +81,7 @@ public class Fit:Perk
 		oppositePerk=typeof(Slob);
 	}
 	//public override string GetName (){return name;}
-	public override void ActivatePerk(PartyMember member){member.maxStamina+=staminaUpgrade;}
+	public override void ActivatePerk(PartyMember member){member.baseMaxStamina+=staminaUpgrade;}
 	public override string GetMouseoverDescription (){return "Can run, jump and fight for extended periods of time\n\n+"+staminaUpgrade+" max stamina";}
 }
 
@@ -95,7 +95,7 @@ public class Slob:Perk
 		oppositePerk=typeof(Fit);
 	}
 	//public override string GetName (){return name;}
-	public override void ActivatePerk(PartyMember member){member.maxStamina-=staminaDowngrade;}
+	public override void ActivatePerk(PartyMember member){member.baseMaxStamina-=staminaDowngrade;}
 	public override string GetMouseoverDescription (){return "Can't keep up with the average\n\n-"+staminaDowngrade+" max stamina";}
 }
 

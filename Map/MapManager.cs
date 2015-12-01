@@ -41,7 +41,7 @@ public class MapManager : MonoBehaviour
 				mapRegions.Add (new Vector2(j,i),CreateNewRegion(newPos,j,i));
 			}
 		}
-		
+		//deprecate this later
 		hordes=new List<Horde>();
 		hordeTokens=new Dictionary<Horde, HordeTokenDrawer>();
 		PartyManager.TimePassed+=MoveAllHordes;
@@ -71,7 +71,7 @@ public class MapManager : MonoBehaviour
 				for (int j=0; j<3; j++)
 				{
 					Vector2 addressVector=newTownTopLeft+new Vector2(i,j);
-					mapRegions[addressVector].hasEncounter=true;
+					mapRegions[addressVector].GenerateEncounter(false);
 					tripleTownSpots.Remove(addressVector);
 					doubleTownSpots.Remove(addressVector);
 				}
@@ -100,7 +100,7 @@ public class MapManager : MonoBehaviour
 				for (int j=0; j<2; j++)
 				{
 					Vector2 addressVector=newTownTopLeft+new Vector2(i,j);
-					mapRegions[addressVector].hasEncounter=true;
+					mapRegions[addressVector].GenerateEncounter(false);//hasEncounter=true;
 					tripleTownSpots.Remove(addressVector);
 					doubleTownSpots.Remove(addressVector);
 				}
@@ -118,8 +118,8 @@ public class MapManager : MonoBehaviour
 		}
 		//Add endgame encounter
 		Vector2 radioStationAddress=new Vector2(Random.Range(0,mapHeight),Random.Range(0,mapWidth));
-		mapRegions[radioStationAddress].hasEncounter=true;
-		mapRegions[radioStationAddress].regionalEncounter=new Encounter(true);
+		mapRegions[radioStationAddress].GenerateEncounter(true);
+		//mapRegions[radioStationAddress].regionalEncounter=new Encounter(true);
 		
 		//final step - party placement
 		if (playerToken!=null) {GameObject.Destroy(playerToken);}
@@ -181,7 +181,20 @@ public class MapManager : MonoBehaviour
 		DiscoverRegions(newRegion.xCoord,newRegion.yCoord);
 		UpdatePartyToken(newRegion);
 		scoutingHandler.EndDialog();
-		CheckPartyRegionForHordes(newRegion);
+		//Threat level roll
+		if (newRegion.hasEncounter)
+		{
+			float randomAttackChance=0;
+			switch(newRegion.threatLevel)
+			{
+				case MapRegion.ThreatLevels.Low: {randomAttackChance=0.1f; break;}
+				case MapRegion.ThreatLevels.Medium: {randomAttackChance=0.25f; break;}
+				case MapRegion.ThreatLevels.High: {randomAttackChance=0.4f; break;}
+			}
+			if (Random.value<randomAttackChance) 
+			EnterEncounter(new RandomAttack(newRegion.regionalEncounter.encounterEnemyType),PartyManager.mainPartyManager.partyMembers);
+		}//
+		//CheckPartyRegionForHordes(newRegion);
 	}
 	
 	void UpdatePartyToken(MapRegion newRegion)
@@ -263,7 +276,7 @@ public class MapManager : MonoBehaviour
 		{
 			MoveHorde(horde);
 		}
-		CheckPartyRegionForHordes(mapRegions[new Vector2(PartyManager.mainPartyManager.mapCoordX,PartyManager.mainPartyManager.mapCoordY)]);
+		//CheckPartyRegionForHordes(mapRegions[new Vector2(PartyManager.mainPartyManager.mapCoordX,PartyManager.mainPartyManager.mapCoordY)]);
 	}
 	
 	void MoveHorde(Horde horde)
@@ -328,6 +341,7 @@ public class MapManager : MonoBehaviour
 			{
 				MapRegion checkedRegion=mapRegions[new Vector2(PartyManager.mainPartyManager.mapCoordX,PartyManager.mainPartyManager.mapCoordY)];
 				Rect encounterStartRect=new Rect(110,10,80,25);
+				/*
 				if (hordeLocked)//checkedRegion.hordeEncounter!=null)
 				{
 					if (GUI.Button (encounterStartRect,"Fight")) 
@@ -336,8 +350,8 @@ public class MapManager : MonoBehaviour
 						//hordeLocked=false;
 					}
 				}
-				else
-				{
+				else*/
+				//{
 					if (checkedRegion.hasEncounter)
 					{
 						if (GUI.Button (encounterStartRect,"Explore")) 
@@ -349,13 +363,35 @@ public class MapManager : MonoBehaviour
 							}
 						}
 					}
-					Rect restButtonRect=new Rect(110,35,80,25);
-					if (GUI.Button(restButtonRect,"Wait")) 
+					Rect restButtonRect=new Rect(110,35,140,25);
+					
+					if (checkedRegion.hasCamp)
 					{
-						PartyManager.mainPartyManager.Rest();
+						if (GUI.Button(restButtonRect,"Rest")) 
+						{
+							PartyManager.mainPartyManager.Rest();
 						
+						}
 					}
-				}
+					else
+					{
+						int campSetupTime=1;
+						if (checkedRegion.hasEncounter)
+						{
+							switch (checkedRegion.threatLevel)
+							{
+								case MapRegion.ThreatLevels.Low: {campSetupTime=1; break;}
+								case MapRegion.ThreatLevels.Medium: {campSetupTime=2; break;}
+								case MapRegion.ThreatLevels.High: {campSetupTime=3; break;}
+							}
+						}
+						if (GUI.Button(restButtonRect,"Setup camp("+campSetupTime+" hours)")) 
+						{
+							PartyManager.mainPartyManager.PassTime(campSetupTime);
+							checkedRegion.SetUpCamp();
+						}
+					}
+				//}
 			}
 			//else 
 			//{

@@ -5,7 +5,7 @@ using System.Collections.Generic;
 
 public class Barricade
 {
-	public int health=10;
+	public int health=1;
 }
 
 public class EncounterRoom
@@ -100,6 +100,31 @@ public class EncounterRoom
 	int _lockStrength=0;
 	
 	public Trap trapInRoom=null;
+	
+	public bool canBarricade
+	{
+		get {return _canBarricade;}
+		set 
+		{
+			_canBarricade=value;
+			if (_canBarricade) {barricadeMaterials=5;}
+		}
+	}
+	bool _canBarricade=false;
+	public int barricadeMaterials
+	{
+		get {return _barricadeMaterials;}
+		set 
+		{
+			_barricadeMaterials=value;
+			if (_barricadeMaterials<=0)
+			{
+				_barricadeMaterials=0;
+				canBarricade=false;
+			}
+		}
+	}
+	int _barricadeMaterials=0;
 	public Barricade barricadeInRoom=null;
 	//public bool isVisible=false;
 	
@@ -215,6 +240,17 @@ public class EncounterRoom
 			barricadeInRoom.health-=bashStrength;
 			if (barricadeInRoom.health<=0) {barricadeInRoom=null;}
 		}
+	}
+	
+	public void BuildBarricade()
+	{
+		if (!canBarricade) throw new System.Exception("Trying to barricade an unbarricadeable room!");
+		if (barricadeInRoom==null) barricadeInRoom=new Barricade();
+		else
+		{
+			barricadeInRoom.health+=1;
+		}
+		barricadeMaterials-=1;
 	}
 	
 }

@@ -8,13 +8,13 @@ public abstract class EncounterEnemy
 	public int health;
 	public int minDamage;
 	public int maxDamage;
-	public int maxAttackRange=0;
+	protected int maxAttackRange=0;
 	//public int encounterCount=5;
-	public float moveChance=0.4f;
+	public float moveChance=0.1f;//0.4f;
 	public List<StatusEffect> activeEffects=new List<StatusEffect>();
 	int xCoord;
 	int yCoord;
-	int visionRange=0;
+	protected int visionRange=0;
 	int barricadeBashStrength=1;
 	
 	public delegate void StatusEffectDel();
@@ -59,20 +59,32 @@ public abstract class EncounterEnemy
 		PartyMember attackedMember=null;
 		if (membersWithinReach.Count>0)
 		{
+			//Determine member to attack
+			attackedMember=membersWithinReach[Random.Range(0,membersWithinReach.Count)];
 			//actionMsg=null;
 			//return damage;
 			EncounterCanvasHandler manager=EncounterCanvasHandler.main;//EncounterCanvasHandler.main;
-			attackedMember=membersWithinReach[Random.Range(0,membersWithinReach.Count)];
+			//See if a member without defence mode on can be found within reach, if so pick the target out of those members
+			List<PartyMember> membersWithoutDefence=new List<PartyMember>();
+			foreach (PartyMember member in membersWithinReach)
+			{
+				if (!manager.memberTokens[member].defenseMode) 
+				{
+					membersWithoutDefence.Add(member);
+				}
+			}
+			if (membersWithoutDefence.Count>0) attackedMember=membersWithoutDefence[Random.Range(0,membersWithoutDefence.Count)];
+			
 			//PartyMember attackedMember=manager.selectedMember;
 			//int targetedPCIndex=manager.selectedMember;
 			//manager.DamagePlayerCharacter(manager.selectedMember,damage);
 			int myDamageRoll=Random.Range(minDamage,maxDamage+1);
-			int realDmg=attackedMember.TakeDamage(myDamageRoll);
+			int realDmg=manager.memberTokens[attackedMember].DamageAssignedMember(myDamageRoll);//attackedMember.TakeDamage(myDamageRoll);
 			
 			//manager.DisplayNewMessage(name+" hits "+attackedMember.name+" for "+realDmg+"!");
 			//GameManager.DebugPrint("calling visualize attack on"+manager.memberTokens[attackedMember].name);
 			manager.VisualizeDamageToMember(realDmg,attackedMember,this);
-			int attackNoiseIntensity=2;
+			int attackNoiseIntensity=1;
 			manager.MakeNoise(GetCoords(),attackNoiseIntensity);
 			//StartCoroutine(manager.VisualizeAttack(realDmg,manager.enemyTokens[this],manager.memberTokens[attackedMember]));
 		} 
@@ -102,13 +114,13 @@ public abstract class EncounterEnemy
 		int count=0;
 		switch(enemyType)
 		{
-		case EnemyTypes.Gasser: {count=14; break;}
+		case EnemyTypes.Gasser: {count=8; break;}
 		case EnemyTypes.Spindler: {count=5; break;}
-		case EnemyTypes.Flesh: {count=14; break;}
-		case EnemyTypes.Muscle: {count=14; break;}
-		case EnemyTypes.Transient: {count=14; break;}
-		case EnemyTypes.Quick: {count=14; break;}
-		case EnemyTypes.Slime: {count=18; break;}
+		case EnemyTypes.Flesh: {count=10; break;}
+		case EnemyTypes.Muscle: {count=10; break;}
+		case EnemyTypes.Transient: {count=10; break;}
+		case EnemyTypes.Quick: {count=10; break;}
+		case EnemyTypes.Slime: {count=12; break;}
 		}
 		return count;
 	}
@@ -299,7 +311,7 @@ public abstract class EncounterEnemy
 						if (map.ContainsKey(cursorPos)) 
 						{
 							EncounterRoom checkedRoom=map[cursorPos];
-							if (!checkedRoom.isWall && !checkedRoom.hasEnemies && checkedRoom.barricadeInRoom==null) 
+							if (!checkedRoom.isWall && /*!checkedRoom.hasEnemies &&*/ checkedRoom.barricadeInRoom==null) 
 							{availableCoords.Add(cursorPos);}
 						}
 						
@@ -388,7 +400,7 @@ public class FleshMass:EncounterEnemy
 	public FleshMass(Vector2 coords) : base(coords)
 	{
 		name="Flesh mass";
-		health=4;
+		health=5;
 		minDamage=3;
 		maxDamage=5;
 	}
@@ -410,10 +422,10 @@ public class QuickMass:EncounterEnemy
 	public QuickMass(Vector2 coords) : base(coords)
 	{
 		name="Quick mass";
-		health=3;
+		health=4;
 		minDamage=4;
 		maxDamage=8;
-		moveChance=1f;
+		moveChance=0.5f;
 	}
 }
 
@@ -506,6 +518,8 @@ public class Gasser:EncounterEnemy
 		health=10;
 		minDamage=4;
 		maxDamage=6;
+		visionRange=1;
+		maxAttackRange=1;
 	}
 	
 	//Potentially deprecate this mechanic later

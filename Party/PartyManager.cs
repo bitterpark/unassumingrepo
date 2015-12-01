@@ -25,6 +25,9 @@ public class PartyManager : MonoBehaviour {
 	public PartyMemberCanvasHandler partyMemberCanvasPrefab;
 	Dictionary<PartyMember,PartyMemberCanvasHandler> partyMemberCanvases; 
 	
+	const int moveFatigueCost=10;
+	const int encounterFatigueCost=10;
+	
 	public int ammo
 	{
 		get {return _ammo;}
@@ -193,7 +196,7 @@ public class PartyManager : MonoBehaviour {
 			mapCoordY=y;
 			if (moveLength>0) 
 			{
-				//foreach(PartyMember member in partyMembers) {member.stamina-=1;}
+				foreach(PartyMember member in partyMembers) {member.fatigue+=moveFatigueCost;}
 				PassTime(1);
 			}
 			
@@ -207,6 +210,12 @@ public class PartyManager : MonoBehaviour {
 			//moveSuccesful=true;
 		//}
 		//return moveSuccesful;
+	}
+	
+	public void EnterPartyIntoEncounter(List<PartyMember> encounterMembers)
+	{
+		PassTime(1);
+		foreach (PartyMember member in encounterMembers) member.fatigue+=encounterFatigueCost;
 	}
 	
 	public void GainItems(InventoryItem newItem)
@@ -238,7 +247,8 @@ public class PartyManager : MonoBehaviour {
 				member.stamina+=Mathf.RoundToInt(member.maxStamina*0.1f);
 			}
 		}*/
-		PassTime(1);
+		foreach (PartyMember member in partyMembers) {member.RestEffect();}
+		PassTime(6);
 	}
 	
 	public void AddPartyMemberStatusEffect(PartyMember member, StatusEffect effect)//(int memberIndex, StatusEffect effect)

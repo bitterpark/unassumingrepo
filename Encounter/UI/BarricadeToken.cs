@@ -3,7 +3,7 @@ using System.Collections;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
 
-public class BarricadeToken : MonoBehaviour ,IBeginDragHandler,IDragHandler,IEndDragHandler, IInitializePotentialDragHandler
+public class BarricadeToken : MonoBehaviour /*,IBeginDragHandler,IDragHandler,IEndDragHandler, IInitializePotentialDragHandler*/
 {
 	public static BarricadeToken barricadeTokenBeingDragged;
 	static bool dragPermitted=false;
@@ -39,7 +39,12 @@ public class BarricadeToken : MonoBehaviour ,IBeginDragHandler,IDragHandler,IEnd
 	{
 		myHealthText.text=newHealth.ToString();
 	}
-
+	
+	public void TokenClicked()
+	{
+		EncounterCanvasHandler.main.BarricadeBashClicked(assignedRoomButton);
+	}
+	/*
 	#region IBeginDragHandler implementation
 
 	public void OnBeginDrag (PointerEventData eventData)
@@ -108,5 +113,5 @@ public class BarricadeToken : MonoBehaviour ,IBeginDragHandler,IDragHandler,IEnd
 		else {dragPermitted=false;}
 	}
 
-	#endregion
+	#endregion*/
 }
