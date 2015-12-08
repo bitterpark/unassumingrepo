@@ -19,6 +19,8 @@ public class SpriteBase : MonoBehaviour {
 	public Sprite bandageSprite;
 	public Sprite perishableFoodSprite;
 	public Sprite foodSprite;
+	public Sprite foodSpriteSmall;
+	public Sprite foodSpriteBig;
 	public Sprite flashlightSprite;
 	public Sprite armorvestSprite;
 	public Sprite radioSprite;

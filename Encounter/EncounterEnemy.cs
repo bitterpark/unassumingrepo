@@ -28,6 +28,72 @@ public abstract class EncounterEnemy
 	
 	public enum EnemyTypes {Flesh,Quick,Slime,Muscle,Transient,Gasser,Spindler};
 	
+	public static string GetMapDescription(EnemyTypes enemyType)
+	{
+		string description=null;
+		switch(enemyType)
+		{
+		case EnemyTypes.Gasser: {description="gas sacs"; break;}
+		case EnemyTypes.Spindler: {description="spindlers"; break;}
+		case EnemyTypes.Flesh: {description="flesh masses"; break;}
+		case EnemyTypes.Muscle: {description="muscle masses"; break;}
+		case EnemyTypes.Transient: {description="transients"; break;}
+		case EnemyTypes.Quick: {description="quick masses"; break;}
+		case EnemyTypes.Slime: {description="slime masses"; break;}
+		}
+		return description;
+	}
+	//Deprecated
+	public static int GetEnemyCount(EnemyTypes enemyType)
+	{
+		int count=0;
+		switch(enemyType)
+		{
+		case EnemyTypes.Gasser: {count=8; break;}
+		case EnemyTypes.Spindler: {count=5; break;}
+		case EnemyTypes.Flesh: {count=10; break;}
+		case EnemyTypes.Muscle: {count=10; break;}
+		case EnemyTypes.Transient: {count=10; break;}
+		case EnemyTypes.Quick: {count=10; break;}
+		case EnemyTypes.Slime: {count=12; break;}
+		}
+		return count;
+	}
+	//Determines how many enemies of this type should spawn compared to the baseline (half as many, twice as many and so on)
+	//Gassers, Quicks and Transients - Weak tier; Flesh and Spindler - Mid Tier; Muscle and Slime - Strong tier
+	//However, gassers get mid tier multiplier, because their shooting ability is too strong
+	public static float GetEnemyCountModifier(EnemyTypes enemyType)
+	{
+		float mod=0;
+		switch(enemyType)
+		{
+			case EnemyTypes.Gasser: {mod=0.9f; break;}
+			case EnemyTypes.Spindler: {mod=0.9f; break;}
+			case EnemyTypes.Flesh: {mod=0.9f; break;}
+			case EnemyTypes.Muscle: {mod=0.6f; break;}
+			case EnemyTypes.Transient: {mod=1.4f; break;}
+			case EnemyTypes.Quick: {mod=1.4f; break;}
+			case EnemyTypes.Slime: {mod=0.6f; break;}
+		}
+		return mod;
+	}
+	
+	public static EncounterEnemy GetEnemy(EnemyTypes enemyType, Vector2 coords)
+	{
+		EncounterEnemy enemy=null;
+		switch(enemyType)
+		{
+		case EnemyTypes.Gasser: {enemy=new Gasser(coords); break;}
+		case EnemyTypes.Spindler: {enemy=new Spindler(coords); break;}
+		case EnemyTypes.Flesh: {enemy=new FleshMass(coords); break;}
+		case EnemyTypes.Muscle: {enemy=new MuscleMass(coords); break;}
+		case EnemyTypes.Transient: {enemy=new Transient(coords); break;}
+		case EnemyTypes.Quick: {enemy=new QuickMass(coords); break;}
+		case EnemyTypes.Slime: {enemy=new SlimeMass(coords); break;}
+		}
+		return enemy;
+	}
+	
 	public Vector2 GetCoords() {return new Vector2(xCoord,yCoord);}
 	public void SetCoords(Vector2 newCoords) {xCoord=(int)newCoords.x; yCoord=(int)newCoords.y;}
 	
@@ -48,8 +114,14 @@ public abstract class EncounterEnemy
 		if (HealthChanged!=null) {HealthChanged();}
 		return dmgTaken;
 	}
+	/*
+	public void ToggleAttack(List<PartyMember> membersWithinReach)
+	{
+		if (EncounterCanvasHandler.main.encounterOngoing)
+		AttackAction(membersWithinReach);
+	}*/
 	
-	public virtual PartyMember RoundAction(List<PartyMember> membersWithinReach)//Dictionary<PartyMember,Vector2> memberCoords)
+	public virtual PartyMember AttackAction(List<PartyMember> membersWithinReach)//Dictionary<PartyMember,Vector2> memberCoords)
 	{
 		/*List<PartyMember> membersInRoom=new List<PartyMember>();
 		foreach (PartyMember key in memberCoords.Keys) 
@@ -93,54 +165,6 @@ public abstract class EncounterEnemy
 	}
 	public virtual void TurnAction() {}
 	
-	public static string GetMapDescription(EnemyTypes enemyType)
-	{
-		string description=null;
-		switch(enemyType)
-		{
-			case EnemyTypes.Gasser: {description="gas sacs"; break;}
-			case EnemyTypes.Spindler: {description="spindlers"; break;}
-			case EnemyTypes.Flesh: {description="flesh masses"; break;}
-			case EnemyTypes.Muscle: {description="muscle masses"; break;}
-			case EnemyTypes.Transient: {description="transients"; break;}
-			case EnemyTypes.Quick: {description="quick masses"; break;}
-			case EnemyTypes.Slime: {description="slime masses"; break;}
-		}
-		return description;
-	}
-	
-	public static int GetEnemyCount(EnemyTypes enemyType)
-	{
-		int count=0;
-		switch(enemyType)
-		{
-		case EnemyTypes.Gasser: {count=8; break;}
-		case EnemyTypes.Spindler: {count=5; break;}
-		case EnemyTypes.Flesh: {count=10; break;}
-		case EnemyTypes.Muscle: {count=10; break;}
-		case EnemyTypes.Transient: {count=10; break;}
-		case EnemyTypes.Quick: {count=10; break;}
-		case EnemyTypes.Slime: {count=12; break;}
-		}
-		return count;
-	}
-	
-	public static EncounterEnemy GetEnemy(EnemyTypes enemyType, Vector2 coords)
-	{
-		EncounterEnemy enemy=null;
-		switch(enemyType)
-		{
-		case EnemyTypes.Gasser: {enemy=new Gasser(coords); break;}
-		case EnemyTypes.Spindler: {enemy=new Spindler(coords); break;}
-		case EnemyTypes.Flesh: {enemy=new FleshMass(coords); break;}
-		case EnemyTypes.Muscle: {enemy=new MuscleMass(coords); break;}
-		case EnemyTypes.Transient: {enemy=new Transient(coords); break;}
-		case EnemyTypes.Quick: {enemy=new QuickMass(coords); break;}
-		case EnemyTypes.Slime: {enemy=new SlimeMass(coords); break;}
-		}
-		return enemy;
-	}
-	
 	//Updates token visual if any members are seen
 	/*
 	public void VisionUpdate()
@@ -178,7 +202,7 @@ public abstract class EncounterEnemy
 	}
 	
 	//Used for both move and attack actions "acting, the enemy uses its "move" for the turn
-	public void Move(Dictionary<PartyMember, Dictionary<Vector2,int>> masks, Dictionary<PartyMember,Vector2> memberCoords
+	public void DoMyRound(Dictionary<PartyMember, Dictionary<Vector2,int>> masks, Dictionary<PartyMember,Vector2> memberCoords
 	, EnemyTokenHandler.PointOfInterest currentPOI)
 	{
 		//Ensure enemies don't move after EncounterCanvasHandler shut down encounter render
@@ -214,7 +238,7 @@ public abstract class EncounterEnemy
 				//If any members are within attack range, attack, otherwise move on to the next fork
 				if (membersWithinAttackRange.Count>0)
 				{	
-					RoundAction(membersWithinAttackRange);		
+					AttackAction(membersWithinAttackRange);		
 				}
 				else
 				{
@@ -320,40 +344,12 @@ public abstract class EncounterEnemy
 					//List<EncounterRoom> availableRooms=new List<EncounterRoom>();
 					//UP
 					roamCheck.Invoke(new Vector2(xCoord,yCoord-1));
-					/*
-					Vector2 upCoords=new Vector2(xCoord,yCoord-1);
-					if (map.ContainsKey(upCoords)) 
-					{
-						EncounterRoom upRoom=map[upCoords];
-						if (!upRoom.isWall) {availableCoords.Add(upCoords);}
-					}*/
 					//DOWN
 					roamCheck.Invoke(new Vector2(xCoord,yCoord+1));
-					/*
-					Vector2 downCoords=new Vector2(xCoord,yCoord+1);
-					if (map.ContainsKey(downCoords)) 
-					{
-						EncounterRoom downRoom=map[downCoords];
-						if (!downRoom.isWall) {availableCoords.Add(downCoords);}
-					}*/
 					//LEFT
 					roamCheck.Invoke(new Vector2(xCoord-1,yCoord));
-					/*
-					Vector2 leftCoords=new Vector2(xCoord-1,yCoord);
-					if (map.ContainsKey(leftCoords)) 
-					{
-						EncounterRoom leftRoom=map[leftCoords];
-						if (!leftRoom.isWall) {availableCoords.Add(leftCoords);}
-					}*/
 					//RIGHT
 					roamCheck.Invoke(new Vector2(xCoord+1,yCoord));
-					/*
-					Vector2 rightCoords=new Vector2(xCoord+1,yCoord);
-					if (map.ContainsKey(rightCoords)) 
-					{
-						EncounterRoom rightRoom=map[rightCoords];
-						if (!rightRoom.isWall) {availableCoords.Add(rightCoords);}
-					}*/
 					//b) randomly pick one to move to
 					if (availableCoords.Count>0 && Random.value<moveChance) 
 					{
@@ -400,9 +396,9 @@ public class FleshMass:EncounterEnemy
 	public FleshMass(Vector2 coords) : base(coords)
 	{
 		name="Flesh mass";
-		health=5;
-		minDamage=3;
-		maxDamage=5;
+		health=15;
+		minDamage=5;
+		maxDamage=9;
 	}
 }
 
@@ -411,9 +407,9 @@ public class MuscleMass:EncounterEnemy
 	public MuscleMass(Vector2 coords) : base(coords)
 	{
 		name="Muscle mass";
-		health=14;
+		health=27;
 		minDamage=5;
-		maxDamage=10;
+		maxDamage=12;
 	}
 }
 
@@ -422,9 +418,9 @@ public class QuickMass:EncounterEnemy
 	public QuickMass(Vector2 coords) : base(coords)
 	{
 		name="Quick mass";
-		health=4;
+		health=6;
 		minDamage=4;
-		maxDamage=8;
+		maxDamage=10;
 		moveChance=0.5f;
 	}
 }
@@ -434,9 +430,9 @@ public class SlimeMass:EncounterEnemy
 	public SlimeMass(Vector2 coords) : base(coords)
 	{
 		name="Slime mass";
-		health=6;
-		minDamage=3;
-		maxDamage=5;
+		health=27;
+		minDamage=5;
+		maxDamage=9;
 	}
 	
 	//int rangedResistance=3;
@@ -465,7 +461,7 @@ public class Transient:EncounterEnemy
 	
 	bool phasedIn=true;
 	PhasedOut myEffect;
-	
+	/*
 	public override int TakeDamage(int dmgTaken, bool isRanged)
 	{
 		int realDmg=0;
@@ -482,9 +478,9 @@ public class Transient:EncounterEnemy
 			//EncounterCanvasHandler.main.DisplayNewMessage("Attack passes through air!");
 		}
 		return base.TakeDamage(realDmg, isRanged);
-	}
+	}*/
 	
-	public override PartyMember RoundAction(List<PartyMember> presentMembers)//Dictionary<PartyMember,Vector2> memberCoords)
+	public override PartyMember AttackAction(List<PartyMember> presentMembers)//Dictionary<PartyMember,Vector2> memberCoords)
 	{
 		phasedIn=true;
 		//EncounterCanvasHandler.main.RemoveEnemyStatusEffect(myEffect);
@@ -493,7 +489,7 @@ public class Transient:EncounterEnemy
 		{
 			//EncounterCanvasHandler.main.DisplayNewMessage(name+" phases in!");			
 		}
-		return base.RoundAction(presentMembers);
+		return base.AttackAction(presentMembers);
 	}
 	/*
 	public override void TurnAction()
@@ -515,7 +511,7 @@ public class Gasser:EncounterEnemy
 	public Gasser(Vector2 coords) : base(coords)
 	{
 		name="Gas sac";
-		health=10;
+		health=5;
 		minDamage=4;
 		maxDamage=6;
 		visionRange=1;
@@ -542,10 +538,10 @@ public class Gasser:EncounterEnemy
 		return recievedDamage;
 	}
 	
-	public override PartyMember RoundAction (List<PartyMember> presentMembers)//Dictionary<PartyMember,Vector2> memberCoords)
+	public override PartyMember AttackAction (List<PartyMember> presentMembers)//Dictionary<PartyMember,Vector2> memberCoords)
 	{
 		damageGainedThisRound=0;
-		return base.RoundAction (presentMembers);
+		return base.AttackAction (presentMembers);
 	}
 }
 
@@ -554,14 +550,14 @@ public class Spindler:EncounterEnemy
 	public Spindler(Vector2 coords) : base(coords)
 	{
 		name="Spindler";
-		health=5;
+		health=15;
 		minDamage=3;
 		maxDamage=5;
 	}
 	
-	public override PartyMember RoundAction (List<PartyMember> presentMembers)//Dictionary<PartyMember,Vector2> memberCoords)
+	public override PartyMember AttackAction (List<PartyMember> presentMembers)//Dictionary<PartyMember,Vector2> memberCoords)
 	{
-		PartyMember targetMember=base.RoundAction (presentMembers);//memberCoords);
+		PartyMember targetMember=base.AttackAction (presentMembers);//memberCoords);
 		if (targetMember!=null)
 		{
 			//EncounterCanvasHandler manager=EncounterCanvasHandler.main;

@@ -7,6 +7,7 @@ public class GameEventManager : MonoBehaviour
 
 	//Dictionary<float,GameEvent> eventPossibilities=new Dictionary<float, GameEvent>();
 	List<EventChance> possibleEvents=new List<EventChance>();
+	List<EventChance> moraleEvents=new List<EventChance>();
 	public static GameEventManager mainEventManager;
 	
 	GameEvent drawnEvent=null;
@@ -56,7 +57,7 @@ public class GameEventManager : MonoBehaviour
 		}
 	}
 	
-	public bool RollEvents()
+	public bool RollEvents(ref bool moveAllowed)
 	{
 		/*
 		Dictionary<float,GameEvent> eligibleEvents=new Dictionary<float, GameEvent>();
@@ -65,6 +66,8 @@ public class GameEventManager : MonoBehaviour
 			if (eventPossibilities[key].PreconditionsMet()) {eligibleEvents.Add(key,eventPossibilities[key]);}
 		
 		}*/
+		//First, see if any morale-based events fire
+		/*
 		//find events with met preconditions
 		List<EventChance> eligibleEvents=new List<EventChance>();
 		foreach(EventChance chance in possibleEvents) 
@@ -96,13 +99,64 @@ public class GameEventManager : MonoBehaviour
 				eventRecord=intervalDict[chance];
 			}
 		}
+		bool eventFired=false;*/
+		//First, see if morale-based events fire
+		bool eventFired=false;
+		float eventsRoll=Random.value;
+		EventChance trackedEventRecord=new EventChance();
+		GameEvent resEvent=PickRandomEvent(moraleEvents, ref trackedEventRecord,eventsRoll);
+		//If no morale events fired, do other events
+		if (resEvent==null)
+		{
+			resEvent=PickRandomEvent(possibleEvents, ref trackedEventRecord,eventsRoll);
+			//If a regular event fired, remove it from events list
+			if (resEvent!=null) possibleEvents.Remove(trackedEventRecord);
+		}
+		
 		if (resEvent!=null) 
 		{
-			possibleEvents.Remove(eventRecord);
+			eventFired=true;
 			StartEventDraw(resEvent);
-			return resEvent.AllowMapMove();
+			moveAllowed=resEvent.AllowMapMove();
 		}
-		return true;
+		else moveAllowed=true;
+		
+		return eventFired;
+	}
+	
+	GameEvent PickRandomEvent(List<EventChance> eventsList, ref EventChance eventRecord, float roll)
+	{
+		//find events with met preconditions
+		List<EventChance> eligibleEvents=new List<EventChance>();
+		foreach(EventChance chance in eventsList) 
+		{
+			if (chance.myEvent.PreconditionsMet()) {eligibleEvents.Add (chance);}
+		}
+		
+		//form a dictionary based on probability intervals
+		float eventPositiveProbabilitySpace=0;
+		foreach (EventChance chance in eligibleEvents) {eventPositiveProbabilitySpace+=chance.chance;}
+		
+		Dictionary<float,EventChance> intervalDict=new Dictionary<float, EventChance>();
+		foreach (EventChance chance in eligibleEvents)
+		{
+			intervalDict.Add (eventPositiveProbabilitySpace,chance);
+			eventPositiveProbabilitySpace-=chance.chance;
+		}
+		
+		//roll on resulting intervals	
+		GameEvent resEvent=null;
+		//Compiler made me assign this, should be null
+		//EventChance eventRecord=new EventChance();
+		foreach (float chance in intervalDict.Keys)
+		{
+			if (roll<chance) 
+			{
+				resEvent=intervalDict[chance].myEvent;
+				eventRecord=intervalDict[chance];
+			}
+		}
+		return resEvent;
 	}
 	
 	void StartEventDraw(GameEvent newDrawnEvent)
@@ -187,9 +241,14 @@ public class GameEventManager : MonoBehaviour
 		possibleEvents.Add( new EventChance(new MedicalCache(),0.04f));
 		possibleEvents.Add (new EventChance(new SurvivorRescue(),0.04f));
 		possibleEvents.Add(new EventChance(new SearchForSurvivor(),0.04f));
-		possibleEvents.Add (new EventChance(new LowMoraleSpiral(),0.04f));
-		possibleEvents.Add (new EventChance(new LowMoraleFight(),0.04f));
-		possibleEvents.Add (new EventChance(new LowMoraleEnmity(),0.04f));
+		//possibleEvents.Add (new EventChance(new LowMoraleSpiral(),0.04f));
+		//possibleEvents.Add (new EventChance(new LowMoraleFight(),0.04f));
+		// possibleEvents.Add (new EventChance(new LowMoraleEnmity(),0.04f));
+		
+		moraleEvents.Add (new EventChance(new LowMoraleSpiral(),0.2f));
+		moraleEvents.Add (new EventChance(new LowMoraleFight(),0.15f));
+		moraleEvents.Add (new EventChance(new LowMoraleEnmity(),0.15f));
+		
 		/*
 		//Add highest first for proper rolling
 		eventPossibilities.Add (0.16f,new LostInAnomaly());

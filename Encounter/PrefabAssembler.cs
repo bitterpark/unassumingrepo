@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 
@@ -14,7 +14,7 @@ public class PrefabAssembler : MonoBehaviour
 	public GameObject hordePreset;
 	public static PrefabAssembler assembler;
 
-	public List<EncounterRoom> SetupEncounterMap(Encounter mappedEncounter, Encounter.LootTypes areaType)
+	public List<EncounterRoom> SetupEncounterMap(Encounter mappedEncounter, Encounter.AreaTypes areaType)
 	{
 	
 		//int encounterSizeX=newEncounter.encounterSizeX;//3;
@@ -23,37 +23,37 @@ public class PrefabAssembler : MonoBehaviour
 		
 		switch (areaType)
 		{
-			case Encounter.LootTypes.Warehouse: 
+			case Encounter.AreaTypes.Warehouse: 
 			{
 				copyBuffer=Instantiate(warehousePreset,new Vector3(0,0,-2),Quaternion.identity) as GameObject; 
 				break;
 			}
-			case Encounter.LootTypes.Apartment: 
+			case Encounter.AreaTypes.Apartment: 
 			{
 				copyBuffer=Instantiate(apartmentPreset,new Vector3(0,0,-2),Quaternion.identity) as GameObject;
 				break;
 			}
-			case Encounter.LootTypes.Store: 
+			case Encounter.AreaTypes.Store: 
 			{
 				copyBuffer=Instantiate(storePreset,new Vector3(0,0,-2),Quaternion.identity) as GameObject;
 				break;
 			}
-			case Encounter.LootTypes.Police:
+			case Encounter.AreaTypes.Police:
 			{
 				copyBuffer=Instantiate(policeStationPreset,new Vector3(0,0,-2),Quaternion.identity) as GameObject;
 				break;
 			}
-			case Encounter.LootTypes.Hospital:
+			case Encounter.AreaTypes.Hospital:
 			{
 				copyBuffer=Instantiate(hospitalPreset,new Vector3(0,0,-2),Quaternion.identity) as GameObject;
 				break;
 			}
-			case Encounter.LootTypes.Endgame:
+			case Encounter.AreaTypes.Endgame:
 			{
 				copyBuffer=Instantiate(radioPreset,new Vector3(0,0,-2),Quaternion.identity) as GameObject;
 				break;
 			}
-			case Encounter.LootTypes.Horde:
+			case Encounter.AreaTypes.Horde:
 			{
 				copyBuffer=Instantiate(hordePreset,new Vector3(0,0,-2),Quaternion.identity) as GameObject;
 				break;

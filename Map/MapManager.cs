@@ -125,7 +125,7 @@ public class MapManager : MonoBehaviour
 		if (playerToken!=null) {GameObject.Destroy(playerToken);}
 		playerToken=Instantiate(playerTokenPrefab) as GameObject;
 		//DiscoverRegions(0,0);
-		MovePartyToRegion(mapRegions[new Vector2(0,0)]);
+		TeleportToRegion(mapRegions[new Vector2(0,0)]);
 	}
 	
 	MapRegion CreateNewRegion(Vector2 newRegionPos, int xCoord, int yCoord)
@@ -162,9 +162,25 @@ public class MapManager : MonoBehaviour
 		{
 			if (PartyManager.mainPartyManager.ConfirmMapMovement(clickedRegion.xCoord,clickedRegion.yCoord))//.MovePartyToMapCoords(clickedRegion.xCoord,clickedRegion.yCoord))
 			{
-				if (GameEventManager.mainEventManager.RollEvents())
+				bool noEventBasedMove=true;
+				bool eventHappened=GameEventManager.mainEventManager.RollEvents(ref noEventBasedMove);
+				if (noEventBasedMove)
 				{
 					MovePartyToRegion(clickedRegion);
+					//Threat level roll
+					if (clickedRegion.hasEncounter && !eventHappened)
+					{
+						float randomAttackChance=0;
+						switch(clickedRegion.threatLevel)
+						{
+							case MapRegion.ThreatLevels.Low: {randomAttackChance=0.1f; break;}
+							case MapRegion.ThreatLevels.Medium: {randomAttackChance=0.25f; break;}
+							case MapRegion.ThreatLevels.High: {randomAttackChance=0.4f; break;}
+						}
+						if (Random.value<randomAttackChance) 
+						EnterEncounter
+						(new RandomAttack(clickedRegion.regionalEncounter.encounterEnemyType),PartyManager.mainPartyManager.partyMembers,true);
+					}//
 				}
 			}
 		}	
@@ -181,19 +197,6 @@ public class MapManager : MonoBehaviour
 		DiscoverRegions(newRegion.xCoord,newRegion.yCoord);
 		UpdatePartyToken(newRegion);
 		scoutingHandler.EndDialog();
-		//Threat level roll
-		if (newRegion.hasEncounter)
-		{
-			float randomAttackChance=0;
-			switch(newRegion.threatLevel)
-			{
-				case MapRegion.ThreatLevels.Low: {randomAttackChance=0.1f; break;}
-				case MapRegion.ThreatLevels.Medium: {randomAttackChance=0.25f; break;}
-				case MapRegion.ThreatLevels.High: {randomAttackChance=0.4f; break;}
-			}
-			if (Random.value<randomAttackChance) 
-			EnterEncounter(new RandomAttack(newRegion.regionalEncounter.encounterEnemyType),PartyManager.mainPartyManager.partyMembers);
-		}//
 		//CheckPartyRegionForHordes(newRegion);
 	}
 	
@@ -228,10 +231,10 @@ public class MapManager : MonoBehaviour
 			hordeLocked=true;
 		}
 	}
-	
-	public void EnterEncounter(Encounter newEncounter, List<PartyMember> team)
+
+	public void EnterEncounter(Encounter newEncounter, List<PartyMember> team, bool isAmbush)
 	{
-		EncounterCanvasHandler.main.StartNewEncounter(newEncounter,team);
+		EncounterCanvasHandler.main.StartNewEncounter(newEncounter,team,isAmbush);
 		scoutingHandler.EndDialog();
 	}
 	
@@ -380,9 +383,9 @@ public class MapManager : MonoBehaviour
 						{
 							switch (checkedRegion.threatLevel)
 							{
-								case MapRegion.ThreatLevels.Low: {campSetupTime=1; break;}
-								case MapRegion.ThreatLevels.Medium: {campSetupTime=2; break;}
-								case MapRegion.ThreatLevels.High: {campSetupTime=3; break;}
+								case MapRegion.ThreatLevels.Low: {campSetupTime=2; break;}
+								case MapRegion.ThreatLevels.Medium: {campSetupTime=3; break;}
+								case MapRegion.ThreatLevels.High: {campSetupTime=4; break;}
 							}
 						}
 						if (GUI.Button(restButtonRect,"Setup camp("+campSetupTime+" hours)")) 

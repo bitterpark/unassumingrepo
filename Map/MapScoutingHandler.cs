@@ -98,8 +98,8 @@ public class MapScoutingHandler : MonoBehaviour {
 			{
 				//EncounterCanvasHandler.mainEncounterCanvasHandler.StartNewEncounter(assignedRegion,selectedForMission);
 				//EndDialog();
-				PartyManager.mainPartyManager.EnterPartyIntoEncounter(selectedForMission);
-				MapManager.mainMapManager.EnterEncounter(assignedRegion.regionalEncounter,selectedForMission);
+				//PartyManager.mainPartyManager.EnterPartyIntoEncounter(selectedForMission);
+				MapManager.mainMapManager.EnterEncounter(assignedRegion.regionalEncounter,selectedForMission,false);
 			}
 		}
 	}

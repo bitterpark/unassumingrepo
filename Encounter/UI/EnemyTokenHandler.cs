@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine.UI;
@@ -8,7 +8,7 @@ public class EnemyTokenHandler : MonoBehaviour, IAttackAnimation
 	//because the coroutine is called from EncounterCanvasHandler, StopAllCoroutines called from this instance doesn't work. So, this is necessary
 	bool destroyed=false;
 	
-	float attackAnimationTime=1f;
+	float attackAnimationTime=0.75f;
 	
 	public Text healthText;
 	EncounterEnemy assignedEnemy;
@@ -45,7 +45,7 @@ public class EnemyTokenHandler : MonoBehaviour, IAttackAnimation
 	public void Clicked()
 	{
 		TooltipManager.main.StopAllTooltips();
-		EncounterCanvasHandler.main.EnemyPressed(assignedEnemy);
+		EncounterCanvasHandler.main.EnemyClicked(assignedEnemy);
 	}
 	/*
 	public void AnimateAttack() 
@@ -70,35 +70,46 @@ public class EnemyTokenHandler : MonoBehaviour, IAttackAnimation
 	
 	public void UpdateTokenVision()
 	{
-		List<PartyMember> currentSeenMembers
-		=assignedEnemy.VisionCheck(EncounterCanvasHandler.main.currentEncounter.encounterMap,EncounterCanvasHandler.main.memberCoords);
-		//If some members were seen on the previous check, but stopped being seen on this check, set the POI to the last known coordinate of the member
-		//!!CAUTION!! - this actually sets the POI to the coordinates the member was at immediately after he got out of vision!
-		if (currentSeenMembers.Count==0 && lastSeenMembers.Count>0) 
+		if (!destroyed && EncounterCanvasHandler.main.encounterOngoing)
 		{
-			if (EncounterCanvasHandler.main.encounterMembers.Contains(lastSeenMembers[0]))
+			List<PartyMember> currentSeenMembers
+				=assignedEnemy.VisionCheck(EncounterCanvasHandler.main.currentEncounter.encounterMap,EncounterCanvasHandler.main.memberCoords);
+			//If some members were seen on the previous check, but stopped being seen on this check, set the POI to the last known coordinate of the member
+			//!!CAUTION!! - this actually sets the POI to the coordinates the member was at immediately after he got out of vision!
+			if (currentSeenMembers.Count==0 && lastSeenMembers.Count>0) 
 			{
-				Vector2 newPOICoords=EncounterCanvasHandler.main.memberCoords[lastSeenMembers[0]];
-				AddNewPOI(newPOICoords,null);//new Dictionary<Vector2, int>(EncounterCanvasHandler.main.memberMoveMasks[lastSeenMembers[0]]));//IterativeGrassfireMapper(newPOICoords));
+				if (EncounterCanvasHandler.main.encounterMembers.Contains(lastSeenMembers[0]))
+				{
+					Vector2 newPOICoords=EncounterCanvasHandler.main.memberCoords[lastSeenMembers[0]];
+					AddNewPOI(newPOICoords,null);//new Dictionary<Vector2, int>(EncounterCanvasHandler.main.memberMoveMasks[lastSeenMembers[0]]));//IterativeGrassfireMapper(newPOICoords));
+				}
 			}
+			//If some members are seen currently, forget the POI and start pursuing them instead
+			if (currentSeenMembers.Count>0) {currentPOI=null;}
+			lastSeenMembers=currentSeenMembers;
+			//assignedEnemy.VisionUpdate();
+			UpdateVisionStatusDisplay();
 		}
-		//If some members are seen currently, forget the POI and start pursuing them instead
-		if (currentSeenMembers.Count>0) {currentPOI=null;}
-		lastSeenMembers=currentSeenMembers;
-		//assignedEnemy.VisionUpdate();
-		UpdateVisionStatusDisplay();
 	}
 	
-	public void DoTokenMove(Dictionary<PartyMember, Dictionary<Vector2,int>> masks, Dictionary<PartyMember,Vector2> memberCoords)
+	public void TokenAttackTrigger(params PartyMember[] membersWithinReach)
 	{
-		if (currentPOI!=null) 
+		if (!destroyed && EncounterCanvasHandler.main.encounterOngoing) assignedEnemy.AttackAction(new List<PartyMember>(membersWithinReach));
+	}
+	
+	public void TokenRoundoverTrigger(Dictionary<PartyMember, Dictionary<Vector2,int>> masks, Dictionary<PartyMember,Vector2> memberCoords)
+	{
+		if (!destroyed && EncounterCanvasHandler.main.encounterOngoing)
 		{
-			if (currentPOI.pointCoords==assignedEnemy.GetCoords()) currentPOI=null;
+			if (currentPOI!=null) 
+			{
+				if (currentPOI.pointCoords==assignedEnemy.GetCoords()) currentPOI=null;
+			}
+			assignedEnemy.DoMyRound(masks,memberCoords,currentPOI);
+			EncounterCanvasHandler.main.roomButtons[assignedEnemy.GetCoords()].AttachEnemyToken(transform);
+			UpdateTokenVision();
+			//UpdateVisionStatusDisplay();
 		}
-		assignedEnemy.Move(masks,memberCoords,currentPOI);
-		EncounterCanvasHandler.main.roomButtons[assignedEnemy.GetCoords()].AttachEnemyToken(transform);
-		UpdateTokenVision();
-		//UpdateVisionStatusDisplay();
 	}
 	
 	void UpdateVisionStatusDisplay()

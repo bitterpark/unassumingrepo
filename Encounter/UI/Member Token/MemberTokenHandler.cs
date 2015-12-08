@@ -9,7 +9,7 @@ public interface IAttackAnimation
 
 public class MemberTokenHandler : MonoBehaviour, IAttackAnimation 
 {
-	const int defenseModifier=5;
+	const int defenseModifier=3;
 	
 	public PartyMember myMember;
 	public GameObject mySelectedArrow;
@@ -20,6 +20,11 @@ public class MemberTokenHandler : MonoBehaviour, IAttackAnimation
 	public Text healthText;
 	public Text nameText;
 	public Text staminaText;
+	
+	public ActionToken myActionToken;
+	public MoveToken myMoveToken;
+	public DefenceToken myDefenceToken;
+	public StaminaRegenToken myStaminaRegenToken;
 	
 	public bool selected
 	{
@@ -82,18 +87,20 @@ public class MemberTokenHandler : MonoBehaviour, IAttackAnimation
 		int extraArmorMod=0;
 		if (defenseMode) {extraArmorMod=defenseModifier;}
 		int realDmg=myMember.TakeDamage(damage,extraArmorMod,true);
+		//if (myMember.health<=0) EncounterCanvasHandler.main.RemoveEncounterMember(myMember);
 		return realDmg;
 	}
 	
 	public void FinishTurn(bool turnSkipped)
 	{
 		if (turnSkipped && !moveTaken) {defenseMode=true;}
+		if (!turnSkipped) {staminaRegenEnabled=false;}
 		turnTaken=true;
 	}
 	
 	public void NextTurn()
 	{
-		const int staminaRegenAmount=3;
+		int staminaRegenAmount=myMember.staminaRegen;
 		if (staminaRegenEnabled) myMember.stamina+=staminaRegenAmount;
 		moveTaken=false;
 		turnTaken=false;
@@ -104,7 +111,7 @@ public class MemberTokenHandler : MonoBehaviour, IAttackAnimation
 	
 	public bool TryMove()
 	{
-		const int moveStaminaCost=3;
+		int moveStaminaCost=myMember.staminaMoveCost;
 		if (myMember.stamina>=moveStaminaCost) 
 		{
 			myMember.stamina-=moveStaminaCost;
@@ -165,7 +172,7 @@ public class MemberTokenHandler : MonoBehaviour, IAttackAnimation
 	{
 		bool enemyReachable=false;
 		
-		if (!moveTaken)
+		//if (!moveTaken)
 		{
 			isRanged=rangedMode;
 			int attackRange;

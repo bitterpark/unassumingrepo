@@ -93,7 +93,7 @@ public class EncounterMap:WeightedGraph<Location>
 	
 	public int Cost(Location a, Location b)
 	{
-		return map[new Vector2(b.x,b.y)].barricadeInRoom!=null ? 10 : 1;
+		return map[new Vector2(b.x,b.y)].barricadeInRoom!=null ? 2 : 1;
 	}
 	
 	public IEnumerable<Location> Neighbors(Location id)

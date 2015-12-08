@@ -44,8 +44,8 @@ public class PartyMemberCanvasHandler : MonoBehaviour {
 		nameText.text=""+assignedMember.name;
 		healthText.text="Health:"+assignedMember.health;
 		staminaText.text="Stamina:"+assignedMember.stamina;
-		hungerText.text="Hunger:"+assignedMember.hunger;
+		hungerText.text="Hunger:"+assignedMember.GetHunger();
 		moraleText.text="Morale:"+assignedMember.morale;
-		fatigueText.text="Fatigue:"+assignedMember.fatigue;//
+		fatigueText.text="Fatigue:"+assignedMember.GetFatigue();//
 	}
 }

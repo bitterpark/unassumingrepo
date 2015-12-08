@@ -58,7 +58,7 @@ public class FoodSpoilage:GameEvent
 		int partyFoodCount=0;
 		foreach (InventoryItem item in PartyManager.mainPartyManager.GetPartyInventory())
 		{
-			if (item.GetType()==typeof(PerishableFood)) {partyFoodCount+=1;}
+			if (item.GetType()==typeof(FoodSmall) || item.GetType()==typeof(FoodBig)) {partyFoodCount+=1;}
 			if (partyFoodCount>=2) {conditionsAreMet=true; break;}
 		}
 		return conditionsAreMet;
@@ -85,13 +85,14 @@ public class FoodSpoilage:GameEvent
 					eventResult="Realizing you can't be picky at a time like this, the party sets out eating old eggs, bread, meat products and other persihables. Aside from some minor stomach gurgling, nobody suffers any ill effects and everyone is energized by the meal.\n\nFood is halved, everyone is fed";	
 					foreach (PartyMember member in PartyManager.mainPartyManager.partyMembers)
 					{
-						member.hunger=0;
+						member.SetHunger(0);
 					}
 					
-					List<PerishableFood> foodItems=new List<PerishableFood>();
+					List<InventoryItem> foodItems=new List<InventoryItem>();
 					foreach (InventoryItem item in PartyManager.mainPartyManager.GetPartyInventory())
 					{
-						if (item.GetType()==typeof(PerishableFood)) {/*foodCount+=1;*/ foodItems.Add(item as PerishableFood);}
+						if (item.GetType()==typeof(FoodBig) || item.GetType()==typeof(FoodSmall)) 
+						{/*foodCount+=1;*/ foodItems.Add(item as InventoryItem);}
 					}
 					int foodCount=Mathf.RoundToInt(foodItems.Count*0.5f);
 					for (int i=0; i<foodCount; i++)
@@ -111,10 +112,11 @@ public class FoodSpoilage:GameEvent
 						//PartyManager.mainPartyManager.foodSupply-=1;
 					}
 					//PartyManager.mainPartyManager.foodSupply=Mathf.RoundToInt(PartyManager.mainPartyManager.foodSupply*0.5f);
-					List<PerishableFood> foodItems=new List<PerishableFood>();
+					List<InventoryItem> foodItems=new List<InventoryItem>();
 					foreach (InventoryItem item in PartyManager.mainPartyManager.GetPartyInventory())
 					{
-						if (item.GetType()==typeof(PerishableFood)) {/*foodCount+=1;*/ foodItems.Add(item as PerishableFood);}
+						if (item.GetType()==typeof(FoodBig) || item.GetType()==typeof(FoodSmall)) 
+						{/*foodCount+=1;*/ foodItems.Add(item as InventoryItem);}
 					}
 					int foodCount=Mathf.RoundToInt(foodItems.Count*0.5f);
 					for (int i=0; i<foodCount; i++)
@@ -128,10 +130,11 @@ public class FoodSpoilage:GameEvent
 			{
 				eventResult="Deciding not to risk it, you throw out the dodgy foods\n\n-50% perishable food";
 				//PartyManager.mainPartyManager.foodSupply=Mathf.RoundToInt(PartyManager.mainPartyManager.foodSupply*0.5f);
-				List<PerishableFood> foodItems=new List<PerishableFood>();
+				List<InventoryItem> foodItems=new List<InventoryItem>();
 				foreach (InventoryItem item in PartyManager.mainPartyManager.GetPartyInventory())
 				{
-					if (item.GetType()==typeof(PerishableFood)) {/*foodCount+=1;*/ foodItems.Add(item as PerishableFood);}
+					if (item.GetType()==typeof(FoodBig) || item.GetType()==typeof(FoodSmall)) 
+					{/*foodCount+=1;*/ foodItems.Add(item as InventoryItem);}
 				}
 				int foodCount=Mathf.RoundToInt(foodItems.Count*0.5f);
 				for (int i=0; i<foodCount; i++)
@@ -305,11 +308,11 @@ public class CacheInAnomaly:GameEvent
 				if (Random.value<0.5f)
 				{
 					eventResult=volunteer.name+" volunteers to try and move across. The roofs are moist and slippery, and "+volunteer.name+" loses balance several times, but manages to recover and safely reaches the supplies. Loaded with bags,"+volunteer.name+" somehow makes it back across, covered in sweat but unharmed\n\n+2 food, +10 ammo, -1 stamina for "+volunteer.name;
-					PartyManager.mainPartyManager.GainItems(new Food());
-					PartyManager.mainPartyManager.GainItems(new Food());
-					PartyManager.mainPartyManager.GainItems(new Food());
+					PartyManager.mainPartyManager.GainItems(new FoodSmall());
+					PartyManager.mainPartyManager.GainItems(new FoodBig());
+					PartyManager.mainPartyManager.GainItems(new FoodBig());
 					PartyManager.mainPartyManager.ammo+=10;
-					volunteer.stamina-=1;
+					volunteer.ChangeFatigue(10);
 				}
 				else
 				{
@@ -317,7 +320,7 @@ public class CacheInAnomaly:GameEvent
 					eventResult=volunteer.name+" navigates the first few cars with surprising nimbleness and grace, but an inclined hatchback roof knocks them off-balance.\n"+volunteer.name+" manages to grab an upper trunk of another nearby car at the last second, but their left foot dips into the drink all the way to their ankle. A terrible scream follows, but a surge of adrenaline causes "+volunteer.name+" to pull themselves up. With one foot badly boiled, they abandon the supplies, and somehow manage to crawl back to safety.\n\n-"+damage+" health for "+volunteer.name;
 					if (volunteer.health<damage) {damage=volunteer.health-1;}
 					volunteer.TakeDamage(damage,false);
-					volunteer.stamina-=1;
+					volunteer.ChangeFatigue(10);
 				}
 				break;
 			}
@@ -584,10 +587,12 @@ public class LowMoraleFight:GameEvent
 		PartyMember normalMember=null;
 		foreach (PartyMember member in PartyManager.mainPartyManager.partyMembers)
 		{
-			if (member.morale<=moraleThreshold) 
+			
+			if (member.morale<=moraleThreshold && angryMember==null) 
 			{
 				angryMember=member;
-			} else {normalMember=member;}
+			}
+			else normalMember=member;
 			if (angryMember!=null && normalMember!=null) {break;}
 		}
 		if (angryMember==null | normalMember==null) {throw new System.Exception("Null members for LowMoraleFight!");}
@@ -644,10 +649,12 @@ public class LowMoraleEnmity:GameEvent
 		PartyMember normalMember=null;
 		foreach (PartyMember member in PartyManager.mainPartyManager.partyMembers)
 		{
-			if (member.morale<=moraleThreshold) 
+			
+			if (member.morale<=moraleThreshold && angryMember==null) 
 			{
 				angryMember=member;
-			} else {normalMember=member;}
+			} 
+			else normalMember=member;
 			if (angryMember!=null && normalMember!=null) {break;}
 		}
 		if (angryMember==null | normalMember==null) {throw new System.Exception("Null members for LowMoraleEnmity!");}

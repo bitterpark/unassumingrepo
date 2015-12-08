@@ -26,7 +26,7 @@ public class PartyManager : MonoBehaviour {
 	Dictionary<PartyMember,PartyMemberCanvasHandler> partyMemberCanvases; 
 	
 	const int moveFatigueCost=10;
-	const int encounterFatigueCost=10;
+	//const int encounterFatigueCost=10;
 	
 	public int ammo
 	{
@@ -77,8 +77,15 @@ public class PartyManager : MonoBehaviour {
 		//AddNewPartyMember(new PartyMember());
 		//AddNewPartyMember(new PartyMember());
 		partyInventory=new List<InventoryItem>();
-		partyInventory.Add(new Food());
-		partyInventory.Add (new Food());
+		partyInventory.Add(new FoodBig());
+		partyInventory.Add (new FoodSmall());
+		//partyInventory.Add(new SettableTrap());
+		//partyInventory.Add(new SettableTrap());
+		//partyInventory.Add(new SettableTrap());
+		partyInventory.Add(new Knife());
+		partyInventory.Add (new Knife());
+		partyInventory.Add (new Axe());
+		partyInventory.Add (new Axe());
 		//partyInventory.Add(new AmmoBox());
 		//partyInventory.Add (new AssaultRifle());
 		//partyInventory.Add (new AssaultRifle());
@@ -196,7 +203,7 @@ public class PartyManager : MonoBehaviour {
 			mapCoordY=y;
 			if (moveLength>0) 
 			{
-				foreach(PartyMember member in partyMembers) {member.fatigue+=moveFatigueCost;}
+				foreach(PartyMember member in partyMembers) {member.ChangeFatigue(moveFatigueCost);}
 				PassTime(1);
 			}
 			
@@ -211,12 +218,19 @@ public class PartyManager : MonoBehaviour {
 		//}
 		//return moveSuccesful;
 	}
-	
+	/*
 	public void EnterPartyIntoEncounter(List<PartyMember> encounterMembers)
 	{
 		PassTime(1);
-		foreach (PartyMember member in encounterMembers) member.fatigue+=encounterFatigueCost;
-	}
+		foreach (PartyMember member in encounterMembers) member.ChangeFatigue(encounterFatigueCost);
+	}*/
+	/*
+	public void MemberLeavesEncounter(PartyMember leavingMember)
+	{
+		//PassTime(1);
+		//foreach (PartyMember member in encounterMembers) member.ChangeFatigue(encounterFatigueCost);
+		leavingMember.ChangeFatigue(encounterFatigueCost);
+	}*/
 	
 	public void GainItems(InventoryItem newItem)
 	{
@@ -255,8 +269,8 @@ public class PartyManager : MonoBehaviour {
 	{
 		if (partyMembers.Contains(member))
 		{
-			member.activeStatusEffects.Add(effect);
-			partyMemberCanvases[member].AddStatusEffectToken(effect);
+			//member.activeStatusEffects.Add(effect);
+			if (member.AddStatusEffect(effect)) partyMemberCanvases[member].AddStatusEffectToken(effect);
 		}
 	}
 	

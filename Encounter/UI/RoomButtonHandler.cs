@@ -245,12 +245,18 @@ public class RoomButtonHandler : MonoBehaviour//, IDropHandler
 	{
 		//Compiler made me assign this
 		InventoryItem.LootItems itemType=InventoryItem.LootItems.Ammo;
+		foreach (InventoryItem item in assignedRoom.LootRoom())
+		{
+			assignedRoom.AddFloorItem(item);
+			AddFloorItem(item);
+		}
+		/*
 		if (assignedRoom.LootRoom(out itemType))
 		{
 			InventoryItem newItem=InventoryItem.GetLootingItem(itemType);
 			assignedRoom.AddFloorItem(newItem);
 			AddFloorItem(newItem);
-		}
+		}*/
 		if (assignedRoom.hasLoot!=hasLoot) 
 		{
 			hasLoot=assignedRoom.hasLoot;

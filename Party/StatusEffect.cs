@@ -10,6 +10,8 @@ public abstract class StatusEffect
 	public virtual void TurnOverEffect() {}
 	public virtual void TimePassEffect(int hoursPassed) {}
 	public virtual void CleanupEffect() {}
+	public virtual void StackEffect() {}
+	public bool canStack=false;
 }
 
 public class Bleed:StatusEffect
@@ -25,7 +27,7 @@ public class Bleed:StatusEffect
 	}
 	//int affectedPartyMemberIndex;
 	PartyMember affectedMember;
-	int hoursDuration=3;
+	int hoursDuration=1;
 	int hoursPassed=0;
 	int bleedDmg=5;
 	
@@ -59,6 +61,11 @@ public class Bleed:StatusEffect
 		PartyManager.TimePassed-=TimePassEffect;
 	}
 	
+	public override void StackEffect ()
+	{
+		hoursDuration+=hoursDuration;
+	}
+	
 	public override string GetMouseoverDescription ()
 	{
 		return _name+"\n-"+bleedDmg+" health every hour\nDuration:"+(hoursDuration-hoursPassed)+" hours";
@@ -69,6 +76,7 @@ public class Bleed:StatusEffect
 		//affectedPartyMemberIndex=affectedMemberIndex;
 		affectedMember=member;
 		PartyManager.TimePassed+=TimePassEffect;
+		canStack=true;
 	}
 }
 

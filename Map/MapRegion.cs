@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using System.Collections;
 using UnityEngine.EventSystems;
 
@@ -110,7 +110,7 @@ public class MapRegion : MonoBehaviour
 			if (_isHive) 
 			{
 				//transform current encounter into a hive
-				regionalEncounter=new Hive(this,regionalEncounter.encounterLootType,regionalEncounter.encounterEnemyType);
+				regionalEncounter=new Hive(this,regionalEncounter.encounterAreaType,regionalEncounter.encounterEnemyType);
 				PartyManager.TimePassed+=GenerateHorde;
 			}
 			else {PartyManager.TimePassed-=GenerateHorde;}
@@ -139,14 +139,14 @@ public class MapRegion : MonoBehaviour
 				{
 					if (scouted)
 					{
-						switch (regionalEncounter.encounterLootType)
+						switch (regionalEncounter.encounterAreaType)
 						{
-							case Encounter.LootTypes.Hospital: {GetComponent<SpriteRenderer>().sprite=hospitalSprite; break;}
-							case Encounter.LootTypes.Apartment: {GetComponent<SpriteRenderer>().sprite=apartmentSprite; break;}
-							case Encounter.LootTypes.Store: {GetComponent<SpriteRenderer>().sprite=storeSprite; break;}
-							case Encounter.LootTypes.Warehouse:{GetComponent<SpriteRenderer>().sprite=warehouseSprite; break;}
-							case Encounter.LootTypes.Police: {GetComponent<SpriteRenderer>().sprite=policeStationSprite; break;}
-							case Encounter.LootTypes.Endgame: {GetComponent<SpriteRenderer>().sprite=radioStationSprite; break;}
+							case Encounter.AreaTypes.Hospital: {GetComponent<SpriteRenderer>().sprite=hospitalSprite; break;}
+							case Encounter.AreaTypes.Apartment: {GetComponent<SpriteRenderer>().sprite=apartmentSprite; break;}
+							case Encounter.AreaTypes.Store: {GetComponent<SpriteRenderer>().sprite=storeSprite; break;}
+							case Encounter.AreaTypes.Warehouse:{GetComponent<SpriteRenderer>().sprite=warehouseSprite; break;}
+							case Encounter.AreaTypes.Police: {GetComponent<SpriteRenderer>().sprite=policeStationSprite; break;}
+							case Encounter.AreaTypes.Endgame: {GetComponent<SpriteRenderer>().sprite=radioStationSprite; break;}
 						}
 					}
 					else
@@ -204,7 +204,7 @@ public class MapRegion : MonoBehaviour
 	{
 		hasCamp=true;
 		GameObject campToken=Instantiate(campTokenPrefab);
-		//campToken.transform.SetParent(this,false);
+		campToken.transform.SetParent(this.transform);//,true);
 		campToken.transform.position=this.transform.position;
 	}
 	
@@ -250,7 +250,7 @@ public class MapRegion : MonoBehaviour
 						{
 							areaDescription+=regionalEncounter.lootDescription+"\n";
 							areaDescription+="Enemies: "+regionalEncounter.enemyDescription+"\n";
-							areaDescription+="Threat level: "+threatLevel;
+							areaDescription+="Ambush threat: "+threatLevel;
 							//if (isHive) {areaDescription+="\nHive";}
 						}
 					}

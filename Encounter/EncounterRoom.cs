@@ -5,7 +5,7 @@ using System.Collections.Generic;
 
 public class Barricade
 {
-	public int health=1;
+	public int health=3;
 }
 
 public class EncounterRoom
@@ -59,6 +59,7 @@ public class EncounterRoom
 	//public EncounterEnemy enemyInRoom
 	public List<EncounterEnemy> enemiesInRoom=new List<EncounterEnemy>();
 	
+	/////LOOT
 	public bool hasLoot
 	{
 		get {return _hasLoot;}
@@ -67,13 +68,15 @@ public class EncounterRoom
 			_hasLoot=value;
 			if (_hasLoot) 
 			{
-				if (Random.value<0.5f) {lootIsLocked=true;}
+				if (Random.value<0.7f) {lootIsLocked=true;}
 			}
 			else {lootIsLocked=false;}
 		}
 	
 	}
 	public bool _hasLoot=false;
+	public List<InventoryItem> lootInRoom=new List<InventoryItem>();
+	
 	public bool lootIsLocked
 	{
 		get {return _lootIsLocked;}
@@ -152,6 +155,12 @@ public class EncounterRoom
 		hasEnemies=true;
 	}
 	
+	public void AddLootItem(InventoryItem newLootItem)
+	{
+		lootInRoom.Add(newLootItem);
+		hasLoot=true;
+	}	
+	
 	//These two methods are called from the corresponding RoomButton, the button is called first, and then it updates the assignedRoom
 	public void MoveEnemyIn(EncounterEnemy newEnemy)
 	{
@@ -218,6 +227,7 @@ public class EncounterRoom
 	}
 	
 	//This method is only called from the corresponding RoomButton, the button is called first, and then it updates the assignedRoom
+	/*
 	public bool LootRoom(out InventoryItem.LootItems item)
 	{
 		hasLoot=false;
@@ -229,6 +239,15 @@ public class EncounterRoom
 			if (randomRes<=chance) {item=parentEncounter.lootChances[chance]; lootFound=true;}
 		}
 		return lootFound;
+	}*/
+	//This method is only called from the corresponding RoomButton, the button is called first, and then it updates the assignedRoom
+	
+	public List<InventoryItem> LootRoom()
+	{
+		hasLoot=false;
+		List<InventoryItem> foundLoot=new List<InventoryItem>(lootInRoom);
+		lootInRoom.Clear();
+		return foundLoot;
 	}
 	
 	public void BashBarricade(int bashStrength)
@@ -245,10 +264,14 @@ public class EncounterRoom
 	public void BuildBarricade()
 	{
 		if (!canBarricade) throw new System.Exception("Trying to barricade an unbarricadeable room!");
-		if (barricadeInRoom==null) barricadeInRoom=new Barricade();
+		if (barricadeInRoom==null) 
+		{
+			barricadeInRoom=new Barricade();
+			barricadeInRoom.health=3;
+		}
 		else
 		{
-			barricadeInRoom.health+=1;
+			barricadeInRoom.health+=3;
 		}
 		barricadeMaterials-=1;
 	}

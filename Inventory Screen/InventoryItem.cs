@@ -12,7 +12,9 @@ public abstract class InventoryItem
 	
 	public virtual int GetWeight() {return 1;}
 	
-	public enum LootItems {Medkits,Bandages,Food,PerishableFood,Ammo,Flashlight,Radio,SettableTrap,AssaultRifle,Shotgun,NineM,Pipe,Knife,Axe,ArmorVest}
+	//Deprecated
+	public enum LootItems {Medkits,Bandages,Food/*,PerishableFood*/,Ammo,Flashlight,Radio,SettableTrap,AssaultRifle,Shotgun,NineM,Pipe,Knife,Axe,ArmorVest}
+	public enum LootMetatypes {Medical,FoodItems,Melee,Guns,Equipment,Radio}
 	
 	//Deprecated, remove later!!!
 	public static string GetLootingDescription(LootItems itemType)
@@ -21,7 +23,7 @@ public abstract class InventoryItem
 		switch (itemType)
 		{
 			case LootItems.Ammo:{description="You find an ammo box";break;}
-			case LootItems.PerishableFood: {description="You find some perishable food"; break;}
+			//case LootItems.PerishableFood: {description="You find some perishable food"; break;}
 			case LootItems.Food:{description="You find a preserved ration";break;}
 			case LootItems.Bandages: {description="You find some bandages"; break;}
 			case LootItems.Medkits:{description="You find a medkit";break;}
@@ -39,6 +41,108 @@ public abstract class InventoryItem
 		return description;
 	}
 	
+	public static List<InventoryItem> GenerateLootSet(LootMetatypes metaType)
+	{
+		float randomRoll=Random.value;
+		List<InventoryItem> setItems=new List<InventoryItem>();
+		switch(metaType)
+		{
+			case LootMetatypes.FoodItems:
+			{
+				setItems.Add (new FoodSmall());
+				setItems.Add (new FoodSmall());
+				if (randomRoll<0.5f)
+				{
+					setItems.Clear();
+					setItems.Add (new FoodBig());
+				}
+				if (randomRoll<0.25f)
+				{
+					setItems.Clear();
+					setItems.Add (new FoodSmall());
+				}
+				break;
+			}
+			case LootMetatypes.Medical:
+			{
+				//Default <1 option
+				setItems.Add (new Medkit());
+				//Other options
+				if (randomRoll<0.4f)
+				{
+					setItems.Clear();
+					setItems.Add (new Medkit());
+					setItems.Add (new Bandages());
+				}
+				if (randomRoll<0.2f)
+				{
+					setItems.Clear();
+					setItems.Add (new Bandages());
+					setItems.Add (new Bandages());
+				}
+				if (randomRoll<0.1f)
+				{
+					setItems.Clear();
+					setItems.Add (new Medkit());
+					setItems.Add (new Medkit());
+				}
+				break;
+			}
+			case LootMetatypes.Melee:
+			{
+				//Default <1 option
+				setItems.Add (new Knife());
+				//Other options
+				if (randomRoll<0.3f)
+				{
+					setItems.Clear();
+					setItems.Add (new Axe());
+				}
+				break;
+			}
+			case LootMetatypes.Guns:
+			{
+				//Default <1 option
+				setItems.Add (new AmmoBox());
+				//Other options
+				if (randomRoll<0.4f)
+				{
+					setItems.Clear();
+					setItems.Add (new NineM());
+				}
+				if (randomRoll<0.2f)
+				{
+					setItems.Clear();
+					setItems.Add (new AssaultRifle());
+				}
+				if (randomRoll<0.1f)
+				{
+					setItems.Clear();
+					setItems.Add (new Shotgun());
+				}
+				break;
+			}
+			case LootMetatypes.Equipment:
+			{
+				//Default <1 option
+				setItems.Add (new Flashlight());
+				//Other options
+				if (randomRoll<0.6f)
+				{
+					setItems.Clear();
+					setItems.Add (new ArmorVest());
+				}
+				break;
+			}
+			case LootMetatypes.Radio:
+			{
+				setItems.Add(new Radio());
+				break;
+			}
+		}
+		return setItems;
+	}
+	//deprecated
 	public static InventoryItem GetLootingItem(LootItems itemType)
 	{
 		InventoryItem lootedItem=null;
@@ -46,8 +150,8 @@ public abstract class InventoryItem
 		{
 			case LootItems.Ammo:{lootedItem=new AmmoBox(); break;}
 			//FOOD
-			case LootItems.Food:{lootedItem=new Food(); break;}
-			case LootItems.PerishableFood: {lootedItem=new PerishableFood(PartyManager.mainPartyManager.timePassed); break;}
+			//case LootItems.Food:{lootedItem=new Food(); break;}
+			//case LootItems.PerishableFood: {lootedItem=new PerishableFood(PartyManager.mainPartyManager.timePassed); break;}
 			//MEDS
 			case LootItems.Medkits:{lootedItem=new Medkit(); break;}
 			case LootItems.Bandages:{lootedItem=new Bandages(); break;}
@@ -101,7 +205,7 @@ public class SettableTrap: InventoryItem
 
 public class AmmoBox:InventoryItem
 {
-	int ammoAmount=10;
+	int ammoAmount=12;
 	public override Sprite GetItemSprite() {return SpriteBase.mainSpriteBase.ammoBoxSprite;}
 	
 	public override bool UseAction(PartyMember member)
@@ -118,7 +222,7 @@ public class AmmoBox:InventoryItem
 public class Medkit:InventoryItem
 {
 	//int healAmount=20;
-	float healPercentage=0.20f;
+	float healPercentage=0.35f;
 	public override Sprite GetItemSprite() {return SpriteBase.mainSpriteBase.medkitSprite;}
 	
 	public override bool UseAction(PartyMember member)
@@ -179,10 +283,10 @@ public class Bandages: InventoryItem
 	
 }
 
-public class Food:InventoryItem
+public class FoodBig:InventoryItem
 {
-	int nutritionAmount=100;
-	public override Sprite GetItemSprite() {return SpriteBase.mainSpriteBase.foodSprite;}
+	int nutritionAmount=50;
+	public override Sprite GetItemSprite() {return SpriteBase.mainSpriteBase.foodSpriteBig;}
 	
 	public override bool UseAction(PartyMember member)
 	{
@@ -198,16 +302,44 @@ public class Food:InventoryItem
 	
 	public override string GetMouseoverDescription ()
 	{
-		return "Preservable ration\nRemoves all hunger";
+		return "Canned food\nRestores "+nutritionAmount+" hunger";
 	}
 }
 
+public class FoodSmall:InventoryItem
+{
+	int nutritionAmount=20;
+	public override Sprite GetItemSprite() {return SpriteBase.mainSpriteBase.foodSpriteSmall;}
+	
+	public override bool UseAction(PartyMember member)
+	{
+		bool use=false;
+		if (member.Eat(nutritionAmount))//PartyManager.mainPartyManager.FeedPartyMember(member,100))
+		{
+			//PartyManager.mainPartyManager.partyInventory.Remove(this);
+			//PartyManager.mainPartyManager.RemoveItems(this);
+			use=true;
+		}
+		return use;
+	}
+	
+	public override string GetMouseoverDescription ()
+	{
+		return "Junk food\nRestores "+nutritionAmount+" hunger";
+	}
+}
+/*
 public class PerishableFood:InventoryItem
 {
 	int nutritionAmount=100;
 	int expireTime=5;
 	int healthPentalty=10;
 	int pickupHour;
+	
+	public PerishableFood()
+	{
+		pickupHour=PartyManager.mainPartyManager.timePassed;
+	}
 	
 	public PerishableFood (int pickupTime)
 	{
@@ -239,7 +371,7 @@ public class PerishableFood:InventoryItem
 	}
 
 }
-
+*/
 public class Radio:InventoryItem
 {
 	public override Sprite GetItemSprite() {return SpriteBase.mainSpriteBase.radioSprite;}
@@ -434,26 +566,43 @@ public abstract class MeleeWeapon:Weapon
 	{
 		return GetName()+"\nDamage:"+GetMinDamage()+"-"+GetMaxDamage()+"\nStamina per hit:"+GetStaminaUse()+"\n Weight:"+GetWeight();
 	}
-	public override int GetDamage (float modifier)
+	public int GetDamage (float moraleModifier, float additionModifier)
 	{
-		int actualDamage=base.GetDamage(modifier);
+		//int actualDamage=base.GetDamage(modifier);
+		/*
+		int rawDamage=Mathf.RoundToInt(GaussianRandom.GetFiveStepRange(GetMinDamage(),GetMaxDamage())+modifier);//Random.Range(GetMinDamage()-0.5f,GetMaxDamage()+0.5f)+modifier);
+		int actualDamage=Mathf.Clamp(rawDamage,GetMinDamage(),GetMaxDamage());
+		return actualDamage;
+		*/
+		float missingStaminaMod=Mathf.Min(1f,(float)EncounterCanvasHandler.main.selectedMember.stamina/(float)GetStaminaUse());
+		//GameManager.DebugPrint("Dividing stamina mod result:"+(float)EncounterCanvasHandler.main.selectedMember.stamina/(float)GetStaminaUse());
+		//GameManager.DebugPrint("Missing stamina mod is:"+missingStaminaMod);
+		float adjustedMinDamage=(GetMinDamage()+additionModifier)*missingStaminaMod;
+		float adjustedMaxDamage=(GetMaxDamage()+additionModifier)*missingStaminaMod;
+		float rawDamage=GaussianRandom.GetFiveStepRange(adjustedMinDamage,adjustedMaxDamage)+moraleModifier;
+		//GameManager.DebugPrint("Actual min:"+adjustedMinDamage);
+		//GameManager.DebugPrint("Actual max:"+adjustedMaxDamage);
+		//GameManager.DebugPrint("Raw damage value"+rawDamage);
+		//GameManager.DebugPrint("Clamp Result:"+Mathf.Clamp(rawDamage,adjustedMinDamage,adjustedMaxDamage));
+		int actualDamage=Mathf.RoundToInt(Mathf.Clamp(rawDamage,adjustedMinDamage,adjustedMaxDamage));
+		/*
 		if (EncounterCanvasHandler.main.selectedMember.stamina<GetStaminaUse()) 
 		{
 			actualDamage=GetMinDamage();	
-		}
+		}*/
 		return actualDamage;
 	}
-	public int GetDamageRoll(float modifier)
-	{
-		return base.GetDamage(modifier);
-	}
+	//public int GetDamageRoll(float modifier)
+	//{
+		//return base.GetDamage(modifier);
+	//}
 }
 
 public class Pipe:MeleeWeapon
 {
-	public int weaponMaxDamage=5;
-	public int weaponMinDamage=1;
-	int staminaUse=4;
+	public int weaponMaxDamage=11;
+	public int weaponMinDamage=7;
+	int staminaUse=3;
 	public string name="Pipe";
 	
 	public override int GetMaxDamage() {return weaponMaxDamage;}
@@ -475,11 +624,11 @@ public class Pipe:MeleeWeapon
 
 public class Knife:MeleeWeapon
 {
-	public int weaponMaxDamage=6;
-	public int weaponMinDamage=2;
+	public int weaponMaxDamage=5;
+	public int weaponMinDamage=1;
 	
 	public string name="Knife";
-	int staminaUse=4;
+	int staminaUse=2;
 	
 	public override int GetMaxDamage() {return weaponMaxDamage;}
 	public override int GetMinDamage() {return weaponMinDamage;}
@@ -499,11 +648,11 @@ public class Knife:MeleeWeapon
 
 public class Axe:MeleeWeapon
 {
-	public int weaponMaxDamage=7;
-	public int weaponMinDamage=3;
+	public int weaponMaxDamage=20;
+	public int weaponMinDamage=16;
 	//int weakDamage=3;
 	public string name="Axe";
-	int staminaUse=5;
+	int staminaUse=4;
 	
 	public override int GetMaxDamage() {return weaponMaxDamage;}
 	public override int GetMinDamage() {return weaponMinDamage;}

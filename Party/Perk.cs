@@ -44,7 +44,7 @@ public abstract class Perk
 
 public class Tough:Perk
 {
-	int healthUpgrade=25;
+	float healthMod=0.25f;
 	//string name="Tough";
 	
 	//public override string GetName (){return name;}
@@ -53,13 +53,13 @@ public class Tough:Perk
 		name="Tough";
 		oppositePerk=typeof(Scrawny);
 	}
-	public override void ActivatePerk(PartyMember member){member.maxHealth+=healthUpgrade;}
-	public override string GetMouseoverDescription (){return "Takes more punishment\n\n+"+healthUpgrade+" max health";}
+	public override void ActivatePerk(PartyMember member){member.maxHealth=Mathf.Max(1,Mathf.RoundToInt(member.maxHealth*(1+healthMod)));}//+=healthUpgrade;}
+	public override string GetMouseoverDescription (){return "Takes more punishment\n\nIncreased max health";}
 }
 
 public class Scrawny:Perk
 {
-	int healthDowngrade=30;
+	float healthMod=-0.25f;
 	// name="Scrawny";
 	public Scrawny ()
 	{
@@ -67,13 +67,13 @@ public class Scrawny:Perk
 		oppositePerk=typeof(Tough);
 	}
 	//public override string GetName (){return name;}
-	public override void ActivatePerk(PartyMember member){member.maxHealth-=healthDowngrade;}
-	public override string GetMouseoverDescription (){return "Easy to kill\n\n-"+healthDowngrade+" max health";}
+	public override void ActivatePerk(PartyMember member){member.maxHealth=Mathf.Max(1,Mathf.RoundToInt(member.maxHealth*(1+healthMod)));}
+	public override string GetMouseoverDescription (){return "Easy to kill\n\nReduced max health";}
 }
 
 public class Fit:Perk
 {
-	int staminaUpgrade=5;
+	int staminaUpgrade=2;
 	//string name="Enduring";
 	public Fit ()
 	{
@@ -87,7 +87,7 @@ public class Fit:Perk
 
 public class Slob:Perk
 {
-	int staminaDowngrade=5;
+	int staminaDowngrade=2;
 	//string name="Weak";
 	public Slob ()
 	{
@@ -319,7 +319,7 @@ public class WeakBack: Perk
 
 public class Medic: Perk
 {
-	public static int healBonus=10;
+	public static int healBonus=15;
 	public Medic ()
 	{
 		name="Medic";

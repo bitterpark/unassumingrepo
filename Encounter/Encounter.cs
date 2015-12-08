@@ -11,30 +11,119 @@ public class Encounter
 	
 	protected const int safeDistanceFromEntrance=1;
 	const float barricadeChance=0.1f;//0.08f;
+	const int normalChestCount=2;
+	const float baselineEnemyPerRoomRatio=0.4f;
 	
 	public string lootDescription="";
 	public string enemyDescription="";
 	
-	public enum LootTypes {Apartment,Warehouse,Store,Police,Hospital,Endgame,Horde};
-	public LootTypes encounterLootType;
+	public enum AreaTypes {Apartment,Warehouse,Store,Police,Hospital,Endgame,Horde};
+	public AreaTypes encounterAreaType;
 	
 	//key is dropchance percentage
-	public Dictionary<float,InventoryItem.LootItems> lootChances;
+	//public Dictionary<float,InventoryItem.LootItems> lootChances;
+	public Dictionary<float,InventoryItem.LootMetatypes> possibleLootTypes;
 	
 	//Used by Horde
-	public static Dictionary<float,InventoryItem.LootItems> GetLootChancesList(LootTypes areaType)
+	public static Dictionary<float,InventoryItem.LootMetatypes> GetLootTypesList(AreaTypes areaType)
 	{
 		string emptyString=null;
-		return GetLootChancesList(areaType,out emptyString);
+		return GetLootTypesList(areaType,out emptyString);
+	}
+	
+	public static InventoryItem.LootMetatypes GetChestType(AreaTypes areaType)
+	{
+		float roll=Random.value;
+		InventoryItem.LootMetatypes chestType=InventoryItem.LootMetatypes.FoodItems;//not null because value type
+		switch (areaType)
+		{
+		case AreaTypes.Apartment:
+		{
+			//Add largest number first	
+			chestType=InventoryItem.LootMetatypes.Melee;
+			if(roll<0.8f)chestType=InventoryItem.LootMetatypes.FoodItems;
+			break;
+		}
+		case AreaTypes.Hospital:
+		{
+			chestType=InventoryItem.LootMetatypes.Medical;
+			break;
+		}
+		case AreaTypes.Store:
+		{
+			chestType=InventoryItem.LootMetatypes.FoodItems;
+			break;
+		}
+		case AreaTypes.Warehouse:
+		{
+			chestType=InventoryItem.LootMetatypes.Equipment;
+			if(roll<0.4f)chestType=InventoryItem.LootMetatypes.Melee;
+			if(roll<0.2f)chestType=InventoryItem.LootMetatypes.FoodItems;
+			break;
+		}
+		case AreaTypes.Police:
+		{
+			chestType=InventoryItem.LootMetatypes.Guns;
+			break;
+		}
+		case AreaTypes.Endgame:
+		{
+			chestType=InventoryItem.LootMetatypes.Radio;
+			break;
+		}
+		}
+		return chestType;
 	}
 	//Not used by Horde
-	public static Dictionary<float,InventoryItem.LootItems> GetLootChancesList(LootTypes areaType, out string areaDescription)
+	public static Dictionary<float,InventoryItem.LootMetatypes> GetLootTypesList(AreaTypes areaType, out string areaDescription)
 	{
-		Dictionary<float, InventoryItem.LootItems>lootChances=new Dictionary<float, InventoryItem.LootItems>();
+		//Dictionary<float, InventoryItem.LootItems>lootChances=new Dictionary<float, InventoryItem.LootItems>();
+		Dictionary<float, InventoryItem.LootMetatypes> lootTypes=new Dictionary<float, InventoryItem.LootMetatypes>();
 		areaDescription="";
 		switch (areaType)
 		{
-			case LootTypes.Apartment:
+		case AreaTypes.Apartment:
+		{
+			areaDescription="An apartment building";
+			//Add largest number first	
+			lootTypes.Add(1f,InventoryItem.LootMetatypes.Melee);
+			lootTypes.Add(0.8f, InventoryItem.LootMetatypes.FoodItems);
+			break;
+		}
+		case AreaTypes.Hospital:
+		{
+			areaDescription="An empty clinic";
+			lootTypes.Add(1f,InventoryItem.LootMetatypes.Medical);
+			break;
+		}
+		case AreaTypes.Store:
+		{
+			areaDescription="An abandoned store";
+			lootTypes.Add(1f,InventoryItem.LootMetatypes.FoodItems);
+			break;
+		}
+		case AreaTypes.Warehouse:
+		{
+			areaDescription="A warehouse";
+			lootTypes.Add(1f,InventoryItem.LootMetatypes.Equipment);
+			lootTypes.Add(0.4f,InventoryItem.LootMetatypes.Melee);
+			lootTypes.Add(0.2f,InventoryItem.LootMetatypes.FoodItems);
+			break;
+		}
+		case AreaTypes.Police:
+		{
+			areaDescription="A deserted police station";
+			lootTypes.Add(1f,InventoryItem.LootMetatypes.Guns);
+			break;
+		}
+		case AreaTypes.Endgame:
+		{
+			areaDescription="An overrun radio station";
+			lootTypes.Add(1f,InventoryItem.LootMetatypes.Radio);
+			break;
+		}
+				/*
+			case AreaTypes.Apartment:
 			{
 				areaDescription="An apartment building";
 				//Add largest number first	
@@ -46,21 +135,21 @@ public class Encounter
 				lootChances.Add (0.1f, InventoryItem.LootItems.PerishableFood);
 				break;
 			}
-			case LootTypes.Hospital:
+			case AreaTypes.Hospital:
 			{
 				areaDescription="An empty clinic";
 				lootChances.Add (0.5f,InventoryItem.LootItems.Medkits);
 				lootChances.Add (0.2f, InventoryItem.LootItems.Bandages);
 				break;
 			}
-			case LootTypes.Store:
+			case AreaTypes.Store:
 			{
 				areaDescription="An abandoned store";
 				lootChances.Add (0.6f,InventoryItem.LootItems.Food);
 				lootChances.Add (0.4f,InventoryItem.LootItems.PerishableFood);
 				break;
 			}
-			case LootTypes.Warehouse:
+			case AreaTypes.Warehouse:
 			{
 				areaDescription="A warehouse";
 				lootChances.Add (0.85f,InventoryItem.LootItems.ArmorVest);
@@ -71,7 +160,7 @@ public class Encounter
 				lootChances.Add (0.1f,InventoryItem.LootItems.PerishableFood);
 				break;
 			}
-			case LootTypes.Police:
+			case AreaTypes.Police:
 			{
 				areaDescription="A deserted police station";
 				lootChances.Add (0.5f,InventoryItem.LootItems.Ammo);
@@ -79,15 +168,15 @@ public class Encounter
 				lootChances.Add (0.05f,InventoryItem.LootItems.AssaultRifle);
 				break;
 			}
-			case LootTypes.Endgame:
+			case AreaTypes.Endgame:
 			{
 				areaDescription="An overrun radio station";
 				lootChances.Add (1f,InventoryItem.LootItems.Radio);
 				break;
-			}
+			}*/
 			//case LootTypes.Horde: {break;}
 		}
-		return lootChances;
+		return lootTypes;
 	}
 	
 	//public enum EnemyTypes {Flesh,Quick,Slime,Muscle,Transient,Gasser,Spindler};
@@ -101,23 +190,23 @@ public class Encounter
 	//for endgame
 	public Encounter (bool isEndgame)
 	{
-		encounterLootType=LootTypes.Endgame;
-		lootChances=Encounter.GetLootChancesList(encounterLootType,out lootDescription);
+		encounterAreaType=AreaTypes.Endgame;
+		possibleLootTypes=Encounter.GetLootTypesList(encounterAreaType,out lootDescription);
 		encounterEnemyType=EncounterEnemy.EnemyTypes.Muscle; enemyDescription="muscle masses";
-		GenerateEncounterFromPrefabMap(PrefabAssembler.assembler.SetupEncounterMap(this,encounterLootType),1.5f);
+		GenerateEncounterFromPrefabMap(PrefabAssembler.assembler.SetupEncounterMap(this,encounterAreaType),1.5f);
 	}
 	//regular constructor
 	public Encounter ()
 	{
 		//determine area loot type
 		float lootRoll=Random.Range(0f,5f);
-		if (lootRoll<=5){encounterLootType=LootTypes.Hospital;}
-		if (lootRoll<=4){encounterLootType=LootTypes.Police;}
-		if (lootRoll<=3) {encounterLootType=LootTypes.Apartment;}
-		if (lootRoll<=2) {encounterLootType=LootTypes.Store;}
-		if (lootRoll<=1) {encounterLootType=LootTypes.Warehouse;}
+		if (lootRoll<=5){encounterAreaType=AreaTypes.Hospital;}
+		if (lootRoll<=4){encounterAreaType=AreaTypes.Police;}
+		if (lootRoll<=3) {encounterAreaType=AreaTypes.Apartment;}
+		if (lootRoll<=2) {encounterAreaType=AreaTypes.Store;}
+		if (lootRoll<=1) {encounterAreaType=AreaTypes.Warehouse;}
 		
-		lootChances=Encounter.GetLootChancesList(encounterLootType,out lootDescription);
+		possibleLootTypes=Encounter.GetLootTypesList(encounterAreaType,out lootDescription);
 		
 		//determine area enemy type
 		float enemiesRoll=Random.Range(0f,7f);
@@ -130,7 +219,7 @@ public class Encounter
 		if (enemiesRoll<=1) {encounterEnemyType=EncounterEnemy.EnemyTypes.Slime;}
 		enemyDescription=EncounterEnemy.GetMapDescription(encounterEnemyType);
 		//GenerateEncounter();
-		GenerateEncounterFromPrefabMap(PrefabAssembler.assembler.SetupEncounterMap(this,encounterLootType),1f);//0.15f);//0.3f);
+		GenerateEncounterFromPrefabMap(PrefabAssembler.assembler.SetupEncounterMap(this,encounterAreaType),1f);//0.15f);//0.3f);
 		//GameManager.DebugPrint("New encounter added, maxX:"+maxX);
 	}
 	
@@ -168,14 +257,29 @@ public class Encounter
 		}
 		
 		//Generate loot placement
-		int requiredLootCount=5;
-		int currentLootCount=0;
-		while (currentLootCount<requiredLootCount && roomsEligibleForLootPlacement.Count>0)
+		int requiredChestCount=normalChestCount;
+		int currentChestCount=0;
+		while (currentChestCount<requiredChestCount && roomsEligibleForLootPlacement.Count>0)
 		{
-			EncounterRoom randomlySelectedRoom=roomsEligibleForLootPlacement[Random.Range(0,roomsEligibleForLootPlacement.Count)];
-			randomlySelectedRoom.hasLoot=true;
-			currentLootCount++;
-			roomsEligibleForLootPlacement.Remove(randomlySelectedRoom);//
+			/*
+			float randomRes=Random.value;
+			
+			InventoryItem.LootItems item=InventoryItem.LootItems.Ammo; //the compiler made me assign this, it should be unassigned/null
+			bool lootFound=false;
+			foreach(float chance in lootChances.Keys)
+			{
+				if (randomRes<=chance) {item=lootChances[chance]; lootFound=true;}
+			}
+			*/
+			
+			//if (lootFound)
+			//{
+				InventoryItem.LootMetatypes chestType=GetChestType(encounterAreaType);
+				EncounterRoom randomlySelectedRoom=roomsEligibleForLootPlacement[Random.Range(0,roomsEligibleForLootPlacement.Count)];
+				foreach (InventoryItem lootItem in InventoryItem.GenerateLootSet(chestType)) randomlySelectedRoom.AddLootItem(lootItem);
+				currentChestCount++;
+				roomsEligibleForLootPlacement.Remove(randomlySelectedRoom);//
+			//}
 		}
 		
 		//Generate enemy placement
@@ -189,7 +293,11 @@ public class Encounter
 		}
 		
 		int currentEnemyCount=0;
-		while (currentEnemyCount<EncounterEnemy.GetEnemyCount(encounterEnemyType)*enemyCountModifier && roomsEligibleForEnemyPlacement.Count>0)
+		//while (currentEnemyCount<EncounterEnemy.GetEnemyCount(encounterEnemyType)*enemyCountModifier && roomsEligibleForEnemyPlacement.Count>0)
+		//Approximately between 1/3 and 1/2 of the rooms should have enemies (that's the baseline)
+		int desiredEnemyCount=
+		Mathf.RoundToInt(roomsEligibleForEnemyPlacement.Count*EncounterEnemy.GetEnemyCountModifier(encounterEnemyType)*baselineEnemyPerRoomRatio);
+		while (currentEnemyCount<desiredEnemyCount && roomsEligibleForEnemyPlacement.Count>0)
 		{
 			EncounterRoom randomlySelectedRoom=roomsEligibleForEnemyPlacement[Random.Range(0,roomsEligibleForEnemyPlacement.Count)];
 			randomlySelectedRoom.GenerateEnemy(encounterEnemyType);
@@ -245,10 +353,10 @@ public class RandomAttack:Encounter
 {
 	public RandomAttack(EncounterEnemy.EnemyTypes enemyType):base(0)
 	{
-		encounterLootType=LootTypes.Horde;
-		lootChances=Encounter.GetLootChancesList(encounterLootType);
+		encounterAreaType=AreaTypes.Horde;
+		possibleLootTypes=Encounter.GetLootTypesList(encounterAreaType);
 		encounterEnemyType=enemyType; enemyDescription=EncounterEnemy.GetMapDescription(enemyType);
-		GenerateEncounterFromPrefabMap(PrefabAssembler.assembler.SetupEncounterMap(this,encounterLootType),1f);
+		GenerateEncounterFromPrefabMap(PrefabAssembler.assembler.SetupEncounterMap(this,encounterAreaType),1f);
 	}
 }
 
@@ -267,11 +375,11 @@ public class Hive:Encounter
 		}
 	}
 	
-	public Hive(MapRegion myRegion,LootTypes lootType, EncounterEnemy.EnemyTypes enemyType):base(0)
+	public Hive(MapRegion myRegion,AreaTypes lootType, EncounterEnemy.EnemyTypes enemyType):base(0)
 	{
 		hiveRegion=myRegion;
-		encounterLootType=lootType;
-		lootChances=Encounter.GetLootChancesList(lootType,out lootDescription);
+		encounterAreaType=lootType;
+		possibleLootTypes=Encounter.GetLootTypesList(lootType,out lootDescription);
 		lootDescription+=" hive";
 		
 		encounterEnemyType=enemyType;
@@ -309,11 +417,11 @@ public class Horde:Encounter
 		mapY=mapCoordY;
 		//lootChances=new Dictionary<float, InventoryItem.LootItems>();
 		encounterEnemyType=enemyType;
-		encounterLootType=LootTypes.Horde;
-		lootChances=Encounter.GetLootChancesList(encounterLootType);
+		encounterAreaType=AreaTypes.Horde;
+		possibleLootTypes=Encounter.GetLootTypesList(encounterAreaType);
 		string enemyDesc=EncounterEnemy.GetMapDescription(encounterEnemyType);
 		lootDescription="A horde of "+enemyDesc+" !";
-		GenerateEncounterFromPrefabMap(PrefabAssembler.assembler.SetupEncounterMap(this,encounterLootType),1.5f);
+		GenerateEncounterFromPrefabMap(PrefabAssembler.assembler.SetupEncounterMap(this,encounterAreaType),1.5f);
 		//assign enemy count
 		foreach (EncounterRoom room in encounterMap.Values) 
 		{if (room.hasEnemies) {enemyCount++;}}

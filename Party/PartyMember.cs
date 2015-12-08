@@ -58,6 +58,7 @@ public class PartyMember
 	public int _health;
 	public int maxHealth=100;
 	
+	//STAMINA
 	public int stamina
 	{
 		get {return _stamina;}
@@ -71,9 +72,28 @@ public class PartyMember
 	}
 	public int _stamina; 
 	public int baseMaxStamina;
-	public int currentMaxStamina;
+	int currentMaxStamina
+	{
+		get {return _currentMaxStamina;}
+		set 
+		{
+			if (value>=4) _currentMaxStamina=value;
+			else _currentMaxStamina=4;
+		}
+	}
+	int _currentMaxStamina;
+	void RefreshMaxStamina()
+	{
+		currentMaxStamina
+		=baseMaxStamina-Mathf.RoundToInt(maxStaminaReductionFromHunger*hunger*0.01f)-Mathf.RoundToInt(maxStaminaReductionFromFatigue*fatigue*0.01f);
+		stamina=currentMaxStamina;
+	}
+	
+	public int staminaRegen=2;
+	public int staminaMoveCost=2;
+	
 	//HUNGER
-	public int hunger
+	int hunger
 	{
 		get {return _hunger;}
 		set 
@@ -84,10 +104,24 @@ public class PartyMember
 		}
 	}
 	int _hunger;
+	public int GetHunger() {return hunger;}
+	public void SetHunger(int newHunger) 
+	{
+		hunger=newHunger;
+		RefreshMaxStamina();		
+	}
+	public void ChangeHunger(int hungerDelta)
+	{
+		SetHunger(hunger+hungerDelta);
+	}
 	public int hungerIncreasePerHour;
-	public int maxStaminaReductionFromHunger=5;
+	//Deprecate this later
+	public int maxStaminaReductionFromHunger=0;
+	public int maxFatigueRestoreReductionFromHunger=40;
+	public float maxHealthRegenReductionFromHunger=0.1f;
+	
 	//FATIGUE
-	public int fatigue
+	int fatigue
 	{
 		get {return _fatigue;}
 		set 
@@ -98,9 +132,21 @@ public class PartyMember
 		}
 	}
 	int _fatigue;
-	public int fatigueIncreasePerAction;
-	public int maxStaminaReductionFromFatigue=5;
+	public int GetFatigue() {return fatigue;}
+	public void SetFatigue(int newFatigue)
+	{
+		fatigue=newFatigue;
+		RefreshMaxStamina();
+	}
+	public void ChangeFatigue(int fatigueDelta)
+	{
+		SetFatigue(fatigue+fatigueDelta);
+	}
+	//public int fatigueIncreasePerAction;
+	public int maxStaminaReductionFromFatigue=6;
+	const int fatigueIncreasePerEncounter=20;
 	
+	//MORALE
 	public int morale
 	{
 		get {return _morale;}
@@ -196,13 +242,13 @@ public class PartyMember
 		moraleDecayPerHour=1;
 		
 		hunger=0;
-		hungerIncreasePerHour=10;
+		hungerIncreasePerHour=5;
 		
 		fatigue=0;
-		fatigueIncreasePerAction=10;
+		//fatigueIncreasePerAction=10;
 		
 		armorValue=0;
-		maxCarryCapacity=2;//
+		maxCarryCapacity=4;//
 		visibilityMod=0;
 		moraleDamageMod=0.02f;
 		moraleChangeFromKills=0;
@@ -228,6 +274,22 @@ public class PartyMember
 		//equippedMeleeWeapon=new Pipe();
 		equippedRangedWeapon=null;//new AssaultRifle();//null;
 		PartyManager.TimePassed+=TimePassEffect;
+	}
+	
+	public bool AddStatusEffect(StatusEffect newEffect)
+	{
+		//bool newEffectAdded=true;
+		foreach (StatusEffect activeEffect in activeStatusEffects)
+		{
+			if(activeEffect.GetType()==newEffect.GetType())
+			{
+				//newEffectAdded=false;
+				if (activeEffect.canStack)activeEffect.StackEffect();
+				return false;
+			}
+		}
+		activeStatusEffects.Add(newEffect);
+		return true;
 	}
 	
 	void DisposePartyMember()
@@ -287,14 +349,14 @@ public class PartyMember
 		{hunger+=((newStaminaValue-stamina)*hungerIncreasePerStamPoint)*hoursPassed;}*/
 		
 		//REGEN/LOSE HEALTH
-		if (hunger<100){health+=2*hoursPassed;}
-		else{health-=2*hoursPassed;}
+		//if (hunger<100){health+=2*hoursPassed;}
+		if (hunger==100){health-=2*hoursPassed;}
 		
 		//DO MAX STAMINA
-		
+		/*
 		currentMaxStamina
 		=baseMaxStamina-Mathf.RoundToInt(maxStaminaReductionFromHunger*hunger*0.01f)-Mathf.RoundToInt(maxStaminaReductionFromFatigue*fatigue*0.01f);
-		stamina=currentMaxStamina;
+		stamina=currentMaxStamina;*/
 		//DO MORALE
 		//if party is starving, morale drops
 		if (hunger>=100) {morale-=moraleDecayPerHour*hoursPassed;}
@@ -328,7 +390,8 @@ public class PartyMember
 		{
 			if (member.isCook) {cookMult=Cook.hungerIncreaseMult; break;}
 		}	
-		hunger+=(int)(hungerIncreasePerHour*cookMult)*hoursPassed;
+		//hunger+=(int)(hungerIncreasePerHour*cookMult)*hoursPassed;
+		ChangeHunger((int)(hungerIncreasePerHour*cookMult)*hoursPassed);
 		
 		//DO RELATIONSHIPS
 		RollRelationships();
@@ -336,7 +399,13 @@ public class PartyMember
 	
 	public void RestEffect()
 	{
-		fatigue=0;
+		int newFatigue=Mathf.RoundToInt(maxFatigueRestoreReductionFromHunger*hunger*0.01f);
+		SetFatigue(newFatigue);
+		if (hunger<100)
+		{
+			float healthRegen=0.1f-maxHealthRegenReductionFromHunger*hunger*0.01f;
+			health+=Mathf.RoundToInt(health*healthRegen);
+		}
 	}
 	
 	public void EncounterStartTrigger(List<PartyMember> team)
@@ -345,6 +414,11 @@ public class PartyMember
 		{
 			if (relationships.ContainsKey(member)) morale+=relationships[member].OnMissionTogether();
 		}
+	}
+	
+	public void EncounterEndTrigger()
+	{
+		ChangeFatigue(fatigueIncreasePerEncounter);
 	}
 	
 	public bool Heal(int amountHealed)
@@ -374,6 +448,7 @@ public class PartyMember
 		return healed;
 	}
 	//for debug purposes
+	/*
 	public void GetMeleeAttackDamage()
 	{
 		int damage=0;
@@ -402,7 +477,7 @@ public class PartyMember
 			}
 			else {damage=Random.Range(minUnarmedDamage,maxUnarmedDamage+1);}
 		}
-	}
+	}*/
 	
 	public string GetMeleeDamageString()
 	{
@@ -416,10 +491,16 @@ public class PartyMember
 	public string GetMeleeAttackDescription()
 	{
 		string res="Hit for ";
+		int requiredStamina=1;
 		if (equippedMeleeWeapon!=null) 
-		{res+=(equippedMeleeWeapon.GetMinDamage()+meleeDamageMod)+"-"+(equippedMeleeWeapon.GetMaxDamage()+meleeDamageMod);}
+		{
+			requiredStamina=equippedMeleeWeapon.GetStaminaUse();
+			float staminaMod=Mathf.Min(1f,(float)stamina/(float)requiredStamina);
+			res+=(Mathf.RoundToInt((equippedMeleeWeapon.GetMinDamage()+meleeDamageMod)*staminaMod))
+			+"-"+(Mathf.RoundToInt((equippedMeleeWeapon.GetMaxDamage()+meleeDamageMod)*staminaMod));
+		}
 		else {res+=(Mathf.Max(minUnarmedDamage+meleeDamageMod,0))+"-"+(maxUnarmedDamage+meleeDamageMod);}
-		res+=" damage";
+		res+=" damage\n("+requiredStamina+" stamina)";
 		return res;
 	}
 	
@@ -431,7 +512,7 @@ public class PartyMember
 		//if (stamina<equippedMeleeWeapon.GetStaminaUse()) {EncounterCanvasHandler.main.DisplayNewMessage(name+"'s attack is weak!");}
 		//if (stamina>0) 
 		//{
-			damage=equippedMeleeWeapon.GetDamage((morale-baseMorale)*moraleDamageMod);
+			damage=equippedMeleeWeapon.GetDamage((morale-baseMorale)*moraleDamageMod,meleeDamageMod);
 			stamina-=equippedMeleeWeapon.GetStaminaUse();
 		}
 		else
@@ -454,7 +535,7 @@ public class PartyMember
 			//damage=1;
 		
 		//}
-		return damage+meleeDamageMod;
+		return damage;
 	}
 	
 	public int RangedAttack()
@@ -495,7 +576,7 @@ public class PartyMember
 		bool ate=false;
 		if (hunger>0)
 		{
-			hunger-=amountFed;
+			ChangeHunger(-amountFed);
 			ate=true;
 		}
 		return ate;
