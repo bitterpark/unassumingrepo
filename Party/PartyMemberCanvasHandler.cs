@@ -32,6 +32,25 @@ public class PartyMemberCanvasHandler : MonoBehaviour {
 		GameObject.Destroy(removedToken.gameObject);
 	}
 	
+	public void ShowHungerTooltip()
+	{
+		TooltipManager.main.CreateTooltip("Decreases health regen, affects morale",hungerText.transform.parent);
+	}
+	
+	public void ShowFatigueTooltip()
+	{
+		TooltipManager.main.CreateTooltip("Reduces max stamina",fatigueText.transform.parent);
+	}
+	
+	public void ShowMoraleTooltip()
+	{
+		TooltipManager.main.CreateTooltip("Affects damage rolls",moraleText.transform.parent);
+	}
+	
+	public void DisableTooltip()
+	{
+		TooltipManager.main.StopAllTooltips();
+	}
 	
 	void Start() 
 	{
@@ -42,8 +61,8 @@ public class PartyMemberCanvasHandler : MonoBehaviour {
 	void Update()
 	{
 		nameText.text=""+assignedMember.name;
-		healthText.text="Health:"+assignedMember.health;
-		staminaText.text="Stamina:"+assignedMember.stamina;
+		healthText.text="Health:"+assignedMember.health+"|"+assignedMember.maxHealth;
+		staminaText.text="Stamina:"+assignedMember.stamina+"|"+assignedMember.currentMaxStamina;
 		hungerText.text="Hunger:"+assignedMember.GetHunger();
 		moraleText.text="Morale:"+assignedMember.morale;
 		fatigueText.text="Fatigue:"+assignedMember.GetFatigue();//

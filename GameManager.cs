@@ -78,6 +78,10 @@ public class GameManager : MonoBehaviour {
 		//Rect messageRect=new Rect();
 		gameOver=true;
 		gameWin=win;
+		string endMessage;
+		if (gameWin) endMessage="You were rescued!";
+		else endMessage="Your party died";
+		PartyStatusCanvasHandler.main.NewNotification(endMessage);
 		//partyStatusCanvas.gameObject.SetActive(false);
 		//EndCurrentGame();
 		yield return new WaitForSeconds(2);
@@ -85,7 +89,7 @@ public class GameManager : MonoBehaviour {
 		gameWin=false;
 		yield break;
 	}
-	
+	/*
 	void OnGUI()
 	{
 		if (gameOver)
@@ -94,5 +98,5 @@ public class GameManager : MonoBehaviour {
 			if (gameWin) {endMessage="You were rescued!";}
 			GUI.Box(new Rect(Screen.width*0.5f-25f,Screen.height*0.5f-50f,120,40),endMessage);
 		}
-	}
+	}*/
 }

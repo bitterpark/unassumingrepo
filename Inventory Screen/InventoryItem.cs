@@ -41,6 +41,45 @@ public abstract class InventoryItem
 		return description;
 	}
 	
+	public static string GetLootMetatypeDescription(LootMetatypes metaType)
+	{
+		string metatypeDesc="";
+		switch(metaType)
+		{
+		case LootMetatypes.FoodItems:
+		{
+			metatypeDesc="Food";
+			break;
+		}
+		case LootMetatypes.Medical:
+		{
+			metatypeDesc="Medicine";
+			break;
+		}
+		case LootMetatypes.Melee:
+		{
+			metatypeDesc="Melee weapons";
+			break;
+		}
+		case LootMetatypes.Guns:
+		{
+			metatypeDesc="Guns";
+			break;
+		}
+		case LootMetatypes.Equipment:
+		{
+			metatypeDesc="Equipment";
+			break;
+		}
+		case LootMetatypes.Radio:
+		{
+			metatypeDesc="Radio";
+			break;
+		}
+		}
+		return metatypeDesc;
+	}
+	
 	public static List<InventoryItem> GenerateLootSet(LootMetatypes metaType)
 	{
 		float randomRoll=Random.value;
@@ -409,7 +448,7 @@ public class Flashlight: EquippableItem
 	
 	public override string GetMouseoverDescription ()
 	{
-		return "Flashlight\nImproves visibility at night";
+		return "Flashlight\nCurrently has no use";
 	}
 }
 

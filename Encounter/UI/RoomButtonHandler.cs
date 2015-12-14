@@ -41,6 +41,7 @@ public class RoomButtonHandler : MonoBehaviour//, IDropHandler
 	public Transform enemiesGroup;
 	public Transform membersGroup;
 
+	public Color wallColor;
 	
 	public void AttachEnemyToken(Transform tokenTransform)
 	{
@@ -306,7 +307,7 @@ public class RoomButtonHandler : MonoBehaviour//, IDropHandler
 	{
 		if (isWall)
 		{
-			GetComponent<Button>().image.color=Color.black;
+			GetComponent<Button>().image.color=wallColor;
 			lootToken.SetActive(false);
 			lockToken.SetActive(false);
 			exitToken.SetActive(false);
@@ -367,10 +368,41 @@ public class RoomButtonHandler : MonoBehaviour//, IDropHandler
 				//Switch on Enemy Group and Member Group
 				actorsGroup.gameObject.SetActive(true);
 				itemsGroup.gameObject.SetActive(true);
-			}	
+			}
+				
 			if (isExit) {exitToken.SetActive(true);}//GetComponent<Button>().image.color=Color.green;}
 		}
 	}
+	
+	public void StartExitTooltip()
+	{
+		string tooltipText="Exit";
+		Vector2 selectedMemberCoords=EncounterCanvasHandler.main.memberCoords[EncounterCanvasHandler.main.selectedMember];
+		if ((selectedMemberCoords-GetRoomCoords()).magnitude==0) tooltipText+="\nClick: escape encounter";
+		TooltipManager.main.CreateTooltip(tooltipText,exitToken.transform);
+	}
+	public void StartLootTooltip()
+	{
+		string tooltipText="Stash";
+		Vector2 selectedMemberCoords=EncounterCanvasHandler.main.memberCoords[EncounterCanvasHandler.main.selectedMember];
+		if ((selectedMemberCoords-GetRoomCoords()).magnitude==0) tooltipText+="\nClick: loot the stash";
+		TooltipManager.main.CreateTooltip(tooltipText,lootToken.transform);
+	}
+	public void StartLootBashTooltip()
+	{
+		string tooltipText="Locked stash";
+		Vector2 selectedMemberCoords=EncounterCanvasHandler.main.memberCoords[EncounterCanvasHandler.main.selectedMember];
+		if ((selectedMemberCoords-GetRoomCoords()).magnitude==0) tooltipText+="\nClick: bash the lock(1)";
+		TooltipManager.main.CreateTooltip(tooltipText,lockToken.transform);
+	}
+	public void StartBarricadeBuildTooltip()
+	{
+		string tooltipText="Furniture";
+		Vector2 selectedMemberCoords=EncounterCanvasHandler.main.memberCoords[EncounterCanvasHandler.main.selectedMember];
+		if ((selectedMemberCoords-GetRoomCoords()).magnitude==0) tooltipText+="\nClick: barricade room(3)";
+		TooltipManager.main.CreateTooltip(tooltipText,barricadeBuildToken.transform);
+	}
+	public void StopTooltip() {TooltipManager.main.StopAllTooltips();}
 	/*
 	#region IDropHandler implementation
 

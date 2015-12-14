@@ -31,11 +31,11 @@ public class PartyStatusCanvasHandler : MonoBehaviour {
 	
 	public void NewNotification(string notificationText)
 	{
-		if (displayEnabled)
+		//if (displayEnabled)
 		{
 			NotePanelHandler newPanel=Instantiate(notePanelPrefab);
 			newPanel.AssignNote(notificationText);
-			newPanel.transform.SetParent(transform,false);
+			//newPanel.transform.SetParent(transform,false);
 		}
 	}
 	

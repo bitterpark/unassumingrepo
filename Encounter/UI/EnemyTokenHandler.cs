@@ -8,7 +8,7 @@ public class EnemyTokenHandler : MonoBehaviour, IAttackAnimation
 	//because the coroutine is called from EncounterCanvasHandler, StopAllCoroutines called from this instance doesn't work. So, this is necessary
 	bool destroyed=false;
 	
-	float attackAnimationTime=0.75f;
+	float attackAnimationTime=0.6f;
 	
 	public Text healthText;
 	EncounterEnemy assignedEnemy;

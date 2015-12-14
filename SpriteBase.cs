@@ -32,6 +32,8 @@ public class SpriteBase : MonoBehaviour {
 	public Sprite bleedSprite;
 	public Sprite phasedOutSprite;
 	
+	public Color[] possibleMemberColors;
+	
 	// Use this for initialization
 	void Start () 
 	{

@@ -82,10 +82,10 @@ public class PartyManager : MonoBehaviour {
 		//partyInventory.Add(new SettableTrap());
 		//partyInventory.Add(new SettableTrap());
 		//partyInventory.Add(new SettableTrap());
-		partyInventory.Add(new Knife());
-		partyInventory.Add (new Knife());
-		partyInventory.Add (new Axe());
-		partyInventory.Add (new Axe());
+		//partyInventory.Add(new Knife());
+		//partyInventory.Add (new Knife());
+		//partyInventory.Add (new Axe());
+		//partyInventory.Add (new Axe());
 		//partyInventory.Add(new AmmoBox());
 		//partyInventory.Add (new AssaultRifle());
 		//partyInventory.Add (new AssaultRifle());

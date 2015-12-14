@@ -19,7 +19,7 @@ public class EncounterCanvasHandler : MonoBehaviour
 	public Dictionary<PartyMember,Dictionary<Vector2,int>> memberMoveMasks;
 	//public EncounterRoom displayedRoom;
 	public Dictionary<PartyMember,Vector2> memberCoords=new Dictionary<PartyMember, Vector2>();
-	
+
 	//This is for the old message system
 	/*
 	string lastMessage="";
@@ -76,6 +76,8 @@ public class EncounterCanvasHandler : MonoBehaviour
 	
 	//GROUPS
 	public Transform encounterMapGroup;
+	public Text eventLogText;
+	public Scrollbar eventLogScrollbar;
 	//public Transform combatSelectorGroup;
 	//public Transform enemySelectorGroup;
 	//public Transform enemyEffectGroup;		
@@ -741,7 +743,8 @@ public class EncounterCanvasHandler : MonoBehaviour
 	void EnableRender() 
 	{
 		GetComponent<Canvas>().enabled=true;
-		
+		//eventLogMask.enabled=true;
+		//eventLogMask.GetComponent<Text>()
 		//selectors=new Dictionary<PartyMember, CombatSelectorHandler>();
 		//enemySelectors=new Dictionary<EncounterEnemy, EnemySelectorHandler>();
 		roomButtons=new Dictionary<Vector2, RoomButtonHandler>();
@@ -827,7 +830,9 @@ public class EncounterCanvasHandler : MonoBehaviour
 	
 	void DisableRender() 
 	{
+		eventLogText.text="";
 		GetComponent<Canvas>().enabled=false;
+		//eventLogMask.enabled=false;
 		currentMap=null;
 		//memberToken.transform.SetParent(this.transform,false);
 		//memberToken.SetActive(false);
@@ -903,6 +908,7 @@ public class EncounterCanvasHandler : MonoBehaviour
 	{
 		if (!roomHandler.assignedRoom.hasEnemies && memberCoords[selectedMember]==new Vector2(roomHandler.assignedRoom.xCoord,roomHandler.assignedRoom.yCoord))
 		{
+			AddNewLogMessage(selectedMember.name+" escapes!");
 			EncounterRoom exitRoom=roomHandler.assignedRoom;//currentEncounter.encounterMap[memberCoords[selectedMember]];
 			RemoveEncounterMember(selectedMember);
 			selectedMember.EncounterEndTrigger();
@@ -918,6 +924,7 @@ public class EncounterCanvasHandler : MonoBehaviour
 			
 			if (encounterMembers.Count>0) 
 			{
+				
 				RevealPartySenses();
 				TurnOver(selectedMember,exitRoom,false);
 			}
@@ -936,6 +943,7 @@ public class EncounterCanvasHandler : MonoBehaviour
 		&& memberCoords[selectedMember]==new Vector2(roomHandler.assignedRoom.xCoord,roomHandler.assignedRoom.yCoord)
 		)//&& !memberTokens[selectedMember].moveTaken)
 		{
+			AddNewLogMessage(selectedMember.name+" loots the stash");
 			roomHandler.LootRoom();
 			TurnOver(selectedMember,roomHandler.assignedRoom,false);
 		}
@@ -951,13 +959,18 @@ public class EncounterCanvasHandler : MonoBehaviour
 		{
 			int bashStrength=1;
 			int bashNoiseDistance=5;
+			/*
+			bool lockExpertInTeam=false;
 			foreach (PartyMember member in encounterMembers)
 			{
-				if (member.isLockExpert) {bashNoiseDistance=0; break;}
-			}
+				if (member.isLockExpert) {lockExpertInTeam=true; break;}
+			}*/
+			AddNewLogMessage(selectedMember.name+" bashes the lock!");
+			AddNewLogMessage(selectedMember.name+" makes a lot of noise!");
 			roomHandler.BashLock(bashStrength);
+			if (!roomHandler.assignedRoom.lootIsLocked) {AddNewLogMessage("The lock breaks!");}
 			//Do noise
-			if (bashNoiseDistance!=0) MakeNoise(roomHandler.GetRoomCoords(),bashNoiseDistance);
+			MakeNoise(roomHandler.GetRoomCoords(),bashNoiseDistance);
 			TurnOver(selectedMember,roomHandler.assignedRoom,false);
 		}
 	}
@@ -968,6 +981,7 @@ public class EncounterCanvasHandler : MonoBehaviour
 		    && memberCoords[selectedMember]==new Vector2(roomHandler.assignedRoom.xCoord,roomHandler.assignedRoom.yCoord)
 		    )//&& !memberTokens[selectedMember].moveTaken)
 		{
+			AddNewLogMessage(selectedMember.name+" throws together a barricade");
 			roomHandler.BarricadeRoom();
 			TurnOver(selectedMember,roomHandler.assignedRoom,false);
 		}
@@ -980,7 +994,9 @@ public class EncounterCanvasHandler : MonoBehaviour
 		    +Mathf.Abs(memberCoords[selectedMember].y-roomHandler.assignedRoom.yCoord)<=1
 		    )//&& !memberTokens[selectedMember].moveTaken)
 		{
+			AddNewLogMessage(selectedMember.name+" smashes the barricade");
 			roomHandler.BashBarricade(1);
+			if (roomHandler.assignedRoom.barricadeInRoom==null) {AddNewLogMessage("The barricade is cleared!");}
 			TurnOver(selectedMember,roomHandler.assignedRoom,false);
 		}
 	}
@@ -1193,9 +1209,18 @@ public class EncounterCanvasHandler : MonoBehaviour
 		MemberTokenHandler attackingMemberToken=null;
 		if (attackingEntity.GetType()==typeof(MemberTokenHandler)) attackingMemberToken=attackingEntity as MemberTokenHandler;
 		int attackSoundIntensity=2;
-		if (attackingMemberToken!=null) MakeNoise(memberCoords[attackingMemberToken.myMember],attackSoundIntensity);
+		if (attackingMemberToken!=null) 
+		{
+			MakeNoise(memberCoords[attackingMemberToken.myMember],attackSoundIntensity);
+			string hitMessage=" hits ";
+			if (isRanged) hitMessage=" shoots ";
+			AddNewLogMessage(attackingMemberToken.myMember.name+hitMessage+attackedEnemy.name+" for "+damage+" damage");
+			AddNewLogMessage(attackingMemberToken.myMember.name+" makes some noise!");
+		}
+		else AddNewLogMessage("a trap does "+damage+" damage to "+attackedEnemy.name);
 		if (attackedEnemy.health<=0) 
 		{
+			AddNewLogMessage(attackedEnemy.name+" is killed!");
 			if (attackingMemberToken!=null) 
 			{
 				attackingMemberToken.myMember.ReactToKill();
@@ -1211,6 +1236,7 @@ public class EncounterCanvasHandler : MonoBehaviour
 	
 	public void VisualizeDamageToMember(int damage,PartyMember attackedMember, EncounterEnemy attackingEnemy)
 	{
+		AddNewLogMessage(attackingEnemy.name+" attacks "+attackedMember.name+" for "+damage+" damage");
 		StartCoroutine(AddEnemyAttackAnimationToQueue(damage,attackedMember,attackingEnemy));
 	}
 	
@@ -1287,6 +1313,12 @@ public class EncounterCanvasHandler : MonoBehaviour
 			string msg="";//selectedMember.name+" hits the "+enemy.name+" for "+actualDmg+"!";
 			RegisterDamage(actualDmg,msg,ranged,enemy,selectedMember);
 		}*/
+	}
+	
+	public void AddNewLogMessage(string newMessage)
+	{
+		eventLogText.text+="-"+newMessage+"\n";
+		eventLogScrollbar.value=0;
 	}
 	/*
 	//MOVE THIS TO THE ONLY PLACE IT IS USED IN LATER

@@ -24,9 +24,3 @@ public abstract class MemberStatusToken : MonoBehaviour, IPointerEnterHandler, I
 	protected abstract string GenerateTooltipText();
 	
 }
-
-
-
-
-
-

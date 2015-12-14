@@ -37,7 +37,19 @@ public class MemberTokenHandler : MonoBehaviour, IAttackAnimation
 	}	
 	bool _selected=false;
 	
-	public bool moveTaken=false;
+	bool moveTaken
+	{
+		get {return _moveTaken;}
+		set 
+		{
+			_moveTaken=value;
+			myMoveToken.MoveStatusChanged(_moveTaken,turnTaken,myMember.stamina>=myMember.staminaMoveCost);
+			myDefenceToken.DefenceStatusChanged(_moveTaken,turnTaken);
+		}	
+	}
+	 
+	bool _moveTaken=false;
+	
 	public bool turnTaken
 	{
 		get {return _turnTaken;}
@@ -45,12 +57,37 @@ public class MemberTokenHandler : MonoBehaviour, IAttackAnimation
 		{
 			_turnTaken=value; 
 			if (_turnTaken) {Deselect();}
+			myActionToken.ActionStatusChanged(_turnTaken);
+			myDefenceToken.DefenceStatusChanged(moveTaken,_turnTaken);
+			myMoveToken.MoveStatusChanged(moveTaken,_turnTaken,myMember.stamina>=myMember.staminaMoveCost);
 			DetermineColor();
 		}
 	}
 	bool _turnTaken=false;
-	public bool defenseMode=false;
-	bool staminaRegenEnabled=true;
+	public bool defenceMode=false;
+	/*
+	public bool defenceMode
+	{
+		get{return _defenceMode;}
+		set
+		{
+			_defenceMode=value;
+			print ("Defence mode set to:"+_defenceMode);
+			myDefenceToken.DefenceChanged(_defenceMode);
+		}
+	}
+	bool _defenceMode=false;*/
+	bool staminaRegenEnabled
+	{
+		get {return _staminaRegenEnabled;}
+		set
+		{
+			_staminaRegenEnabled=value;
+			myStaminaRegenToken.StaminaRegenStatusChanged(_staminaRegenEnabled);
+		}
+	}
+	
+	bool _staminaRegenEnabled=true;
 	
 	
 	public bool rangedMode
@@ -80,12 +117,16 @@ public class MemberTokenHandler : MonoBehaviour, IAttackAnimation
 		myMember=member;
 		nameText.text=member.name;
 		myImage.color=member.color;
+		myDefenceToken.DefenceStatusChanged(moveTaken,turnTaken);
+		myActionToken.ActionStatusChanged(turnTaken);
+		myMoveToken.MoveStatusChanged(moveTaken,turnTaken,myMember.stamina>=myMember.staminaMoveCost);
+		myStaminaRegenToken.StaminaRegenStatusChanged(staminaRegenEnabled);
 	}
 	
 	public int DamageAssignedMember(int damage)
 	{
 		int extraArmorMod=0;
-		if (defenseMode) {extraArmorMod=defenseModifier;}
+		if (defenceMode) {extraArmorMod=defenseModifier;}
 		int realDmg=myMember.TakeDamage(damage,extraArmorMod,true);
 		//if (myMember.health<=0) EncounterCanvasHandler.main.RemoveEncounterMember(myMember);
 		return realDmg;
@@ -93,7 +134,10 @@ public class MemberTokenHandler : MonoBehaviour, IAttackAnimation
 	
 	public void FinishTurn(bool turnSkipped)
 	{
-		if (turnSkipped && !moveTaken) {defenseMode=true;}
+		if (turnSkipped && !moveTaken) 
+		{
+			defenceMode=true;
+		}
 		if (!turnSkipped) {staminaRegenEnabled=false;}
 		turnTaken=true;
 	}
@@ -104,7 +148,7 @@ public class MemberTokenHandler : MonoBehaviour, IAttackAnimation
 		if (staminaRegenEnabled) myMember.stamina+=staminaRegenAmount;
 		moveTaken=false;
 		turnTaken=false;
-		defenseMode=false;
+		defenceMode=false;
 		staminaRegenEnabled=true;
 		//print ("next turn switched!");
 	}
@@ -142,7 +186,7 @@ public class MemberTokenHandler : MonoBehaviour, IAttackAnimation
 	{
 		if (!turnTaken)
 		{
-			myImage.GetComponent<Button>().interactable=true;
+			//myImage.GetComponent<Button>().interactable=true;
 			if (_selected) 
 			{
 				
@@ -157,7 +201,7 @@ public class MemberTokenHandler : MonoBehaviour, IAttackAnimation
 		}
 		else 
 		{
-			myImage.GetComponent<Button>().interactable=false; 
+			//myImage.GetComponent<Button>().interactable=false; 
 			mySelectedArrow.SetActive(false);
 		}//GetComponent<Button>().image.color=Color.gray;}
 	}
@@ -216,10 +260,10 @@ public class MemberTokenHandler : MonoBehaviour, IAttackAnimation
 			child.transform.
 		}*/
 		//print ("starting attack animation!");
-		myImage.transform.localScale=new Vector3(1.6f,1.6f,1f);
+		if (myImage!=null) myImage.transform.localScale=new Vector3(1.6f,1.6f,1f);
 		yield return new WaitForSeconds(0.6f);
 		//print ("yielding attack animation!");
-		myImage.transform.localScale=new Vector3(1f,1f,1f);
+		if (myImage!=null) myImage.transform.localScale=new Vector3(1f,1f,1f);
 		yield break;
 	}
 

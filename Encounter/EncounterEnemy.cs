@@ -33,7 +33,7 @@ public abstract class EncounterEnemy
 		string description=null;
 		switch(enemyType)
 		{
-		case EnemyTypes.Gasser: {description="gas sacs"; break;}
+		case EnemyTypes.Gasser: {description="gas spitters"; break;}
 		case EnemyTypes.Spindler: {description="spindlers"; break;}
 		case EnemyTypes.Flesh: {description="flesh masses"; break;}
 		case EnemyTypes.Muscle: {description="muscle masses"; break;}
@@ -67,13 +67,13 @@ public abstract class EncounterEnemy
 		float mod=0;
 		switch(enemyType)
 		{
-			case EnemyTypes.Gasser: {mod=0.9f; break;}
-			case EnemyTypes.Spindler: {mod=0.9f; break;}
-			case EnemyTypes.Flesh: {mod=0.9f; break;}
+			case EnemyTypes.Gasser: {mod=0.85f; break;}
+			case EnemyTypes.Spindler: {mod=0.85f; break;}
+			case EnemyTypes.Flesh: {mod=0.85f; break;}
 			case EnemyTypes.Muscle: {mod=0.6f; break;}
-			case EnemyTypes.Transient: {mod=1.4f; break;}
-			case EnemyTypes.Quick: {mod=1.4f; break;}
 			case EnemyTypes.Slime: {mod=0.6f; break;}
+			case EnemyTypes.Transient: {mod=1.3f; break;}
+			case EnemyTypes.Quick: {mod=1.3f; break;}
 		}
 		return mod;
 	}
@@ -140,7 +140,7 @@ public abstract class EncounterEnemy
 			List<PartyMember> membersWithoutDefence=new List<PartyMember>();
 			foreach (PartyMember member in membersWithinReach)
 			{
-				if (!manager.memberTokens[member].defenseMode) 
+				if (!manager.memberTokens[member].defenceMode) 
 				{
 					membersWithoutDefence.Add(member);
 				}
@@ -420,7 +420,7 @@ public class QuickMass:EncounterEnemy
 		name="Quick mass";
 		health=6;
 		minDamage=4;
-		maxDamage=10;
+		maxDamage=8;
 		moveChance=0.5f;
 	}
 }
@@ -510,7 +510,7 @@ public class Gasser:EncounterEnemy
 {
 	public Gasser(Vector2 coords) : base(coords)
 	{
-		name="Gas sac";
+		name="Gas spitter";
 		health=5;
 		minDamage=4;
 		maxDamage=6;

@@ -28,6 +28,7 @@ public class TooltipManager : MonoBehaviour
 		//tooltipWidth=activeTooltip.GetComponent<RectTransform>().rect.width;
 		//print ("width is:"+activeTooltip.GetComponent<RectTransform>().rect.width);
 		activeTooltip.GetComponent<RectTransform>().SetInsetAndSizeFromParentEdge(RectTransform.Edge.Right,-(tooltipWidth+edgeOffsetSize),tooltipWidth);
+		//if (realScaling) activeTooltip.transform.localScale/=80;
 		activeTooltip.GetComponent<Canvas>().enabled=true;
 		activeTooltip.GetComponent<Canvas>().overrideSorting=true;
 		activeTooltip.GetComponent<Canvas>().sortingOrder=100;

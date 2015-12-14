@@ -1,8 +1,9 @@
 using UnityEngine;
 using System.Collections;
 using UnityEngine.EventSystems;
+using UnityEngine.UI;
 
-public class MapRegion : MonoBehaviour
+public class MapRegion : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, IPointerDownHandler
 {
 	public int xCoord=0;
 	public int yCoord=0;
@@ -124,14 +125,14 @@ public class MapRegion : MonoBehaviour
 	{
 		if (!_discovered)
 		{
-			GetComponent<SpriteRenderer>().sprite=undiscoveredLocSprite;
+			GetComponent<Image>().sprite=undiscoveredLocSprite;
 		}
 		else
 		{
 			/*
 			if (hasHorde && visible)
 			{
-				GetComponent<SpriteRenderer>().sprite=hordeSprite;
+				GetComponent<Image>().sprite=hordeSprite;
 			}*/
 			//else
 			{
@@ -141,34 +142,34 @@ public class MapRegion : MonoBehaviour
 					{
 						switch (regionalEncounter.encounterAreaType)
 						{
-							case Encounter.AreaTypes.Hospital: {GetComponent<SpriteRenderer>().sprite=hospitalSprite; break;}
-							case Encounter.AreaTypes.Apartment: {GetComponent<SpriteRenderer>().sprite=apartmentSprite; break;}
-							case Encounter.AreaTypes.Store: {GetComponent<SpriteRenderer>().sprite=storeSprite; break;}
-							case Encounter.AreaTypes.Warehouse:{GetComponent<SpriteRenderer>().sprite=warehouseSprite; break;}
-							case Encounter.AreaTypes.Police: {GetComponent<SpriteRenderer>().sprite=policeStationSprite; break;}
-							case Encounter.AreaTypes.Endgame: {GetComponent<SpriteRenderer>().sprite=radioStationSprite; break;}
+							case Encounter.AreaTypes.Hospital: {GetComponent<Image>().sprite=hospitalSprite; break;}
+							case Encounter.AreaTypes.Apartment: {GetComponent<Image>().sprite=apartmentSprite; break;}
+							case Encounter.AreaTypes.Store: {GetComponent<Image>().sprite=storeSprite; break;}
+							case Encounter.AreaTypes.Warehouse:{GetComponent<Image>().sprite=warehouseSprite; break;}
+							case Encounter.AreaTypes.Police: {GetComponent<Image>().sprite=policeStationSprite; break;}
+							case Encounter.AreaTypes.Endgame: {GetComponent<Image>().sprite=radioStationSprite; break;}
 						}
 					}
 					else
 					{
-						GetComponent<SpriteRenderer>().sprite=encounterSprite;
+						GetComponent<Image>().sprite=encounterSprite;
 					}
 				}
 				else
 				{
-					GetComponent<SpriteRenderer>().sprite=emptyLocSprite;
+					GetComponent<Image>().sprite=emptyLocSprite;
 				}
 			}
 			
-			if (isHive) GetComponent<SpriteRenderer>().color=Color.red;
+			if (isHive) GetComponent<Image>().color=Color.red;
 			if (visible)
 			{
-				if (hasHorde) {GetComponent<SpriteRenderer>().color=Color.red;} 
-				else {GetComponent<SpriteRenderer>().color=Color.white;}
+				if (hasHorde) {GetComponent<Image>().color=Color.red;} 
+				else {GetComponent<Image>().color=Color.white;}
 			}
 			else
 			{
-				GetComponent<SpriteRenderer>().color=Color.gray;
+				GetComponent<Image>().color=Color.gray;
 			}
 		}
 	}
@@ -210,15 +211,79 @@ public class MapRegion : MonoBehaviour
 	
 	//void Start() {transform.Rotate(new Vector3(-90,0,0));}
 	void Start() {SetSprite();}
-	
+
+	#region IPointerDownHandler implementation
+
+	public void OnPointerDown (PointerEventData eventData)
+	{
+		/*if (!EventSystem.current.IsPointerOverGameObject())*/ MapManager.mainMapManager.RegionClicked(this);
+	}
+
+	#endregion
+	/*
 	void OnMouseDown()
 	{
 		if (!EventSystem.current.IsPointerOverGameObject()) MapManager.mainMapManager.RegionClicked(this);
+	}*/
+
+	#region IPointerEnterHandler implementation
+
+	public void OnPointerEnter (PointerEventData eventData)
+	{
+		bool textExists=true;
+		string areaDescription="";
+		if (!discovered) {areaDescription="Undiscovered";}
+		else 
+		{
+			if (hasHorde)
+			{
+				areaDescription+=hordeEncounter.lootDescription;
+			}
+			else
+			{
+				if (hasEncounter)
+				{
+					if (!scouted) {areaDescription="Not scouted";}
+					else
+					{
+						areaDescription+=regionalEncounter.lootDescription+"\n\n";
+						//Describe all potential loot
+						areaDescription+="May contain:\n";
+						foreach (InventoryItem.LootMetatypes metatype in regionalEncounter.possibleLootTypes.Values)
+						{
+							areaDescription+="-"+InventoryItem.GetLootMetatypeDescription(metatype)+"\n";
+						}
+						areaDescription+="Enemies: "+regionalEncounter.enemyDescription+"\n";
+						areaDescription+="Ambush threat: "+threatLevel;
+						//if (isHive) {areaDescription+="\nHive";}
+					}
+				}
+				else {textExists=false;}
+			}
+		}
+		if (textExists)	TooltipManager.main.CreateTooltip(areaDescription,this.transform);
 	}
+
+	#endregion
+
+	#region IPointerExitHandler implementation
+
+	public void OnPointerExit (PointerEventData eventData)
+	{
+		TooltipManager.main.StopAllTooltips();
+	}
+
+	#endregion
+	/*
+	void OnMouseEnter()
+	{
+		//TooltipManager.main.CreateTooltip("Map thing",this.transform,true);
+	}*
 	
 	void OnMouseOver()
 	{
-		drawMouseoverText=true;
+		drawMouseoverText=false;//true;
+		
 	}
 	
 	void OnMouseExit()
@@ -264,5 +329,5 @@ public class MapRegion : MonoBehaviour
 				GUI.Box(textRect,areaDescription);
 			}
 		}	
-	}
+	}*/
 }

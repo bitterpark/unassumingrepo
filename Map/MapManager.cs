@@ -7,6 +7,8 @@ public class MapManager : MonoBehaviour
 {
 	public static MapManager mainMapManager;
 	
+	public Transform regionsGridGroup;
+	
 	public MapRegion mapRegionPrefab;
 	public GameObject playerTokenPrefab;
 	
@@ -26,12 +28,14 @@ public class MapManager : MonoBehaviour
 	
 	public void GenerateNewMap()
 	{
+		regionsGridGroup.GetComponent<GridLayoutGroup>().constraintCount=mapWidth;
+		
 		float xElementSize=80;
 		float yElementSize=80;
 		float xElementOffset=xElementSize+10;
 		float yElementOffset=yElementSize+10;
-		float baseOffsetX=360;
-		float baseOffsetY=380;
+		float baseOffsetX=0;//360;
+		float baseOffsetY=GetComponent<RectTransform>().rect.height*0.5f;//380;
 		
 		for (int i=0; i<mapHeight; i++)
 		{
@@ -41,6 +45,7 @@ public class MapManager : MonoBehaviour
 				mapRegions.Add (new Vector2(j,i),CreateNewRegion(newPos,j,i));
 			}
 		}
+		
 		//deprecate this later
 		hordes=new List<Horde>();
 		hordeTokens=new Dictionary<Horde, HordeTokenDrawer>();
@@ -133,6 +138,7 @@ public class MapManager : MonoBehaviour
 		MapRegion newRegion=Instantiate(mapRegionPrefab,newRegionPos,Quaternion.identity) as MapRegion;
 		newRegion.xCoord=xCoord;
 		newRegion.yCoord=yCoord;
+		newRegion.transform.SetParent(regionsGridGroup);
 		/*
 		float rand=Random.value;
 		if (rand<0.5) {newRegion.hasEncounter=true;}
@@ -205,6 +211,7 @@ public class MapManager : MonoBehaviour
 		Vector3 newTokenPos=newRegion.transform.position;
 		newTokenPos.z=playerToken.transform.position.z;
 		playerToken.transform.position=newTokenPos;
+		playerToken.transform.SetParent(newRegion.transform);
 	}
 	
 	void DiscoverRegions(int originXCoord, int originYCoord)

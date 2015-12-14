@@ -30,14 +30,15 @@ public class PartyMember
 	
 	static List<Color> GetColors() 
 	{
-		List<Color> possibleColors=new List<Color>();
+		List<Color> possibleColors=new List<Color>(SpriteBase.mainSpriteBase.possibleMemberColors);
 		//possibleColors.Add(Color.gray);
 		//Blue and gray are reserved, black is too dark
+		/*
 		possibleColors.Add(Color.red);
 		possibleColors.Add(Color.cyan);
 		possibleColors.Add(Color.green);
 		possibleColors.Add(Color.yellow);
-		possibleColors.Add(Color.magenta);
+		possibleColors.Add(Color.magenta);*/
 		return possibleColors;
 	}
 	
@@ -57,6 +58,7 @@ public class PartyMember
 	}
 	public int _health;
 	public int maxHealth=100;
+	float healthRegenPercentage=0.2f;
 	
 	//STAMINA
 	public int stamina
@@ -72,7 +74,7 @@ public class PartyMember
 	}
 	public int _stamina; 
 	public int baseMaxStamina;
-	int currentMaxStamina
+	public int currentMaxStamina
 	{
 		get {return _currentMaxStamina;}
 		set 
@@ -118,7 +120,7 @@ public class PartyMember
 	//Deprecate this later
 	public int maxStaminaReductionFromHunger=0;
 	public int maxFatigueRestoreReductionFromHunger=40;
-	public float maxHealthRegenReductionFromHunger=0.1f;
+	public float maxHealthRegenReductionFromHunger=0.2f;
 	
 	//FATIGUE
 	int fatigue
@@ -202,15 +204,16 @@ public class PartyMember
 	void GeneratePartyMember(string memberName)
 	{
 		//Pick color out of ones left
+		
 		color=Color.white;
 		foreach (Color c in GetColors())
 		{
-			bool colorFound=false;
+			bool colorTaken=false;
 			foreach (PartyMember member in PartyManager.mainPartyManager.partyMembers)
 			{
-				if (member.color==c) {colorFound=true; break;}	
+				if (member.color==c) {colorTaken=true; break;}	
 			}
-			if (!colorFound) {color=c; break;}
+			if (!colorTaken) {color=c; break;}
 		}
 		
 		//Randomly pick out perks
@@ -248,7 +251,7 @@ public class PartyMember
 		//fatigueIncreasePerAction=10;
 		
 		armorValue=0;
-		maxCarryCapacity=4;//
+		maxCarryCapacity=3;//
 		visibilityMod=0;
 		moraleDamageMod=0.02f;
 		moraleChangeFromKills=0;
@@ -403,7 +406,7 @@ public class PartyMember
 		SetFatigue(newFatigue);
 		if (hunger<100)
 		{
-			float healthRegen=0.1f-maxHealthRegenReductionFromHunger*hunger*0.01f;
+			float healthRegen=healthRegenPercentage-maxHealthRegenReductionFromHunger*hunger*0.01f;
 			health+=Mathf.RoundToInt(health*healthRegen);
 		}
 	}

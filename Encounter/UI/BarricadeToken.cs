@@ -3,7 +3,7 @@ using System.Collections;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
 
-public class BarricadeToken : MonoBehaviour /*,IBeginDragHandler,IDragHandler,IEndDragHandler, IInitializePotentialDragHandler*/
+public class BarricadeToken : MonoBehaviour, IPointerEnterHandler,IPointerExitHandler, IPointerDownHandler /*,IBeginDragHandler,IDragHandler,IEndDragHandler, IInitializePotentialDragHandler*/
 {
 	public static BarricadeToken barricadeTokenBeingDragged;
 	static bool dragPermitted=false;
@@ -39,11 +39,41 @@ public class BarricadeToken : MonoBehaviour /*,IBeginDragHandler,IDragHandler,IE
 	{
 		myHealthText.text=newHealth.ToString();
 	}
-	
+	/*
 	public void TokenClicked()
 	{
 		EncounterCanvasHandler.main.BarricadeBashClicked(assignedRoomButton);
+	}*/
+
+	#region IPointerDownHandler implementation
+
+	public void OnPointerDown (PointerEventData eventData)
+	{
+		EncounterCanvasHandler.main.BarricadeBashClicked(assignedRoomButton);
 	}
+
+	#endregion
+	
+	#region IPointerEnterHandler implementation
+	
+	public void OnPointerEnter (PointerEventData eventData)
+	{
+		string tooltipText="Blocks entrance into the room";
+		Vector2 selectedMemberCoords=EncounterCanvasHandler.main.memberCoords[EncounterCanvasHandler.main.selectedMember];
+		if ((selectedMemberCoords-assignedRoomButton.GetRoomCoords()).magnitude<=1) tooltipText+="\nClick: break barricade(1)";
+		TooltipManager.main.CreateTooltip(tooltipText,this.transform);
+	}
+	
+	#endregion
+	
+	#region IPointerExitHandler implementation
+	
+	public void OnPointerExit (PointerEventData eventData)
+	{
+		TooltipManager.main.StopAllTooltips();
+	}
+	
+	#endregion
 	/*
 	#region IBeginDragHandler implementation
 
