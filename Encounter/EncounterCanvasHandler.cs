@@ -29,6 +29,8 @@ public class EncounterCanvasHandler : MonoBehaviour
 	int iterationCount=0;
 	
 	bool damageNumberOut=false;
+	
+	bool enemyTurnOngoing=false;
 	//public GameObject memberToken;
 	//GUI HANDLER ELEMENTS
 	//PREFABS
@@ -86,8 +88,8 @@ public class EncounterCanvasHandler : MonoBehaviour
 	public static int encounterMaxPlayerCount=20;
 	public static EncounterCanvasHandler main;
 	
-	public delegate void EnemiesMoveDel(Dictionary<PartyMember, Dictionary<Vector2,int>> masks, Dictionary<PartyMember,Vector2> memberCoords);//(Dictionary<Vector2, int> costs);
-	public static event EnemiesMoveDel EMoveEnemies;
+	//public delegate void EnemiesMoveDel(Dictionary<PartyMember, Dictionary<Vector2,int>> masks, Dictionary<PartyMember,Vector2> memberCoords);//(Dictionary<Vector2, int> costs);
+	//public static event EnemiesMoveDel EMoveEnemies;
 	delegate void MemberMovedDel ();
 	event MemberMovedDel EMemberMoved;
 	
@@ -133,80 +135,89 @@ public class EncounterCanvasHandler : MonoBehaviour
 	
 	void EndEncounter()
 	{
-		currentEncounter.RandomizeEnemyPositions();
-		DisableRender();
-		encounterOngoing=false;
+		if (encounterOngoing)
+		{
+			currentEncounter.RandomizeEnemyPositions();
+			DisableRender();
+			encounterOngoing=false;
+		}
 	}
 	
 	public void RoomClicked(RoomButtonHandler roomHandler)//EncounterRoomDrawer roomDrawer)
 	{
-		//roomButtons[new Vector2(room.xCoord,room.yCoord)].GetMyLocalPos();
+		
 		int moveDistance=0;	
 		EncounterRoom startingRoom=currentEncounter.encounterMap[memberCoords[selectedMember]];
 		moveDistance=Mathf.Abs((int)startingRoom.xCoord-roomHandler.roomX)+Mathf.Abs((int)startingRoom.yCoord-roomHandler.roomY);//encounterPlayerX-room.xCoord)+Mathf.Abs(encounterPlayerY-room.yCoord);
 		
-		if (moveDistance==1 
+		if (GetComponent<CanvasGroup>().interactable
+		&& moveDistance==1 
 		&& !roomHandler.assignedRoom.isWall 
 		&& roomHandler.assignedRoom.barricadeInRoom==null) //&& !currentEncounter.encounterMap[memberCoords[selectedMember]].hasEnemies)//new Vector2(encounterPlayerX,encounterPlayerY)].hasEnemies)
 		{
-			//If the room has no other party members move there regularly, else - do the swap
-			//currently switched off
-			//See if member has enough stamina to move (if it does, the token itself will deduct stamina)
-			if (memberTokens[selectedMember].TryMove())//!memberCoords.ContainsValue(roomHandler.GetRoomCoords()))
-			{
-				//Enemies get a free swipe if you are the last to move out of their spot
-				//(moving member's coords don't get updated until after the check, so this is necessary)
+			StartCoroutine(MoveMemberToRoom(roomHandler));
+		}//
+	}
+	
+	IEnumerator MoveMemberToRoom(RoomButtonHandler roomHandler)
+	{
+		EncounterRoom startingRoom=currentEncounter.encounterMap[memberCoords[selectedMember]];
+		//If the room has no other party members move there regularly, else - do the swap
+		//currently switched off
+		//See if member has enough stamina to move (if it does, the token itself will deduct stamina)
+		bool doTurnover;
+		if (memberTokens[selectedMember].TryMove(out doTurnover))//!memberCoords.ContainsValue(roomHandler.GetRoomCoords()))
+		{
+			//Enemies get a free swipe if you are the last to move out of their spot
+			//(moving member's coords don't get updated until after the check, so this is necessary)
+			/*
 				List<Vector2> nonMovingMemberCoords=new List<Vector2>(memberCoords.Values);
 				nonMovingMemberCoords.Remove(memberCoords[selectedMember]);
 				if (!nonMovingMemberCoords.Contains(startingRoom.GetCoords()))
+				*/
+			if (startingRoom.hasEnemies)
+			{
+				GetComponent<CanvasGroup>().interactable=false;
+				List<PartyMember> argumentListOfOne=new List<PartyMember>();
+				argumentListOfOne.Add(selectedMember);
+				foreach (EncounterEnemy enemy in startingRoom.enemiesInRoom) 
 				{
-					List<PartyMember> argumentListOfOne=new List<PartyMember>();
-					argumentListOfOne.Add(selectedMember);
-					foreach (EncounterEnemy enemy in startingRoom.enemiesInRoom) 
-					{enemyTokens[enemy].TokenAttackTrigger(selectedMember);}//attack equivalent enemy.Move();}
+					yield return StartCoroutine(enemyTokens[enemy].TokenAttackTrigger(selectedMember));
 				}
-				//if last party member didn't die moving away
-				if (encounterOngoing) 
+				GetComponent<CanvasGroup>().interactable=true;
+			}
+			//if last party member didn't die moving away
+			if (encounterOngoing) 
+			{
+				MovePartyMemberToRoom(selectedMember,roomHandler,false);
+				DeadMemberCleanupCheck();
+				//If moved member died during move, try to switch to next available member
+				if (encounterOngoing)
 				{
-					MovePartyMemberToRoom(selectedMember,roomHandler,false);
-					DeadMemberCleanupCheck();
-					//If moved member died during move, try to switch to next available member
-					if (encounterOngoing)
+					if (!encounterMembers.Contains(selectedMember))
 					{
-						if (!encounterMembers.Contains(selectedMember))
+						bool unactedMemberFound=false;
+						foreach (MemberTokenHandler handler in memberTokens.Values)
 						{
-							bool unactedMemberFound=false;
-							foreach (MemberTokenHandler handler in memberTokens.Values)
+							if (!handler.turnTaken)
 							{
-								if (!handler.turnTaken)
-								{
-									unactedMemberFound=true;
-									SelectMember(handler);
-									break;
-								}
+								unactedMemberFound=true;
+								SelectMember(handler);
+								break;
 							}
-							if (!unactedMemberFound) ToggleRoundSwitch();
 						}
+						if (!unactedMemberFound) ToggleRoundSwitch();
+					}
+					else
+					{
+						if (doTurnover) TurnOver(selectedMember,roomButtons[memberCoords[selectedMember]].assignedRoom,false);
 					}
 				}
 			}
-			/* member place swap code
-			else
-			{
-				PartyMember memberAtDestination=null;
-				foreach (PartyMember key in memberCoords.Keys)
-				{
-					if (memberCoords[key]==roomHandler.GetRoomCoords()) 
-					{
-						memberAtDestination=key;
-						break;
-					}
-				}
-				if (memberAtDestination==null) {throw new System.Exception("Could not find member at destination room!");}
-				if (!memberTokens[memberAtDestination].actionTaken) {SwapMemberPlaces(selectedMember,memberAtDestination);}
-			}*/
-		}//
+		}
+		yield break;
 	}
+	
 	//Consider deprecating this later
 	void SwapMemberPlaces(PartyMember member1, PartyMember member2)
 	{
@@ -420,16 +431,41 @@ public class EncounterCanvasHandler : MonoBehaviour
 	
 	void ToggleRoundSwitch()
 	{
-		RoundOver();
-		DeadMemberCleanupCheck();
-		if (encounterOngoing) NextRound();
+		//StartCoroutine(TurnoverSignRoutine());
+		StartCoroutine(RoundSwitchRoutine());
+		
 	}
 	
-	void RoundOver()
+	IEnumerator RoundSwitchRoutine()
 	{
+		float noteTime=0.5f;
+		PartyStatusCanvasHandler.main.NewNotification("Enemy turn",noteTime);
+		//!!IMPORTANT!! THIS IS CALLED ON TOP OF =true AND =false IN ATTACK VISUALIZATION ROUTINE. It is here in case no attack animations occur
+		//during the enemy turn, otherwise the =true after an attack animation will cancel this!!!
+		enemyTurnOngoing=true;
+		GetComponent<CanvasGroup>().interactable=false;
+		yield return new WaitForSeconds(noteTime);
 		if (ERoundIsOver!=null) ERoundIsOver(); //necessary for hearing token placement
-		EnemiesMove();
+		//EnemiesMove();
+		
+		//Wait for all the enemies to take their turns and all the animations to play
+		foreach (EnemyTokenHandler enemyHandler in enemyTokens.Values)
+		{
+			yield return StartCoroutine(enemyHandler.TokenRoundoverTrigger(memberMoveMasks,memberCoords));
+		}
+		DeadMemberCleanupCheck();
+		//SEE ABOVE
+		GetComponent<CanvasGroup>().interactable=true;
+		if (encounterOngoing) NextRound();
+		yield break;
 	}
+	/*
+	IEnumerator TurnoverSignRoutine()
+	{
+		PartyStatusCanvasHandler.main.NewNotification("Enemy turn");
+		yield return new WaitForSeconds(NotePanelHandler.lifeTime);
+		
+	}*/
 	
 	void NextRound()
 	{
@@ -712,7 +748,7 @@ public class EncounterCanvasHandler : MonoBehaviour
 	//used for roundover
 	void EnemiesMove()
 	{		
-		if (EMoveEnemies!=null) EMoveEnemies(memberMoveMasks,memberCoords);
+		//if (EMoveEnemies!=null) EMoveEnemies(memberMoveMasks,memberCoords);
 	}
 	
 	/*
@@ -776,7 +812,7 @@ public class EncounterCanvasHandler : MonoBehaviour
 						newEnemyToken.AssignEnemy(enemy);
 						//EncounterEnemy catchEnemy=enemy;
 						enemyTokens.Add (enemy,newEnemyToken);
-						EMoveEnemies+=newEnemyToken.TokenRoundoverTrigger;//catchEnemy.Move;
+						//EMoveEnemies+=newEnemyToken.TokenRoundoverTrigger;//catchEnemy.Move;
 						EMemberMoved+=newEnemyToken.UpdateTokenVision;//catchEnemy.VisionUpdate;
 					}
 				}
@@ -852,7 +888,7 @@ public class EncounterCanvasHandler : MonoBehaviour
 		//clean enemy tokens from rooms
 		foreach (EnemyTokenHandler tokenHandler in enemyTokens.Values) 
 		{
-			EMoveEnemies-=tokenHandler.TokenRoundoverTrigger;
+			//EMoveEnemies-=tokenHandler.TokenRoundoverTrigger;
 			EMemberMoved-=tokenHandler.UpdateTokenVision;
 			GameObject.Destroy(tokenHandler.gameObject);
 		}
@@ -914,13 +950,14 @@ public class EncounterCanvasHandler : MonoBehaviour
 			selectedMember.EncounterEndTrigger();
 			//PartyManager.mainPartyManager.MemberLeavesEncounter();
 			//Dumps member's inventory to common inventory
+			/*
 			List<InventoryItem> membersItems=new List<InventoryItem>();
 			membersItems.AddRange(selectedMember.carriedItems.ToArray());
 			foreach (InventoryItem carriedItem in membersItems) 
 			{
 				selectedMember.carriedItems.Remove(carriedItem);
 				PartyManager.mainPartyManager.GainItems(carriedItem);
-			}
+			}*/
 			
 			if (encounterMembers.Count>0) 
 			{
@@ -932,7 +969,7 @@ public class EncounterCanvasHandler : MonoBehaviour
 			{
 				PartyManager.mainPartyManager.PassTime(1);
 				EndEncounter();
-				MapManager.mainMapManager.hordeLocked=false;
+				MapManager.main.hordeLocked=false;
 			}
 		}
 	}
@@ -1082,17 +1119,40 @@ public class EncounterCanvasHandler : MonoBehaviour
 		}
 	}*/
 	
-	public void SendFloatingMessage(string text, Transform startTransform)
+	public void SendFloatingMessage(string text, Transform startTransform) {SendFloatingMessage(text, startTransform, Color.red);}
+	
+	public void SendFloatingMessage(string text, Transform startTransform, Color textColor)
 	{
 		FloatingTextHandler newHandler=Instantiate(floatingTextPrefab);
 		newHandler.AssignText(text);
 		newHandler.transform.SetParent(startTransform,false);
 		newHandler.transform.position=startTransform.position;
+		newHandler.GetComponent<Text>().color=textColor;
 		
 		//newHandler.AssignNumber(dmg);
 	}
 	
+	public void ShowDamageToPartyMember(PartyMember damagedMember, EncounterEnemy attackingEnemy, int damage, bool blocked)
+	{
+		if (memberTokens.ContainsKey(damagedMember))
+		{
+			string attackMessage="";
+			if (blocked) attackMessage=damagedMember.name+" blocks "+attackingEnemy.name+", losing "+damage+" stamina";
+			else attackMessage=attackingEnemy.name+" attacks "+damagedMember.name+" for "+damage+" damage";
+			AddNewLogMessage(attackMessage);
+			
+			Color textColor=Color.red;
+			if (blocked) textColor=Color.green;
+			SendFloatingMessage(damage.ToString(),memberTokens[damagedMember].transform,textColor);
+		}
+	}
+	
 	IEnumerator VisualizeAttack(int dmg, IAttackAnimation attacker, MonoBehaviour defender)
+	{
+		return VisualizeAttack(dmg,false,attacker,defender);
+	}
+	
+	IEnumerator VisualizeAttack(int dmg,bool blocked, IAttackAnimation attacker, MonoBehaviour defender)
 	{
 		FloatingTextHandler newHandler=Instantiate(floatingTextPrefab);
 		newHandler.AssignNumber(dmg);
@@ -1102,7 +1162,8 @@ public class EncounterCanvasHandler : MonoBehaviour
 			MemberTokenHandler defenderToken=defender as MemberTokenHandler;
 			if (memberTokens.ContainsValue(defenderToken)) //selectors.ContainsKey(info.damagedMember)) 
 			{
-				newHandler.GetComponent<Text>().color=Color.red;
+				if (blocked) newHandler.GetComponent<Text>().color=Color.green;
+				else  newHandler.GetComponent<Text>().color=Color.red;
 				newHandler.transform.SetParent(defenderToken.transform,false);
 				newHandler.transform.position=defenderToken.transform.position;
 			}
@@ -1227,20 +1288,24 @@ public class EncounterCanvasHandler : MonoBehaviour
 			}
 			//EMoveEnemies-=attackedEnemy.Move;
 			//EMemberMoved-=attackedEnemy.VisionUpdate;
-			EMoveEnemies-=enemyTokens[attackedEnemy].TokenRoundoverTrigger;//enemy.Move;
+			//EMoveEnemies-=enemyTokens[attackedEnemy].TokenRoundoverTrigger;//enemy.Move;
 			EMemberMoved-=enemyTokens[attackedEnemy].UpdateTokenVision;//enemy.VisionUpdate;
 			GameObject.Destroy(enemyTokens[attackedEnemy].gameObject);
 			enemyTokens.Remove(attackedEnemy);
 		}
 	}
-	
-	public void VisualizeDamageToMember(int damage,PartyMember attackedMember, EncounterEnemy attackingEnemy)
+	/*
+	//If the attack is blocked, damage is stamina damage, else damage is health damage
+	public void VisualizeDamageToMember(int damage,bool blocked,PartyMember attackedMember, EncounterEnemy attackingEnemy)
 	{
-		AddNewLogMessage(attackingEnemy.name+" attacks "+attackedMember.name+" for "+damage+" damage");
-		StartCoroutine(AddEnemyAttackAnimationToQueue(damage,attackedMember,attackingEnemy));
+		string attackMessage="";
+		if (blocked) attackMessage=attackedMember.name+" blocks "+attackingEnemy.name+", losing "+damage+" stamina";
+		else attackMessage=attackingEnemy.name+" attacks "+attackedMember.name+" for "+damage+" damage";
+		AddNewLogMessage(attackMessage);
+		StartCoroutine(AddEnemyAttackAnimationToQueue(damage, blocked, attackedMember,attackingEnemy));
 	}
-	
-	IEnumerator AddEnemyAttackAnimationToQueue(int damage,PartyMember attackedMember, EncounterEnemy attackingEnemy)
+	//If the attack is blocked, damage is stamina damage, else damage is health damage
+	IEnumerator AddEnemyAttackAnimationToQueue(int damage, bool blocked, PartyMember attackedMember, EncounterEnemy attackingEnemy)
 	{
 		while (damageNumberOut)
 		{
@@ -1249,11 +1314,11 @@ public class EncounterCanvasHandler : MonoBehaviour
 		if (memberTokens.ContainsKey(attackedMember)) //selectors.ContainsKey(info.damagedMember)) 
 		{
 			damageNumberOut=true;
-			yield return StartCoroutine(VisualizeAttack(damage,enemyTokens[attackingEnemy],memberTokens[attackedMember]));
+			yield return StartCoroutine(VisualizeAttack(damage,blocked,enemyTokens[attackingEnemy],memberTokens[attackedMember]));
 			damageNumberOut=false;
 		}
 		yield break;//
-	}
+	}*/
 	
 	public void EnemyClicked(EncounterEnemy enemy)
 	{
@@ -1317,8 +1382,12 @@ public class EncounterCanvasHandler : MonoBehaviour
 	
 	public void AddNewLogMessage(string newMessage)
 	{
-		eventLogText.text+="-"+newMessage+"\n";
-		eventLogScrollbar.value=0;
+		eventLogText.text+="\n-"+newMessage;
+		Canvas.ForceUpdateCanvases();
+		//scrollRect.verticalScrollbar.value=0f;
+		//eventLogScrollbar.value=0;
+		eventLogText.transform.GetComponentInParent<ScrollRect>().verticalNormalizedPosition=0;
+		Canvas.ForceUpdateCanvases();
 	}
 	/*
 	//MOVE THIS TO THE ONLY PLACE IT IS USED IN LATER
@@ -1356,7 +1425,7 @@ public class EncounterCanvasHandler : MonoBehaviour
 	void Start() 
 	{
 		main=this;
-		//GameManager.GameOver+=EndEncounter;
+		GameManager.GameOver+=EndEncounter;
 	}
 	
 	void Update()
@@ -1438,6 +1507,7 @@ public class EncounterCanvasHandler : MonoBehaviour
 			if (Input.GetKeyDown(KeyCode.E)) 
 			{
 				MakeNoise(memberCoords[selectedMember],2);
+				AddNewLogMessage(selectedMember.name+" makes some noise");
 			}
 			
 		}

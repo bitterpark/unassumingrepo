@@ -7,6 +7,8 @@ public class PartyMember
 	public string name;
 	public Color color;
 	
+	public Vector2 worldCoords;
+	
 	static List<string> occupiedNames=new List<string>();
 	static string GenerateName()
 	{
@@ -91,8 +93,8 @@ public class PartyMember
 		stamina=currentMaxStamina;
 	}
 	
-	public int staminaRegen=2;
-	public int staminaMoveCost=2;
+	public int staminaRegen=3;
+	public int staminaMoveCost=0;
 	
 	//HUNGER
 	int hunger
@@ -191,20 +193,21 @@ public class PartyMember
 	public List<Perk> perks=new List<Perk>();
 	public Dictionary<PartyMember,Relationship> relationships=new Dictionary<PartyMember, Relationship>();
 	
-	public PartyMember ()
+	public PartyMember (Vector2 startingWorldCoords)
 	{
-		GeneratePartyMember(GenerateName());
+		GeneratePartyMember(GenerateName(), startingWorldCoords);
 	}
 	
-	public PartyMember(string memberName)//, params Perk[] assignedPerks)
+	public PartyMember(string memberName,Vector2 startingWorldCoords)//, params Perk[] assignedPerks)
 	{
-		GeneratePartyMember(memberName);
+		GeneratePartyMember(memberName, startingWorldCoords);
 	}
 	
-	void GeneratePartyMember(string memberName)
+	void GeneratePartyMember(string memberName, Vector2 startingCoords)
 	{
 		//Pick color out of ones left
-		
+		worldCoords=startingCoords;
+		MapManager.main.GetRegion(startingCoords).localPartyMembers.Add(this);
 		color=Color.white;
 		foreach (Color c in GetColors())
 		{
@@ -632,7 +635,8 @@ public class PartyMember
 					encounterHdlr.roomButtons[encounterHdlr.memberCoords[this]].DropItemOnFloor(item);	
 				} else {throw new System.Exception("Dropping items as a non-member of encounter!");}
 			}
-			else {PartyManager.mainPartyManager.GainItems(item);}
+			else MapManager.main.GetRegion(worldCoords).StashItem(item);
+			//{PartyManager.mainPartyManager.GainItems(item);}
 			
 		} else {throw new System.Exception("Dropped item does not exist in member's carriedItems!");}
 	}

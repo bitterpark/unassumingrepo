@@ -5,18 +5,20 @@ using UnityEngine.UI;
 
 public class MapManager : MonoBehaviour 
 {
-	public static MapManager mainMapManager;
+	public static MapManager main;
 	
 	public Transform regionsGridGroup;
 	
 	public MapRegion mapRegionPrefab;
 	public GameObject playerTokenPrefab;
+	public MemberMapToken memberTokenPrefab;
 	
 	GameObject playerToken;
 	
 	public int mapHeight=0;
 	public int mapWidth=0;
 	
+	public Dictionary<PartyMember,MemberMapToken> memberTokens;
 	public List<Horde> hordes;
 	public Dictionary<Horde,HordeTokenDrawer> hordeTokens;
 	public HordeTokenDrawer hordeTokenPrefab;
@@ -45,11 +47,12 @@ public class MapManager : MonoBehaviour
 				mapRegions.Add (new Vector2(j,i),CreateNewRegion(newPos,j,i));
 			}
 		}
-		
+		//selectedMembers=new List<PartyMember>();
+		memberTokens=new Dictionary<PartyMember,MemberMapToken>();
 		//deprecate this later
 		hordes=new List<Horde>();
 		hordeTokens=new Dictionary<Horde, HordeTokenDrawer>();
-		PartyManager.TimePassed+=MoveAllHordes;
+		//PartyManager.TimePassed+=MoveAllHordes;
 		//city generation step
 		//Initial mask boundaries
 		List<Vector2> doubleTownSpots=new List<Vector2>();
@@ -129,8 +132,9 @@ public class MapManager : MonoBehaviour
 		//final step - party placement
 		if (playerToken!=null) {GameObject.Destroy(playerToken);}
 		playerToken=Instantiate(playerTokenPrefab) as GameObject;
+		
 		//DiscoverRegions(0,0);
-		TeleportToRegion(mapRegions[new Vector2(0,0)]);
+		//TeleportToRegion(mapRegions[new Vector2(0,0)]);
 	}
 	
 	MapRegion CreateNewRegion(Vector2 newRegionPos, int xCoord, int yCoord)
@@ -159,38 +163,72 @@ public class MapManager : MonoBehaviour
 		GameObject.Destroy(playerToken);
 	}
 	
+	public void AddMemberToken(PartyMember member)
+	{
+		MemberMapToken newToken=Instantiate(memberTokenPrefab);
+		//MapRegion memberRegion=GetRegion(member.worldCoords);
+		//newToken.transform.SetParent(memberRegion.transform,false);
+		//newToken.transform.position=memberRegion.transform.position;
+		newToken.AssignPartyMember(member);
+		memberTokens.Add(member,newToken);
+	}
+	
+	public void RemoveMemberToken(PartyMember member)
+	{
+		if (memberTokens.ContainsKey(member))
+		{
+			GameObject.Destroy(memberTokens[member].gameObject);
+			memberTokens.Remove(member);
+		}
+		else throw new System.Exception("Attempting to delete nonexistent map member token!");
+	}
+	
+	
 	public MapRegion GetRegion(int coordX,int coordY) {return GetRegion(new Vector2(coordX,coordY));}
 	public MapRegion GetRegion(Vector2 coords) {return mapRegions[coords];}
 	
 	public void RegionClicked(MapRegion clickedRegion)
 	{	
-		if (!EncounterCanvasHandler.main.encounterOngoing && GetRegion(PartyManager.mainPartyManager.mapCoordX,PartyManager.mainPartyManager.mapCoordY).hordeEncounter==null)
+		if (PartyManager.mainPartyManager.selectedMembers.Count>0)
 		{
-			if (PartyManager.mainPartyManager.ConfirmMapMovement(clickedRegion.xCoord,clickedRegion.yCoord))//.MovePartyToMapCoords(clickedRegion.xCoord,clickedRegion.yCoord))
+			if (!EncounterCanvasHandler.main.encounterOngoing 
+			    && mapRegions[PartyManager.mainPartyManager.selectedMembers[0].worldCoords].hordeEncounter==null)
 			{
-				bool noEventBasedMove=true;
-				bool eventHappened=GameEventManager.mainEventManager.RollEvents(ref noEventBasedMove);
-				if (noEventBasedMove)
+				//Needs to be cached at this stage, the party gets deselected on confirm, due to moved being set to =true
+				List<PartyMember> movedMembers=new List<PartyMember>(PartyManager.mainPartyManager.selectedMembers);
+				if (PartyManager.mainPartyManager.ConfirmMapMovement(clickedRegion.xCoord,clickedRegion.yCoord))//.MovePartyToMapCoords(clickedRegion.xCoord,clickedRegion.yCoord))
 				{
-					MovePartyToRegion(clickedRegion);
-					//Threat level roll
-					if (clickedRegion.hasEncounter && !eventHappened)
+					bool noEventBasedMove=true;
+					bool eventHappened=false;
+					GameEventManager.mainEventManager.RollEvents(ref noEventBasedMove,clickedRegion,movedMembers);
+					if (noEventBasedMove)
 					{
-						float randomAttackChance=0;
-						switch(clickedRegion.threatLevel)
+						//MovePartyToRegion(clickedRegion);
+						foreach (PartyMember member in movedMembers)
 						{
+							MoveMemberToRegion(member,clickedRegion);
+						}
+						DiscoverRegions(clickedRegion.GetCoords());
+						//Threat level roll
+						if (clickedRegion.hasEncounter && !eventHappened)
+						{
+							float randomAttackChance=0;
+							switch(clickedRegion.threatLevel)
+							{
 							case MapRegion.ThreatLevels.Low: {randomAttackChance=0.1f; break;}
 							case MapRegion.ThreatLevels.Medium: {randomAttackChance=0.25f; break;}
 							case MapRegion.ThreatLevels.High: {randomAttackChance=0.4f; break;}
-						}
-						if (Random.value<randomAttackChance) 
-						EnterEncounter
-						(new RandomAttack(clickedRegion.regionalEncounter.encounterEnemyType),PartyManager.mainPartyManager.partyMembers,true);
-					}//
+							}
+							if (Random.value<randomAttackChance) 
+								EnterEncounter
+									(new RandomAttack(clickedRegion.regionalEncounter.encounterEnemyType),movedMembers,true);
+						}//
+					}
 				}
 			}
 		}	
 	}
+	/*
 	//for special events
 	public void TeleportToRegion(MapRegion teleportRegion)
 	{
@@ -212,7 +250,23 @@ public class MapManager : MonoBehaviour
 		newTokenPos.z=playerToken.transform.position.z;
 		playerToken.transform.position=newTokenPos;
 		playerToken.transform.SetParent(newRegion.transform);
+	}*/
+	
+	public void MoveMemberToRegion(PartyMember movedMember,Vector2 newRegionCoords)
+	{
+		MoveMemberToRegion(movedMember,GetRegion(newRegionCoords));
+		DiscoverRegions(newRegionCoords);
 	}
+	
+	public void MoveMemberToRegion(PartyMember movedMember,MapRegion newRegion)
+	{
+		mapRegions[movedMember.worldCoords].localPartyMembers.Remove(movedMember);
+		movedMember.worldCoords=newRegion.GetCoords();
+		newRegion.localPartyMembers.Add(movedMember);
+		memberTokens[movedMember].MoveToken(newRegion.transform);
+	}	
+	
+	void DiscoverRegions(Vector2 coords) {DiscoverRegions((int)coords.x,(int)coords.y);}
 	
 	void DiscoverRegions(int originXCoord, int originYCoord)
 	{
@@ -229,7 +283,7 @@ public class MapManager : MonoBehaviour
 			else {region.visible=false;}
 		}
 	}
-	
+	/*
 	void CheckPartyRegionForHordes(MapRegion region)
 	{
 		if (region.hordeEncounter!=null && !EncounterCanvasHandler.main.encounterOngoing) 
@@ -237,24 +291,18 @@ public class MapManager : MonoBehaviour
 			//EnterEncounter(region.hordeEncounter,PartyManager.mainPartyManager.partyMembers);
 			hordeLocked=true;
 		}
-	}
+	}*/
 
 	public void EnterEncounter(Encounter newEncounter, List<PartyMember> team, bool isAmbush)
 	{
 		EncounterCanvasHandler.main.StartNewEncounter(newEncounter,team,isAmbush);
 		scoutingHandler.EndDialog();
 	}
-	
+	/*
 	public void AddHorde(Vector2 hiveCoords,EncounterEnemy.EnemyTypes hordeType)
 	{
 		Vector2 hordeCoords=hiveCoords;
 		//determine if horde will shift by 1 x or 1 y from hive
-		/*
-		if (Random.value<0.5f)
-		{
-			if (Random.value<0.5f) {hordeCoords.x+=1;} else {hordeCoords.x-=1;}
-		}
-		else {if (Random.value<0.5f) {hordeCoords.y+=1;} else {hordeCoords.y-=1;}}*/
 		if (mapRegions[hordeCoords].hordeEncounter==null)
 		{
 			HordeTokenDrawer newToken=Instantiate(hordeTokenPrefab);
@@ -266,16 +314,17 @@ public class MapManager : MonoBehaviour
 			MoveHorde(newHorde);
 		}
 	}
-	
+	*/
 	public void RemoveHorde(Horde removedHorde)
 	{
+		/*
 		Vector2 removedHordeCoords=new Vector2(removedHorde.mapX,removedHorde.mapY);
 		mapRegions[removedHordeCoords].hordeEncounter=null;
 		hordes.Remove(removedHorde);
 		GameObject.Destroy(hordeTokens[removedHorde].gameObject);
-		hordeTokens.Remove(removedHorde);
+		hordeTokens.Remove(removedHorde);*/
 	}
-	
+	/*
 	public void MoveAllHordes(int timeVar)
 	{
 		//!!IMPORTANT!! - Dispose of expired hordes first!
@@ -334,22 +383,22 @@ public class MapManager : MonoBehaviour
 			moveLoc=moveLocs[Random.Range(0,moveLocs.Count)];
 		}
 		return movePossible;
-	}
+	}*/
 	
 	void Start()
 	{
-		mainMapManager=this;
+		main=this;
 		GameManager.GameStart+=GenerateNewMap;
 		GameManager.GameOver+=ClearMap;
 	}
 	
 	void OnGUI()
 	{
-		if (GameManager.main.gameStarted && !EncounterCanvasHandler.main.encounterOngoing)
+		if (GameManager.main.gameStarted && !EncounterCanvasHandler.main.encounterOngoing && PartyManager.mainPartyManager.selectedMembers.Count>0)
 		{
 			if (!InventoryScreenHandler.mainISHandler.inventoryShown && !GameEventManager.mainEventManager.drawingEvent)
 			{
-				MapRegion checkedRegion=mapRegions[new Vector2(PartyManager.mainPartyManager.mapCoordX,PartyManager.mainPartyManager.mapCoordY)];
+				MapRegion checkedRegion=mapRegions[PartyManager.mainPartyManager.selectedMembers[0].worldCoords];
 				Rect encounterStartRect=new Rect(110,10,80,25);
 				/*
 				if (hordeLocked)//checkedRegion.hordeEncounter!=null)

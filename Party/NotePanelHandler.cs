@@ -7,10 +7,12 @@ public class NotePanelHandler : MonoBehaviour
 	float notificationTime;
 	public Text notificationText;
 	
-	public void AssignNote(string newText)
+	public void AssignNote(string newText) {AssignNote(newText,2f);}
+	
+	public void AssignNote(string newText, float lifeTime)
 	{
 		notificationText.text=newText;
-		notificationTime=2f;
+		notificationTime=lifeTime;
 	}
 	
 	void Update()

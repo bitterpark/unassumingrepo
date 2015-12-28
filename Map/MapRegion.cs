@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
@@ -7,6 +8,7 @@ public class MapRegion : MonoBehaviour, IPointerEnterHandler, IPointerExitHandle
 {
 	public int xCoord=0;
 	public int yCoord=0;
+	public Vector2 GetCoords() {return new Vector2(xCoord,yCoord);}
 	
 	public Sprite undiscoveredLocSprite;
 	public Sprite emptyLocSprite;
@@ -21,6 +23,8 @@ public class MapRegion : MonoBehaviour, IPointerEnterHandler, IPointerExitHandle
 	public Sprite hordeSprite;
 	
 	public GameObject campTokenPrefab;
+	
+	public Image stashToken;
 	
 	public bool discovered
 	{
@@ -62,6 +66,25 @@ public class MapRegion : MonoBehaviour, IPointerEnterHandler, IPointerExitHandle
 	public bool hasEncounter=false;
 	
 	public bool hasCamp=false;
+	
+	public List<PartyMember> localPartyMembers=new List<PartyMember>();
+	
+	List<InventoryItem> stashedItems=new List<InventoryItem>();
+	public List<InventoryItem> GetStashedItems() {return stashedItems;}
+	public void StashItem(InventoryItem stashedItem)
+	{
+		stashedItems.Add(stashedItem);
+		stashToken.enabled=true;
+	}
+	public void TakeStashItem(InventoryItem takenItem)
+	{
+		if (!stashedItems.Contains(takenItem)) throw new System.Exception("Trying to take item that does not exist in region");
+		else
+		{
+			stashedItems.Remove(takenItem);
+			if (stashedItems.Count==0) stashToken.enabled=false;
+		}
+	}
 	/*
 	{
 		get {return _hasEncounter;}
@@ -194,11 +217,12 @@ public class MapRegion : MonoBehaviour, IPointerEnterHandler, IPointerExitHandle
 	
 	public void GenerateHorde(int emptySigVar)
 	{
+		/*
 		if (Random.value<0.1f) 
 		{
-			MapManager.mainMapManager.AddHorde(new Vector2(xCoord,yCoord),regionalEncounter.encounterEnemyType);
+			MapManager.main.AddHorde(new Vector2(xCoord,yCoord),regionalEncounter.encounterEnemyType);
 			//GameManager.DebugPrint("New horde added, maxX:");
-		}
+		}*/
 	}
 	
 	public void SetUpCamp()
@@ -216,7 +240,7 @@ public class MapRegion : MonoBehaviour, IPointerEnterHandler, IPointerExitHandle
 
 	public void OnPointerDown (PointerEventData eventData)
 	{
-		/*if (!EventSystem.current.IsPointerOverGameObject())*/ MapManager.mainMapManager.RegionClicked(this);
+		/*if (!EventSystem.current.IsPointerOverGameObject())*/ MapManager.main.RegionClicked(this);
 	}
 
 	#endregion

@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 
@@ -10,8 +10,9 @@ public class Encounter
 	public int maxY=0;
 	
 	protected const int safeDistanceFromEntrance=1;
-	const float barricadeChance=0.1f;//0.08f;
-	const int normalChestCount=2;
+	const float barricadeChance=0.15f;//0.08f;
+	const int normalChestCountMin=2;
+	const int normalChestCountMax=3;
 	const float baselineEnemyPerRoomRatio=0.4f;
 	
 	public string lootDescription="";
@@ -257,7 +258,7 @@ public class Encounter
 		}
 		
 		//Generate loot placement
-		int requiredChestCount=normalChestCount;
+		int requiredChestCount=Random.Range(normalChestCountMin,normalChestCountMax+1);
 		int currentChestCount=0;
 		while (currentChestCount<requiredChestCount && roomsEligibleForLootPlacement.Count>0)
 		{
@@ -402,13 +403,13 @@ public class Horde:Encounter
 	public void ReduceLifespan()
 	{
 		lifespan--;
-		if (lifespan<=0) {MapManager.mainMapManager.RemoveHorde(this);}
+		if (lifespan<=0) {MapManager.main.RemoveHorde(this);}
 	}
 	
 	public void DeadEnemyReport() 
 	{
 		enemyCount-=1;
-		if (enemyCount<=0) {MapManager.mainMapManager.RemoveHorde(this);}
+		if (enemyCount<=0) {MapManager.main.RemoveHorde(this);}
 	}
 	//for hordes
 	public Horde (EncounterEnemy.EnemyTypes enemyType, int mapCoordX, int mapCoordY) : base(0)

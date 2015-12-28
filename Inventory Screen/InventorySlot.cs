@@ -29,7 +29,8 @@ public class InventorySlot : MonoBehaviour, IDropHandler
 			.roomButtons[EncounterCanvasHandler.main.memberCoords[InventoryScreenHandler.mainISHandler.selectedMember]];
 			affectedRoom.DropItemOnFloor(newSlotItem.assignedItem);
 		}
-		else {PartyManager.mainPartyManager.GainItems(newSlotItem.assignedItem);}
+		else {MapManager.main.GetRegion(InventoryScreenHandler.mainISHandler.selectedMember.worldCoords).StashItem(newSlotItem.assignedItem);}
+		//PartyManager.mainPartyManager.GainItems(newSlotItem.assignedItem);}
 	}
 	
 	//see if the new item can currently be filled into this slot, if yes - return true
@@ -108,7 +109,8 @@ public class InventorySlot : MonoBehaviour, IDropHandler
 				.roomButtons[EncounterCanvasHandler.main.memberCoords[InventoryScreenHandler.mainISHandler.selectedMember]];
 				affectedRoom.PickUpFloorItem(filledItem.assignedItem);
 			}
-			else {PartyManager.mainPartyManager.RemoveItems(filledItem.assignedItem);}
+			else MapManager.main.GetRegion(InventoryScreenHandler.mainISHandler.selectedMember.worldCoords).TakeStashItem(filledItem.assignedItem);
+			//{PartyManager.mainPartyManager.RemoveItems(filledItem.assignedItem);}
 		}
 		filledItem=null;
 	}

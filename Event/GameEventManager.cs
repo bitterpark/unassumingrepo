@@ -57,58 +57,16 @@ public class GameEventManager : MonoBehaviour
 		}
 	}
 	
-	public bool RollEvents(ref bool moveAllowed)
+	public bool RollEvents(ref bool moveAllowed, MapRegion eventRegion, List<PartyMember> movedMembers)
 	{
-		/*
-		Dictionary<float,GameEvent> eligibleEvents=new Dictionary<float, GameEvent>();
-		foreach (float key in eventPossibilities.Keys) 
-		{
-			if (eventPossibilities[key].PreconditionsMet()) {eligibleEvents.Add(key,eventPossibilities[key]);}
-		
-		}*/
-		//First, see if any morale-based events fire
-		/*
-		//find events with met preconditions
-		List<EventChance> eligibleEvents=new List<EventChance>();
-		foreach(EventChance chance in possibleEvents) 
-		{
-			if (chance.myEvent.PreconditionsMet()) {eligibleEvents.Add (chance);}
-		}
-		
-		//form a dictionary based on probability intervals
-		float eventPositiveProbabilitySpace=0;
-		foreach (EventChance chance in eligibleEvents) {eventPositiveProbabilitySpace+=chance.chance;}
-		
-		Dictionary<float,EventChance> intervalDict=new Dictionary<float, EventChance>();
-		foreach (EventChance chance in eligibleEvents)
-		{
-			intervalDict.Add (eventPositiveProbabilitySpace,chance);
-			eventPositiveProbabilitySpace-=chance.chance;
-		}
-		
-		//roll on resulting intervals	
-		float roll=Random.value;
-		GameEvent resEvent=null;
-		//Compiler made me assign this, should be null
-		EventChance eventRecord=new EventChance();
-		foreach (float chance in intervalDict.Keys)
-		{
-			if (roll<chance) 
-			{
-				resEvent=intervalDict[chance].myEvent;
-				eventRecord=intervalDict[chance];
-			}
-		}
-		bool eventFired=false;*/
-		//First, see if morale-based events fire
 		bool eventFired=false;
 		float eventsRoll=Random.value;
 		EventChance trackedEventRecord=new EventChance();
-		GameEvent resEvent=PickRandomEvent(moraleEvents, ref trackedEventRecord,eventsRoll);
+		GameEvent resEvent=PickRandomEvent(moraleEvents, ref trackedEventRecord,eventsRoll, eventRegion, movedMembers);
 		//If no morale events fired, do other events
 		if (resEvent==null)
 		{
-			resEvent=PickRandomEvent(possibleEvents, ref trackedEventRecord,eventsRoll);
+			resEvent=PickRandomEvent(possibleEvents, ref trackedEventRecord,eventsRoll,eventRegion, movedMembers);
 			//If a regular event fired, remove it from events list
 			if (resEvent!=null) possibleEvents.Remove(trackedEventRecord);
 		}
@@ -116,7 +74,7 @@ public class GameEventManager : MonoBehaviour
 		if (resEvent!=null) 
 		{
 			eventFired=true;
-			StartEventDraw(resEvent);
+			StartEventDraw(resEvent, eventRegion, movedMembers);
 			moveAllowed=resEvent.AllowMapMove();
 		}
 		else moveAllowed=true;
@@ -124,13 +82,15 @@ public class GameEventManager : MonoBehaviour
 		return eventFired;
 	}
 	
-	GameEvent PickRandomEvent(List<EventChance> eventsList, ref EventChance eventRecord, float roll)
+	GameEvent PickRandomEvent(List<EventChance> eventsList, ref EventChance eventRecord, float roll
+	, MapRegion eventRegion,List<PartyMember> movedMembers)
 	{
 		//find events with met preconditions
+		//MapRegion currentTeamRegion=MapManager.main.GetRegion(PartyManager.mainPartyManager.selectedMembers.);
 		List<EventChance> eligibleEvents=new List<EventChance>();
 		foreach(EventChance chance in eventsList) 
 		{
-			if (chance.myEvent.PreconditionsMet()) {eligibleEvents.Add (chance);}
+			if (chance.myEvent.PreconditionsMet(eventRegion,movedMembers)) {eligibleEvents.Add (chance);}
 		}
 		
 		//form a dictionary based on probability intervals
@@ -159,7 +119,7 @@ public class GameEventManager : MonoBehaviour
 		return resEvent;
 	}
 	
-	void StartEventDraw(GameEvent newDrawnEvent)
+	void StartEventDraw(GameEvent newDrawnEvent,MapRegion eventRegion, List<PartyMember> movedMembers)
 	{
 		/*
 		drawingEvent=true;
@@ -170,9 +130,9 @@ public class GameEventManager : MonoBehaviour
 		//currentDescription=
 		drawingEvent=true;
 		EventCanvasHandler newEventScreen=Instantiate(eventScreenPrefab);
-		newEventScreen.AssignEvent(newDrawnEvent);
+		newEventScreen.AssignEvent(newDrawnEvent, eventRegion, movedMembers);
 	}
-	
+	/*
 	void DrawEvent()
 	{
 		//main bg
@@ -209,7 +169,7 @@ public class GameEventManager : MonoBehaviour
 			choicesRect.y-=(choiceHeight+choiceVPad)*choices.Count-1;
 			foreach (string choice in choices)
 			{
-				if (GUI.Button(choicesRect,choice)) {currentDescription=drawnEvent.DoChoice(choice);/*FormatEventDecription(drawnEvent.DoChoice(choice));*/ choiceMade=true;}
+				if (GUI.Button(choicesRect,choice)) {currentDescription=drawnEvent.DoChoice(choice); choiceMade=true;}
 				choicesRect.y+=choiceHeight+choiceVPad;
 				//i++;
 			}
@@ -219,7 +179,7 @@ public class GameEventManager : MonoBehaviour
 			//Rect closeButtonRect=new Rect();
 			if (GUI.Button(choicesRect,"Close")) {EndEventDraw();}
 		}
-	}
+	}*/
 	
 	public void EndEventDraw()
 	{
@@ -233,17 +193,14 @@ public class GameEventManager : MonoBehaviour
 	void Start()
 	{
 		mainEventManager=this;
-		possibleEvents.Add (new EventChance(new FoodSpoilage(),0.04f));
+		//possibleEvents.Add (new EventChance(new FoodSpoilage(),0.04f));
 		possibleEvents.Add (new EventChance(new MonsterAttack(),0.04f));
 		possibleEvents.Add (new EventChance(new CacheInAnomaly(),0.04f));
-		possibleEvents.Add (new EventChance(new LostInAnomaly(),0.04f));
+		//possibleEvents.Add (new EventChance(new LostInAnomaly(),0.04f));
 		possibleEvents.Add( new EventChance(new NewSurvivor(),0.04f));
-		possibleEvents.Add( new EventChance(new MedicalCache(),0.04f));
+		possibleEvents.Add( new EventChance(new MedicalCache(),1f));
 		possibleEvents.Add (new EventChance(new SurvivorRescue(),0.04f));
 		possibleEvents.Add(new EventChance(new SearchForSurvivor(),0.04f));
-		//possibleEvents.Add (new EventChance(new LowMoraleSpiral(),0.04f));
-		//possibleEvents.Add (new EventChance(new LowMoraleFight(),0.04f));
-		// possibleEvents.Add (new EventChance(new LowMoraleEnmity(),0.04f));
 		
 		moraleEvents.Add (new EventChance(new LowMoraleSpiral(),0.2f));
 		moraleEvents.Add (new EventChance(new LowMoraleFight(),0.15f));

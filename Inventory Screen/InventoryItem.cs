@@ -6,6 +6,8 @@ public abstract class InventoryItem
 {
 	//public static int foundAmmoCount=10;
 	
+	public string itemName;
+	
 	public abstract Sprite GetItemSprite();
 	public virtual bool UseAction(PartyMember member) {return false;}
 	public abstract string GetMouseoverDescription();
@@ -217,11 +219,13 @@ public class SettableTrap: InventoryItem
 {
 	System.Type myTrapType=typeof(Trap);
 	
+	public SettableTrap (){itemName="Trap";}
+	
 	public override Sprite GetItemSprite() {return SpriteBase.mainSpriteBase.settableTrapSprite;}
 	
 	public override string GetMouseoverDescription ()
 	{
-		return "Settable trap\nAdds tarp";
+		return "Settable trap\nSets a one-use trap";
 	}
 	
 	public override bool UseAction(PartyMember member)
@@ -244,6 +248,11 @@ public class SettableTrap: InventoryItem
 
 public class AmmoBox:InventoryItem
 {
+	public AmmoBox()
+	{
+		itemName="Ammo box";
+	}
+	
 	int ammoAmount=12;
 	public override Sprite GetItemSprite() {return SpriteBase.mainSpriteBase.ammoBoxSprite;}
 	
@@ -254,12 +263,17 @@ public class AmmoBox:InventoryItem
 	}
 	public override string GetMouseoverDescription ()
 	{
-		return "Ammo box\nAdds "+ammoAmount+" ammo";
+		return itemName+"\nAdds "+ammoAmount+" ammo";
 	}
 }
 
 public class Medkit:InventoryItem
 {
+	public Medkit()
+	{
+		itemName="Medkit";
+	}
+	
 	//int healAmount=20;
 	float healPercentage=0.35f;
 	public override Sprite GetItemSprite() {return SpriteBase.mainSpriteBase.medkitSprite;}
@@ -289,12 +303,17 @@ public class Medkit:InventoryItem
 	public override string GetMouseoverDescription ()
 	{
 		int healAmount=Mathf.FloorToInt(InventoryScreenHandler.mainISHandler.selectedMember.maxHealth*healPercentage);
-		return "Medkit\nHeals "+healAmount+"% of hp\nCures bleed";
+		return itemName+"\nHeals "+healAmount+"% of hp\nCures bleed";
 	}
 }
 
 public class Bandages: InventoryItem
 {
+	public Bandages() 
+	{
+		itemName="Bandages";
+	}
+	
 	int healAmount=20;
 	public override Sprite GetItemSprite() {return SpriteBase.mainSpriteBase.bandageSprite;}
 	
@@ -317,13 +336,18 @@ public class Bandages: InventoryItem
 	}
 	public override string GetMouseoverDescription ()
 	{
-		return "Bandages\nCure bleed";
+		return itemName+"\nCure bleed";
 	}
 	
 }
 
 public class FoodBig:InventoryItem
 {
+	public FoodBig()
+	{
+		itemName="Canned food";
+	}
+	
 	int nutritionAmount=50;
 	public override Sprite GetItemSprite() {return SpriteBase.mainSpriteBase.foodSpriteBig;}
 	
@@ -341,12 +365,17 @@ public class FoodBig:InventoryItem
 	
 	public override string GetMouseoverDescription ()
 	{
-		return "Canned food\nRestores "+nutritionAmount+" hunger";
+		return itemName+"\nRestores "+nutritionAmount+" hunger";
 	}
 }
 
 public class FoodSmall:InventoryItem
 {
+	public FoodSmall()
+	{
+		itemName="Junk food";
+	}
+	
 	int nutritionAmount=20;
 	public override Sprite GetItemSprite() {return SpriteBase.mainSpriteBase.foodSpriteSmall;}
 	
@@ -364,7 +393,7 @@ public class FoodSmall:InventoryItem
 	
 	public override string GetMouseoverDescription ()
 	{
-		return "Junk food\nRestores "+nutritionAmount+" hunger";
+		return itemName+"\nRestores "+nutritionAmount+" hunger";
 	}
 }
 /*
@@ -413,6 +442,11 @@ public class PerishableFood:InventoryItem
 */
 public class Radio:InventoryItem
 {
+	public Radio()
+	{
+		itemName="Radio";
+	}
+	
 	public override Sprite GetItemSprite() {return SpriteBase.mainSpriteBase.radioSprite;}
 	
 	public override bool UseAction(PartyMember member)
@@ -423,7 +457,7 @@ public class Radio:InventoryItem
 	
 	public override string GetMouseoverDescription ()
 	{
-		return "Radio\nSummons a rescue";
+		return itemName+"\nSummons a rescue";
 	}
 }
 
@@ -436,6 +470,11 @@ public abstract class EquippableItem:InventoryItem
 
 public class Flashlight: EquippableItem
 {
+	public Flashlight()
+	{
+		itemName="Flashlight";
+	}
+	
 	public override Sprite GetItemSprite() {return SpriteBase.mainSpriteBase.flashlightSprite;}
 	public override void EquipEffect (PartyMember member)
 	{
@@ -448,12 +487,17 @@ public class Flashlight: EquippableItem
 	
 	public override string GetMouseoverDescription ()
 	{
-		return "Flashlight\nCurrently has no use";
+		return itemName+"\nCurrently has no use";
 	}
 }
 
 public class ArmorVest:EquippableItem
 {
+	public ArmorVest()
+	{
+		itemName="Armor vest";
+	}
+	
 	int damageReduction=3;
 	public override Sprite GetItemSprite() {return SpriteBase.mainSpriteBase.armorvestSprite;}
 	public override void EquipEffect (PartyMember member)
@@ -467,13 +511,13 @@ public class ArmorVest:EquippableItem
 	
 	public override string GetMouseoverDescription ()
 	{
-		return "Armor vest\nReduces physical damage by "+damageReduction;
+		return itemName+"\nReduces physical damage by "+damageReduction;
 	}
 }
 
 
 public abstract class Weapon:InventoryItem
-{
+{	
 	//damage for display on mouseover text
 	public abstract int GetMaxDamage();
 	public abstract int GetMinDamage();
@@ -484,7 +528,6 @@ public abstract class Weapon:InventoryItem
 		int actualDamage=Mathf.Clamp(rawDamage,GetMinDamage(),GetMaxDamage());
 		return actualDamage;
 	}
-	public abstract string GetName();//virtual string GetName() {return "";}
 	public virtual void Unequip(PartyMember member)//virtual void Unequip (PartyMember member) {}
 	{
 		member.UnequipWeapon(this);
@@ -496,21 +539,25 @@ public abstract class RangedWeapon:Weapon
 	public abstract int GetAmmoUsePerShot();
 	public override string GetMouseoverDescription ()
 	{
-		return GetName()+"\nDamage:"+GetMinDamage()+"-"+GetMaxDamage()+"\nAmmo per shot:"+GetAmmoUsePerShot()+"\n Weight:"+GetWeight();
+		return itemName+"\nDamage:"+GetMinDamage()+"-"+GetMaxDamage()+"\nAmmo per shot:"+GetAmmoUsePerShot()+"\n Weight:"+GetWeight();
 	}
 	//public override bool UseAction (PartyMember member) {return false;}
 }
 
 public class NineM:RangedWeapon
 {
-	string name="9mm Pistol";
-	int weaponMaxDamage=6;
-	int weaponMinDamage=5;
+	public NineM()
+	{
+		itemName="9mm Pistol";
+	}
+	
+	//string name="9mm Pistol";
+	int weaponMaxDamage=100;
+	int weaponMinDamage=80;
 	int ammoPerShot=1;
 	
 	public override int GetMaxDamage() {return weaponMaxDamage;}
 	public override int GetMinDamage() {return weaponMinDamage;}
-	public override string GetName() {return name;}
 	public override int GetAmmoUsePerShot (){return ammoPerShot;}
 	
 	public override Sprite GetItemSprite ()
@@ -526,11 +573,15 @@ public class NineM:RangedWeapon
 
 public class Shotgun:RangedWeapon
 {
-	string name="Shotgun";
-	int weaponMaxDamage=10;
-	int weaponMinDamage=8;
-	int oneShotMinDamage=4;
-	int oneShotMaxDamage=5;
+	public Shotgun()
+	{
+		itemName="Shotgun";
+	}
+	
+	int weaponMaxDamage=200;
+	int weaponMinDamage=160;
+	int oneShotMinDamage=80;
+	int oneShotMaxDamage=100;
 	int ammoPerShot=2;
 	public override int GetMaxDamage() {return weaponMaxDamage;}
 	public override int GetMinDamage() {return weaponMinDamage;}
@@ -549,7 +600,6 @@ public class Shotgun:RangedWeapon
 		}
 		return actualDamage;
 	}
-	public override string GetName() {return name;}
 	public override int GetAmmoUsePerShot () {return ammoPerShot;}
 	
 	public override Sprite GetItemSprite ()
@@ -561,11 +611,15 @@ public class Shotgun:RangedWeapon
 
 public class AssaultRifle:RangedWeapon
 {
-	string name="Assault Rifle";
-	int weaponMaxDamage=15;
-	int weaponMinDamage=12;
-	int oneShotMinDamage=4;
-	int oneShotMaxDamage=5;
+	public AssaultRifle()
+	{
+		itemName="Assault Rifle";
+	}
+	
+	int weaponMaxDamage=360;
+	int weaponMinDamage=330;
+	int oneShotMinDamage=110;
+	int oneShotMaxDamage=120;
 	int ammoPerShot=3;
 	public override int GetMaxDamage() {return weaponMaxDamage;}
 	public override int GetMinDamage() {return weaponMinDamage;}
@@ -584,7 +638,6 @@ public class AssaultRifle:RangedWeapon
 		}
 		return actualDamage;
 	}
-	public override string GetName() {return name;}
 	public override int GetAmmoUsePerShot () {return ammoPerShot;}
 	
 	public override Sprite GetItemSprite ()
@@ -603,7 +656,7 @@ public abstract class MeleeWeapon:Weapon
 	public abstract int GetStaminaUse();
 	public override string GetMouseoverDescription ()
 	{
-		return GetName()+"\nDamage:"+GetMinDamage()+"-"+GetMaxDamage()+"\nStamina per hit:"+GetStaminaUse()+"\n Weight:"+GetWeight();
+		return itemName+"\nDamage:"+GetMinDamage()+"-"+GetMaxDamage()+"\nStamina per hit:"+GetStaminaUse()+"\n Weight:"+GetWeight();
 	}
 	public int GetDamage (float moraleModifier, float additionModifier)
 	{
@@ -639,14 +692,17 @@ public abstract class MeleeWeapon:Weapon
 
 public class Pipe:MeleeWeapon
 {
-	public int weaponMaxDamage=11;
-	public int weaponMinDamage=7;
+	public Pipe()
+	{
+		itemName="Pipe";
+	}
+	
+	public int weaponMaxDamage=110;
+	public int weaponMinDamage=70;
 	int staminaUse=3;
-	public string name="Pipe";
 	
 	public override int GetMaxDamage() {return weaponMaxDamage;}
 	public override int GetMinDamage() {return weaponMinDamage;}
-	public override string GetName() {return name;}
 	public override int GetStaminaUse() {return staminaUse;}
 	
 	
@@ -663,15 +719,18 @@ public class Pipe:MeleeWeapon
 
 public class Knife:MeleeWeapon
 {
-	public int weaponMaxDamage=5;
-	public int weaponMinDamage=1;
+	public Knife()
+	{
+		itemName="Knife";
+	}
 	
-	public string name="Knife";
+	public int weaponMaxDamage=50;
+	public int weaponMinDamage=10;
+	
 	int staminaUse=2;
 	
 	public override int GetMaxDamage() {return weaponMaxDamage;}
 	public override int GetMinDamage() {return weaponMinDamage;}
-	public override string GetName() {return name;}
 	public override int GetStaminaUse() {return staminaUse;}
 	
 	public override Sprite GetItemSprite ()
@@ -687,10 +746,14 @@ public class Knife:MeleeWeapon
 
 public class Axe:MeleeWeapon
 {
-	public int weaponMaxDamage=20;
-	public int weaponMinDamage=16;
+	public Axe()
+	{
+		itemName="Axe";
+	}
+	
+	public int weaponMaxDamage=200;
+	public int weaponMinDamage=160;
 	//int weakDamage=3;
-	public string name="Axe";
 	int staminaUse=4;
 	
 	public override int GetMaxDamage() {return weaponMaxDamage;}
@@ -705,7 +768,6 @@ public class Axe:MeleeWeapon
 		}
 		return actualDamage;
 	}*/
-	public override string GetName() {return name;}
 	public override int GetStaminaUse() {return staminaUse;}
 	
 	public override Sprite GetItemSprite ()

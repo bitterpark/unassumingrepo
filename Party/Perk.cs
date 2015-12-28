@@ -251,7 +251,7 @@ public class Antisocial: Perk
 
 public class Powerhouse: Perk
 {
-	int meleeDamageChange=1;
+	int meleeDamageChange=10;
 	public Powerhouse ()
 	{
 		name="Powerhouse";
@@ -262,7 +262,7 @@ public class Powerhouse: Perk
 }
 public class WeakArm: Perk
 {
-	int meleeDamageChange=-1;
+	int meleeDamageChange=-10;
 	public WeakArm ()
 	{
 		name="Weak arm";
@@ -274,7 +274,7 @@ public class WeakArm: Perk
 
 public class Deadeye: Perk
 {
-	int rangedDamageChange=2;
+	int rangedDamageChange=20;
 	public Deadeye ()
 	{
 		name="Deadeye";
@@ -285,7 +285,7 @@ public class Deadeye: Perk
 }
 public class PoorShot: Perk
 {
-	int rangedDamageChange=-2;
+	int rangedDamageChange=-20;
 	public PoorShot ()
 	{
 		name="Poor shot";

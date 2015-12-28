@@ -92,12 +92,20 @@ public class EnemyTokenHandler : MonoBehaviour, IAttackAnimation
 		}
 	}
 	
-	public void TokenAttackTrigger(params PartyMember[] membersWithinReach)
+	public IEnumerator TokenAttackTrigger(params PartyMember[] membersWithinReach)
 	{
-		if (!destroyed && EncounterCanvasHandler.main.encounterOngoing) assignedEnemy.AttackAction(new List<PartyMember>(membersWithinReach));
+		
+		if (!destroyed && EncounterCanvasHandler.main.encounterOngoing) 
+		{
+			EnemyAttack attackInfo=assignedEnemy.AttackAction(new List<PartyMember>(membersWithinReach));
+			EncounterCanvasHandler.main.ShowDamageToPartyMember
+			(attackInfo.attackedMember,attackInfo.attackingEnemy,attackInfo.damageDealt,attackInfo.blocked);
+			yield return StartCoroutine(AttackAnimation());
+		}
+		yield break;
 	}
 	
-	public void TokenRoundoverTrigger(Dictionary<PartyMember, Dictionary<Vector2,int>> masks, Dictionary<PartyMember,Vector2> memberCoords)
+	public IEnumerator TokenRoundoverTrigger(Dictionary<PartyMember, Dictionary<Vector2,int>> masks, Dictionary<PartyMember,Vector2> memberCoords)
 	{
 		if (!destroyed && EncounterCanvasHandler.main.encounterOngoing)
 		{
@@ -105,9 +113,17 @@ public class EnemyTokenHandler : MonoBehaviour, IAttackAnimation
 			{
 				if (currentPOI.pointCoords==assignedEnemy.GetCoords()) currentPOI=null;
 			}
-			assignedEnemy.DoMyRound(masks,memberCoords,currentPOI);
+			EnemyAttack attackInfo;//=new EnemyAttack();
+			bool roundIsAttack=assignedEnemy.DoMyRound(masks,memberCoords,currentPOI,out attackInfo);
+			if (roundIsAttack)
+			{
+				EncounterCanvasHandler.main.ShowDamageToPartyMember
+				(attackInfo.attackedMember,attackInfo.attackingEnemy,attackInfo.damageDealt,attackInfo.blocked);
+				yield return StartCoroutine(AttackAnimation());
+			}
 			EncounterCanvasHandler.main.roomButtons[assignedEnemy.GetCoords()].AttachEnemyToken(transform);
 			UpdateTokenVision();
+			yield break;
 			//UpdateVisionStatusDisplay();
 		}
 	}

@@ -2,12 +2,28 @@
 using System.Collections;
 using System.Collections.Generic;
 
-public abstract class EncounterEnemy 
+public struct EnemyAttack
 {
+	public int damageDealt;
+	public bool blocked;
+	public PartyMember attackedMember;
+	public EncounterEnemy attackingEnemy;
+	public EnemyAttack(int dmg, bool blockStatus, PartyMember defender, EncounterEnemy attacker)
+	{
+		damageDealt=dmg;
+		blocked=blockStatus;
+		attackedMember=defender;
+		attackingEnemy=attacker;
+	}
+}
+
+public abstract class EncounterEnemy 
+{	
 	public string name;
 	public int health;
 	public int minDamage;
 	public int maxDamage;
+	protected int staminaDamage=1;
 	protected int maxAttackRange=0;
 	//public int encounterCount=5;
 	public float moveChance=0.1f;//0.4f;
@@ -121,7 +137,7 @@ public abstract class EncounterEnemy
 		AttackAction(membersWithinReach);
 	}*/
 	
-	public virtual PartyMember AttackAction(List<PartyMember> membersWithinReach)//Dictionary<PartyMember,Vector2> memberCoords)
+	public virtual EnemyAttack AttackAction(List<PartyMember> membersWithinReach)//Dictionary<PartyMember,Vector2> memberCoords)
 	{
 		/*List<PartyMember> membersInRoom=new List<PartyMember>();
 		foreach (PartyMember key in memberCoords.Keys) 
@@ -129,6 +145,7 @@ public abstract class EncounterEnemy
 			if (memberCoords[key]==new Vector2(xCoord,yCoord)) membersInRoom.Add(key);
 		}*/
 		PartyMember attackedMember=null;
+		EnemyAttack performedAttack=new EnemyAttack();
 		if (membersWithinReach.Count>0)
 		{
 			//Determine member to attack
@@ -140,7 +157,7 @@ public abstract class EncounterEnemy
 			List<PartyMember> membersWithoutDefence=new List<PartyMember>();
 			foreach (PartyMember member in membersWithinReach)
 			{
-				if (!manager.memberTokens[member].defenceMode) 
+				if (member.stamina<staminaDamage)//!manager.memberTokens[member].defenceMode) 
 				{
 					membersWithoutDefence.Add(member);
 				}
@@ -150,18 +167,22 @@ public abstract class EncounterEnemy
 			//PartyMember attackedMember=manager.selectedMember;
 			//int targetedPCIndex=manager.selectedMember;
 			//manager.DamagePlayerCharacter(manager.selectedMember,damage);
+			//See if damage gets blocked
 			int myDamageRoll=Random.Range(minDamage,maxDamage+1);
-			int realDmg=manager.memberTokens[attackedMember].DamageAssignedMember(myDamageRoll);//attackedMember.TakeDamage(myDamageRoll);
+			int realStaminaDamage=staminaDamage;
+			int realDmg=manager.memberTokens[attackedMember].DamageAssignedMember(myDamageRoll,ref realStaminaDamage);//attackedMember.TakeDamage(myDamageRoll);
+			bool blocked=realStaminaDamage!=0;
 			
-			//manager.DisplayNewMessage(name+" hits "+attackedMember.name+" for "+realDmg+"!");
-			//GameManager.DebugPrint("calling visualize attack on"+manager.memberTokens[attackedMember].name);
-			manager.VisualizeDamageToMember(realDmg,attackedMember,this);
+			//If damage is blocked, send stamina damage instead
+			if (blocked) {realDmg=realStaminaDamage;}
+			//manager.VisualizeDamageToMember(realDmg,blocked,attackedMember,this);
+			performedAttack=new EnemyAttack(realDmg,blocked,attackedMember,this);
 			int attackNoiseIntensity=1;
 			manager.MakeNoise(GetCoords(),attackNoiseIntensity);
 			//StartCoroutine(manager.VisualizeAttack(realDmg,manager.enemyTokens[this],manager.memberTokens[attackedMember]));
 		} 
 		else {throw new System.Exception("EncounterEnemy attack called while no members are within reach!");}
-		return attackedMember;
+		return performedAttack;//attackedMember;
 	}
 	public virtual void TurnAction() {}
 	
@@ -202,9 +223,12 @@ public abstract class EncounterEnemy
 	}
 	
 	//Used for both move and attack actions "acting, the enemy uses its "move" for the turn
-	public void DoMyRound(Dictionary<PartyMember, Dictionary<Vector2,int>> masks, Dictionary<PartyMember,Vector2> memberCoords
-	, EnemyTokenHandler.PointOfInterest currentPOI)
+	public bool DoMyRound(Dictionary<PartyMember, Dictionary<Vector2,int>> masks, Dictionary<PartyMember,Vector2> memberCoords
+	, EnemyTokenHandler.PointOfInterest currentPOI, out EnemyAttack performedAttack)
 	{
+		//This lets the controlling enemy token know an attack needs to be animated
+		bool roundIsAttack=false;
+		performedAttack=new EnemyAttack();
 		//Ensure enemies don't move after EncounterCanvasHandler shut down encounter render
 		if (EncounterCanvasHandler.main.encounterOngoing)
 		{
@@ -238,7 +262,8 @@ public abstract class EncounterEnemy
 				//If any members are within attack range, attack, otherwise move on to the next fork
 				if (membersWithinAttackRange.Count>0)
 				{	
-					AttackAction(membersWithinAttackRange);		
+					performedAttack=AttackAction(membersWithinAttackRange);
+					roundIsAttack=true;		
 				}
 				else
 				{
@@ -381,6 +406,7 @@ public abstract class EncounterEnemy
 				RoundAction(presentMembers);
 			}*/
 		}
+		return roundIsAttack;
 	}
 	
 	public EncounterEnemy(Vector2 coords) 
@@ -391,61 +417,16 @@ public abstract class EncounterEnemy
 	
 }
 
-public class FleshMass:EncounterEnemy
-{
-	public FleshMass(Vector2 coords) : base(coords)
-	{
-		name="Flesh mass";
-		health=15;
-		minDamage=5;
-		maxDamage=9;
-	}
-}
-
-public class MuscleMass:EncounterEnemy
-{
-	public MuscleMass(Vector2 coords) : base(coords)
-	{
-		name="Muscle mass";
-		health=27;
-		minDamage=5;
-		maxDamage=12;
-	}
-}
-
+//LIGHT TIER
 public class QuickMass:EncounterEnemy
 {
 	public QuickMass(Vector2 coords) : base(coords)
 	{
 		name="Quick mass";
-		health=6;
-		minDamage=4;
-		maxDamage=8;
+		health=100;
+		minDamage=10;
+		maxDamage=15;
 		moveChance=0.5f;
-	}
-}
-
-public class SlimeMass:EncounterEnemy
-{	
-	public SlimeMass(Vector2 coords) : base(coords)
-	{
-		name="Slime mass";
-		health=27;
-		minDamage=5;
-		maxDamage=9;
-	}
-	
-	//int rangedResistance=3;
-	float rangedDamageMultiplier=0.5f;
-	
-	public override int TakeDamage (int dmgTaken, bool isRanged)
-	{
-		if (isRanged) 
-		{
-			dmgTaken=Mathf.FloorToInt(dmgTaken*rangedDamageMultiplier);
-			//EncounterCanvasHandler.main.DisplayNewMessage("Shots pass clean through the slime!");
-		}
-		return base.TakeDamage (dmgTaken, isRanged);
 	}
 }
 
@@ -454,9 +435,9 @@ public class Transient:EncounterEnemy
 	public Transient(Vector2 coords) : base(coords)
 	{
 		name="Transient";
-		health=6;
-		minDamage=1;
-		maxDamage=10;
+		health=100;
+		minDamage=5;
+		maxDamage=18;
 	}
 	
 	bool phasedIn=true;
@@ -480,7 +461,7 @@ public class Transient:EncounterEnemy
 		return base.TakeDamage(realDmg, isRanged);
 	}*/
 	
-	public override PartyMember AttackAction(List<PartyMember> presentMembers)//Dictionary<PartyMember,Vector2> memberCoords)
+	public override EnemyAttack AttackAction(List<PartyMember> presentMembers)//Dictionary<PartyMember,Vector2> memberCoords)
 	{
 		phasedIn=true;
 		//EncounterCanvasHandler.main.RemoveEnemyStatusEffect(myEffect);
@@ -511,9 +492,9 @@ public class Gasser:EncounterEnemy
 	public Gasser(Vector2 coords) : base(coords)
 	{
 		name="Gas spitter";
-		health=5;
-		minDamage=4;
-		maxDamage=6;
+		health=80;
+		minDamage=8;
+		maxDamage=15;
 		visionRange=1;
 		maxAttackRange=1;
 	}
@@ -538,10 +519,22 @@ public class Gasser:EncounterEnemy
 		return recievedDamage;
 	}
 	
-	public override PartyMember AttackAction (List<PartyMember> presentMembers)//Dictionary<PartyMember,Vector2> memberCoords)
+	public override EnemyAttack AttackAction (List<PartyMember> presentMembers)//Dictionary<PartyMember,Vector2> memberCoords)
 	{
 		damageGainedThisRound=0;
 		return base.AttackAction (presentMembers);
+	}
+}
+
+//MEDIUM TIER
+public class FleshMass:EncounterEnemy
+{
+	public FleshMass(Vector2 coords) : base(coords)
+	{
+		name="Flesh mass";
+		health=210;
+		minDamage=13;
+		maxDamage=18;
 	}
 }
 
@@ -550,14 +543,15 @@ public class Spindler:EncounterEnemy
 	public Spindler(Vector2 coords) : base(coords)
 	{
 		name="Spindler";
-		health=15;
-		minDamage=3;
-		maxDamage=5;
+		health=190;
+		minDamage=9;
+		maxDamage=14;
 	}
 	
-	public override PartyMember AttackAction (List<PartyMember> presentMembers)//Dictionary<PartyMember,Vector2> memberCoords)
+	public override EnemyAttack AttackAction (List<PartyMember> presentMembers)//Dictionary<PartyMember,Vector2> memberCoords)
 	{
-		PartyMember targetMember=base.AttackAction (presentMembers);//memberCoords);
+		EnemyAttack performedAttack=base.AttackAction(presentMembers);
+		PartyMember targetMember=performedAttack.attackedMember;//memberCoords);
 		if (targetMember!=null)
 		{
 			//EncounterCanvasHandler manager=EncounterCanvasHandler.main;
@@ -565,6 +559,49 @@ public class Spindler:EncounterEnemy
 			//EncounterCanvasHandler.main.DisplayNewMessage(name+" causes "+targetMember.name+" to bleed!");
 		} 
 		else {throw new System.Exception("Spindler tried to assign bleed to null PartyMember");}
-		return targetMember;
+		return performedAttack;
 	}
 }
+
+//HEAVY TIER
+public class MuscleMass:EncounterEnemy
+{
+	public MuscleMass(Vector2 coords) : base(coords)
+	{
+		name="Muscle mass";
+		health=360;
+		minDamage=20;
+		maxDamage=35;
+		staminaDamage=2;
+	}
+}
+
+
+
+public class SlimeMass:EncounterEnemy
+{	
+	public SlimeMass(Vector2 coords) : base(coords)
+	{
+		name="Slime mass";
+		health=400;
+		minDamage=18;
+		maxDamage=24;
+		moveChance=0.1f;
+		staminaDamage=2;
+	}
+	
+	//int rangedResistance=3;
+	float rangedDamageMultiplier=0.5f;
+	
+	public override int TakeDamage (int dmgTaken, bool isRanged)
+	{
+		if (isRanged) 
+		{
+			dmgTaken=Mathf.FloorToInt(dmgTaken*rangedDamageMultiplier);
+			//EncounterCanvasHandler.main.DisplayNewMessage("Shots pass clean through the slime!");
+		}
+		return base.TakeDamage (dmgTaken, isRanged);
+	}
+}
+
+

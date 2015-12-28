@@ -4,27 +4,28 @@ using System.Collections.Generic;
 
 public abstract class GameEvent
 {
-	public abstract string GetDescription();// {return null;}
-	public virtual bool PreconditionsMet() {return true;}
+	public abstract string GetDescription(MapRegion eventRegion, List<PartyMember> movedMembers);// {return null;}
+	public virtual bool PreconditionsMet(MapRegion eventRegion, List<PartyMember> movedMembers) {return true;}
 	public virtual bool AllowMapMove() {return true;}
-	public abstract List<string> GetChoices();// {return null;}
-	public abstract string DoChoice(string choiceString);// {return null;}
+	public abstract List<string> GetChoices(MapRegion eventRegion, List<PartyMember> movedMembers);// {return null;}
+	public abstract string DoChoice(string choiceString, MapRegion eventRegion, List<PartyMember> movedMembers);// {return null;}
 }
 
 public class NewSurvivor:GameEvent
 {
 	string eventDescription="You come across another survivor, who asks to join your group";
 	
-	public override string GetDescription() {return eventDescription;}
+	public override string GetDescription(MapRegion eventRegion, List<PartyMember> movedMembers) {return eventDescription;}
 	
-	public override List<string> GetChoices()
+
+	public override List<string> GetChoices(MapRegion eventRegion, List<PartyMember> movedMembers)
 	{
 		List<string> choicesList=new List<string>();
 		choicesList.Add("Accept them");
 		choicesList.Add("Reject them");
 		return choicesList;
 	}
-	public override string DoChoice (string choiceString)
+	public override string DoChoice (string choiceString, MapRegion eventRegion, List<PartyMember> movedMembers)
 	{
 		string eventResult=null;
 		
@@ -32,7 +33,7 @@ public class NewSurvivor:GameEvent
 		{
 			case"Accept them": 
 			{
-				PartyMember newGuy=new PartyMember();
+				PartyMember newGuy=new PartyMember(eventRegion.GetCoords());
 				PartyManager.mainPartyManager.AddNewPartyMember(newGuy);//.partyMembers.Add (newGuy);
 				break;
 			}
@@ -45,12 +46,12 @@ public class NewSurvivor:GameEvent
 		return eventResult;
 	}
 }
-
+/*
 public class FoodSpoilage:GameEvent
 {
 	string eventDescription="You discover some of your perishable food is about to expire.\nYou can try to eat it now and risk food poisoning, or just throw it away";
 	
-	public override string GetDescription() {return eventDescription;}
+	public override string GetDescription(MapRegion eventRegion) {return eventDescription;}
 	
 	public override bool PreconditionsMet ()
 	{
@@ -64,14 +65,14 @@ public class FoodSpoilage:GameEvent
 		return conditionsAreMet;
 	}
 	
-	public override List<string> GetChoices()
+	public override List<string> GetChoices(MapRegion eventRegion)
 	{
 		List<string> choicesList=new List<string>();
 		choicesList.Add("Eat it");
 		choicesList.Add("Throw it out");
 		return choicesList;
 	}
-	public override string DoChoice (string choiceString)
+	public override string DoChoice (string choiceString,MapRegion eventRegion)
 	{
 		string eventResult=null;
 		
@@ -83,7 +84,7 @@ public class FoodSpoilage:GameEvent
 				if (Random.value>0.5f)
 				{
 					eventResult="Realizing you can't be picky at a time like this, the party sets out eating old eggs, bread, meat products and other persihables. Aside from some minor stomach gurgling, nobody suffers any ill effects and everyone is energized by the meal.\n\nFood is halved, everyone is fed";	
-					foreach (PartyMember member in PartyManager.mainPartyManager.partyMembers)
+					foreach (PartyMember member in eventRegion.localPartyMembers)
 					{
 						member.SetHunger(0);
 					}
@@ -92,7 +93,7 @@ public class FoodSpoilage:GameEvent
 					foreach (InventoryItem item in PartyManager.mainPartyManager.GetPartyInventory())
 					{
 						if (item.GetType()==typeof(FoodBig) || item.GetType()==typeof(FoodSmall)) 
-						{/*foodCount+=1;*/ foodItems.Add(item as InventoryItem);}
+						{foodItems.Add(item as InventoryItem);}
 					}
 					int foodCount=Mathf.RoundToInt(foodItems.Count*0.5f);
 					for (int i=0; i<foodCount; i++)
@@ -105,7 +106,7 @@ public class FoodSpoilage:GameEvent
 					
 					eventResult="Eating unrefrigerated goods is a risky move, and eventually the party succumbs to food poisoning, ending up worse than they started\n\nFood is halved, -5 health for everyone";
 					
-					foreach (PartyMember member in PartyManager.mainPartyManager.partyMembers)
+					foreach (PartyMember member in eventRegion.localPartyMembers)
 					{
 						if (member.health-5>0) {member.health-=5;}
 						else {member.health=1;}
@@ -116,7 +117,7 @@ public class FoodSpoilage:GameEvent
 					foreach (InventoryItem item in PartyManager.mainPartyManager.GetPartyInventory())
 					{
 						if (item.GetType()==typeof(FoodBig) || item.GetType()==typeof(FoodSmall)) 
-						{/*foodCount+=1;*/ foodItems.Add(item as InventoryItem);}
+						{foodItems.Add(item as InventoryItem);}
 					}
 					int foodCount=Mathf.RoundToInt(foodItems.Count*0.5f);
 					for (int i=0; i<foodCount; i++)
@@ -134,7 +135,7 @@ public class FoodSpoilage:GameEvent
 				foreach (InventoryItem item in PartyManager.mainPartyManager.GetPartyInventory())
 				{
 					if (item.GetType()==typeof(FoodBig) || item.GetType()==typeof(FoodSmall)) 
-					{/*foodCount+=1;*/ foodItems.Add(item as InventoryItem);}
+					{ foodItems.Add(item as InventoryItem);}
 				}
 				int foodCount=Mathf.RoundToInt(foodItems.Count*0.5f);
 				for (int i=0; i<foodCount; i++)
@@ -146,21 +147,21 @@ public class FoodSpoilage:GameEvent
 		}
 		return eventResult;
 	}
-}
+}*/
 
 public class MonsterAttack:GameEvent
 {
 	string eventDescription="As your party moves, you start to hear suspicious noises close by.\nThey grow and shrink in intensity and change direction several times as you go, putting everyone on their guard.\nFinally, the source reveals itself: a monster!";
 	
-	public override string GetDescription() {return eventDescription;}
-	public override List<string> GetChoices()
+	public override string GetDescription(MapRegion eventRegion, List<PartyMember> movedMembers) {return eventDescription;}
+	public override List<string> GetChoices(MapRegion eventRegion, List<PartyMember> movedMembers)
 	{
 		List<string> choicesList=new List<string>();
 		choicesList.Add("Fight it");
 		choicesList.Add("Try to run");
 		//Check to see if party has ranged weapons
 		bool partyHasGuns=false;
-		foreach (PartyMember member in PartyManager.mainPartyManager.partyMembers) 
+		foreach (PartyMember member in movedMembers) 
 		{
 			if (member.equippedRangedWeapon!=null) {partyHasGuns=true; break;}
 		}
@@ -169,7 +170,7 @@ public class MonsterAttack:GameEvent
 		return choicesList;
 	}
 		
-	public override string DoChoice (string choiceString)
+	public override string DoChoice (string choiceString, MapRegion eventRegion, List<PartyMember> movedMembers)
 	{
 		string eventResult=null;
 		
@@ -181,16 +182,16 @@ public class MonsterAttack:GameEvent
 				if (Random.value>0.5f)
 				{
 					eventResult="Seeing the creature so close, you decide it's too late to run.\nSurging with adrenaline, the party charges the monster with their weapons drawn! Surprised, the terrifying creature wilts under a rain of blows, dead\n\n -1 Stamina for everyone";
-					foreach (PartyMember member in PartyManager.mainPartyManager.partyMembers)
+					foreach (PartyMember member in movedMembers)
 					{
 						member.stamina-=1;
 					}
 				}
 				else
 				{
-					PartyMember hurtMember=PartyManager.mainPartyManager.partyMembers[Random.Range(0,PartyManager.mainPartyManager.partyMembers.Count)];
+					PartyMember hurtMember=movedMembers[Random.Range(0,movedMembers.Count)];
 					eventResult=hurtMember.name+" is the first to charge the creature, and bears the brunt of its ferocious attacks. The others run in to help and finish it off, but "+hurtMember.name+" is in a bad shape.\n\n-25% health for "+hurtMember.name;
-					//foreach (PartyMember member in PartyManager.mainPartyManager.partyMembers)
+					//foreach (PartyMember member in eventRegion.localPartyMembers)
 					//{
 						if (hurtMember.health-25>0) {hurtMember.health-=25;}
 						else {hurtMember.health=1;}
@@ -205,7 +206,7 @@ public class MonsterAttack:GameEvent
 				eventResult="Surprised by the attack, the party turns tail. You run with your hearts in your ears, only stopping once you're about to keel over from exhaustion. You're not sure how long you ran, but the creature is nowhere in sight\n\n 2 hours pass";
 				
 				/*
-				foreach (PartyMember member in PartyManager.mainPartyManager.partyMembers)
+				foreach (PartyMember member in eventRegion.localPartyMembers)
 				{
 					member.stamina-=5;
 				}*/
@@ -225,15 +226,15 @@ public class MonsterAttack:GameEvent
 		return eventResult;
 	}
 }
-
+/*
 public class LostInAnomaly:GameEvent
 {
 	string eventDescription="While making their way to the next region, the party turns a corner in a dark, enclosed archway.\nUpon walking out the other side, everyone realizes it's a completely different territory. You emerge into a couryard of tall buildings, impossibly dense and close to eachother.\nThis couldn't be the destination you were trying to reach";
 	
-	public override string GetDescription() {return eventDescription;}
+	public override string GetDescription(MapRegion eventRegion) {return eventDescription;}
 	public override bool AllowMapMove (){return false;}
 	
-	public override List<string> GetChoices()
+	public override List<string> GetChoices(MapRegion eventRegion)
 	{
 		List<string> choicesList=new List<string>();
 		choicesList.Add("Press on");
@@ -241,7 +242,7 @@ public class LostInAnomaly:GameEvent
 		return choicesList;
 	}
 	
-	public override string DoChoice (string choiceString)
+	public override string DoChoice (string choiceString, MapRegion eventRegion)
 	{
 		string eventResult=null;
 		
@@ -251,7 +252,7 @@ public class LostInAnomaly:GameEvent
 		{
 			//success
 			eventResult="This couldn't possibly be the place you were trying to reach before. The layout doesn't make sense, someone would have noticed such tall buildings from further away. Whatever happened to you all in that archway, you decide not to tempt fate and explore this new area instead";
-			MapManager mpManager=MapManager.mainMapManager;
+			MapManager mpManager=MapManager.main;
 			mpManager.TeleportToRegion(mpManager.GetRegion(new Vector2(Random.Range(0,mpManager.mapWidth),Random.Range(0,mpManager.mapHeight))));
 			break;
 		}
@@ -261,12 +262,12 @@ public class LostInAnomaly:GameEvent
 				{
 					eventResult="You file back into the mysterious archway, and it seems to take several minutes longer than it did when you walked in the other direction. However, when you finally emerge, you find yourselves much further back, in the area you started from. Someone notices the archway behind you no longer rounds a corner...";
 					PartyManager manager=PartyManager.mainPartyManager;
-					MapManager.mainMapManager.TeleportToRegion(MapManager.mainMapManager.GetRegion(manager.mapCoordX,manager.mapCoordY));
+					MapManager.main.TeleportToRegion(MapManager.main.GetRegion(manager.mapCoordX,manager.mapCoordY));
 				}
 				else
 				{
 					eventResult="As you turn around and walk back through, the archway seems to take several more turns than it did last time, eventually terminating in a different region still. As you look back, the archway looks short and straight, and the area on the other side looks nothing like where you just came from. You decide not to take any more chances";
-					MapManager mpManager=MapManager.mainMapManager;
+					MapManager mpManager=MapManager.main;
 					mpManager.TeleportToRegion(mpManager.GetRegion(new Vector2(Random.Range(0,mpManager.mapWidth),Random.Range(0,mpManager.mapHeight))));
 				}
 			break;
@@ -274,20 +275,20 @@ public class LostInAnomaly:GameEvent
 		}
 		return eventResult;
 	}
-}
+}*/
 
 public class CacheInAnomaly:GameEvent
 {	
 	string eventDescription="";
 	
-	public override string GetDescription() 
+	public override string GetDescription(MapRegion eventRegion, List<PartyMember> movedMembers) 
 	{
-		string noticingPartyMemberName=PartyManager.mainPartyManager.partyMembers[Random.Range(0,PartyManager.mainPartyManager.partyMembers.Count)].name;
+		string noticingPartyMemberName=movedMembers[Random.Range(0,movedMembers.Count)].name;
 		eventDescription="As you explore the area, you come across a patch of road filled with empty cars.\nTheir roofs stand at waist height relative to you, the cars are piled together as if they all slid from their parking spots into an unseen sinkhole.\nBubbling water covers the entire area below them, obscuring the ground and emanating warm steam.\nAs you take in this strange sight,"+noticingPartyMemberName+" notices some food and ammo stashed in an open bed truck amid the cars";
 		
 		return eventDescription;
 	}
-	public override List<string> GetChoices()
+	public override List<string> GetChoices(MapRegion eventRegion, List<PartyMember> movedMembers)
 	{
 		List<string> choicesList=new List<string>();
 		choicesList.Add("Try to navigate the car roofs to reach the supplies");
@@ -295,7 +296,7 @@ public class CacheInAnomaly:GameEvent
 		return choicesList;
 	}
 	
-	public override string DoChoice (string choiceString)
+	public override string DoChoice (string choiceString,MapRegion eventRegion, List<PartyMember> movedMembers)
 	{
 		string eventResult=null;
 		
@@ -303,14 +304,17 @@ public class CacheInAnomaly:GameEvent
 		{
 		case"Try to navigate the car roofs to reach the supplies": 
 			{
-				PartyMember volunteer=PartyManager.mainPartyManager.partyMembers[Random.Range(0,PartyManager.mainPartyManager.partyMembers.Count)];
+				PartyMember volunteer=movedMembers[Random.Range(0,movedMembers.Count)];
 				//success
 				if (Random.value<0.5f)
 				{
 					eventResult=volunteer.name+" volunteers to try and move across. The roofs are moist and slippery, and "+volunteer.name+" loses balance several times, but manages to recover and safely reaches the supplies. Loaded with bags,"+volunteer.name+" somehow makes it back across, covered in sweat but unharmed\n\n+2 food, +10 ammo, -1 stamina for "+volunteer.name;
-					PartyManager.mainPartyManager.GainItems(new FoodSmall());
-					PartyManager.mainPartyManager.GainItems(new FoodBig());
-					PartyManager.mainPartyManager.GainItems(new FoodBig());
+					eventRegion.StashItem(new FoodSmall());
+					eventRegion.StashItem(new FoodBig());
+					eventRegion.StashItem(new FoodBig());
+					//PartyManager.mainPartyManager.GainItems(new FoodSmall());
+					//PartyManager.mainPartyManager.GainItems(new FoodBig());
+					//PartyManager.mainPartyManager.GainItems(new FoodBig());
 					PartyManager.mainPartyManager.ammo+=10;
 					volunteer.ChangeFatigue(10);
 				}
@@ -338,12 +342,13 @@ public class MedicalCache:GameEvent
 {	
 	string eventDescription="";
 	
-	public override string GetDescription() 
+	public override string GetDescription(MapRegion eventRegion, List<PartyMember> movedMembers) 
 	{
 		eventDescription="Wandering down a street, you spot a notice glued to one of the lampposts. It calls for evacuation and lists the address of the nearest emergency service post.\n They are probably gone by now, but they may have left some supplies behind. You can spend time to try and find the address, or ignore it and move on";
+		//GameManager.DebugPrint("Region coords is:"+eventRegion.GetCoords());
 		return eventDescription;
 	}
-	public override List<string> GetChoices()
+	public override List<string> GetChoices(MapRegion eventRegion, List<PartyMember> movedMembers)
 	{
 		List<string> choicesList=new List<string>();
 		choicesList.Add("Try to find the address");
@@ -351,7 +356,7 @@ public class MedicalCache:GameEvent
 		return choicesList;
 	}
 	
-	public override string DoChoice (string choiceString)
+	public override string DoChoice (string choiceString, MapRegion eventRegion, List<PartyMember> movedMembers)
 	{
 		string eventResult=null;
 		
@@ -363,15 +368,15 @@ public class MedicalCache:GameEvent
 				if (Random.value<0.5f)
 				{
 					eventResult="After an hour of wandering through deserted streets and alleyways, you find the remains of the emeregency camp in an emptied out parking lot.\nIt looks like they left in a hurry: a few tents stand abandoned amid discarded cellophane bags and other refuse.\nSearching the tents, you discover forgotten medical supplies\n\n1 hour passes. 2 medkits  2 bandages";
-					PartyManager.mainPartyManager.GainItems(new Medkit());
-					PartyManager.mainPartyManager.GainItems(new Medkit());
-					PartyManager.mainPartyManager.GainItems(new Bandages());
-					PartyManager.mainPartyManager.GainItems(new Bandages());
+					eventRegion.StashItem(new Medkit());
+					eventRegion.StashItem(new Medkit());
+					eventRegion.StashItem(new Bandages());
+					eventRegion.StashItem(new Bandages());
 					PartyManager.mainPartyManager.PassTime(1);
 				}
 				else
 				{
-					eventResult="You search the winding streets and alleyways.\n The layout of this area seems strangely twisted, the street signs hard to find.\nAfter runnning into several cul-de-sacs and a few passageways inexplicably blocked by random concrete debris, you find yourself looping back to where you started and give the search up.\n\n 1 hour passes.";
+					eventResult="You search the winding streets and alleyways.\n The layout of this area seems strangely twisted, the street signs hard to find.\nAfter runnning into several dead ends and a few passageways inexplicably blocked by random debris, you find yourself looping back to where you started and give the search up.\n\n 1 hour passes.";
 					PartyManager.mainPartyManager.PassTime(1);
 				}
 				break;
@@ -390,12 +395,12 @@ public class SurvivorRescue:GameEvent
 {	
 	string eventDescription="";
 	
-	public override string GetDescription() 
+	public override string GetDescription(MapRegion eventRegion, List<PartyMember> movedMembers) 
 	{
 		eventDescription="You stumble across a survivor fighting for his life against an otherwolrdly creature. Occupied with their struggle, neither of them notice your party.\nThe survivor doesn't look like he can hold out much longer";
 		return eventDescription;
 	}
-	public override List<string> GetChoices()
+	public override List<string> GetChoices(MapRegion eventRegion, List<PartyMember> movedMembers)
 	{
 		List<string> choicesList=new List<string>();
 		choicesList.Add("Charge in to help");
@@ -403,7 +408,7 @@ public class SurvivorRescue:GameEvent
 		return choicesList;
 	}
 	
-	public override string DoChoice (string choiceString)
+	public override string DoChoice (string choiceString, MapRegion eventRegion, List<PartyMember> movedMembers)
 	{
 		string eventResult=null;
 		int failPartyDamage=-20;
@@ -418,7 +423,7 @@ public class SurvivorRescue:GameEvent
 				if (Random.value<0.5f)
 				{
 					eventResult="You charge the creature before it can deliver another blow to the distressed survivor. Taken by surprise, it quickly succumbs to your attacks.\nThe survivor is shaken, but alive.\n\nA new survivor joins your party";
-					PartyMember newGuy=new PartyMember();
+					PartyMember newGuy=new PartyMember(eventRegion.GetCoords());
 					PartyManager.mainPartyManager.AddNewPartyMember(newGuy);
 					newGuy.health+=newMemberHealthPenalty;
 				}
@@ -426,9 +431,9 @@ public class SurvivorRescue:GameEvent
 				{
 					eventResult="Before you can close the distance, the creature reacts and lunges at you!\nAmid a flurry of vicious attacks, you barely manage to fight it off with the help of the lone survivor.\n\n"+failPartyDamage+" health for everyone. A new survivor joins your party";
 					//Order is
-					foreach (PartyMember member in PartyManager.mainPartyManager.partyMembers) {member.health+=failPartyDamage;}
+					foreach (PartyMember member in movedMembers) {member.health+=failPartyDamage;}
 					//important
-					PartyMember newGuy=new PartyMember();
+					PartyMember newGuy=new PartyMember(eventRegion.GetCoords());
 					PartyManager.mainPartyManager.AddNewPartyMember(newGuy);
 					newGuy.health+=newMemberHealthPenalty;
 				}
@@ -437,7 +442,7 @@ public class SurvivorRescue:GameEvent
 		case"Slip away while the creature is distracted":
 			{
 				eventResult="You quickly pass the fight by and leave the survivor to his fate. Eventually, the sounds of struggle behind you turn to stillness\n\n"+ignoreMoralePenalty+" morale for everyone";
-				foreach (PartyMember member in PartyManager.mainPartyManager.partyMembers) {member.morale-=ignoreMoralePenalty;}
+				foreach (PartyMember member in movedMembers) {member.morale-=ignoreMoralePenalty;}
 				break;
 			}
 		}
@@ -449,12 +454,12 @@ public class SearchForSurvivor:GameEvent
 {	
 	string eventDescription="";
 	
-	public override string GetDescription() 
+	public override string GetDescription(MapRegion eventRegion, List<PartyMember> movedMembers) 
 	{
 		eventDescription="Suddenly, your surroundings echo a voice calling out for survivors. It doesn't seem to react when you try to shout back, continuing to cry out in uneven intervals.\nIt sounds fairly distant, but you can just barely make out the direction to search";
 		return eventDescription;
 	}
-	public override List<string> GetChoices()
+	public override List<string> GetChoices(MapRegion eventRegion, List<PartyMember> movedMembers)
 	{
 		List<string> choicesList=new List<string>();
 		choicesList.Add("Search for the voice");
@@ -462,7 +467,7 @@ public class SearchForSurvivor:GameEvent
 		return choicesList;
 	}
 	
-	public override string DoChoice (string choiceString)
+	public override string DoChoice (string choiceString, MapRegion eventRegion, List<PartyMember> movedMembers)
 	{
 		string eventResult=null;
 		int ignoreMoralePenalty=-10;
@@ -475,7 +480,7 @@ public class SearchForSurvivor:GameEvent
 				if (Random.value<0.5f)
 				{
 					eventResult="The voice grows louder as you close in on the source, and eventually starts responding to your calls, quickly guiding you to another survivor\n\nA new survivor joins your party";
-					PartyMember newGuy=new PartyMember();
+					PartyMember newGuy=new PartyMember(eventRegion.GetCoords());
 					PartyManager.mainPartyManager.AddNewPartyMember(newGuy);
 				}
 				else
@@ -488,7 +493,7 @@ public class SearchForSurvivor:GameEvent
 		case"Ignore it and move on":
 			{
 				eventResult="You decide not to take any chances searching for strangers and move on.\n\n"+ignoreMoralePenalty+" morale for everyone";
-				foreach (PartyMember member in PartyManager.mainPartyManager.partyMembers) {member.morale-=ignoreMoralePenalty;}
+				foreach (PartyMember member in movedMembers) {member.morale-=ignoreMoralePenalty;}
 				break;
 			}
 		}
@@ -502,34 +507,34 @@ public class LowMoraleSpiral:GameEvent
 	int moraleThreshold=30;
 	int moralePenalty=-15;
 	
-	public override string GetDescription() 
+	public override string GetDescription(MapRegion eventRegion, List<PartyMember> movedMembers) 
 	{
 		eventDescription="As morale wavers, some people start to slide into hopelessness";
 		return eventDescription;
 	}
 	
-	public override bool PreconditionsMet ()
+	public override bool PreconditionsMet (MapRegion eventRegion, List<PartyMember> movedMembers)
 	{
 		bool conditionsAreMet=false;
-		foreach (PartyMember member in PartyManager.mainPartyManager.partyMembers)
+		foreach (PartyMember member in movedMembers)
 		{
 			if (member.morale<=moraleThreshold) {conditionsAreMet=true; break;}
 		}
 		return conditionsAreMet;
 	}
 	
-	public override List<string> GetChoices()
+	public override List<string> GetChoices(MapRegion eventRegion, List<PartyMember> movedMembers)
 	{
 		List<string> choicesList=new List<string>();
 		choicesList.Add("Continue");
 		return choicesList;
 	}
 	
-	public override string DoChoice (string choiceString)
+	public override string DoChoice (string choiceString, MapRegion eventRegion, List<PartyMember> movedMembers)
 	{
 		string eventResult=null;
 		PartyMember affectedMember=null;
-		foreach (PartyMember member in PartyManager.mainPartyManager.partyMembers)
+		foreach (PartyMember member in movedMembers)
 		{
 			if (member.morale<=moraleThreshold) {affectedMember=member; break;}
 		}
@@ -555,17 +560,17 @@ public class LowMoraleFight:GameEvent
 	int moraleThreshold=20;
 	int healthPenalty=-10;
 	
-	public override string GetDescription() 
+	public override string GetDescription(MapRegion eventRegion, List<PartyMember> movedMembers) 
 	{
 		eventDescription="A few terse words send pent up tension boiling over, sparking a fistfight between two survivors!";
 		return eventDescription;
 	}
-	public override bool PreconditionsMet ()
+	public override bool PreconditionsMet (MapRegion eventRegion, List<PartyMember> movedMembers)
 	{
 		bool conditionsAreMet=false;
-		if (PartyManager.mainPartyManager.partyMembers.Count>1)
+		if (movedMembers.Count>1)
 		{
-			foreach (PartyMember member in PartyManager.mainPartyManager.partyMembers)
+			foreach (PartyMember member in movedMembers)
 			{
 				if (member.morale<=moraleThreshold) {conditionsAreMet=true; break;}
 			}
@@ -573,19 +578,19 @@ public class LowMoraleFight:GameEvent
 		return conditionsAreMet;
 	}
 	
-	public override List<string> GetChoices()
+	public override List<string> GetChoices(MapRegion eventRegion, List<PartyMember> movedMembers)
 	{
 		List<string> choicesList=new List<string>();
 		choicesList.Add("Continue");
 		return choicesList;
 	}
 	
-	public override string DoChoice (string choiceString)
+	public override string DoChoice (string choiceString, MapRegion eventRegion, List<PartyMember> movedMembers)
 	{
 		string eventResult=null;
 		PartyMember angryMember=null;
 		PartyMember normalMember=null;
-		foreach (PartyMember member in PartyManager.mainPartyManager.partyMembers)
+		foreach (PartyMember member in movedMembers)
 		{
 			
 			if (member.morale<=moraleThreshold && angryMember==null) 
@@ -617,17 +622,17 @@ public class LowMoraleEnmity:GameEvent
 	string eventDescription="";
 	int moraleThreshold=10;
 	
-	public override string GetDescription() 
+	public override string GetDescription(MapRegion eventRegion, List<PartyMember> movedMembers) 
 	{
 		eventDescription="Tension and frustration in the group escalates in a shouting match between two survivors!";
 		return eventDescription;
 	}
-	public override bool PreconditionsMet ()
+	public override bool PreconditionsMet (MapRegion eventRegion, List<PartyMember> movedMembers)
 	{
 		bool conditionsAreMet=false;
-		if (PartyManager.mainPartyManager.partyMembers.Count>1)
+		if (movedMembers.Count>1)
 		{
-			foreach (PartyMember member in PartyManager.mainPartyManager.partyMembers)
+			foreach (PartyMember member in movedMembers)
 			{
 				if (member.morale<=moraleThreshold) {conditionsAreMet=true; break;}
 			}
@@ -635,19 +640,19 @@ public class LowMoraleEnmity:GameEvent
 		return conditionsAreMet;
 	}
 	
-	public override List<string> GetChoices()
+	public override List<string> GetChoices(MapRegion eventRegion, List<PartyMember> movedMembers)
 	{
 		List<string> choicesList=new List<string>();
 		choicesList.Add("Continue");
 		return choicesList;
 	}
 	
-	public override string DoChoice (string choiceString)
+	public override string DoChoice (string choiceString, MapRegion eventRegion, List<PartyMember> movedMembers)
 	{
 		string eventResult=null;
 		PartyMember angryMember=null;
 		PartyMember normalMember=null;
-		foreach (PartyMember member in PartyManager.mainPartyManager.partyMembers)
+		foreach (PartyMember member in movedMembers)
 		{
 			
 			if (member.morale<=moraleThreshold && angryMember==null) 

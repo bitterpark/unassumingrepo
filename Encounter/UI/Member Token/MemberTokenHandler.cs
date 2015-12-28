@@ -44,7 +44,7 @@ public class MemberTokenHandler : MonoBehaviour, IAttackAnimation
 		{
 			_moveTaken=value;
 			myMoveToken.MoveStatusChanged(_moveTaken,turnTaken,myMember.stamina>=myMember.staminaMoveCost);
-			myDefenceToken.DefenceStatusChanged(_moveTaken,turnTaken);
+			//myDefenceToken.DefenceStatusChanged(_moveTaken,turnTaken);
 		}	
 	}
 	 
@@ -58,13 +58,13 @@ public class MemberTokenHandler : MonoBehaviour, IAttackAnimation
 			_turnTaken=value; 
 			if (_turnTaken) {Deselect();}
 			myActionToken.ActionStatusChanged(_turnTaken);
-			myDefenceToken.DefenceStatusChanged(moveTaken,_turnTaken);
+			//myDefenceToken.DefenceStatusChanged(moveTaken,_turnTaken);
 			myMoveToken.MoveStatusChanged(moveTaken,_turnTaken,myMember.stamina>=myMember.staminaMoveCost);
 			DetermineColor();
 		}
 	}
 	bool _turnTaken=false;
-	public bool defenceMode=false;
+	//public bool defenceMode=false;
 	/*
 	public bool defenceMode
 	{
@@ -117,16 +117,23 @@ public class MemberTokenHandler : MonoBehaviour, IAttackAnimation
 		myMember=member;
 		nameText.text=member.name;
 		myImage.color=member.color;
-		myDefenceToken.DefenceStatusChanged(moveTaken,turnTaken);
+		//myDefenceToken.DefenceStatusChanged(moveTaken,turnTaken);
 		myActionToken.ActionStatusChanged(turnTaken);
 		myMoveToken.MoveStatusChanged(moveTaken,turnTaken,myMember.stamina>=myMember.staminaMoveCost);
 		myStaminaRegenToken.StaminaRegenStatusChanged(staminaRegenEnabled);
 	}
 	
-	public int DamageAssignedMember(int damage)
+	public int DamageAssignedMember(int damage, ref int staminaDamage)
 	{
 		int extraArmorMod=0;
-		if (defenceMode) {extraArmorMod=defenseModifier;}
+		//if (defenceMode) {extraArmorMod=damage;}
+		if (myMember.stamina>=staminaDamage) 
+		{
+			extraArmorMod=damage; 
+			myMember.stamina-=staminaDamage;
+		}
+		else staminaDamage=0;
+		staminaRegenEnabled=false;
 		int realDmg=myMember.TakeDamage(damage,extraArmorMod,true);
 		//if (myMember.health<=0) EncounterCanvasHandler.main.RemoveEncounterMember(myMember);
 		return realDmg;
@@ -134,10 +141,10 @@ public class MemberTokenHandler : MonoBehaviour, IAttackAnimation
 	
 	public void FinishTurn(bool turnSkipped)
 	{
-		if (turnSkipped && !moveTaken) 
-		{
-			defenceMode=true;
-		}
+		//if (turnSkipped && !moveTaken) 
+		//{
+			//defenceMode=true;
+		//}
 		if (!turnSkipped) {staminaRegenEnabled=false;}
 		turnTaken=true;
 	}
@@ -148,18 +155,23 @@ public class MemberTokenHandler : MonoBehaviour, IAttackAnimation
 		if (staminaRegenEnabled) myMember.stamina+=staminaRegenAmount;
 		moveTaken=false;
 		turnTaken=false;
-		defenceMode=false;
+		//defenceMode=false;
 		staminaRegenEnabled=true;
 		//print ("next turn switched!");
 	}
 	
-	public bool TryMove()
+	public bool TryMove(out bool doTurnOver)
 	{
+		doTurnOver=false;
 		int moveStaminaCost=myMember.staminaMoveCost;
 		if (myMember.stamina>=moveStaminaCost) 
 		{
 			myMember.stamina-=moveStaminaCost;
-			if (moveTaken) staminaRegenEnabled=false;
+			staminaRegenEnabled=false;
+			if (moveTaken) 
+			{
+				doTurnOver=true;
+			}
 			moveTaken=true;
 			return true;
 		}

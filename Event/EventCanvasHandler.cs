@@ -9,15 +9,20 @@ public class EventCanvasHandler : MonoBehaviour
 	public Text descriptionText;
 	
 	GameEvent assignedEvent;
+	MapRegion currentTeamRegion;
+	List<PartyMember> teamList;
 	//bool decisionMade;
 	
-	public void AssignEvent(GameEvent newEvent)
+	public void AssignEvent(GameEvent newEvent, MapRegion eventRegion, List<PartyMember> movedMembers)
 	{
 		GameEventManager.mainEventManager.drawingEvent=true;
+		currentTeamRegion=eventRegion;
+		teamList=movedMembers;
 		assignedEvent=newEvent;
-		descriptionText.text=newEvent.GetDescription();
+		descriptionText.text=newEvent.GetDescription(currentTeamRegion,teamList);
 		//decisionMade=false;
-		List<string> choices=newEvent.GetChoices();
+	
+		List<string> choices=newEvent.GetChoices(currentTeamRegion,teamList);
 		
 		foreach (string choice in choices)
 		{
@@ -31,8 +36,10 @@ public class EventCanvasHandler : MonoBehaviour
 	
 	public void ResolveChoice(string choiceString)
 	{
+		//Find current team's region
+		//MapRegion currentTeamRegion=MapManager.main.GetRegion(PartyManager.mainPartyManager.selectedMembers[0].worldCoords);
 		//Resolve the decision
-		descriptionText.text=assignedEvent.DoChoice(choiceString);
+		descriptionText.text=assignedEvent.DoChoice(choiceString,currentTeamRegion, teamList);
 		//Destroy all choice buttons
 		Button[] decisionButtons=transform.FindChild("Event Panel").FindChild("Decision Group").GetComponentsInChildren<Button>();
 		foreach (Button btn in decisionButtons) {GameObject.Destroy(btn.gameObject);}

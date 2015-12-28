@@ -1,10 +1,11 @@
-﻿using UnityEngine;
+using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine.UI;
 
 public class MapScoutingHandler : MonoBehaviour {
 
+	public static bool scoutingDialogOngoing=false;
 	public Text descriptionText;
 	public Text selectCountText;
 	public Text confirmButtonText;
@@ -38,7 +39,7 @@ public class MapScoutingHandler : MonoBehaviour {
 	{
 		descriptionText.text=assignedRegion.regionalEncounter.lootDescription+" infested with "+assignedRegion.regionalEncounter.enemyDescription;
 		confirmButtonText.text="Enter";
-		foreach (PartyMember member in PartyManager.mainPartyManager.partyMembers) 
+		foreach (PartyMember member in PartyManager.mainPartyManager.selectedMembers) 
 		{
 			MissionSelectorHandler newSelector=Instantiate (memberSelectorPrefab) as MissionSelectorHandler;
 			newSelector.AssignMember(member);
@@ -52,10 +53,12 @@ public class MapScoutingHandler : MonoBehaviour {
 	public void StartDialog(MapRegion dialogRegion) 
 	{
 		GetComponent<Canvas>().enabled=true;
+		scoutingDialogOngoing=true;
 		AssignRegion(dialogRegion);
 	}
 	public void EndDialog()
 	{
+		scoutingDialogOngoing=false;
 		foreach (MissionSelectorHandler child in memberSelectorGroup.GetComponentsInChildren<MissionSelectorHandler>()) {GameObject.Destroy(child.gameObject);}
 		selectedForMission.Clear();
 		GetComponent<Canvas>().enabled=false;
@@ -99,7 +102,7 @@ public class MapScoutingHandler : MonoBehaviour {
 				//EncounterCanvasHandler.mainEncounterCanvasHandler.StartNewEncounter(assignedRegion,selectedForMission);
 				//EndDialog();
 				//PartyManager.mainPartyManager.EnterPartyIntoEncounter(selectedForMission);
-				MapManager.mainMapManager.EnterEncounter(assignedRegion.regionalEncounter,selectedForMission,false);
+				MapManager.main.EnterEncounter(assignedRegion.regionalEncounter,selectedForMission,false);
 			}
 		}
 	}

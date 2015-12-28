@@ -11,13 +11,15 @@ public class PartyManager : MonoBehaviour {
 	public int dayTime;//=0;
 	public int timePassed=0;
 	
-	public int mapCoordX;//=0;
-	public int mapCoordY;//=0;
+	//public int mapCoordX;//=0;
+	//public int mapCoordY;//=0;
+	//public Vector2 GetPartyMapCoords() {return new Vector2(mapCoordX,mapCoordY);}
 	
 	//public bool hasCook=false;
 	
 	public List<PartyMember> partyMembers;
-	public List<PartyMemberSelector> selectors;
+	public List<PartyMember> selectedMembers;
+	//public List<PartyMemberSelector> selectors;
 	public StatusEffectDrawer effectTokenPrefab;
 	Dictionary<int,List<StatusEffectDrawer>> statusEffectTokens;
 	
@@ -41,8 +43,8 @@ public class PartyManager : MonoBehaviour {
 	
 	//public int partyVisibilityMod;
 	
-	List<InventoryItem> partyInventory;
-	public List<InventoryItem> GetPartyInventory() {return partyInventory;}
+	//List<InventoryItem> partyInventory;
+	//public List<InventoryItem> GetPartyInventory() {return partyInventory;}
 	
 	public delegate void InventoryChangedDeleg();
 	public static event InventoryChangedDeleg InventoryChanged;
@@ -55,43 +57,36 @@ public class PartyManager : MonoBehaviour {
 	//Setup start of game
 	void SetDefaultState()
 	{
+		Vector2 startingPartyWorldCoords=new Vector2(0,0);
 		//partyStatusCanvas.gameObject.SetActive(true);
 		statusCanvas.EnableStatusDisplay();
 		partyMemberCanvases=new Dictionary<PartyMember, PartyMemberCanvasHandler>();
 		dayTime=5;
 		
-		mapCoordX=0;
-		mapCoordY=0;
+		//mapCoordX=0;
+		//mapCoordY=0;
 		//partyVisibilityMod=0;
 		//foodSupply=0;//2;
 		ammo=0;//500;//5;
 		
 		partyMembers=new List<PartyMember>();
-		selectors=new List<PartyMemberSelector>();
+		selectedMembers=new List<PartyMember>();
+		//selectors=new List<PartyMemberSelector>();
 		//statusEffectTokens=new Dictionary<int, List<StatusEffectDrawer>>();
 		
-		AddNewPartyMember(new PartyMember());
-		AddNewPartyMember(new PartyMember());
+		AddNewPartyMember(new PartyMember(startingPartyWorldCoords));
+		AddNewPartyMember(new PartyMember(startingPartyWorldCoords));
 		//AddNewPartyMember(new PartyMember());
 		//AddNewPartyMember(new PartyMember());
 		//AddNewPartyMember(new PartyMember());
 		//AddNewPartyMember(new PartyMember());
-		partyInventory=new List<InventoryItem>();
-		partyInventory.Add(new FoodBig());
-		partyInventory.Add (new FoodSmall());
-		//partyInventory.Add(new SettableTrap());
-		//partyInventory.Add(new SettableTrap());
-		//partyInventory.Add(new SettableTrap());
-		//partyInventory.Add(new Knife());
-		//partyInventory.Add (new Knife());
-		//partyInventory.Add (new Axe());
-		//partyInventory.Add (new Axe());
-		//partyInventory.Add(new AmmoBox());
-		//partyInventory.Add (new AssaultRifle());
-		//partyInventory.Add (new AssaultRifle());
-		//partyInventory.Add (new SettableTrap());
-		//partyInventory.Add (new SettableTrap());
-		//partyInventory.Add (new Flashlight());
+		
+		MapRegion startingRegion=MapManager.main.GetRegion(startingPartyWorldCoords);
+		//MapManager.main.TeleportToRegion(startingRegion);
+		startingRegion.StashItem(new FoodBig());
+		startingRegion.StashItem(new FoodBig());
+		startingRegion.StashItem(new FoodSmall());
+		startingRegion.StashItem(new FoodSmall());
 		//Do this to setup proper background color
 		PassTime(1);
 	}
@@ -110,18 +105,32 @@ public class PartyManager : MonoBehaviour {
 		Camera.main.backgroundColor=new Color(0,0,newb);
 	}
 	
-	//Debug
+	void AdvanceMapTurn()
+	{
+		PassTime(1);
+		foreach (MemberMapToken token in MapManager.main.memberTokens.Values) token.moved=false;
+	}
 	
+	//Debug
 	void Update() 
 	{
 		if (Input.GetKeyDown(KeyCode.M)) 
 		{
-			RemovePartyMember(partyMembers[2]);
+			print ("Random 3:3 region coords:"+MapManager.main.GetRegion(new Vector2(3,3)).GetCoords());
+			//RemovePartyMember(partyMembers[0]);
 			/*
 			for (int i=0; i<30; i++)
 			{
 			partyMembers[0].GetMeleeAttackDamage();
 			}*/
+		}
+		if (Input.GetKeyDown(KeyCode.Space))
+		{
+			if (GameManager.main.gameStarted && !EncounterCanvasHandler.main.encounterOngoing)
+			{
+				AdvanceMapTurn();
+				//foreach (MemberMapToken token in MapManager.main.memberTokens) token.moved=false;
+			}
 		}
 	}
 	
@@ -135,11 +144,16 @@ public class PartyManager : MonoBehaviour {
 		newPartyMemberCanvas.AssignPartyMember(newMember);
 		newPartyMemberCanvas.transform.SetParent(statusCanvas.transform.FindChild("PartyMembersLayoutGroup"),false);
 		partyMemberCanvases.Add(newMember,newPartyMemberCanvas);
+		
+		MapManager.main.AddMemberToken(newMember);
+		MapManager.main.MoveMemberToRegion(newMember,newMember.worldCoords);
+		
 		statusCanvas.NewNotification(newMember.name+" has joined the party");
 	}
 	
 	public void RemovePartyMember(PartyMember removedMember)
 	{
+		MapManager.main.RemoveMemberToken(removedMember);
 		PartyMemberCanvasHandler deletedHandler=partyMemberCanvases[removedMember];
 		partyMemberCanvases.Remove(removedMember);
 		GameObject.Destroy(deletedHandler.gameObject);
@@ -165,6 +179,33 @@ public class PartyManager : MonoBehaviour {
 		}
 	}
 	
+	public void MapMemberClicked(PartyMember selectedMember)
+	{
+		if (selectedMembers.Contains(selectedMember))
+		{
+			//selectedMembers.Remove(selectedMember);
+			MapManager.main.memberTokens[selectedMember].Deselect();
+		}
+		else 
+		{
+			if (selectedMembers.Count>0)
+			{
+				List<PartyMember> membersInWrongLocation=new List<PartyMember>();
+				foreach (PartyMember member in selectedMembers)
+				{
+					if (member.worldCoords!=selectedMember.worldCoords) membersInWrongLocation.Add(member);
+				}
+				foreach(PartyMember member in membersInWrongLocation) 
+				{
+					MapManager.main.memberTokens[member].Deselect();
+					//selectedMembers.Remove(member);
+				}
+			} 
+			//selectedMembers.Add(selectedMember);
+			MapManager.main.memberTokens[selectedMember].Select();
+		}
+	}
+	//Makes sure members can't move too far away, and takes care of move penalties
 	public bool ConfirmMapMovement(int x, int y)
 	{
 		bool moveSuccesful=false;
@@ -174,10 +215,25 @@ public class PartyManager : MonoBehaviour {
 		{
 			if (member.stamina<1) {return moveSuccesful;}
 		}*/
-		int moveLength=Mathf.Abs(x-mapCoordX)+Mathf.Abs(y-mapCoordY);//Mathf.Max (Mathf.Abs(x-mapCoordX),Mathf.Abs(y-mapCoordY));
+		
+		float moveLength=(new Vector2(x,y)-selectedMembers[0].worldCoords).magnitude;//Mathf.Abs(x-mapCoordX)+Mathf.Abs(y-mapCoordY);//Mathf.Max (Mathf.Abs(x-mapCoordX),Mathf.Abs(y-mapCoordY));
 		if (moveLength==1)
 		{
 			moveSuccesful=true;
+			foreach (PartyMember member in selectedMembers)
+			{
+				if	(MapManager.main.memberTokens[member].moved) {moveSuccesful=false; break;}
+			}
+			
+			if (moveSuccesful)
+			{
+				List<PartyMember> cachedList=new List<PartyMember>(selectedMembers);
+				foreach (PartyMember member in cachedList) 
+				{
+					member.ChangeFatigue(moveFatigueCost);
+					MapManager.main.memberTokens[member].moved=true;
+				}
+			}
 		}
 		return moveSuccesful;
 	}
@@ -186,18 +242,9 @@ public class PartyManager : MonoBehaviour {
 	//public bool MovePartyToMapCoords(int x, int y) {return MovePartyToMapCoords(x,y,false);}
 	
 	//for event-based map jumps
+	/*
 	public void MovePartyToMapCoords(int x, int y)
 	{
-		/*
-		bool moveSuccesful=false;
-		//cancel if not enough stamina to move
-		foreach (PartyMember member in partyMembers) 
-		{
-			if (member.stamina<1 && !overrideMoveLimits) {return moveSuccesful;}
-		}
-		int moveLength=Mathf.Abs(x-mapCoordX)+Mathf.Abs(y-mapCoordY);//Mathf.Max (Mathf.Abs(x-mapCoordX),Mathf.Abs(y-mapCoordY));
-		if (moveLength==1 | overrideMoveLimits)
-		{*/
 			int moveLength=Mathf.Abs(x-mapCoordX)+Mathf.Abs(y-mapCoordY);
 			mapCoordX=x;
 			mapCoordY=y;
@@ -206,18 +253,7 @@ public class PartyManager : MonoBehaviour {
 				foreach(PartyMember member in partyMembers) {member.ChangeFatigue(moveFatigueCost);}
 				PassTime(1);
 			}
-			
-			
-			//foodSupply-=1;
-			//stamina-=1;
-			
-			//dayTime=(int)Mathf.Repeat(dayTime+1,24);
-			
-			
-			//moveSuccesful=true;
-		//}
-		//return moveSuccesful;
-	}
+	}*/
 	/*
 	public void EnterPartyIntoEncounter(List<PartyMember> encounterMembers)
 	{
@@ -231,7 +267,7 @@ public class PartyManager : MonoBehaviour {
 		//foreach (PartyMember member in encounterMembers) member.ChangeFatigue(encounterFatigueCost);
 		leavingMember.ChangeFatigue(encounterFatigueCost);
 	}*/
-	
+	/*
 	public void GainItems(InventoryItem newItem)
 	{
 		partyInventory.Add(newItem);
@@ -242,7 +278,7 @@ public class PartyManager : MonoBehaviour {
 	{
 		partyInventory.Remove(lostItem);
 		InventoryChanged();
-	}
+	}*/
 	
 	public void Rest()
 	{

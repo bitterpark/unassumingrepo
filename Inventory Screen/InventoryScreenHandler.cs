@@ -26,7 +26,9 @@ public class InventoryScreenHandler : MonoBehaviour
 	public SlotItem slotItemPrefab;
 	
 	//GROUPS
-	public Transform weaponsGroup;
+	//public Transform weaponsGroup;
+	public Transform meleeSlotPlacement;
+	public Transform rangedSlotPlacement;
 	public Transform equipmentGroup;
 	public Transform inventoryGroup;
 	public Transform memberInventoryGroup;
@@ -94,14 +96,14 @@ public class InventoryScreenHandler : MonoBehaviour
 		rangedDamageText.text=rangedText;
 		
 		//Remove old weapons
-		foreach (Image oldWeaponImage in weaponsGroup.GetComponentsInChildren<Image>()) 
-		{
-			GameObject.Destroy(oldWeaponImage.gameObject);
-		}
+		Image oldMeleeSlot=meleeSlotPlacement.GetComponentInChildren<Image>();
+		Image oldRangedSlot=rangedSlotPlacement.GetComponentInChildren<Image>();
+		if (oldMeleeSlot!=null) GameObject.Destroy(oldMeleeSlot.gameObject);
+		if (oldRangedSlot!=null) GameObject.Destroy(oldRangedSlot.gameObject);
 	
 		//Refresh melee slot
 		MeleeSlot newMeleeSlot=Instantiate(meleeSlotPrefab);
-		newMeleeSlot.transform.SetParent(weaponsGroup,false);
+		newMeleeSlot.transform.SetParent(meleeSlotPlacement,false);
 		if (selectedMember.equippedMeleeWeapon!=null)
 		{
 			SlotItem meleeWeapon=Instantiate(slotItemPrefab);
@@ -112,7 +114,7 @@ public class InventoryScreenHandler : MonoBehaviour
 		
 		//Refresh ranged slot
 		RangedSlot newRangedSlot=Instantiate(rangedSlotPrefab);
-		newRangedSlot.transform.SetParent(weaponsGroup,false);
+		newRangedSlot.transform.SetParent(rangedSlotPlacement,false);
 		if (selectedMember.equippedRangedWeapon!=null)
 		{
 			SlotItem rangedWeapon=Instantiate(slotItemPrefab);
@@ -172,7 +174,7 @@ public class InventoryScreenHandler : MonoBehaviour
 			EncounterCanvasHandler encounterManager=EncounterCanvasHandler.main;
 			activeList=encounterManager.currentEncounter.encounterMap[encounterManager.memberCoords[selectedMember]].floorItems;
 		}
-		else {activeList=PartyManager.mainPartyManager.GetPartyInventory();}
+		else {activeList=MapManager.main.GetRegion(selectedMember.worldCoords).GetStashedItems();}//PartyManager.mainPartyManager.GetPartyInventory();}
 		//Use floor or inventory list
 		for (int i=0; i<slotCount; i++)
 		{
@@ -225,7 +227,8 @@ public class InventoryScreenHandler : MonoBehaviour
 					//EncounterCanvasHandler.main.displayedRoom.RemoveFloorItem(clickedItem);
 					encounterHandler.roomButtons[encounterHandler.memberCoords[selectedMember]].PickUpFloorItem(clickedItem);
 				}
-				else {PartyManager.mainPartyManager.RemoveItems(clickedItem);}
+				else MapManager.main.GetRegion(selectedMember.worldCoords).TakeStashItem(clickedItem);
+				//{PartyManager.mainPartyManager.RemoveItems(clickedItem);}
 				
 			}
 			//if item came from member inventory
@@ -252,7 +255,7 @@ public class InventoryScreenHandler : MonoBehaviour
 	}
 	
 	void Update()
-	{
+	{	
 		if (Input.GetKeyDown(KeyCode.I))
 		{
 			if (GameManager.main.gameStarted && EncounterCanvasHandler.main.GetComponent<CanvasGroup>().interactable)

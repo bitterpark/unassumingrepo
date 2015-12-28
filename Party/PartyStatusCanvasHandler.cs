@@ -22,19 +22,20 @@ public class PartyStatusCanvasHandler : MonoBehaviour {
 	{
 		if (displayEnabled)
 		{
-			mapXText.text="X:"+PartyManager.mainPartyManager.mapCoordX.ToString();
-			mapYText.text="Y:"+PartyManager.mainPartyManager.mapCoordY.ToString();
+			//mapXText.text="X:"+PartyManager.mainPartyManager.mapCoordX.ToString();
+			//mapYText.text="Y:"+PartyManager.mainPartyManager.mapCoordY.ToString();
 			timeText.text="Time:"+PartyManager.mainPartyManager.dayTime.ToString()+":00";
 			ammoText.text="Ammo:"+PartyManager.mainPartyManager.ammo.ToString();
 		}
 	}
 	
-	public void NewNotification(string notificationText)
+	public void NewNotification(string notificationText) {NewNotification(notificationText,2f);}
+	public void NewNotification(string notificationText, float noteLifetime)
 	{
 		//if (displayEnabled)
 		{
 			NotePanelHandler newPanel=Instantiate(notePanelPrefab);
-			newPanel.AssignNote(notificationText);
+			newPanel.AssignNote(notificationText,noteLifetime);
 			//newPanel.transform.SetParent(transform,false);
 		}
 	}
