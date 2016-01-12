@@ -88,8 +88,12 @@ public class PartyMember
 	int _currentMaxStamina;
 	void RefreshMaxStamina()
 	{
+		currentMaxStamina=baseMaxStamina;
+		//Currently cancelled
+		/*
 		currentMaxStamina
 		=baseMaxStamina-Mathf.RoundToInt(maxStaminaReductionFromHunger*hunger*0.01f)-Mathf.RoundToInt(maxStaminaReductionFromFatigue*fatigue*0.01f);
+		*/
 		stamina=currentMaxStamina;
 	}
 	
@@ -144,7 +148,8 @@ public class PartyMember
 	}
 	public void ChangeFatigue(int fatigueDelta)
 	{
-		SetFatigue(fatigue+fatigueDelta);
+		if (fatigue<100) SetFatigue(fatigue+fatigueDelta);
+		else ChangeHunger(fatigueDelta);
 	}
 	//public int fatigueIncreasePerAction;
 	public int maxStaminaReductionFromFatigue=6;
@@ -175,6 +180,7 @@ public class PartyMember
 	public bool isCook;
 	public bool isLockExpert;
 	public bool isMedic;
+	public bool isScout;
 	public int armorValue;
 	public int maxCarryCapacity;
 	public int currentCarryCapacity;
@@ -219,19 +225,43 @@ public class PartyMember
 			if (!colorTaken) {color=c; break;}
 		}
 		
-		//Randomly pick out perks
-		int necessaryPerkCount=3;
-		List<Perk> possiblePerks=Perk.GetPerkList();
-		while (perks.Count<necessaryPerkCount)
+		//Fill out perk lists
+		List<Perk> possibleSpecialtyPerks=Perk.GetSpecialtyPerkList();
+		List<Perk> possibleGenericPerks=Perk.GetPerkList();
+		
+		//Randomly pick out a specialty perk
+		int requiredSpecialtyPerks=1;
+		while (requiredSpecialtyPerks>0)
 		{
-			Perk newPerk=possiblePerks[Random.Range(0,possiblePerks.Count)];
+			requiredSpecialtyPerks--;
+			Perk newPerk=possibleSpecialtyPerks[Random.Range(0,possibleSpecialtyPerks.Count)];
 			perks.Add(newPerk);
-			possiblePerks.Remove(newPerk);
+			possibleSpecialtyPerks.Remove(newPerk);
 			if (newPerk.oppositePerk!=null) 
 			{
-				foreach (Perk possiblePerk in possiblePerks) 
+				foreach (Perk possiblePerk in possibleSpecialtyPerks) 
 				{
-					if (possiblePerk.GetType()==newPerk.oppositePerk) {possiblePerks.Remove(possiblePerk); break;}
+					if (possiblePerk.GetType()==newPerk.oppositePerk) {possibleSpecialtyPerks.Remove(possiblePerk); break;}
+				}
+				foreach (Perk possiblePerk in possibleGenericPerks) 
+				{
+					if (possiblePerk.GetType()==newPerk.oppositePerk) {possibleGenericPerks.Remove(possiblePerk); break;}
+				}
+			}
+		}
+		
+		//Randomly pick out generic perks
+		int necessaryPerkCount=2;
+		while (perks.Count-1<necessaryPerkCount)
+		{
+			Perk newPerk=possibleGenericPerks[Random.Range(0,possibleGenericPerks.Count)];
+			perks.Add(newPerk);
+			possibleGenericPerks.Remove(newPerk);
+			if (newPerk.oppositePerk!=null) 
+			{
+				foreach (Perk possiblePerk in possibleGenericPerks) 
+				{
+					if (possiblePerk.GetType()==newPerk.oppositePerk) {possibleGenericPerks.Remove(possiblePerk); break;}
 				}
 			}
 		}
@@ -254,9 +284,9 @@ public class PartyMember
 		//fatigueIncreasePerAction=10;
 		
 		armorValue=0;
-		maxCarryCapacity=3;//
+		maxCarryCapacity=2;//
 		visibilityMod=0;
-		moraleDamageMod=0.02f;
+		moraleDamageMod=0;//0.02f;
 		moraleChangeFromKills=0;
 		friendshipChance=0.6f;
 		rangedDamageMod=0;
@@ -265,6 +295,7 @@ public class PartyMember
 		isCook=false;
 		isMedic=false;
 		isLockExpert=false;
+		isScout=false;
 		foreach (Perk myPerk in perks)
 		{
 			myPerk.ActivatePerk(this);
@@ -403,9 +434,48 @@ public class PartyMember
 		RollRelationships();
 	}
 	
-	public void RestEffect()
+	public AssignedTask GetRestTask(bool restInBed)
 	{
-		int newFatigue=Mathf.RoundToInt(maxFatigueRestoreReductionFromHunger*hunger*0.01f);
+		AssignedTaskTypes taskType=AssignedTaskTypes.Rest;
+		if (restInBed) 
+		{
+			//taskType=AssignedTaskTypes.RestInBed;
+			return new AssignedTask(this,taskType
+			,()=>
+			{
+				if (this.fatigue>0 || this.health<this.maxHealth) return true;
+				else 
+				{
+					return false;
+				}
+			}
+			,()=>{RestEffect(restInBed);}
+			,()=>{MapManager.main.GetRegion(worldCoords).campInRegion.freeBeds-=1;}
+			,()=>{MapManager.main.GetRegion(worldCoords).campInRegion.freeBeds+=1;}
+			);
+		}
+		else
+		{
+			return new AssignedTask(this,taskType
+			,()=>
+			{
+				if (this.fatigue>0 || this.health<this.maxHealth) return true;
+				else 
+				{
+					return false;
+				}
+			}
+			,()=>{RestEffect(restInBed);}
+			);
+		}
+	}
+	
+	void RestEffect(bool hasBed)
+	{	
+		int bedModifier=5;
+		int totalRest=5;
+		if (hasBed) totalRest+=bedModifier;
+		int newFatigue=_fatigue-=totalRest;//Mathf.RoundToInt(maxFatigueRestoreReductionFromHunger*hunger*0.01f);
 		SetFatigue(newFatigue);
 		if (hunger<100)
 		{

@@ -82,6 +82,11 @@ public class GameEventManager : MonoBehaviour
 		return eventFired;
 	}
 	
+	public void DoEvent(GameEvent newEvent, MapRegion eventRegion, List<PartyMember> eventMembers)
+	{
+		StartEventDraw(newEvent, eventRegion, eventMembers);
+	}
+	
 	GameEvent PickRandomEvent(List<EventChance> eventsList, ref EventChance eventRecord, float roll
 	, MapRegion eventRegion,List<PartyMember> movedMembers)
 	{
@@ -198,13 +203,14 @@ public class GameEventManager : MonoBehaviour
 		possibleEvents.Add (new EventChance(new CacheInAnomaly(),0.04f));
 		//possibleEvents.Add (new EventChance(new LostInAnomaly(),0.04f));
 		possibleEvents.Add( new EventChance(new NewSurvivor(),0.04f));
-		possibleEvents.Add( new EventChance(new MedicalCache(),1f));
+		possibleEvents.Add( new EventChance(new MedicalCache(),0.04f));
 		possibleEvents.Add (new EventChance(new SurvivorRescue(),0.04f));
 		possibleEvents.Add(new EventChance(new SearchForSurvivor(),0.04f));
 		
 		moraleEvents.Add (new EventChance(new LowMoraleSpiral(),0.2f));
 		moraleEvents.Add (new EventChance(new LowMoraleFight(),0.15f));
 		moraleEvents.Add (new EventChance(new LowMoraleEnmity(),0.15f));
+		moraleEvents.Add (new EventChance(new LowMoraleQuit(),0.15f));
 		
 		/*
 		//Add highest first for proper rolling

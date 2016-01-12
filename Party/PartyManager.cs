@@ -3,8 +3,60 @@ using UnityEngine.UI;
 using System.Collections;
 using System.Collections.Generic;
 
+public enum AssignedTaskTypes {Rest,BuildCamp};
+public struct AssignedTask
+{
+	public AssignedTaskTypes taskType;
+	public System.Func<bool> preconditionCheck;
+	public System.Action actionToPerform;
+	public System.Action startTaskAction;
+	public System.Action endTaskAction;
+	public PartyMember performingMember;
+	public AssignedTask(PartyMember member, AssignedTaskTypes type, System.Func<bool> check, System.Action mainAction)
+	{
+		taskType=type;
+		preconditionCheck=check;
+		actionToPerform=mainAction;
+		performingMember=member;
+		startTaskAction=null;
+		endTaskAction=null;
+	}
+	public AssignedTask(PartyMember member, AssignedTaskTypes type, System.Func<bool> check
+	, System.Action mainAction, System.Action startAction, System.Action endAction)
+	{
+		taskType=type;
+		preconditionCheck=check;
+		actionToPerform=mainAction;
+		performingMember=member;
+		if (startAction!=null) startTaskAction=startAction;
+		else startTaskAction=null;
+		if (endAction!=null) endTaskAction=endAction;
+		else endTaskAction=null;
+	}
+	
+	public void DoStartAction()
+	{
+		if (startTaskAction!=null) startTaskAction.Invoke();
+	}
+	public void DoEndAction()
+	{
+		if (endTaskAction!=null) endTaskAction.Invoke();
+	}
+	
+	public Sprite GetTaskSprite()
+	{
+		Sprite result=null;
+		switch (taskType)
+		{
+			case AssignedTaskTypes.BuildCamp: {result=SpriteBase.mainSpriteBase.buildCampSprite; break;}
+			case AssignedTaskTypes.Rest: {result=SpriteBase.mainSpriteBase.restSprite; break;}
+		}
+		return result;
+	}
+}
 
-public class PartyManager : MonoBehaviour {
+public class PartyManager : MonoBehaviour
+{
 
 	public static PartyManager mainPartyManager;//mainPlayerState;
 	
@@ -19,13 +71,25 @@ public class PartyManager : MonoBehaviour {
 	
 	public List<PartyMember> partyMembers;
 	public List<PartyMember> selectedMembers;
+	public void AddSelectedMember(PartyMember addedMember)
+	{
+		if (!partyMembers.Contains(addedMember)) throw new System.Exception("Attempting to select party member that doesn't exist!");
+		selectedMembers.Add(addedMember);
+		PartyStatusCanvasHandler.main.RefreshAssignmentButtons(selectedMembers);
+	}
+	public void RemoveSelectedMember(PartyMember removedMember)
+	{
+		if (!selectedMembers.Contains(removedMember)) throw new System.Exception("Attempting to remove non-selected member from selection!");
+		selectedMembers.Remove(removedMember);
+		PartyStatusCanvasHandler.main.RefreshAssignmentButtons(selectedMembers);
+	}
 	//public List<PartyMemberSelector> selectors;
 	public StatusEffectDrawer effectTokenPrefab;
 	Dictionary<int,List<StatusEffectDrawer>> statusEffectTokens;
 	
 	public PartyStatusCanvasHandler statusCanvas;
 	public PartyMemberCanvasHandler partyMemberCanvasPrefab;
-	Dictionary<PartyMember,PartyMemberCanvasHandler> partyMemberCanvases; 
+	public Dictionary<PartyMember,PartyMemberCanvasHandler> partyMemberCanvases; 
 	
 	const int moveFatigueCost=10;
 	//const int encounterFatigueCost=10;
@@ -52,10 +116,41 @@ public class PartyManager : MonoBehaviour {
 	public delegate void TimePassedDeleg(int hours);
 	public static event TimePassedDeleg TimePassed;
 	
+	Dictionary<PartyMember,AssignedTask> assignedTasks;
+	public bool GetAssignedTask(PartyMember member, out AssignedTaskTypes type)
+	{
+		type=AssignedTaskTypes.BuildCamp;
+		if (!assignedTasks.ContainsKey(member)) return false;
+		else
+		{
+			type=assignedTasks[member].taskType;
+			return true;
+		}
+	}
+	public void AssignMemberNewTask(AssignedTask newTask)
+	{
+		if (assignedTasks.ContainsKey(newTask.performingMember)) throw new System.Exception("Trying to assign task to member with task!");
+		if (newTask.preconditionCheck.Invoke())
+		{
+			newTask.DoStartAction();
+			assignedTasks.Add(newTask.performingMember,newTask);
+			MapManager.main.memberTokens[newTask.performingMember].NewTaskSet(newTask.GetTaskSprite());
+			PartyStatusCanvasHandler.main.RefreshAssignmentButtons(selectedMembers);
+			//MapManager.main.memberTokens[newTask.performingMember].moved=true;
+		}
+	}
+	public void RemoveMemberTask(PartyMember member)
+	{
+		if (!assignedTasks.ContainsKey(member)) throw new System.Exception("Trying to remove task from member with no task!");
+		assignedTasks[member].DoEndAction();
+		assignedTasks.Remove(member);
+		MapManager.main.memberTokens[member].TaskRemoved();//.moved=false;
+		PartyStatusCanvasHandler.main.RefreshAssignmentButtons(selectedMembers);
+	}
 	//public PartyMemberSelector selectorPrefab;
 	
 	//Setup start of game
-	void SetDefaultState()
+	public void SetDefaultState()
 	{
 		Vector2 startingPartyWorldCoords=new Vector2(0,0);
 		//partyStatusCanvas.gameObject.SetActive(true);
@@ -71,6 +166,7 @@ public class PartyManager : MonoBehaviour {
 		
 		partyMembers=new List<PartyMember>();
 		selectedMembers=new List<PartyMember>();
+		assignedTasks=new Dictionary<PartyMember, AssignedTask>();
 		//selectors=new List<PartyMemberSelector>();
 		//statusEffectTokens=new Dictionary<int, List<StatusEffectDrawer>>();
 		
@@ -87,6 +183,9 @@ public class PartyManager : MonoBehaviour {
 		startingRegion.StashItem(new FoodBig());
 		startingRegion.StashItem(new FoodSmall());
 		startingRegion.StashItem(new FoodSmall());
+		//startingRegion.StashItem(new Bed());
+		//startingRegion.StashItem(new Bed());
+		//startingRegion.StashItem(new Pot());//
 		//Do this to setup proper background color
 		PassTime(1);
 	}
@@ -107,8 +206,18 @@ public class PartyManager : MonoBehaviour {
 	
 	void AdvanceMapTurn()
 	{
+		//Make sure the rest tasks and time skip occur in proper order
 		PassTime(1);
-		foreach (MemberMapToken token in MapManager.main.memberTokens.Values) token.moved=false;
+		foreach (MemberMapToken token in MapManager.main.memberTokens.Values) 
+		if (!assignedTasks.ContainsKey(token.assignedMember)) token.moved=false;
+		foreach (PartyMember member in new List<PartyMember>(assignedTasks.Keys)) 
+		{
+			assignedTasks[member].actionToPerform.Invoke();
+			if (!assignedTasks[member].preconditionCheck()) RemoveMemberTask(member);
+		}
+		//This may cause issues on gameover
+		PartyStatusCanvasHandler.main.RefreshAssignmentButtons(selectedMembers);
+		//PartyStatusCanvasHandler.main.StartTimeFlash();
 	}
 	
 	//Debug
@@ -116,17 +225,10 @@ public class PartyManager : MonoBehaviour {
 	{
 		if (Input.GetKeyDown(KeyCode.M)) 
 		{
-			print ("Random 3:3 region coords:"+MapManager.main.GetRegion(new Vector2(3,3)).GetCoords());
-			//RemovePartyMember(partyMembers[0]);
-			/*
-			for (int i=0; i<30; i++)
-			{
-			partyMembers[0].GetMeleeAttackDamage();
-			}*/
 		}
 		if (Input.GetKeyDown(KeyCode.Space))
 		{
-			if (GameManager.main.gameStarted && !EncounterCanvasHandler.main.encounterOngoing)
+			if (GameManager.main.gameStarted && !EncounterCanvasHandler.main.encounterOngoing && !GameEventManager.mainEventManager.drawingEvent)
 			{
 				AdvanceMapTurn();
 				//foreach (MemberMapToken token in MapManager.main.memberTokens) token.moved=false;
@@ -142,17 +244,19 @@ public class PartyManager : MonoBehaviour {
 		partyMembers.Add (newMember);
 		PartyMemberCanvasHandler newPartyMemberCanvas=Instantiate(partyMemberCanvasPrefab);
 		newPartyMemberCanvas.AssignPartyMember(newMember);
-		newPartyMemberCanvas.transform.SetParent(statusCanvas.transform.FindChild("PartyMembersLayoutGroup"),false);
+		newPartyMemberCanvas.transform.SetParent(statusCanvas.memberCanvasGroup,false);
 		partyMemberCanvases.Add(newMember,newPartyMemberCanvas);
 		
 		MapManager.main.AddMemberToken(newMember);
-		MapManager.main.MoveMemberToRegion(newMember,newMember.worldCoords);
+		MapManager.main.MoveMembersToRegion(newMember.worldCoords,newMember);
 		
 		statusCanvas.NewNotification(newMember.name+" has joined the party");
 	}
 	
 	public void RemovePartyMember(PartyMember removedMember)
 	{
+		if (assignedTasks.ContainsKey(removedMember)) RemoveMemberTask(removedMember);
+		if (selectedMembers.Contains(removedMember)) selectedMembers.Remove(removedMember);
 		MapManager.main.RemoveMemberToken(removedMember);
 		PartyMemberCanvasHandler deletedHandler=partyMemberCanvases[removedMember];
 		partyMemberCanvases.Remove(removedMember);
@@ -172,9 +276,10 @@ public class PartyManager : MonoBehaviour {
 			{
 				if (member.relationships.ContainsKey(removedMember))
 				{
-					member.morale-=40;
+					member.morale-=50;
 					member.RemoveRelatonship(removedMember);
 				}
+				else member.morale-=35;
 			}
 		}
 	}
@@ -206,7 +311,7 @@ public class PartyManager : MonoBehaviour {
 		}
 	}
 	//Makes sure members can't move too far away, and takes care of move penalties
-	public bool ConfirmMapMovement(int x, int y)
+	public bool ConfirmMapMovement(int x, int y, out List<PartyMember> movedList)
 	{
 		bool moveSuccesful=false;
 		//cancel if not enough stamina to move
@@ -215,25 +320,34 @@ public class PartyManager : MonoBehaviour {
 		{
 			if (member.stamina<1) {return moveSuccesful;}
 		}*/
-		
+		movedList=new List<PartyMember>();
 		float moveLength=(new Vector2(x,y)-selectedMembers[0].worldCoords).magnitude;//Mathf.Abs(x-mapCoordX)+Mathf.Abs(y-mapCoordY);//Mathf.Max (Mathf.Abs(x-mapCoordX),Mathf.Abs(y-mapCoordY));
 		if (moveLength==1)
 		{
 			moveSuccesful=true;
+			
 			foreach (PartyMember member in selectedMembers)
 			{
-				if	(MapManager.main.memberTokens[member].moved) {moveSuccesful=false; break;}
+				if	(!MapManager.main.memberTokens[member].moved) movedList.Add(member);
 			}
 			
-			if (moveSuccesful)
+			if (movedList.Count>0)
 			{
-				List<PartyMember> cachedList=new List<PartyMember>(selectedMembers);
-				foreach (PartyMember member in cachedList) 
+				moveSuccesful=true;
+				//Deselect all non-moved members
+				List<PartyMember> cachedSelectedMembers=new List<PartyMember>(selectedMembers);
+				foreach (PartyMember member in cachedSelectedMembers)
+				{
+					if (!movedList.Contains(member)) MapManager.main.memberTokens[member].Deselect();
+				}
+				//Apply fatigue to all moved members
+				foreach (PartyMember member in movedList) 
 				{
 					member.ChangeFatigue(moveFatigueCost);
 					MapManager.main.memberTokens[member].moved=true;
 				}
-			}
+			} 
+			else moveSuccesful=false;
 		}
 		return moveSuccesful;
 	}
@@ -280,26 +394,6 @@ public class PartyManager : MonoBehaviour {
 		InventoryChanged();
 	}*/
 	
-	public void Rest()
-	{
-		/*
-		foreach (PartyMember member in partyMembers)
-		{
-			//foodSupply-=1;
-			if (member.hunger<100)
-			{
-				member.stamina+=Mathf.RoundToInt(member.maxStamina*0.3f);
-				member.health+=2;
-			}
-			else
-			{
-				member.health-=2;
-				member.stamina+=Mathf.RoundToInt(member.maxStamina*0.1f);
-			}
-		}*/
-		foreach (PartyMember member in partyMembers) {member.RestEffect();}
-		PassTime(6);
-	}
 	
 	public void AddPartyMemberStatusEffect(PartyMember member, StatusEffect effect)//(int memberIndex, StatusEffect effect)
 	{
@@ -423,7 +517,8 @@ public class PartyManager : MonoBehaviour {
 	void Start()
 	{
 		mainPartyManager=this;//mainPlayerState=this;
-		GameManager.GameStart+=SetDefaultState;
+		//GameManager.main.PartyManagerStartDelegate+=SetDefaultState;
+		//GameManager.GameStart+=SetDefaultState;
 		GameManager.GameOver+=GameOverCleanup;
 	}
 	
@@ -456,6 +551,4 @@ public class PartyManager : MonoBehaviour {
 			GUI.Box(new Rect(Screen.width*0.5f-25f,Screen.height*0.5f-50f,100,50),endMessage);
 		}*/
 	}
-	
-	
 }

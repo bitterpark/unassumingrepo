@@ -132,7 +132,8 @@ public class MapManager : MonoBehaviour
 		//final step - party placement
 		if (playerToken!=null) {GameObject.Destroy(playerToken);}
 		playerToken=Instantiate(playerTokenPrefab) as GameObject;
-		
+		Canvas.ForceUpdateCanvases();
+		GetComponentInChildren<ScrollRect>().normalizedPosition=new Vector2(0,1);
 		//DiscoverRegions(0,0);
 		//TeleportToRegion(mapRegions[new Vector2(0,0)]);
 	}
@@ -194,23 +195,38 @@ public class MapManager : MonoBehaviour
 			if (!EncounterCanvasHandler.main.encounterOngoing 
 			    && mapRegions[PartyManager.mainPartyManager.selectedMembers[0].worldCoords].hordeEncounter==null)
 			{
-				//Needs to be cached at this stage, the party gets deselected on confirm, due to moved being set to =true
-				List<PartyMember> movedMembers=new List<PartyMember>(PartyManager.mainPartyManager.selectedMembers);
-				if (PartyManager.mainPartyManager.ConfirmMapMovement(clickedRegion.xCoord,clickedRegion.yCoord))//.MovePartyToMapCoords(clickedRegion.xCoord,clickedRegion.yCoord))
+				//See which of the selected party members are capable of moving
+				/*
+				List<PartyMember> movedMembers=new List<PartyMember>();
+				foreach (PartyMember member in PartyManager.mainPartyManager.selectedMembers)
+				{
+					if (!memberTokens[member].moved) {movedMembers.Add(member); print ("Member added to movedMembers");}
+				}
+				//If none of the selected members are capable of moving, quit
+				if (movedMembers.Count==0) return;*/
+				List<PartyMember> movedMembers;
+				if (PartyManager.mainPartyManager.ConfirmMapMovement(clickedRegion.xCoord,clickedRegion.yCoord, out movedMembers))//.MovePartyToMapCoords(clickedRegion.xCoord,clickedRegion.yCoord))
 				{
 					bool noEventBasedMove=true;
-					bool eventHappened=false;
-					GameEventManager.mainEventManager.RollEvents(ref noEventBasedMove,clickedRegion,movedMembers);
+					bool eventHappened=GameEventManager.mainEventManager.RollEvents(ref noEventBasedMove,clickedRegion,movedMembers);
 					if (noEventBasedMove)
 					{
 						//MovePartyToRegion(clickedRegion);
-						foreach (PartyMember member in movedMembers)
-						{
-							MoveMemberToRegion(member,clickedRegion);
-						}
+						//foreach (PartyMember member in movedMembers)
+						//{
+							MoveMembersToRegion(clickedRegion,movedMembers.ToArray());
+						//}
 						DiscoverRegions(clickedRegion.GetCoords());
 						//Threat level roll
-						if (clickedRegion.hasEncounter && !eventHappened)
+						
+						//Searches if a scout is included in the party, if so - no ambushes trigger
+						bool membersCanBeAmbushed=true;
+						foreach (PartyMember member in movedMembers)
+						{
+							if (member.isScout) {membersCanBeAmbushed=false; break;}
+						}
+						
+						if (clickedRegion.hasEncounter && !eventHappened && membersCanBeAmbushed)
 						{
 							float randomAttackChance=0;
 							switch(clickedRegion.threatLevel)
@@ -220,9 +236,9 @@ public class MapManager : MonoBehaviour
 							case MapRegion.ThreatLevels.High: {randomAttackChance=0.4f; break;}
 							}
 							if (Random.value<randomAttackChance) 
-								EnterEncounter
-									(new RandomAttack(clickedRegion.regionalEncounter.encounterEnemyType),movedMembers,true);
-						}//
+							GameEventManager.mainEventManager.DoEvent(new AmbushEvent(),clickedRegion,movedMembers);
+							//EnterEncounter(new RandomAttack(clickedRegion.regionalEncounter.encounterEnemyType),movedMembers,true);
+						}//*/
 					}
 				}
 			}
@@ -252,18 +268,23 @@ public class MapManager : MonoBehaviour
 		playerToken.transform.SetParent(newRegion.transform);
 	}*/
 	
-	public void MoveMemberToRegion(PartyMember movedMember,Vector2 newRegionCoords)
+	public void MoveMembersToRegion(Vector2 newRegionCoords, params PartyMember[] movedMembers)
 	{
-		MoveMemberToRegion(movedMember,GetRegion(newRegionCoords));
-		DiscoverRegions(newRegionCoords);
+		MoveMembersToRegion(GetRegion(newRegionCoords),movedMembers);
 	}
 	
-	public void MoveMemberToRegion(PartyMember movedMember,MapRegion newRegion)
+	public void MoveMembersToRegion(MapRegion newRegion, params PartyMember[] movedMembers)
 	{
-		mapRegions[movedMember.worldCoords].localPartyMembers.Remove(movedMember);
-		movedMember.worldCoords=newRegion.GetCoords();
-		newRegion.localPartyMembers.Add(movedMember);
-		memberTokens[movedMember].MoveToken(newRegion.transform);
+		foreach (PartyMember movedMember in movedMembers)
+		{
+			mapRegions[movedMember.worldCoords].localPartyMembers.Remove(movedMember);
+			movedMember.worldCoords=newRegion.GetCoords();
+			newRegion.localPartyMembers.Add(movedMember);
+			memberTokens[movedMember].MoveToken(newRegion.transform);
+		}
+		DiscoverRegions(newRegion.GetCoords());
+		PartyStatusCanvasHandler.main.RefreshAssignmentButtons(PartyManager.mainPartyManager.selectedMembers);
+		
 	}	
 	
 	void DiscoverRegions(Vector2 coords) {DiscoverRegions((int)coords.x,(int)coords.y);}
@@ -388,10 +409,11 @@ public class MapManager : MonoBehaviour
 	void Start()
 	{
 		main=this;
-		GameManager.GameStart+=GenerateNewMap;
+		//GameManager.MapManagerStartDelegate+=GenerateNewMap;
+		//GameManager.GameStart+=GenerateNewMap;
 		GameManager.GameOver+=ClearMap;
 	}
-	
+	/*
 	void OnGUI()
 	{
 		if (GameManager.main.gameStarted && !EncounterCanvasHandler.main.encounterOngoing && PartyManager.mainPartyManager.selectedMembers.Count>0)
@@ -400,17 +422,20 @@ public class MapManager : MonoBehaviour
 			{
 				MapRegion checkedRegion=mapRegions[PartyManager.mainPartyManager.selectedMembers[0].worldCoords];
 				Rect encounterStartRect=new Rect(110,10,80,25);
-				/*
-				if (hordeLocked)//checkedRegion.hordeEncounter!=null)
+				
+				List<PartyMember> membersFreeToAct=new List<PartyMember>();
+				
+				foreach (PartyMember member in PartyManager.mainPartyManager.selectedMembers)
 				{
-					if (GUI.Button (encounterStartRect,"Fight")) 
+					if (!memberTokens[member].moved)
 					{
-						EnterEncounter(checkedRegion.hordeEncounter,PartyManager.mainPartyManager.partyMembers);
-						//hordeLocked=false;
+						membersFreeToAct.Add(member);
 					}
 				}
-				else*/
 				//{
+				Rect restButtonRect=new Rect(110,35,140,25);
+				if (membersFreeToAct.Count>0)
+				{
 					if (checkedRegion.hasEncounter)
 					{
 						if (GUI.Button (encounterStartRect,"Explore")) 
@@ -422,40 +447,101 @@ public class MapManager : MonoBehaviour
 							}
 						}
 					}
-					Rect restButtonRect=new Rect(110,35,140,25);
+					
 					
 					if (checkedRegion.hasCamp)
 					{
 						if (GUI.Button(restButtonRect,"Rest")) 
 						{
-							PartyManager.mainPartyManager.Rest();
+							foreach (PartyMember member in membersFreeToAct)
+							{
+								PartyManager.mainPartyManager.Rest(member);
+							}
 						
 						}
 					}
 					else
 					{
-						int campSetupTime=1;
-						if (checkedRegion.hasEncounter)
+						if (GUI.Button(restButtonRect,"Setup camp("+checkedRegion.campSetupTimeRemaining+" hours)")) 
 						{
-							switch (checkedRegion.threatLevel)
+							int totalInvestedHours=0;
+							//PartyManager.mainPartyManager.PassTime(campSetupTime);
+							foreach (PartyMember member in membersFreeToAct)
 							{
-								case MapRegion.ThreatLevels.Low: {campSetupTime=2; break;}
-								case MapRegion.ThreatLevels.Medium: {campSetupTime=3; break;}
-								case MapRegion.ThreatLevels.High: {campSetupTime=4; break;}
+								//token.moved=true;
+								//totalInvestedHours+=1;
+								//if (totalInvestedHours==checkedRegion.campSetupTimeRemaining) break;
+								AssignedTask campBuildingTask=new AssignedTask(member,AssignedTaskTypes.BuildCamp
+								,()=>
+								{
+									if (!checkedRegion.hasCamp) return true;
+									else return false;
+								}
+								,()=>
+								{
+									checkedRegion.SetUpCamp(1);
+								}
+								);
+								PartyManager.mainPartyManager.AssignMemberNewTask(campBuildingTask);
 							}
-						}
-						if (GUI.Button(restButtonRect,"Setup camp("+campSetupTime+" hours)")) 
-						{
-							PartyManager.mainPartyManager.PassTime(campSetupTime);
-							checkedRegion.SetUpCamp();
+							//checkedRegion.SetUpCamp(totalInvestedHours);
 						}
 					}
-				//}
+				}
+				else
+				{
+					if (checkedRegion.hasCamp)
+					{
+						List<PartyMember> buildingMembers=new List<PartyMember>();
+						foreach (PartyMember member in PartyManager.mainPartyManager.selectedMembers)
+						{
+							AssignedTaskTypes memberTaskType;
+							if (PartyManager.mainPartyManager.GetAssignedTask(member,out memberTaskType))
+							{
+								if (memberTaskType==AssignedTaskTypes.Rest) 
+									buildingMembers.Add(member);
+							}
+						}
+						if (buildingMembers.Count>0)
+						{
+							if (GUI.Button(restButtonRect,"Stop resting")) 
+							{
+								foreach (PartyMember member in buildingMembers)
+								{
+									PartyManager.mainPartyManager.RemoveMemberTask(member);//.assignedTasks.Remove(token.assignedMember);
+									//token.moved=false;
+								}
+								
+							}
+						}
+					}
+					else
+					{
+						List<PartyMember> buildingMembers=new List<PartyMember>();
+						foreach (PartyMember member in PartyManager.mainPartyManager.selectedMembers)
+						{
+							AssignedTaskTypes memberTaskType;
+							if (PartyManager.mainPartyManager.GetAssignedTask(member,out memberTaskType))
+							{
+								if (memberTaskType==AssignedTaskTypes.BuildCamp) 
+								buildingMembers.Add(member);
+							}
+						}
+						if (buildingMembers.Count>0)
+						{
+							if (GUI.Button(restButtonRect,"Stop building camp")) 
+							{
+								foreach (PartyMember member in buildingMembers)
+								{
+									PartyManager.mainPartyManager.RemoveMemberTask(member);//.assignedTasks.Remove(token.assignedMember);
+									//token.moved=false;
+								}
+								
+							}
+						}
+					}
+				}
 			}
-			//else 
-			//{
-			
-			//}
 		}
-	}
+	}*/
 }

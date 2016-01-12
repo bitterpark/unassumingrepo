@@ -5,8 +5,9 @@ using UnityEngine.EventSystems;
 
 public class MemberMapToken : MonoBehaviour, IPointerClickHandler, IPointerEnterHandler 
 {
+	public Image actionStatusToken;
 	
-	PartyMember assignedMember;
+	public PartyMember assignedMember;
 	public bool moved
 	{
 		get {return _moved;}
@@ -15,7 +16,12 @@ public class MemberMapToken : MonoBehaviour, IPointerClickHandler, IPointerEnter
 			_moved=value;
 			if (_moved)
 			{
-				Deselect();
+				actionStatusToken.enabled=false;
+			} 
+			else 
+			{
+				actionStatusToken.enabled=true;
+				actionStatusToken.sprite=SpriteBase.mainSpriteBase.noActionSprite;
 			}
 		}
 	}
@@ -32,7 +38,7 @@ public class MemberMapToken : MonoBehaviour, IPointerClickHandler, IPointerEnter
 	{
 		if (!MapScoutingHandler.scoutingDialogOngoing)
 		{
-			PartyManager.mainPartyManager.selectedMembers.Add(assignedMember);
+			PartyManager.mainPartyManager.AddSelectedMember(assignedMember);//.selectedMembers.Add(assignedMember);
 			GetComponent<Image>().color=Color.blue;
 		}
 	}
@@ -41,7 +47,7 @@ public class MemberMapToken : MonoBehaviour, IPointerClickHandler, IPointerEnter
 	{
 		if (PartyManager.mainPartyManager.selectedMembers.Contains(assignedMember))
 		{
-			PartyManager.mainPartyManager.selectedMembers.Remove(assignedMember);
+			PartyManager.mainPartyManager.RemoveSelectedMember(assignedMember);
 			GetComponent<Image>().color=assignedMember.color;
 		}
 	}
@@ -51,12 +57,22 @@ public class MemberMapToken : MonoBehaviour, IPointerClickHandler, IPointerEnter
 		transform.SetParent(newRegion,false);
 		transform.position=newRegion.position;
 	}
-
+	
+	public void NewTaskSet(Sprite taskSprite)
+	{
+		moved=true;
+		actionStatusToken.enabled=true;
+		actionStatusToken.sprite=taskSprite;
+	}
+	public void TaskRemoved()
+	{
+		moved=false;
+	}
 
 	#region IPointerClickHandler implementation	
 	public void OnPointerClick (PointerEventData eventData)
 	{
-		if (!moved) PartyManager.mainPartyManager.MapMemberClicked(assignedMember);
+		PartyManager.mainPartyManager.MapMemberClicked(assignedMember);
 		//throw new System.NotImplementedException ();
 	}
 

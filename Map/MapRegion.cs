@@ -22,9 +22,10 @@ public class MapRegion : MonoBehaviour, IPointerEnterHandler, IPointerExitHandle
 	
 	public Sprite hordeSprite;
 	
-	public GameObject campTokenPrefab;
+	//public GameObject campTokenPrefab;
 	
 	public Image stashToken;
+	public Image campToken;
 	
 	public bool discovered
 	{
@@ -66,6 +67,8 @@ public class MapRegion : MonoBehaviour, IPointerEnterHandler, IPointerExitHandle
 	public bool hasEncounter=false;
 	
 	public bool hasCamp=false;
+	public int campSetupTimeRemaining=5;
+	public Camp campInRegion;
 	
 	public List<PartyMember> localPartyMembers=new List<PartyMember>();
 	
@@ -213,6 +216,9 @@ public class MapRegion : MonoBehaviour, IPointerEnterHandler, IPointerExitHandle
 			if (threatRoll<0.7f) threatLevel=ThreatLevels.Medium;
 			if (threatRoll<0.3f) threatLevel=ThreatLevels.High;
 		}
+		if (threatLevel==ThreatLevels.Low) campSetupTimeRemaining+=2;
+		if (threatLevel==ThreatLevels.Medium) campSetupTimeRemaining+=4;
+		if (threatLevel==ThreatLevels.High) campSetupTimeRemaining+=6;
 	}
 	
 	public void GenerateHorde(int emptySigVar)
@@ -225,12 +231,21 @@ public class MapRegion : MonoBehaviour, IPointerEnterHandler, IPointerExitHandle
 		}*/
 	}
 	
-	public void SetUpCamp()
+	public void SetUpCamp(int manhoursInvested)
 	{
-		hasCamp=true;
-		GameObject campToken=Instantiate(campTokenPrefab);
-		campToken.transform.SetParent(this.transform);//,true);
-		campToken.transform.position=this.transform.position;
+		campSetupTimeRemaining-=manhoursInvested;
+		campToken.gameObject.SetActive(true);
+		if (campSetupTimeRemaining<=0)
+		{
+			hasCamp=true;
+			//print ("camp setup");
+			campInRegion=new Camp();
+			campToken.GetComponentInChildren<Text>().enabled=false;
+			//GameObject campToken=Instantiate(campTokenPrefab);
+			//campToken.transform.SetParent(this.transform);//,true);
+			//campToken.transform.position=this.transform.position;
+		}
+		else campToken.GetComponentInChildren<Text>().text=campSetupTimeRemaining.ToString();
 	}
 	
 	//void Start() {transform.Rotate(new Vector3(-90,0,0));}

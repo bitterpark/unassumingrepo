@@ -153,7 +153,7 @@ public class EncounterCanvasHandler : MonoBehaviour
 		if (GetComponent<CanvasGroup>().interactable
 		&& moveDistance==1 
 		&& !roomHandler.assignedRoom.isWall 
-		&& roomHandler.assignedRoom.barricadeInRoom==null) //&& !currentEncounter.encounterMap[memberCoords[selectedMember]].hasEnemies)//new Vector2(encounterPlayerX,encounterPlayerY)].hasEnemies)
+		&& (roomHandler.assignedRoom.barricadeInRoom==null || selectedMember.isScout)) //&& !currentEncounter.encounterMap[memberCoords[selectedMember]].hasEnemies)//new Vector2(encounterPlayerX,encounterPlayerY)].hasEnemies)
 		{
 			StartCoroutine(MoveMemberToRoom(roomHandler));
 		}//
@@ -175,7 +175,7 @@ public class EncounterCanvasHandler : MonoBehaviour
 				nonMovingMemberCoords.Remove(memberCoords[selectedMember]);
 				if (!nonMovingMemberCoords.Contains(startingRoom.GetCoords()))
 				*/
-			if (startingRoom.hasEnemies)
+			if (startingRoom.hasEnemies)// && !selectedMember.isScout)
 			{
 				GetComponent<CanvasGroup>().interactable=false;
 				List<PartyMember> argumentListOfOne=new List<PartyMember>();

@@ -5,15 +5,15 @@ public class SpriteBase : MonoBehaviour {
 	
 	public static SpriteBase mainSpriteBase;
 	
-	
+	//Ranged
 	public Sprite nineMSprite;
 	public Sprite shotgunSprite;
 	public Sprite assaultRifleSprite;
-	
+	//Melee
 	public Sprite pipeSprite;
 	public Sprite knifeSprite;
 	public Sprite axeSprite;
-	
+	//Items
 	public Sprite ammoBoxSprite;
 	public Sprite medkitSprite;
 	public Sprite bandageSprite;
@@ -25,10 +25,16 @@ public class SpriteBase : MonoBehaviour {
 	public Sprite armorvestSprite;
 	public Sprite radioSprite;
 	public Sprite settableTrapSprite;
+	public Sprite bedSprite;
 	
+	//Assigned task sprites
+	public Sprite buildCampSprite;
+	public Sprite restSprite;
+	public Sprite noActionSprite;
 	
+	//Enemy sprites
 	public Sprite genericEnemySprite;
-	
+	//Status effect sprites
 	public Sprite bleedSprite;
 	public Sprite phasedOutSprite;
 	

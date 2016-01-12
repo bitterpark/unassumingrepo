@@ -10,6 +10,8 @@ public class SlotItem : MonoBehaviour, IBeginDragHandler,IDragHandler,IEndDragHa
 	public InventorySlot currentSlot;
 	public InventoryItem assignedItem;
 	
+	public bool draggable=true;
+	
 	bool drawMouseoverText=false;
 	
 	public void AssignItem(InventoryItem newItem)
@@ -28,11 +30,14 @@ public class SlotItem : MonoBehaviour, IBeginDragHandler,IDragHandler,IEndDragHa
 	#region IBeginDragHandler implementation
 	public void OnBeginDrag (PointerEventData eventData)
 	{
-		itemBeingDragged=this;
-		//makes sure OnDrop fires correctly for all objects
-		GetComponent<CanvasGroup>().blocksRaycasts=false;
-		transform.SetParent(InventoryScreenHandler.mainISHandler.transform);
-		//print ("drag start");
+		if (draggable)
+		{
+			itemBeingDragged=this;
+			//makes sure OnDrop fires correctly for all objects
+			GetComponent<CanvasGroup>().blocksRaycasts=false;
+			transform.SetParent(InventoryScreenHandler.mainISHandler.transform);
+			//print ("drag start");
+		}
 	}
 	#endregion
 	
@@ -40,7 +45,10 @@ public class SlotItem : MonoBehaviour, IBeginDragHandler,IDragHandler,IEndDragHa
 	#region IDragHandler implementation
 	public void OnDrag (PointerEventData eventData)
 	{
-		transform.position=Input.mousePosition;
+		if (draggable)
+		{
+			transform.position=Input.mousePosition;
+		}
 	}
 	#endregion
 
@@ -48,11 +56,14 @@ public class SlotItem : MonoBehaviour, IBeginDragHandler,IDragHandler,IEndDragHa
 
 	public void OnEndDrag (PointerEventData eventData)
 	{
-		//print ("drag end");
-		GetComponent<CanvasGroup>().blocksRaycasts=true;
-		transform.SetParent(currentSlot.transform,false);
-		transform.position=transform.parent.position;
-		itemBeingDragged=null;
+		if (draggable)
+		{
+			//print ("drag end");
+			GetComponent<CanvasGroup>().blocksRaycasts=true;
+			transform.SetParent(currentSlot.transform,false);
+			transform.position=transform.parent.position;
+			itemBeingDragged=null;
+		}
 	}
 	#endregion
 	

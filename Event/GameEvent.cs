@@ -149,6 +149,51 @@ public class FoodSpoilage:GameEvent
 	}
 }*/
 
+public class AmbushEvent:GameEvent
+{
+	public override string GetDescription(MapRegion eventRegion, List<PartyMember> movedMembers) 
+	{
+		string desc="";
+		if (movedMembers.Count==1) desc=movedMembers[0].name+" has been ambushed by monsters!";
+		else
+		{
+			for (int i=0; i<movedMembers.Count-1; i++)
+			{
+				if (i>0) desc+=", ";
+				desc+=movedMembers[i].name;
+			}
+			desc+=" and "+movedMembers[movedMembers.Count-1].name+" have been ambushed by monsters!";
+		}
+		return desc;
+	}
+	public override List<string> GetChoices(MapRegion eventRegion, List<PartyMember> movedMembers)
+	{
+		List<string> choicesList=new List<string>();
+		choicesList.Add("Continue");
+		return choicesList;
+	}
+	
+	public override string DoChoice (string choiceString, MapRegion eventRegion, List<PartyMember> movedMembers)
+	{
+		string eventResult=null;
+		
+		switch (choiceString)
+		{
+			case"Continue": 
+			{
+				int minHealthLoss=10;
+				int maxHealthLoss=25;
+				int actualHealthLoss=Random.Range(minHealthLoss,maxHealthLoss+1);
+				if (movedMembers.Count==1) eventResult=movedMembers[0].name+" loses "+actualHealthLoss+" health";
+				else  eventResult="Everyone loses "+actualHealthLoss+" health";
+				foreach (PartyMember member in movedMembers){member.health-=actualHealthLoss;}
+				break;
+			}
+		}
+		return eventResult;
+	}
+}
+
 public class MonsterAttack:GameEvent
 {
 	string eventDescription="As your party moves, you start to hear suspicious noises close by.\nThey grow and shrink in intensity and change direction several times as you go, putting everyone on their guard.\nFinally, the source reveals itself: a monster!";
@@ -620,7 +665,7 @@ public class LowMoraleFight:GameEvent
 public class LowMoraleEnmity:GameEvent
 {	
 	string eventDescription="";
-	int moraleThreshold=10;
+	int moraleThreshold=15;
 	
 	public override string GetDescription(MapRegion eventRegion, List<PartyMember> movedMembers) 
 	{
@@ -672,6 +717,59 @@ public class LowMoraleEnmity:GameEvent
 				eventResult=angryMember.name+" and "+normalMember.name+"'s argument devolves into personal attacks, as both forget the original root of their disagreement.\n When the exchange of accusastions finally settles, "+normalMember.name+" seems livid with indignation.\n\n"+normalMember.name+" has a grudge against "+angryMember.name;
 				if (normalMember.relationships.ContainsKey(angryMember)) {normalMember.RemoveRelatonship(angryMember);}
 				normalMember.SetRelationship(angryMember,Relationship.RelationTypes.Enemy);
+				break;
+			}
+		}
+		return eventResult;
+	}
+}
+
+public class LowMoraleQuit:GameEvent
+{
+	string eventDescription="";
+	int moraleThreshold=10;
+	PartyMember leavingMember;
+	
+	public override string GetDescription(MapRegion eventRegion, List<PartyMember> movedMembers) 
+	{
+		eventDescription="Fed up with the group, "+leavingMember.name+" decides to try his luck alone";
+		return eventDescription;
+	}
+	public override bool PreconditionsMet (MapRegion eventRegion, List<PartyMember> movedMembers)
+	{
+		bool conditionsAreMet=false;
+		if (PartyManager.mainPartyManager.partyMembers.Count>1)
+		{
+			foreach (PartyMember member in PartyManager.mainPartyManager.partyMembers)
+			{
+				if (member.morale<=moraleThreshold) 
+				{
+					leavingMember=member;
+					conditionsAreMet=true; 
+					break;
+				}
+			}
+		}
+		return conditionsAreMet;
+	}
+	
+	public override List<string> GetChoices(MapRegion eventRegion, List<PartyMember> movedMembers)
+	{
+		List<string> choicesList=new List<string>();
+		choicesList.Add("Continue");
+		return choicesList;
+	}
+	
+	public override string DoChoice (string choiceString, MapRegion eventRegion, List<PartyMember> movedMembers)
+	{
+		string eventResult=null;
+		switch (choiceString)
+		{
+		case"Continue": 
+			{
+				//success
+				eventResult=leavingMember.name+" leaves the party";
+				PartyManager.mainPartyManager.RemovePartyMember(leavingMember);
 				break;
 			}
 		}

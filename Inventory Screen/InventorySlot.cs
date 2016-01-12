@@ -69,10 +69,11 @@ public class InventorySlot : MonoBehaviour, IDropHandler
 			//remove current item and fill in new item
 			EmptySlot();
 			RegisterNewItem(newSlotItem);
-			//Update armor/damage/other stats on inventory screen
-			InventoryScreenHandler.mainISHandler.RefreshInventoryItems();
 			//If slot previously had an item in it - swap to other slot
 			if (oldItem!=null) {oldSlot.ItemSwapped(oldItem);}
+			//Update armor/damage/other stats on inventory screen
+			InventoryScreenHandler.mainISHandler.RefreshInventoryItems();
+			
 		}
 	}
 	
@@ -91,7 +92,7 @@ public class InventorySlot : MonoBehaviour, IDropHandler
 				}
 			}
 		}
-		InventoryScreenHandler.mainISHandler.RefreshInventoryItems();
+		//InventoryScreenHandler.mainISHandler.RefreshInventoryItems();
 	}
 	
 	//unconditional emptying out

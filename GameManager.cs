@@ -4,6 +4,7 @@ using UnityEngine.UI;
 
 public class GameManager : MonoBehaviour {
 	
+	bool gamestartPrepared=false;
 	public bool gameStarted;
 	MainMenu mainMenu;
 	MapManager myMapManager;
@@ -13,8 +14,10 @@ public class GameManager : MonoBehaviour {
 	public delegate void GameOverDeleg();
 	public static event GameOverDeleg GameOver;
 	
-	public delegate void GameStartDeleg();
-	public static event GameStartDeleg GameStart;
+	delegate void GameStartDeleg();
+	static event GameStartDeleg GameStart;
+	//public delegate void MapManagerStartDelegate();
+	//public delegate void PartyManagerStartDelegate();
 	
 	public Canvas startMenuCanvas;
 	
@@ -32,7 +35,19 @@ public class GameManager : MonoBehaviour {
 		Button startButton=startMenuCanvas.transform.FindChild("Start Game Button").GetComponent<Button>();
 		startButton.onClick.AddListener(()=>RegisterClick(startButton));
 		startMenuCanvas.gameObject.SetActive(true);
+		StartCoroutine(PrepareGamestartDelegate());
 		//partyStatusCanvas.enabled=false;
+	}
+	
+	IEnumerator PrepareGamestartDelegate()
+	{
+		//Determine the proper order of starting delegates here
+		while (MapManager.main==null) yield return new WaitForFixedUpdate();
+		GameStart+=MapManager.main.GenerateNewMap;
+		while (PartyManager.mainPartyManager==null) yield return new WaitForFixedUpdate();
+		GameStart+=PartyManager.mainPartyManager.SetDefaultState;
+		gamestartPrepared=true;
+		yield break;
 	}
 	
 	//lambda expression example

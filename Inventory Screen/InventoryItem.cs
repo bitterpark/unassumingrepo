@@ -173,6 +173,11 @@ public abstract class InventoryItem
 					setItems.Clear();
 					setItems.Add (new ArmorVest());
 				}
+				if (randomRoll<0.04f)
+				{
+					setItems.Clear();
+					setItems.Add(new Bed());
+				}
 				break;
 			}
 			case LootMetatypes.Radio:
@@ -773,5 +778,46 @@ public class Axe:MeleeWeapon
 	public override Sprite GetItemSprite ()
 	{
 		return SpriteBase.mainSpriteBase.axeSprite;
+	}
+}
+
+public class Bed:InventoryItem
+{
+	public Bed()
+	{
+		itemName="Bedroll";
+	}
+	
+	public override Sprite GetItemSprite() {return SpriteBase.mainSpriteBase.bedSprite;}
+	
+	public override bool UseAction(PartyMember member)
+	{
+		return false;
+	}
+	
+	public override string GetMouseoverDescription ()
+	{
+		return itemName+"\nProvides one sleeping space";
+	}
+}
+
+public class Pot:InventoryItem
+{
+	public Pot()
+	{
+		itemName="Cooking pot";
+	}
+	
+	int nutritionAmount=50;
+	public override Sprite GetItemSprite() {return SpriteBase.mainSpriteBase.perishableFoodSprite;}
+	
+	public override bool UseAction(PartyMember member)
+	{
+		return false;
+	}
+	
+	public override string GetMouseoverDescription ()
+	{
+		return itemName+"\nRestores "+nutritionAmount+" hunger";
 	}
 }

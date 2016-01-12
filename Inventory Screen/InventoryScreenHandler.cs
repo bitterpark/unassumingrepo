@@ -14,6 +14,7 @@ public class InventoryScreenHandler : MonoBehaviour
 	public Text meleeDamageText;
 	public Text rangedDamageText;
 	public Text armorValueText;
+	public CampCanvas campingCanvas;
 	public static InventoryScreenHandler mainISHandler;
 	public bool inventoryShown=false;
 	
@@ -61,6 +62,12 @@ public class InventoryScreenHandler : MonoBehaviour
 				inventoryShown=true;
 				memberNameText.text=newMember.name;		
 				RefreshInventoryItems();
+				
+				if (!EncounterCanvasHandler.main.encounterOngoing)
+				{
+					campingCanvas.AssignCamp(MapManager.main.GetRegion(selectedMember.worldCoords).campInRegion
+					,MapManager.main.GetRegion(selectedMember.worldCoords).hasCamp);
+				}
 			}
 		} 
 		else 
@@ -77,6 +84,7 @@ public class InventoryScreenHandler : MonoBehaviour
 	void CloseScreen()
 	{
 		selectedMember=null;
+		campingCanvas.CloseScreen();
 		GetComponent<Canvas>().enabled=false;
 		inventoryShown=false;
 	}

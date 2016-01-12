@@ -13,6 +13,7 @@ public class PartyMemberCanvasHandler : MonoBehaviour {
 	public Text moraleText;
 	public Text fatigueText;
 	public Button memberSelector;
+	public Button assignmentButton;
 	Dictionary<StatusEffect,StatusEffectImageHandler> statusEffectTokens=new Dictionary<StatusEffect, StatusEffectImageHandler>();
 	public StatusEffectImageHandler tokenPrefab;
 	
@@ -50,6 +51,91 @@ public class PartyMemberCanvasHandler : MonoBehaviour {
 	public void DisableTooltip()
 	{
 		TooltipManager.main.StopAllTooltips();
+	}
+	
+	public void RefreshAssignmentButton()
+	{
+		assignmentButton.gameObject.SetActive(false);
+		AssignedTaskTypes currentTaskType;
+		if (PartyManager.mainPartyManager.GetAssignedTask(assignedMember, out currentTaskType))
+		{
+			if (currentTaskType==AssignedTaskTypes.BuildCamp)
+			{
+				assignmentButton.gameObject.SetActive(true);
+				assignmentButton.GetComponentInChildren<Text>().text="Stop building";
+				assignmentButton.onClick.RemoveAllListeners();
+				assignmentButton.onClick.AddListener(
+				()=>
+				{
+					PartyManager.mainPartyManager.RemoveMemberTask(assignedMember);//.assignedTasks.Remove(token.assignedMember);
+					PartyStatusCanvasHandler.main.RefreshAssignmentButtons();
+				}
+				);
+			}
+			if (currentTaskType==AssignedTaskTypes.Rest)
+			{
+				assignmentButton.gameObject.SetActive(true);
+				assignmentButton.GetComponentInChildren<Text>().text="Stop resting";
+				assignmentButton.onClick.RemoveAllListeners();
+				assignmentButton.onClick.AddListener(
+				()=>
+				{
+					PartyManager.mainPartyManager.RemoveMemberTask(assignedMember);//.assignedTasks.Remove(token.assignedMember);
+					//token.moved=false;
+					PartyStatusCanvasHandler.main.RefreshAssignmentButtons();
+				}
+				);
+			}
+		}
+		else
+		{
+			if (!MapManager.main.memberTokens[assignedMember].moved)
+			{
+				MapRegion checkedRegion=MapManager.main.GetRegion(assignedMember.worldCoords);
+				if (!checkedRegion.hasCamp)
+				{
+					assignmentButton.gameObject.SetActive(true);
+					assignmentButton.GetComponentInChildren<Text>().text="Build camp";
+					assignmentButton.onClick.RemoveAllListeners();
+					assignmentButton.onClick.AddListener(
+					()=>
+					{
+						int totalInvestedHours=0;
+						//PartyManager.mainPartyManager.PassTime(campSetupTime);
+						AssignedTask campBuildingTask=new AssignedTask(assignedMember,AssignedTaskTypes.BuildCamp
+						,()=>
+						{
+							if (!checkedRegion.hasCamp) return true;
+							else return false;
+						}
+						,()=>{checkedRegion.SetUpCamp(1);}
+						);
+						PartyManager.mainPartyManager.AssignMemberNewTask(campBuildingTask);
+						PartyStatusCanvasHandler.main.RefreshAssignmentButtons();
+					}
+					);
+				}
+				else
+				{
+					assignmentButton.gameObject.SetActive(true);
+					string buttonText="Rest";
+					bool hasBed=false;
+					if (checkedRegion.campInRegion.freeBeds>0) 
+					{
+						hasBed=true;
+						buttonText="Rest(bed)";
+					}
+					assignmentButton.GetComponentInChildren<Text>().text=buttonText;
+					assignmentButton.onClick.RemoveAllListeners();
+					assignmentButton.onClick.AddListener(()=>
+					{
+						
+						PartyManager.mainPartyManager.AssignMemberNewTask(assignedMember.GetRestTask(hasBed));//.Rest(member);
+						PartyStatusCanvasHandler.main.RefreshAssignmentButtons();
+					});
+				}
+			}
+		}
 	}
 	
 	void Start() 

@@ -29,19 +29,62 @@ public abstract class Perk
 		allPerks.Add (new Downer());
 		allPerks.Add (new PeoplePerson());
 		allPerks.Add (new Antisocial());
-		allPerks.Add (new Powerhouse());
+		//allPerks.Add (new Powerhouse());
 		allPerks.Add (new WeakArm());
 		allPerks.Add (new Deadeye());
 		allPerks.Add (new PoorShot());
 		allPerks.Add (new Medic());
 		allPerks.Add (new Cook());
-		allPerks.Add (new StrongBack());
+		//allPerks.Add (new StrongBack());
 		allPerks.Add (new WeakBack());
 		
 		return allPerks;
 	}
+	
+	public static List<Perk> GetSpecialtyPerkList()
+	{
+		List<Perk> specialtyPerks=new List<Perk>();
+		specialtyPerks.Add(new Scout());
+		specialtyPerks.Add(new Fighter());
+		specialtyPerks.Add(new Carrier());
+		return specialtyPerks;
+	}
 }
 
+//SPECIALTY PERKS
+public class Scout:Perk
+{	
+	public Scout()
+	{
+		name="Escape artist";
+	}
+	public override void ActivatePerk(PartyMember member){member.isScout=true;}//+=healthUpgrade;}
+	public override string GetMouseoverDescription (){return "Quick on his feet\n\nNever gets ambushed or triggers attacks of opportunity";}
+}
+public class Fighter:Perk
+{	
+	int meleeDamageChange=50;
+	public Fighter()
+	{
+		name="Powerhouse";
+		oppositePerk=typeof(WeakArm);
+	}
+	public override void ActivatePerk(PartyMember member) {member.meleeDamageMod+=meleeDamageChange;}
+	public override string GetMouseoverDescription () {return "Hits like a truck\n\n"+meleeDamageChange+" to melee damage";}
+}
+public class Carrier:Perk
+{
+	int inventorySizeChange=1;
+	public Carrier ()
+	{
+		name="Strong back";
+		oppositePerk=typeof(WeakBack);
+	}
+	public override void ActivatePerk(PartyMember member) {member.maxCarryCapacity+=inventorySizeChange;}
+	public override string GetMouseoverDescription () {return "A real packmule\n\n"+inventorySizeChange+" to carry capacity";}
+}
+
+//GENERIC PERKS
 public class Tough:Perk
 {
 	float healthMod=0.25f;
@@ -248,7 +291,7 @@ public class Antisocial: Perk
 	public override void ActivatePerk(PartyMember member) {member.friendshipChance+=friendChanceChange;}
 	public override string GetMouseoverDescription () {return "Doesn't like people\n\nMore likely to make enemies";}
 }
-
+/*
 public class Powerhouse: Perk
 {
 	int meleeDamageChange=10;
@@ -259,14 +302,14 @@ public class Powerhouse: Perk
 	}
 	public override void ActivatePerk(PartyMember member) {member.meleeDamageMod+=meleeDamageChange;}
 	public override string GetMouseoverDescription () {return "Hits like a truck\n\n"+meleeDamageChange+" to melee damage";}
-}
+}*/
 public class WeakArm: Perk
 {
 	int meleeDamageChange=-10;
 	public WeakArm ()
 	{
 		name="Weak arm";
-		oppositePerk=typeof(Powerhouse);
+		oppositePerk=typeof(Fighter);//Powerhouse);
 	}
 	public override void ActivatePerk(PartyMember member) {member.meleeDamageMod+=meleeDamageChange;}
 	public override string GetMouseoverDescription () {return "Hits like a pansy\n\n"+meleeDamageChange+" to melee damage";}
@@ -294,6 +337,7 @@ public class PoorShot: Perk
 	public override void ActivatePerk(PartyMember member) {member.rangedDamageMod+=rangedDamageChange;}
 	public override string GetMouseoverDescription () {return "Can't hit the broad side of a barn\n\n"+rangedDamageChange+" to ranged damage";}
 }
+/*
 public class StrongBack: Perk
 {
 	int inventorySizeChange=1;
@@ -304,14 +348,14 @@ public class StrongBack: Perk
 	}
 	public override void ActivatePerk(PartyMember member) {member.maxCarryCapacity+=inventorySizeChange;}
 	public override string GetMouseoverDescription () {return "A real packmule\n\n"+inventorySizeChange+" to carry capacity";}
-}
+}*/
 public class WeakBack: Perk
 {
 	int inventorySizeChange=-1;
 	public WeakBack ()
 	{
 		name="Weak back";
-		oppositePerk=typeof(StrongBack);
+		oppositePerk=typeof(Carrier);//StrongBack);
 	}
 	public override void ActivatePerk(PartyMember member) {member.maxCarryCapacity+=inventorySizeChange;}
 	public override string GetMouseoverDescription () {return "Doesn't even lift\n\n"+inventorySizeChange+" to carry capacity";}
