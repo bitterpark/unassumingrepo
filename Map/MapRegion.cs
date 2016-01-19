@@ -293,7 +293,8 @@ public class MapRegion : MonoBehaviour, IPointerEnterHandler, IPointerExitHandle
 							areaDescription+="-"+InventoryItem.GetLootMetatypeDescription(metatype)+"\n";
 						}
 						areaDescription+="Enemies: "+regionalEncounter.enemyDescription+"\n";
-						areaDescription+="Ambush threat: "+threatLevel;
+						areaDescription+="Ambush threat: "+threatLevel+"\n";
+						areaDescription+="Required team size: "+regionalEncounter.requiredMembers;
 						//if (isHive) {areaDescription+="\nHive";}
 					}
 				}

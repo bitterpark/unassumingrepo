@@ -37,6 +37,7 @@ public class SpriteBase : MonoBehaviour {
 	//Status effect sprites
 	public Sprite bleedSprite;
 	public Sprite phasedOutSprite;
+	public Sprite brokenArmsSprite;
 	
 	public Color[] possibleMemberColors;
 	

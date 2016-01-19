@@ -31,7 +31,7 @@ public class RoomButtonHandler : MonoBehaviour//, IDropHandler
 	bool isVisible;
 	bool isWithinHearingRange;
 	bool isDiscovered;
-	bool hasEnemies;
+	public bool hasEnemies;
 	bool hasLoot;
 	bool lootIsLocked;
 	bool canBarricade;
@@ -141,9 +141,9 @@ public class RoomButtonHandler : MonoBehaviour//, IDropHandler
 		else {GetComponentInChildren<BarricadeToken>().UpdateHealth(assignedRoom.barricadeInRoom.health);}
 	}
 	
-	public int AttackEnemyInRoom(int damage, EncounterEnemy attackedEnemy, bool isRanged)
+	public int AttackEnemyInRoom(int damage, BodyPart attackedPart, EncounterEnemy attackedEnemy, bool isRanged)
 	{
-		return assignedRoom.DamageEnemy(damage,attackedEnemy,isRanged);
+		return assignedRoom.DamageEnemy(damage,attackedPart,attackedEnemy,isRanged);
 	}
 	
 	//These methods are the go-between to external scripts and assigned EncounterRoom

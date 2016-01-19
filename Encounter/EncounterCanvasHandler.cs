@@ -35,6 +35,7 @@ public class EncounterCanvasHandler : MonoBehaviour
 	//GUI HANDLER ELEMENTS
 	//PREFABS
 	//public StatusEffectImageHandler enemyEffectPrefab;
+	public AttackLocationSelector attackLocSelectorPrefab;
 	public RoomButtonHandler roomPrefab;
 	//public CombatSelectorHandler selectorPrefab;
 	//public EnemySelectorHandler enemySelectorPrefab;
@@ -161,6 +162,7 @@ public class EncounterCanvasHandler : MonoBehaviour
 	
 	IEnumerator MoveMemberToRoom(RoomButtonHandler roomHandler)
 	{
+		AttackLocationSelector.DestroySelectors();
 		EncounterRoom startingRoom=currentEncounter.encounterMap[memberCoords[selectedMember]];
 		//If the room has no other party members move there regularly, else - do the swap
 		//currently switched off
@@ -190,6 +192,7 @@ public class EncounterCanvasHandler : MonoBehaviour
 			if (encounterOngoing) 
 			{
 				MovePartyMemberToRoom(selectedMember,roomHandler,false);
+				MakeNoise(roomHandler.GetRoomCoords(),2);
 				DeadMemberCleanupCheck();
 				//If moved member died during move, try to switch to next available member
 				if (encounterOngoing)
@@ -947,7 +950,7 @@ public class EncounterCanvasHandler : MonoBehaviour
 			AddNewLogMessage(selectedMember.name+" escapes!");
 			EncounterRoom exitRoom=roomHandler.assignedRoom;//currentEncounter.encounterMap[memberCoords[selectedMember]];
 			RemoveEncounterMember(selectedMember);
-			selectedMember.EncounterEndTrigger();
+			//selectedMember.EncounterEndTrigger();
 			//PartyManager.mainPartyManager.MemberLeavesEncounter();
 			//Dumps member's inventory to common inventory
 			/*
@@ -1258,11 +1261,11 @@ public class EncounterCanvasHandler : MonoBehaviour
 	
 	
 	//Used by callbacks from member tokens and also by set off traps
-	public void RegisterDamage(int damage, bool isRanged,EncounterEnemy attackedEnemy, IAttackAnimation attackingEntity)//Object attackingEntity)//PartyMember attackingMember)
+	public void RegisterDamage(int damage, BodyPart attackedPart, bool isRanged,EncounterEnemy attackedEnemy, IAttackAnimation attackingEntity)//Object attackingEntity)//PartyMember attackingMember)
 	{
 		//EncounterRoom currentRoom=currentEncounter.encounterMap[memberCoords[selectedMember]];
 		//int actualDmg=currentRoom.DamageEnemy(damage,attackedEnemy,isRanged);
-		int actualDmg=roomButtons[attackedEnemy.GetCoords()].AttackEnemyInRoom(damage,attackedEnemy,isRanged);
+		int actualDmg=roomButtons[attackedEnemy.GetCoords()].AttackEnemyInRoom(damage,attackedPart,attackedEnemy,isRanged);
 		
 		//bool blockInteraction=attackingEntity.GetType()==typeof(MemberTokenHandler);
 		StartCoroutine(VisualizeAttack(actualDmg,attackingEntity,enemyTokens[attackedEnemy]));//VisualizeAttackOnEnemy(actualDmg,attackedEnemy, attackingEntity));
@@ -1360,11 +1363,9 @@ public class EncounterCanvasHandler : MonoBehaviour
 		
 		if (enemyReachable)
 		{
-			int actualDmg=0;
-			if (ranged) {actualDmg=selectedMember.RangedAttack();}
-			else {actualDmg=selectedMember.MeleeAttack();}
-			RegisterDamage(actualDmg,ranged,enemy,memberTokens[selectedMember]);
-			TurnOver(selectedMember,roomButtons[memberCoords[selectedMember]].assignedRoom,false);
+			//AttackOnEnemy(enemy, ranged);
+			AttackLocationSelector newAtkSelector=Instantiate(attackLocSelectorPrefab);
+			newAtkSelector.EnableNewAttackSelector(enemyTokens[enemy],ranged);
 		}
 		
 		/*
@@ -1378,6 +1379,15 @@ public class EncounterCanvasHandler : MonoBehaviour
 			string msg="";//selectedMember.name+" hits the "+enemy.name+" for "+actualDmg+"!";
 			RegisterDamage(actualDmg,msg,ranged,enemy,selectedMember);
 		}*/
+	}
+	
+	public void AttackOnEnemy(EncounterEnemy enemy, bool ranged, BodyPart attackedPart)
+	{
+		int actualDmg=0;
+		if (ranged) actualDmg=selectedMember.RangedAttack();
+		else actualDmg=selectedMember.MeleeAttack();
+		RegisterDamage(actualDmg,attackedPart,ranged,enemy,memberTokens[selectedMember]);
+		TurnOver(selectedMember,roomButtons[memberCoords[selectedMember]].assignedRoom,false);
 	}
 	
 	public void AddNewLogMessage(string newMessage)

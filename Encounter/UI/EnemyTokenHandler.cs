@@ -9,9 +9,10 @@ public class EnemyTokenHandler : MonoBehaviour, IAttackAnimation
 	bool destroyed=false;
 	
 	float attackAnimationTime=0.6f;
+	float moveWaitTime=1f;
 	
 	public Text healthText;
-	EncounterEnemy assignedEnemy;
+	public EncounterEnemy assignedEnemy;
 	public Image myImage;
 	
 	public class PointOfInterest
@@ -94,7 +95,6 @@ public class EnemyTokenHandler : MonoBehaviour, IAttackAnimation
 	
 	public IEnumerator TokenAttackTrigger(params PartyMember[] membersWithinReach)
 	{
-		
 		if (!destroyed && EncounterCanvasHandler.main.encounterOngoing) 
 		{
 			EnemyAttack attackInfo=assignedEnemy.AttackAction(new List<PartyMember>(membersWithinReach));
@@ -114,15 +114,36 @@ public class EnemyTokenHandler : MonoBehaviour, IAttackAnimation
 				if (currentPOI.pointCoords==assignedEnemy.GetCoords()) currentPOI=null;
 			}
 			EnemyAttack attackInfo;//=new EnemyAttack();
-			bool roundIsAttack=assignedEnemy.DoMyRound(masks,memberCoords,currentPOI,out attackInfo);
+			EnemyMove movesInfo;
+			bool roundIsAttack=assignedEnemy.DoMyRound(masks,memberCoords,currentPOI,out attackInfo, out movesInfo);
 			if (roundIsAttack)
 			{
 				EncounterCanvasHandler.main.ShowDamageToPartyMember
 				(attackInfo.attackedMember,attackInfo.attackingEnemy,attackInfo.damageDealt,attackInfo.blocked);
 				yield return StartCoroutine(AttackAnimation());
 			}
-			EncounterCanvasHandler.main.roomButtons[assignedEnemy.GetCoords()].AttachEnemyToken(transform);
-			UpdateTokenVision();
+			else
+			{
+				int totalMovesCount=movesInfo.enemyMoveCoords.Count;
+				if (totalMovesCount>0)
+				{
+					for (int i=0; i<totalMovesCount; i++)
+					{
+						EncounterCanvasHandler.main.roomButtons[movesInfo.enemyMoveCoords[i]].AttachEnemyToken(transform);
+						UpdateTokenVision();
+						//totalMovesCount--;
+						yield return new WaitForSeconds(moveWaitTime);
+					}
+					/*
+					while (totalMovesCount>0)
+					{
+						EncounterCanvasHandler.main.roomButtons[assignedEnemy.GetCoords()].AttachEnemyToken(transform);
+						UpdateTokenVision();
+						totalMovesCount--;
+						yield return new WaitForSeconds(moveWaitTime);
+					}*/
+				}
+			}
 			yield break;
 			//UpdateVisionStatusDisplay();
 		}
@@ -172,9 +193,19 @@ public class EnemyTokenHandler : MonoBehaviour, IAttackAnimation
 				//If selected member was switched during mouseover, update mouseover text to fit new selected member
 				referencedMember=EncounterCanvasHandler.main.selectedMember;
 				TooltipManager.main.StopAllTooltips();
-				//
+				//Name
 				string tooltipText=assignedEnemy.name;
 				EncounterCanvasHandler encounterHandler=EncounterCanvasHandler.main;
+				//Limb info
+				if (assignedEnemy.bodyParts.Count>0)
+				{
+					//tooltipText+="\nB";
+					foreach (BodyPart part in assignedEnemy.bodyParts)
+					{
+						tooltipText+="\n"+part.name+":"+part.hp;
+					}
+				}
+				//Info on attacking this enemy
 				bool textForRangedAttack=false;
 				bool attackPossible=encounterHandler.memberTokens[encounterHandler.selectedMember].AttackIsPossible(ref textForRangedAttack,assignedEnemy);
 				if (attackPossible)//encounterHandler.memberCoords[encounterHandler.selectedMember]==assignedEnemy.GetCoords()) 
@@ -224,7 +255,7 @@ public class EnemyTokenHandler : MonoBehaviour, IAttackAnimation
 				newHandler.AssignStatusEffect(effect);
 				newHandler.transform.SetParent(statusEffectsGroup,false);
 				//This should be done by the enemy's basic tooltip
-				newHandler.GetComponent<Image>().raycastTarget=false;
+				//newHandler.GetComponent<Image>().raycastTarget=false;
 			}
 		}
 	}

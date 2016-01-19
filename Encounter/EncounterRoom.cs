@@ -175,13 +175,13 @@ public class EncounterRoom
 		//GameManager.DebugPrint("enemies remaining in"+new Vector2(xCoord,yCoord)+":"+enemiesInRoom.Count);
 	}
 	
-	public int DamageEnemy(int damage,EncounterEnemy damagedEnemy, bool isRanged)
+	public int DamageEnemy(int damage, BodyPart attackedPart, EncounterEnemy damagedEnemy, bool isRanged)
 	{
 		if (enemiesInRoom.Contains(damagedEnemy))
 		{
 			//enemyInRoom.health-=damage;
 			int enemyIndex=enemiesInRoom.IndexOf(damagedEnemy);
-			int actualDmgTaken=damagedEnemy.TakeDamage(damage,isRanged);
+			int actualDmgTaken=damagedEnemy.TakeDamage(damage,attackedPart,isRanged);
 			if (damagedEnemy.health<=0) 
 			{
 				//hasEnemies=false;

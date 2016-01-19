@@ -97,3 +97,28 @@ public class PhasedOut:StatusEffect
 		return _name+"\nCannot be harmed";
 	}
 }
+
+public class NoArms:StatusEffect
+{
+	int staminaDamageReduction=1;
+	
+	string _name="Broken arms";
+	public override string effectName 
+	{
+		get {return _name;}
+	}
+	public override Sprite effectSprite 
+	{
+		get {return SpriteBase.mainSpriteBase.brokenArmsSprite;}
+	}
+	
+	public override string GetMouseoverDescription ()
+	{
+		return _name+"\nStamina damage reduced";
+	}
+	
+	public NoArms(EncounterEnemy affectedEnemy)
+	{
+		affectedEnemy.staminaDamage-=staminaDamageReduction;
+	}
+}

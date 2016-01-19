@@ -284,7 +284,7 @@ public class PartyMember
 		//fatigueIncreasePerAction=10;
 		
 		armorValue=0;
-		maxCarryCapacity=2;//
+		maxCarryCapacity=3;//
 		visibilityMod=0;
 		moraleDamageMod=0;//0.02f;
 		moraleChangeFromKills=0;
@@ -490,11 +490,12 @@ public class PartyMember
 		{
 			if (relationships.ContainsKey(member)) morale+=relationships[member].OnMissionTogether();
 		}
+		ChangeFatigue(fatigueIncreasePerEncounter);
 	}
 	
 	public void EncounterEndTrigger()
 	{
-		ChangeFatigue(fatigueIncreasePerEncounter);
+		//ChangeFatigue(fatigueIncreasePerEncounter);
 	}
 	
 	public bool Heal(int amountHealed)

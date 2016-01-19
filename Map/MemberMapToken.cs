@@ -6,6 +6,7 @@ using UnityEngine.EventSystems;
 public class MemberMapToken : MonoBehaviour, IPointerClickHandler, IPointerEnterHandler 
 {
 	public Image actionStatusToken;
+	public Text nameText;
 	
 	public PartyMember assignedMember;
 	public bool moved
@@ -30,6 +31,7 @@ public class MemberMapToken : MonoBehaviour, IPointerClickHandler, IPointerEnter
 	public void AssignPartyMember(PartyMember assigned)
 	{
 		assignedMember=assigned;
+		nameText.text=assigned.name;
 		GetComponent<Image>().color=assigned.color;
 		MoveToken(MapManager.main.GetRegion(assignedMember.worldCoords).transform);
 	}

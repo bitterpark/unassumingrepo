@@ -45,7 +45,7 @@ public class MapScoutingHandler : MonoBehaviour {
 			newSelector.AssignMember(member);
 			newSelector.GetComponent<Button>().onClick.AddListener(()=>ToggleMissionMember(newSelector));
 			newSelector.transform.SetParent(memberSelectorGroup,false);
-			selectCountText.text=selectedForMission.Count+"/"+EncounterCanvasHandler.encounterMaxPlayerCount;
+			selectCountText.text=selectedForMission.Count+"/"+assignedRegion.regionalEncounter.requiredMembers;//+EncounterCanvasHandler.encounterMaxPlayerCount;
 			selectionText.text="";
 		}
 	}
@@ -67,7 +67,7 @@ public class MapScoutingHandler : MonoBehaviour {
 	public void ToggleMissionMember(MissionSelectorHandler handler)
 	{
 		PartyMember member=handler.assignedMember;
-		if (!selectedForMission.Contains(member) && selectedForMission.Count<EncounterCanvasHandler.encounterMaxPlayerCount) 
+		if (!selectedForMission.Contains(member) && selectedForMission.Count<assignedRegion.regionalEncounter.requiredMembers)//EncounterCanvasHandler.encounterMaxPlayerCount) 
 		{
 			selectedForMission.Add(member);
 			handler.selected=true;
@@ -77,7 +77,7 @@ public class MapScoutingHandler : MonoBehaviour {
 			selectedForMission.Remove(member);	
 			handler.selected=false;
 		}
-		selectCountText.text=selectedForMission.Count+"/"+EncounterCanvasHandler.encounterMaxPlayerCount;
+		selectCountText.text=selectedForMission.Count+"/"+assignedRegion.regionalEncounter.requiredMembers;
 		if (selectedForMission.Count==0) {selectionText.text="";}
 		else
 		{
@@ -97,7 +97,7 @@ public class MapScoutingHandler : MonoBehaviour {
 		}
 		else 
 		{
-			if (selectedForMission.Count>0)
+			if (selectedForMission.Count==assignedRegion.regionalEncounter.requiredMembers)//>0)
 			{
 				//EncounterCanvasHandler.mainEncounterCanvasHandler.StartNewEncounter(assignedRegion,selectedForMission);
 				//EndDialog();
@@ -105,5 +105,10 @@ public class MapScoutingHandler : MonoBehaviour {
 				MapManager.main.EnterEncounter(assignedRegion.regionalEncounter,selectedForMission,false);
 			}
 		}
+	}
+	
+	public void CancelPressed()
+	{
+		EndDialog();
 	}
 }

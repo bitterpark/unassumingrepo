@@ -17,7 +17,8 @@ public class Trap
 		{
 			if (assignedToken==null) {throw new System.Exception("Trying to set off a trap with no token assigned!");}
 			//GameManager.DebugPrint("begginning trap setoff");
-			EncounterCanvasHandler.main.RegisterDamage(damage,false,assignedRoom.enemiesInRoom[0],assignedToken);
+			EncounterCanvasHandler.main.RegisterDamage
+			(damage,assignedRoom.enemiesInRoom[0].bodyParts[0],false,assignedRoom.enemiesInRoom[0],assignedToken);
 			sprung=true;
 			assignedToken.BeginDispose();
 			//GameManager.DebugPrint("resuming trap script after trap setoff");

@@ -2,6 +2,40 @@
 using System.Collections;
 using System.Collections.Generic;
 
+public class BodyPart
+{
+	public string name;
+	public int hp;
+	System.Action destructionEffect;
+	System.Action<int> damageEffect;
+	
+	public BodyPart(string newName, int newHp, System.Action newDestroyEffect)
+	{
+		BasicConstructor(newName,newHp,newDestroyEffect,null);
+	}
+	public BodyPart(string newName, int newHp, System.Action newDestroyEffect, System.Action<int> newDamageEffect)
+	{
+		BasicConstructor(newName,newHp,newDestroyEffect,newDamageEffect);
+	}
+	
+	void BasicConstructor(string newName, int newHp, System.Action newDestroyEffect, System.Action<int> newDamageEffect)
+	{
+		name=newName;
+		hp=newHp;
+		destructionEffect=newDestroyEffect;
+		damageEffect=newDamageEffect;
+	}
+	
+	public void DamageBodypart(int damageDelta)
+	{
+		hp-=damageDelta;
+		if (damageEffect!=null) damageEffect.Invoke(hp);
+		
+		//This launches destruction effect, but the limb is still removed from outside
+		if (hp<=0 && destructionEffect!=null) destructionEffect.Invoke();
+	}
+}
+
 public struct EnemyAttack
 {
 	public int damageDealt;
@@ -17,33 +51,15 @@ public struct EnemyAttack
 	}
 }
 
+public struct EnemyMove
+{
+	public List<Vector2> enemyMoveCoords;
+	public EnemyMove(List<Vector2> moves){enemyMoveCoords=moves;}
+}
+
 public abstract class EncounterEnemy 
 {	
-	public string name;
-	public int health;
-	public int minDamage;
-	public int maxDamage;
-	protected int staminaDamage=1;
-	protected int maxAttackRange=0;
-	//public int encounterCount=5;
-	public float moveChance=0.1f;//0.4f;
-	public List<StatusEffect> activeEffects=new List<StatusEffect>();
-	int xCoord;
-	int yCoord;
-	protected int visionRange=0;
-	int barricadeBashStrength=1;
-	
-	public delegate void StatusEffectDel();
-	public event StatusEffectDel StatusEffectsChanged;
-	public delegate void HealthChangeDel();
-	public event HealthChangeDel HealthChanged;
-	
-	public string GetDamageString() {return minDamage+"-"+maxDamage;}
-	
-	public Sprite GetSprite() {return SpriteBase.mainSpriteBase.genericEnemySprite;}
-	
-	public enum EnemyTypes {Flesh,Quick,Slime,Muscle,Transient,Gasser,Spindler};
-	
+	//STATIC
 	public static string GetMapDescription(EnemyTypes enemyType)
 	{
 		string description=null;
@@ -83,13 +99,13 @@ public abstract class EncounterEnemy
 		float mod=0;
 		switch(enemyType)
 		{
-			case EnemyTypes.Gasser: {mod=0.85f; break;}
-			case EnemyTypes.Spindler: {mod=0.85f; break;}
-			case EnemyTypes.Flesh: {mod=0.85f; break;}
-			case EnemyTypes.Muscle: {mod=0.6f; break;}
-			case EnemyTypes.Slime: {mod=0.6f; break;}
-			case EnemyTypes.Transient: {mod=1.3f; break;}
-			case EnemyTypes.Quick: {mod=1.3f; break;}
+		case EnemyTypes.Gasser: {mod=1.5f; break;}
+		case EnemyTypes.Spindler: {mod=1f; break;}
+		case EnemyTypes.Flesh: {mod=1f; break;}
+		case EnemyTypes.Muscle: {mod=0.6f; break;}
+		case EnemyTypes.Slime: {mod=0.6f; break;}
+		case EnemyTypes.Transient: {mod=2f; break;}
+		case EnemyTypes.Quick: {mod=2f; break;}
 		}
 		return mod;
 	}
@@ -110,6 +126,44 @@ public abstract class EncounterEnemy
 		return enemy;
 	}
 	
+	//NON-STATIC
+	public string name;
+	public int health
+	{
+		get {return _health;}
+		set 
+		{
+			_health=value;
+			if (HealthChanged!=null) HealthChanged();
+		}
+	}
+	int _health;
+	public List<BodyPart> bodyParts=new List<BodyPart>();
+	public int minDamage;
+	public int maxDamage;
+	public int staminaDamage=2;
+	protected int maxAttackRange=0;
+	protected float movesPerTurn=1;
+	protected float currentAccumulatedMoves=0;
+	//public int encounterCount=5;
+	public float moveChance=0.1f;//0.4f;
+	public List<StatusEffect> activeEffects=new List<StatusEffect>();
+	int xCoord;
+	int yCoord;
+	protected int visionRange=0;
+	int barricadeBashStrength=1;
+	
+	public delegate void StatusEffectDel();
+	public event StatusEffectDel StatusEffectsChanged;
+	public delegate void HealthChangeDel();
+	public event HealthChangeDel HealthChanged;
+	
+	public string GetDamageString() {return minDamage+"-"+maxDamage;}
+	
+	public Sprite GetSprite() {return SpriteBase.mainSpriteBase.genericEnemySprite;}
+	
+	public enum EnemyTypes {Flesh,Quick,Slime,Muscle,Transient,Gasser,Spindler};
+	
 	public Vector2 GetCoords() {return new Vector2(xCoord,yCoord);}
 	public void SetCoords(Vector2 newCoords) {xCoord=(int)newCoords.x; yCoord=(int)newCoords.y;}
 	
@@ -124,10 +178,27 @@ public abstract class EncounterEnemy
 		if (StatusEffectsChanged!=null) StatusEffectsChanged();
 	}
 	
-	public virtual int TakeDamage(int dmgTaken, bool isRanged)
+	public virtual int TakeDamage(int dmgTaken, BodyPart damagedPart, bool isRanged)
 	{
-		health-=dmgTaken;
-		if (HealthChanged!=null) {HealthChanged();}
+		//if (bodyParts.Count>0)
+		{
+			//BodyPart damagedPart=attackedPart;//bodyParts[0];
+			damagedPart.DamageBodypart(dmgTaken);//.hp-=dmgTaken;
+			//Make this work within the damage routine in encountercanvashandler later
+			EncounterCanvasHandler.main.AddNewLogMessage(name+"'s "+damagedPart.name+" is damaged for "+dmgTaken);
+			if (damagedPart.hp<=0) 
+			{
+				//if (damagedPart.destructionEffect!=null) damagedPart.destructionEffect.Invoke();
+				EncounterCanvasHandler.main.AddNewLogMessage(name+"'s "+damagedPart.name+" is broken!");
+				bodyParts.Remove(damagedPart);//.Remove(damagedPart);
+			}
+		}
+		/*
+		else
+		{
+			health-=dmgTaken;
+			if (HealthChanged!=null) {HealthChanged();}
+		}*/
 		return dmgTaken;
 	}
 	/*
@@ -186,6 +257,168 @@ public abstract class EncounterEnemy
 	}
 	public virtual void TurnAction() {}
 	
+	//Incapsulates the actual moving of the token and enemy, does not determine whether or not to move this turn
+	/*
+	protected void MoveAction(Vector2 moveFromCoords, Vector2 moveToCoords)
+	{
+		RoomButtonHandler moveRoom=EncounterCanvasHandler.main.roomButtons[moveToCoords];
+		RoomButtonHandler startRoom=EncounterCanvasHandler.main.roomButtons[moveFromCoords];
+		if (moveRoom.assignedRoom.barricadeInRoom==null)
+		{
+			startRoom.MoveEnemyOutOfRoom(this);
+			//ORDER IS IMPORTANT!
+			SetCoords(moveToCoords);
+			moveRoom.MoveEnemyInRoom(this);
+		}
+		else
+		{
+			moveRoom.BashBarricade(barricadeBashStrength);
+		}
+	}*/
+	
+	protected bool TryMove(List<PartyMember> visibleMembers, EnemyTokenHandler.PointOfInterest currentPOI
+	, Dictionary<Vector2,EncounterRoom> map, Dictionary<PartyMember,Vector2> memberCoords, out Vector2 move)
+	{
+		bool movePerformed=false;
+		Vector2 moveCoords=new Vector2(xCoord,yCoord);
+		Vector2 startCoords=new Vector2(xCoord,yCoord);
+		move=startCoords;
+		//MOVE IS DONE HERE
+		//If some members are visible, or a Point of Interest exists
+		if (visibleMembers.Count>0 | currentPOI!=null) 
+		{
+			//Dictionary<Vector2,int> targetMemberMask=null;
+			Vector2 targetCoord=Vector2.zero;
+			//If the enemy is seeing members right now
+			if (visibleMembers.Count>0)
+			{
+				/*
+				//see if any of the visible members are "free" and not currently fighting
+				List<PartyMember> freeVisibleMembers=new List<PartyMember>();
+				
+				foreach (PartyMember member in visibleMembers) 
+				{
+					if (!map[memberCoords[member]].hasEnemies) 
+					{
+						freeVisibleMembers.Add(member);
+					}
+				}
+				
+				//IF FREE VISIBLE MEMBERS EXIST, CHOOSE TARGET FROM THE SET OF FREE MEMBERS, ELSE CHOOSE FROM THE NON-FREE SET
+				if (freeVisibleMembers.Count>0) {visibleMembers=freeVisibleMembers;}*/
+				
+				//Determine which member to target (in this case based on nearest distance)
+				//targetMemberMask=masks[visibleMembers[0]];//Vector2 closestMemberCoords=memberCoords[visibleMembers[0]];
+				int minRange=int.MaxValue;
+				
+				foreach (PartyMember visibleMember in visibleMembers)
+				{
+					//Vector2 =EncounterCanvasHandler.main.memberCoords[visibleMember];
+					if (Mathf.Abs(memberCoords[visibleMember].x-xCoord)+Mathf.Abs(memberCoords[visibleMember].y-yCoord)<minRange)
+					{
+						targetCoord=memberCoords[visibleMember];
+						minRange=(int)(Mathf.Abs(memberCoords[visibleMember].x-xCoord)+Mathf.Abs(memberCoords[visibleMember].y-yCoord));
+					}
+					/*
+						//If my position in cycled member's mask is closer than in the previous one, make cycled member closest
+						if (masks[visibleMember][new Vector2(xCoord,yCoord)]<targetMemberMask[new Vector2(xCoord,yCoord)]) 
+						targetMemberMask=masks[visibleMember];*/
+				}
+				
+			}
+			else
+			{
+				//if no members are visible right now, but a POI to move towards exists
+				//targetMemberMask=currentPOI.pointMoveMask;
+				targetCoord=currentPOI.pointCoords;
+				
+			}
+			//This should ensure that the actor will pick next waypoint for a path longer than 1 node, and pick current node otherwise
+			var path=EncounterCanvasHandler.main.GetPathInCurrentEncounter(GetCoords(),targetCoord);
+			moveCoords=path[Mathf.Clamp(path.Count-1,0,1)];
+			//!!! CHANGE THIS TO COLLECT A LIST OF POSSIBLE MOVES AND PICK ONE OUT OF IT !!!
+			//check nearby cells to find shortest route to player
+			/*
+					Vector2 minCoords=startCoords;
+					float minValue=Mathf.Infinity;
+					
+					//Incapsulated check for position applicability
+					System.Action<Vector2> pursuitCheck=(Vector2 cursorPos)=>
+					{
+						if (targetMemberMask.ContainsKey(cursorPos)) 
+						{
+							if (minValue>targetMemberMask[cursorPos] && !map[cursorPos].hasEnemies) 
+							{
+								minCoords=cursorPos;
+								minValue=targetMemberMask[cursorPos];
+							}
+						}
+					
+					};
+					
+					//Up
+					pursuitCheck.Invoke(startCoords+new Vector2(0,-1));
+					//Down
+					pursuitCheck.Invoke(startCoords+new Vector2(0,1));
+					//Left
+					pursuitCheck.Invoke(startCoords+new Vector2(-1,0));
+					//Right
+					pursuitCheck.Invoke(startCoords+new Vector2(1,0));
+					moveCoords=minCoords;*/
+			
+		}
+		else
+		{
+			//a) determine rooms available for move
+			//Incapsulated check for position applicability and adding to available pool
+			List<Vector2> availableCoords=new List<Vector2>();
+			System.Action<Vector2> roamCheck=(Vector2 cursorPos)=>
+			{
+				if (map.ContainsKey(cursorPos)) 
+				{
+					EncounterRoom checkedRoom=map[cursorPos];
+					if (!checkedRoom.isWall && /*!checkedRoom.hasEnemies &&*/ checkedRoom.barricadeInRoom==null) 
+					{availableCoords.Add(cursorPos);}
+				}
+				
+			};
+			
+			//List<EncounterRoom> availableRooms=new List<EncounterRoom>();
+			//UP
+			roamCheck.Invoke(new Vector2(xCoord,yCoord-1));
+			//DOWN
+			roamCheck.Invoke(new Vector2(xCoord,yCoord+1));
+			//LEFT
+			roamCheck.Invoke(new Vector2(xCoord-1,yCoord));
+			//RIGHT
+			roamCheck.Invoke(new Vector2(xCoord+1,yCoord));
+			//b) randomly pick one to move to
+			if (availableCoords.Count>0 && Random.value<moveChance) 
+			{
+				moveCoords=availableCoords[Random.Range(0,availableCoords.Count)];
+			}
+		}
+		if (moveCoords!=startCoords)
+		{
+			RoomButtonHandler moveRoom=EncounterCanvasHandler.main.roomButtons[moveCoords];
+			RoomButtonHandler startRoom=EncounterCanvasHandler.main.roomButtons[startCoords];
+			if (moveRoom.assignedRoom.barricadeInRoom==null)
+			{
+				movePerformed=true;
+				startRoom.MoveEnemyOutOfRoom(this);
+				//ORDER IS IMPORTANT!
+				SetCoords(moveCoords);
+				moveRoom.MoveEnemyInRoom(this);
+				move=moveCoords;
+			}
+			else
+			{
+				moveRoom.BashBarricade(barricadeBashStrength);
+			}
+		}
+		return movePerformed;
+	}
+	
 	//Updates token visual if any members are seen
 	/*
 	public void VisionUpdate()
@@ -224,10 +457,12 @@ public abstract class EncounterEnemy
 	
 	//Used for both move and attack actions "acting, the enemy uses its "move" for the turn
 	public bool DoMyRound(Dictionary<PartyMember, Dictionary<Vector2,int>> masks, Dictionary<PartyMember,Vector2> memberCoords
-	, EnemyTokenHandler.PointOfInterest currentPOI, out EnemyAttack performedAttack)
+	, EnemyTokenHandler.PointOfInterest currentPOI, out EnemyAttack performedAttack, out EnemyMove move)
 	{
 		//This lets the controlling enemy token know an attack needs to be animated
 		bool roundIsAttack=false;
+		//This lets the token know how many move stops it must do
+		move=new EnemyMove(new List<Vector2>());
 		performedAttack=new EnemyAttack();
 		//Ensure enemies don't move after EncounterCanvasHandler shut down encounter render
 		if (EncounterCanvasHandler.main.encounterOngoing)
@@ -245,8 +480,7 @@ public abstract class EncounterEnemy
 			//If no member present in my room do the move, otherwise do RoundAction
 			if (presentMembers.Count==0)//!membersPresent)
 			{*/	
-				Vector2 moveCoords=new Vector2(xCoord,yCoord);
-				Vector2 startCoords=new Vector2(xCoord,yCoord);
+				
 				
 				//Find if any members are visible !!!CONSIDER CHANGING List<PartyMember> TO List<Vector2>!!!!!
 				List<PartyMember> visibleMembers=VisionCheck(map,memberCoords);
@@ -267,144 +501,26 @@ public abstract class EncounterEnemy
 				}
 				else
 				{
-				//If some members are visible, or a Point of Interest exists
-				if (visibleMembers.Count>0 | currentPOI!=null) 
-				{
-					//Dictionary<Vector2,int> targetMemberMask=null;
-					Vector2 targetCoord=Vector2.zero;
-					//If the enemy is seeing members right now
-					if (visibleMembers.Count>0)
+					//If moves per turn are reduced below 1, enemy will move every other turn
+					//TryMove(startCoords,moveCoords,visibleMembers,currentPOI,map,memberCoords);
+					
+					currentAccumulatedMoves+=Mathf.Max(0.5f,movesPerTurn);
+					if (currentAccumulatedMoves>=1)
 					{
-						//see if any of the visible members are "free" and not currently fighting
-						List<PartyMember> freeVisibleMembers=new List<PartyMember>();
 						
-						foreach (PartyMember member in visibleMembers) 
+						int totalMovesDone=0;
+						List<Vector2> movesCoords=new List<Vector2>();
+						for (totalMovesDone=0; totalMovesDone<currentAccumulatedMoves; totalMovesDone++)
 						{
-							if (!map[memberCoords[member]].hasEnemies) 
-							{
-								freeVisibleMembers.Add(member);
-							}
+							Vector2 newMove=new Vector2();
+							if (TryMove(visibleMembers,currentPOI,map,memberCoords, out newMove)) movesCoords.Add(newMove);
 						}
-						
-						//IF FREE VISIBLE MEMBERS EXIST, CHOOSE TARGET FROM THE SET OF FREE MEMBERS, ELSE CHOOSE FROM THE NON-FREE SET
-						if (freeVisibleMembers.Count>0) {visibleMembers=freeVisibleMembers;}
-						
-						//Determine which member to target (in this case based on nearest distance)
-						//targetMemberMask=masks[visibleMembers[0]];//Vector2 closestMemberCoords=memberCoords[visibleMembers[0]];
-						int minRange=int.MaxValue;
-						
-						foreach (PartyMember visibleMember in visibleMembers)
-						{
-							//Vector2 =EncounterCanvasHandler.main.memberCoords[visibleMember];
-							if (Mathf.Abs(memberCoords[visibleMember].x-xCoord)+Mathf.Abs(memberCoords[visibleMember].y-yCoord)<minRange)
-							{
-								targetCoord=memberCoords[visibleMember];
-								minRange=(int)(Mathf.Abs(memberCoords[visibleMember].x-xCoord)+Mathf.Abs(memberCoords[visibleMember].y-yCoord));
-							}
-							/*
-							//If my position in cycled member's mask is closer than in the previous one, make cycled member closest
-							if (masks[visibleMember][new Vector2(xCoord,yCoord)]<targetMemberMask[new Vector2(xCoord,yCoord)]) 
-								targetMemberMask=masks[visibleMember];*/
-						}
-						
-					}
-					else
-					{
-						//if no members are visible right now, but a POI to move towards exists
-						//targetMemberMask=currentPOI.pointMoveMask;
-						targetCoord=currentPOI.pointCoords;
-						
-					}
-					//This should ensure that the actor will pick next waypoint for a path longer than 1 node, and pick current node otherwise
-					var path=EncounterCanvasHandler.main.GetPathInCurrentEncounter(GetCoords(),targetCoord);
-					moveCoords=path[Mathf.Clamp(path.Count-1,0,1)];
-					//!!! CHANGE THIS TO COLLECT A LIST OF POSSIBLE MOVES AND PICK ONE OUT OF IT !!!
-					//check nearby cells to find shortest route to player
-					/*
-					Vector2 minCoords=startCoords;
-					float minValue=Mathf.Infinity;
-					
-					//Incapsulated check for position applicability
-					System.Action<Vector2> pursuitCheck=(Vector2 cursorPos)=>
-					{
-						if (targetMemberMask.ContainsKey(cursorPos)) 
-						{
-							if (minValue>targetMemberMask[cursorPos] && !map[cursorPos].hasEnemies) 
-							{
-								minCoords=cursorPos;
-								minValue=targetMemberMask[cursorPos];
-							}
-						}
-					
-					};
-					
-					//Up
-					pursuitCheck.Invoke(startCoords+new Vector2(0,-1));
-					//Down
-					pursuitCheck.Invoke(startCoords+new Vector2(0,1));
-					//Left
-					pursuitCheck.Invoke(startCoords+new Vector2(-1,0));
-					//Right
-					pursuitCheck.Invoke(startCoords+new Vector2(1,0));
-					moveCoords=minCoords;*/
-					
-				}
-				else
-				{
-					//a) determine rooms available for move
-					
-					//Incapsulated check for position applicability and add to available pool
-					List<Vector2> availableCoords=new List<Vector2>();
-					System.Action<Vector2> roamCheck=(Vector2 cursorPos)=>
-					{
-						if (map.ContainsKey(cursorPos)) 
-						{
-							EncounterRoom checkedRoom=map[cursorPos];
-							if (!checkedRoom.isWall && /*!checkedRoom.hasEnemies &&*/ checkedRoom.barricadeInRoom==null) 
-							{availableCoords.Add(cursorPos);}
-						}
-						
-					};
-					
-					//List<EncounterRoom> availableRooms=new List<EncounterRoom>();
-					//UP
-					roamCheck.Invoke(new Vector2(xCoord,yCoord-1));
-					//DOWN
-					roamCheck.Invoke(new Vector2(xCoord,yCoord+1));
-					//LEFT
-					roamCheck.Invoke(new Vector2(xCoord-1,yCoord));
-					//RIGHT
-					roamCheck.Invoke(new Vector2(xCoord+1,yCoord));
-					//b) randomly pick one to move to
-					if (availableCoords.Count>0 && Random.value<moveChance) 
-					{
-						moveCoords=availableCoords[Random.Range(0,availableCoords.Count)];
-					}
-				}
-				if (moveCoords!=startCoords)
-				{
-					RoomButtonHandler moveRoom=EncounterCanvasHandler.main.roomButtons[moveCoords];
-					RoomButtonHandler startRoom=EncounterCanvasHandler.main.roomButtons[startCoords];
-					if (moveRoom.assignedRoom.barricadeInRoom==null)
-					{
-						startRoom.MoveEnemyOutOfRoom(this);
-						//ORDER IS IMPORTANT!
-						SetCoords(moveCoords);
-						moveRoom.MoveEnemyInRoom(this);
-					}
-					else
-					{
-						moveRoom.BashBarricade(barricadeBashStrength);
+						move=new EnemyMove(movesCoords);
+						currentAccumulatedMoves-=totalMovesDone;
+						//movesCount=totalMovesDone;
 					}
 					
 				}
-			}
-			/*
-			}
-			else
-			{
-				RoundAction(presentMembers);
-			}*/
 		}
 		return roundIsAttack;
 	}
@@ -427,6 +543,9 @@ public class QuickMass:EncounterEnemy
 		minDamage=10;
 		maxDamage=15;
 		moveChance=0.5f;
+		bodyParts.Add(new BodyPart("Vitals",health,null,(int newHealth)=>{this.health=newHealth;}));
+		bodyParts.Add(new BodyPart("Arms",20,()=>{this.AddStatusEffect(new NoArms(this));}));
+		//bodyParts.Add(new BodyPart("Legs",20,()=>{this.AddStatusEffect(new NoArms(this));}));
 	}
 }
 
@@ -438,12 +557,14 @@ public class Transient:EncounterEnemy
 		health=100;
 		minDamage=5;
 		maxDamage=18;
+		bodyParts.Add(new BodyPart("Vitals",health,null,(int newHealth)=>{this.health=newHealth;}));
+		bodyParts.Add(new BodyPart("Arms",20,()=>{this.AddStatusEffect(new NoArms(this));}));
 	}
 	
 	bool phasedIn=true;
 	PhasedOut myEffect;
 	/*
-	public override int TakeDamage(int dmgTaken, bool isRanged)
+	public override int TakeDamage(int dmgTaken, BodyPart damagedPart, bool isRanged)
 	{
 		int realDmg=0;
 		if (phasedIn) 
@@ -497,6 +618,8 @@ public class Gasser:EncounterEnemy
 		maxDamage=15;
 		visionRange=1;
 		maxAttackRange=1;
+		bodyParts.Add(new BodyPart("Vitals",health,null,(int newHealth)=>{this.health=newHealth;}));
+		bodyParts.Add(new BodyPart("Arms",20,()=>{this.AddStatusEffect(new NoArms(this));}));
 	}
 	
 	//Potentially deprecate this mechanic later
@@ -504,9 +627,9 @@ public class Gasser:EncounterEnemy
 	int retaliationDamageThreshold=70;
 	int damageGainedThisRound=0;
 	
-	public override int TakeDamage(int dmgTaken, bool isRanged)
+	public override int TakeDamage(int dmgTaken, BodyPart damagedPart, bool isRanged)
 	{
-		int recievedDamage=base.TakeDamage(dmgTaken, isRanged);
+		int recievedDamage=base.TakeDamage(dmgTaken,damagedPart, isRanged);
 		/*
 		damageGainedThisRound+=recievedDamage;
 		if (damageGainedThisRound>=retaliationDamageThreshold && health>0)
@@ -535,6 +658,8 @@ public class FleshMass:EncounterEnemy
 		health=210;
 		minDamage=13;
 		maxDamage=18;
+		bodyParts.Add(new BodyPart("Vitals",health,null,(int newHealth)=>{this.health=newHealth;}));
+		bodyParts.Add(new BodyPart("Arms",20,()=>{this.AddStatusEffect(new NoArms(this));}));
 	}
 }
 
@@ -546,6 +671,8 @@ public class Spindler:EncounterEnemy
 		health=190;
 		minDamage=9;
 		maxDamage=14;
+		bodyParts.Add(new BodyPart("Vitals",health,null,(int newHealth)=>{this.health=newHealth;}));
+		bodyParts.Add(new BodyPart("Arms",20,()=>{this.AddStatusEffect(new NoArms(this));}));
 	}
 	
 	public override EnemyAttack AttackAction (List<PartyMember> presentMembers)//Dictionary<PartyMember,Vector2> memberCoords)
@@ -572,7 +699,9 @@ public class MuscleMass:EncounterEnemy
 		health=360;
 		minDamage=20;
 		maxDamage=35;
-		staminaDamage=2;
+		staminaDamage=3;
+		bodyParts.Add(new BodyPart("Vitals",health,null,(int newHealth)=>{this.health=newHealth;}));
+		bodyParts.Add(new BodyPart("Arms",20,()=>{this.AddStatusEffect(new NoArms(this));}));
 	}
 }
 
@@ -587,20 +716,22 @@ public class SlimeMass:EncounterEnemy
 		minDamage=18;
 		maxDamage=24;
 		moveChance=0.1f;
-		staminaDamage=2;
+		staminaDamage=3;
+		bodyParts.Add(new BodyPart("Vitals",health,null,(int newHealth)=>{this.health=newHealth;}));
+		bodyParts.Add(new BodyPart("Arms",20,()=>{this.AddStatusEffect(new NoArms(this));}));
 	}
 	
 	//int rangedResistance=3;
 	float rangedDamageMultiplier=0.5f;
 	
-	public override int TakeDamage (int dmgTaken, bool isRanged)
+	public override int TakeDamage(int dmgTaken, BodyPart damagedPart, bool isRanged)
 	{
 		if (isRanged) 
 		{
 			dmgTaken=Mathf.FloorToInt(dmgTaken*rangedDamageMultiplier);
 			//EncounterCanvasHandler.main.DisplayNewMessage("Shots pass clean through the slime!");
 		}
-		return base.TakeDamage (dmgTaken, isRanged);
+		return base.TakeDamage (dmgTaken,damagedPart, isRanged);
 	}
 }
 

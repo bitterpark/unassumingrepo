@@ -172,6 +172,7 @@ public class PartyManager : MonoBehaviour
 		
 		AddNewPartyMember(new PartyMember(startingPartyWorldCoords));
 		AddNewPartyMember(new PartyMember(startingPartyWorldCoords));
+		AddNewPartyMember(new PartyMember(startingPartyWorldCoords));
 		//AddNewPartyMember(new PartyMember());
 		//AddNewPartyMember(new PartyMember());
 		//AddNewPartyMember(new PartyMember());
@@ -201,7 +202,7 @@ public class PartyManager : MonoBehaviour
 		float lightBottomThreshold=0.5f;
 		float noonLightLevelBonus=0.5f;
 		float newb=lightBottomThreshold+noonLightLevelBonus-(noonLightLevelBonus/12)*(Mathf.Abs(dayTime-12));//Mathf.Repeat(Camera.main.backgroundColor.b-0.083//+0.0416f*hoursPassed,1);
-		Camera.main.backgroundColor=new Color(0,0,newb);
+		//Camera.main.backgroundColor=new Color(0,0,newb);//
 	}
 	
 	void AdvanceMapTurn()
@@ -210,11 +211,22 @@ public class PartyManager : MonoBehaviour
 		PassTime(1);
 		foreach (MemberMapToken token in MapManager.main.memberTokens.Values) 
 		if (!assignedTasks.ContainsKey(token.assignedMember)) token.moved=false;
+		//Perform assigned tasks
 		foreach (PartyMember member in new List<PartyMember>(assignedTasks.Keys)) 
 		{
-			assignedTasks[member].actionToPerform.Invoke();
+			if (!assignedTasks[member].preconditionCheck()) RemoveMemberTask(member);
+			else
+			{
+				assignedTasks[member].actionToPerform.Invoke();
+				if (!assignedTasks[member].preconditionCheck()) RemoveMemberTask(member);
+			}
+		}
+		//See if tasks are still not finished (must be in that order)
+		foreach (PartyMember member in new List<PartyMember>(assignedTasks.Keys)) 
+		{
 			if (!assignedTasks[member].preconditionCheck()) RemoveMemberTask(member);
 		}
+		
 		//This may cause issues on gameover
 		PartyStatusCanvasHandler.main.RefreshAssignmentButtons(selectedMembers);
 		//PartyStatusCanvasHandler.main.StartTimeFlash();

@@ -95,7 +95,7 @@ public class PartyMemberCanvasHandler : MonoBehaviour {
 				if (!checkedRegion.hasCamp)
 				{
 					assignmentButton.gameObject.SetActive(true);
-					assignmentButton.GetComponentInChildren<Text>().text="Build camp";
+					assignmentButton.GetComponentInChildren<Text>().text="Build camp("+checkedRegion.campSetupTimeRemaining+")";
 					assignmentButton.onClick.RemoveAllListeners();
 					assignmentButton.onClick.AddListener(
 					()=>
@@ -117,22 +117,24 @@ public class PartyMemberCanvasHandler : MonoBehaviour {
 				}
 				else
 				{
-					assignmentButton.gameObject.SetActive(true);
-					string buttonText="Rest";
-					bool hasBed=false;
-					if (checkedRegion.campInRegion.freeBeds>0) 
+					if (assignedMember.GetFatigue()>0)
 					{
-						hasBed=true;
-						buttonText="Rest(bed)";
+						assignmentButton.gameObject.SetActive(true);
+						string buttonText="Rest";
+						bool hasBed=false;
+						if (checkedRegion.campInRegion.freeBeds>0) 
+						{
+							hasBed=true;
+							buttonText="Rest(bed)";
+						}
+						assignmentButton.GetComponentInChildren<Text>().text=buttonText;
+						assignmentButton.onClick.RemoveAllListeners();
+						assignmentButton.onClick.AddListener(()=>
+						{
+							PartyManager.mainPartyManager.AssignMemberNewTask(assignedMember.GetRestTask(hasBed));//.Rest(member);
+							PartyStatusCanvasHandler.main.RefreshAssignmentButtons();
+						});
 					}
-					assignmentButton.GetComponentInChildren<Text>().text=buttonText;
-					assignmentButton.onClick.RemoveAllListeners();
-					assignmentButton.onClick.AddListener(()=>
-					{
-						
-						PartyManager.mainPartyManager.AssignMemberNewTask(assignedMember.GetRestTask(hasBed));//.Rest(member);
-						PartyStatusCanvasHandler.main.RefreshAssignmentButtons();
-					});
 				}
 			}
 		}
