@@ -131,7 +131,7 @@ public class EncounterCanvasHandler : MonoBehaviour
 		currentMap=new EncounterMap(newEncounter.encounterMap);
 		EnableRender();
 		//If members ambushed, alert all enemies to their presence
-		if (isAmbush) MakeNoise(memberCoords[encounterMembers[0]],100);
+		if (isAmbush) MakeNoise(memberCoords[encounterMembers[0]],5);
 	}
 	
 	void EndEncounter()
@@ -179,12 +179,18 @@ public class EncounterCanvasHandler : MonoBehaviour
 				*/
 			if (startingRoom.hasEnemies)// && !selectedMember.isScout)
 			{
+				int enemiesBlockedByMembers=-1;
+				foreach (Vector2 memberCoord in memberCoords.Values)
+				{
+					if (memberCoord==startingRoom.GetCoords()) enemiesBlockedByMembers++;
+				}
 				GetComponent<CanvasGroup>().interactable=false;
 				List<PartyMember> argumentListOfOne=new List<PartyMember>();
 				argumentListOfOne.Add(selectedMember);
 				foreach (EncounterEnemy enemy in startingRoom.enemiesInRoom) 
 				{
-					yield return StartCoroutine(enemyTokens[enemy].TokenAttackTrigger(selectedMember));
+					if (enemiesBlockedByMembers<=0) yield return StartCoroutine(enemyTokens[enemy].TokenAttackTrigger(selectedMember));
+					else enemiesBlockedByMembers--;
 				}
 				GetComponent<CanvasGroup>().interactable=true;
 			}
@@ -192,11 +198,12 @@ public class EncounterCanvasHandler : MonoBehaviour
 			if (encounterOngoing) 
 			{
 				MovePartyMemberToRoom(selectedMember,roomHandler,false);
-				MakeNoise(roomHandler.GetRoomCoords(),2);
+				MakeNoise(roomHandler.GetRoomCoords(),1);
 				DeadMemberCleanupCheck();
-				//If moved member died during move, try to switch to next available member
+				
 				if (encounterOngoing)
 				{
+					//If moved member died during move, try to switch to next available member
 					if (!encounterMembers.Contains(selectedMember))
 					{
 						bool unactedMemberFound=false;
@@ -213,6 +220,8 @@ public class EncounterCanvasHandler : MonoBehaviour
 					}
 					else
 					{
+						//If moved member survived during move
+						if (selectedMember.legsBroken) doTurnover=true;
 						if (doTurnover) TurnOver(selectedMember,roomButtons[memberCoords[selectedMember]].assignedRoom,false);
 					}
 				}
@@ -459,7 +468,11 @@ public class EncounterCanvasHandler : MonoBehaviour
 		DeadMemberCleanupCheck();
 		//SEE ABOVE
 		GetComponent<CanvasGroup>().interactable=true;
-		if (encounterOngoing) NextRound();
+		if (encounterOngoing) 
+		{
+			PartyStatusCanvasHandler.main.NewNotification("Survivors' turn",noteTime);
+			NextRound();
+		}
 		yield break;
 	}
 	/*
@@ -970,7 +983,6 @@ public class EncounterCanvasHandler : MonoBehaviour
 			}
 			else
 			{
-				PartyManager.mainPartyManager.PassTime(1);
 				EndEncounter();
 				MapManager.main.hordeLocked=false;
 			}
@@ -998,7 +1010,7 @@ public class EncounterCanvasHandler : MonoBehaviour
 		)//&& !memberTokens[selectedMember].moveTaken)
 		{
 			int bashStrength=1;
-			int bashNoiseDistance=5;
+			int bashNoiseDistance=4;
 			/*
 			bool lockExpertInTeam=false;
 			foreach (PartyMember member in encounterMembers)
@@ -1034,9 +1046,11 @@ public class EncounterCanvasHandler : MonoBehaviour
 		    +Mathf.Abs(memberCoords[selectedMember].y-roomHandler.assignedRoom.yCoord)<=1
 		    )//&& !memberTokens[selectedMember].moveTaken)
 		{
-			AddNewLogMessage(selectedMember.name+" smashes the barricade");
-			roomHandler.BashBarricade(1);
-			if (roomHandler.assignedRoom.barricadeInRoom==null) {AddNewLogMessage("The barricade is cleared!");}
+			int damageToBarricade=selectedMember.MeleeAttack();
+			AddNewLogMessage(selectedMember.name+" smashes the barricade for "+damageToBarricade);
+			roomHandler.BashBarricade(damageToBarricade);
+			//SendFloatingMessage(damageToBarricade.ToString(),roomHandler.transform,Color.black);
+			//if (roomHandler.assignedRoom.barricadeInRoom==null) {AddNewLogMessage("The barricade is cleared!");}
 			TurnOver(selectedMember,roomHandler.assignedRoom,false);
 		}
 	}
@@ -1063,7 +1077,9 @@ public class EncounterCanvasHandler : MonoBehaviour
 		//Create text
 		if (encounterOngoing)
 		{
-			SendFloatingMessage("Noise",roomButtons[originCoords].transform);
+			string noiseText="Noise";
+			for (int i=0; i<carryDistance; i++) {noiseText+="+";}
+			SendFloatingMessage(noiseText,roomButtons[originCoords].transform);
 			//Do effect
 			//Dictionary<Vector2,int> moveMaskToSource=IterativeGrassfireMapper(originCoords);
 			for (int i=-carryDistance; i<=carryDistance; i++)
@@ -1077,7 +1093,7 @@ public class EncounterCanvasHandler : MonoBehaviour
 						{
 							foreach (EncounterEnemy enemy in roomButtons[cursorCoords].assignedRoom.enemiesInRoom)
 							{
-								enemyTokens[enemy].AddNewPOI(originCoords,null);//moveMaskToSource);
+								enemyTokens[enemy].AddNewPOI(originCoords,null,carryDistance);//moveMaskToSource);
 							}		
 						}
 					}
@@ -1135,30 +1151,53 @@ public class EncounterCanvasHandler : MonoBehaviour
 		//newHandler.AssignNumber(dmg);
 	}
 	
-	public void ShowDamageToPartyMember(PartyMember damagedMember, EncounterEnemy attackingEnemy, int damage, bool blocked)
+	public void ShowDamageToPartyMember(EnemyAttack attack)//PartyMember damagedMember, EncounterEnemy attackingEnemy, int damage, bool blocked)
 	{
+		PartyMember damagedMember=attack.attackedMember;
+		EncounterEnemy attackingEnemy=attack.attackingEnemy;
+		int damage=attack.damageDealt;
+		bool blocked=attack.blocked;// -currently removed
+		bool attackHit=attack.hitSuccesful;
 		if (memberTokens.ContainsKey(damagedMember))
 		{
 			string attackMessage="";
-			if (blocked) attackMessage=damagedMember.name+" blocks "+attackingEnemy.name+", losing "+damage+" stamina";
-			else attackMessage=attackingEnemy.name+" attacks "+damagedMember.name+" for "+damage+" damage";
+			//if (blocked) attackMessage=damagedMember.name+" blocks "+attackingEnemy.name+", losing "+damage+" stamina";
+			//else attackMessage=attackingEnemy.name+" attacks "+damagedMember.name+" for "+damage+" damage";
+			Color textColor=Color.red;
+			if (attackHit)
+			{
+				attackMessage=attackingEnemy.name+" attacks "+damagedMember.name+"'s "+attack.hitBodyPart.ToString()+" for "+damage+" damage";
+				textColor=Color.red;
+				SendFloatingMessage(attack.hitBodyPart.ToString()+" -"+damage.ToString(),memberTokens[damagedMember].transform,textColor);
+			}
+			else
+			{
+				attackMessage=attackingEnemy.name+" misses "+damagedMember.name;
+				textColor=Color.green;
+				SendFloatingMessage("Miss",memberTokens[damagedMember].transform,textColor);
+			}
+			
 			AddNewLogMessage(attackMessage);
 			
-			Color textColor=Color.red;
-			if (blocked) textColor=Color.green;
-			SendFloatingMessage(damage.ToString(),memberTokens[damagedMember].transform,textColor);
+			
+			//if (blocked) textColor=Color.green;
+			
 		}
 	}
 	
 	IEnumerator VisualizeAttack(int dmg, IAttackAnimation attacker, MonoBehaviour defender)
 	{
-		return VisualizeAttack(dmg,false,attacker,defender);
+		return VisualizeAttack(true,dmg,false,attacker,defender);
 	}
-	
-	IEnumerator VisualizeAttack(int dmg,bool blocked, IAttackAnimation attacker, MonoBehaviour defender)
+	IEnumerator VisualizeAttack(bool hitSuccessful, int dmg, IAttackAnimation attacker, MonoBehaviour defender)
+	{
+		return VisualizeAttack(hitSuccessful,dmg,false,attacker,defender);
+	}
+	IEnumerator VisualizeAttack(bool hitSuccessful, int dmg,bool blocked, IAttackAnimation attacker, MonoBehaviour defender)
 	{
 		FloatingTextHandler newHandler=Instantiate(floatingTextPrefab);
-		newHandler.AssignNumber(dmg);
+		if (hitSuccessful) newHandler.AssignNumber(dmg);
+		else newHandler.AssignText("Miss");
 		//If attacking member
 		if (defender.GetType()==typeof(MemberTokenHandler))
 		{
@@ -1261,27 +1300,42 @@ public class EncounterCanvasHandler : MonoBehaviour
 	
 	
 	//Used by callbacks from member tokens and also by set off traps
-	public void RegisterDamage(int damage, BodyPart attackedPart, bool isRanged,EncounterEnemy attackedEnemy, IAttackAnimation attackingEntity)//Object attackingEntity)//PartyMember attackingMember)
+	public void RegisterDamage(int damage, BodyPart attackedPart, bool isRanged,EncounterEnemy attackedEnemy, IAttackAnimation attackingEntity)
+	{
+		RegisterDamage(true,damage,attackedPart,isRanged,attackedEnemy,attackingEntity);
+	}
+	public void RegisterDamage(bool hitSuccessful, int damage
+	, BodyPart attackedPart, bool isRanged,EncounterEnemy attackedEnemy, IAttackAnimation attackingEntity)//Object attackingEntity)//PartyMember attackingMember)
 	{
 		//EncounterRoom currentRoom=currentEncounter.encounterMap[memberCoords[selectedMember]];
 		//int actualDmg=currentRoom.DamageEnemy(damage,attackedEnemy,isRanged);
-		int actualDmg=roomButtons[attackedEnemy.GetCoords()].AttackEnemyInRoom(damage,attackedPart,attackedEnemy,isRanged);
+		int actualDmg=0;
+		if (hitSuccessful) actualDmg=roomButtons[attackedEnemy.GetCoords()].AttackEnemyInRoom(damage,attackedPart,attackedEnemy,isRanged);
 		
 		//bool blockInteraction=attackingEntity.GetType()==typeof(MemberTokenHandler);
-		StartCoroutine(VisualizeAttack(actualDmg,attackingEntity,enemyTokens[attackedEnemy]));//VisualizeAttackOnEnemy(actualDmg,attackedEnemy, attackingEntity));
-		bool attackerIsMember=false;
+		StartCoroutine(VisualizeAttack(hitSuccessful,actualDmg,attackingEntity,enemyTokens[attackedEnemy]));//VisualizeAttackOnEnemy(actualDmg,attackedEnemy, attackingEntity));
 		MemberTokenHandler attackingMemberToken=null;
+		//Find if attacker is member or trap
 		if (attackingEntity.GetType()==typeof(MemberTokenHandler)) attackingMemberToken=attackingEntity as MemberTokenHandler;
-		int attackSoundIntensity=2;
+		int attackSoundIntensity=1;
+		//If attacker is member
 		if (attackingMemberToken!=null) 
 		{
-			MakeNoise(memberCoords[attackingMemberToken.myMember],attackSoundIntensity);
-			string hitMessage=" hits ";
-			if (isRanged) hitMessage=" shoots ";
-			AddNewLogMessage(attackingMemberToken.myMember.name+hitMessage+attackedEnemy.name+" for "+damage+" damage");
-			AddNewLogMessage(attackingMemberToken.myMember.name+" makes some noise!");
-		}
-		else AddNewLogMessage("a trap does "+damage+" damage to "+attackedEnemy.name);
+			if (hitSuccessful)
+			{
+				MakeNoise(memberCoords[attackingMemberToken.myMember],attackSoundIntensity);
+				string hitMessage=" hits ";
+				if (isRanged) hitMessage=" shoots ";
+				AddNewLogMessage(attackingMemberToken.myMember.name+" makes some noise!");
+				AddNewLogMessage(attackingMemberToken.myMember.name+hitMessage+attackedEnemy.name+" for "+damage+" damage");
+			}
+			else
+			{
+				string hitMessage=" misses ";
+				AddNewLogMessage(attackingMemberToken.myMember.name+hitMessage+attackedEnemy.name+"!");
+			}
+		}//if attacker is trap
+		else AddNewLogMessage("a trap does "+damage+" damage to "+attackedEnemy.name+"'s "+attackedPart.name);
 		if (attackedEnemy.health<=0) 
 		{
 			AddNewLogMessage(attackedEnemy.name+" is killed!");
@@ -1381,12 +1435,16 @@ public class EncounterCanvasHandler : MonoBehaviour
 		}*/
 	}
 	
-	public void AttackOnEnemy(EncounterEnemy enemy, bool ranged, BodyPart attackedPart)
+	public void AttackOnEnemy(EncounterEnemy enemy, bool ranged, BodyPart attackedPart, float hitChance)
 	{
 		int actualDmg=0;
-		if (ranged) actualDmg=selectedMember.RangedAttack();
-		else actualDmg=selectedMember.MeleeAttack();
-		RegisterDamage(actualDmg,attackedPart,ranged,enemy,memberTokens[selectedMember]);
+		bool hitSuccessful=false;
+		if (Random.value<=hitChance) hitSuccessful=true;
+		{
+			if (ranged) actualDmg=selectedMember.RangedAttack();
+			else actualDmg=selectedMember.MeleeAttack();
+		}
+		RegisterDamage(hitSuccessful,actualDmg,attackedPart,ranged,enemy,memberTokens[selectedMember]);
 		TurnOver(selectedMember,roomButtons[memberCoords[selectedMember]].assignedRoom,false);
 	}
 	

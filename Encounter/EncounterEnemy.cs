@@ -4,26 +4,31 @@ using System.Collections.Generic;
 
 public class BodyPart
 {
+	public enum PartTypes {Vitals, Hands, Legs, Other}
+	public PartTypes partType;
 	public string name;
 	public int hp;
+	public float hitPercentageModifier;
 	System.Action destructionEffect;
 	System.Action<int> damageEffect;
 	
-	public BodyPart(string newName, int newHp, System.Action newDestroyEffect)
+	public BodyPart(string newName, int newHp, System.Action newDestroyEffect, System.Action<int> newDamageEffect, PartTypes type)
 	{
-		BasicConstructor(newName,newHp,newDestroyEffect,null);
+		BasicConstructor(newName,newHp,newDestroyEffect,newDamageEffect,type,0);
 	}
-	public BodyPart(string newName, int newHp, System.Action newDestroyEffect, System.Action<int> newDamageEffect)
+	public BodyPart(string newName, int newHp, System.Action newDestroyEffect, System.Action<int> newDamageEffect, PartTypes type, float hitModifier)
 	{
-		BasicConstructor(newName,newHp,newDestroyEffect,newDamageEffect);
+		BasicConstructor(newName,newHp,newDestroyEffect,newDamageEffect,type,hitModifier);
 	}
 	
-	void BasicConstructor(string newName, int newHp, System.Action newDestroyEffect, System.Action<int> newDamageEffect)
+	void BasicConstructor(string newName, int newHp, System.Action newDestroyEffect, System.Action<int> newDamageEffect,PartTypes type, float hitModifier)
 	{
 		name=newName;
 		hp=newHp;
 		destructionEffect=newDestroyEffect;
 		damageEffect=newDamageEffect;
+		hitPercentageModifier=hitModifier;
+		partType=type;
 	}
 	
 	public void DamageBodypart(int damageDelta)
@@ -39,15 +44,21 @@ public class BodyPart
 public struct EnemyAttack
 {
 	public int damageDealt;
+	public bool hitSuccesful;
 	public bool blocked;
 	public PartyMember attackedMember;
 	public EncounterEnemy attackingEnemy;
-	public EnemyAttack(int dmg, bool blockStatus, PartyMember defender, EncounterEnemy attacker)
+	public PartyMember.BodyPartTypes hitBodyPart;
+	
+	public EnemyAttack(bool attackHit,int dmg, bool blockStatus, PartyMember defender, EncounterEnemy attacker
+	, PartyMember.BodyPartTypes hitPart)
 	{
 		damageDealt=dmg;
 		blocked=blockStatus;
 		attackedMember=defender;
 		attackingEnemy=attacker;
+		hitSuccesful=attackHit;
+		hitBodyPart=hitPart;
 	}
 }
 
@@ -103,7 +114,7 @@ public abstract class EncounterEnemy
 		case EnemyTypes.Spindler: {mod=1f; break;}
 		case EnemyTypes.Flesh: {mod=1f; break;}
 		case EnemyTypes.Muscle: {mod=0.6f; break;}
-		case EnemyTypes.Slime: {mod=0.6f; break;}
+		case EnemyTypes.Slime: {mod=1.5f; break;}
 		case EnemyTypes.Transient: {mod=2f; break;}
 		case EnemyTypes.Quick: {mod=2f; break;}
 		}
@@ -139,11 +150,21 @@ public abstract class EncounterEnemy
 	}
 	int _health;
 	public List<BodyPart> bodyParts=new List<BodyPart>();
+	public bool TryGetBodyPart(BodyPart.PartTypes type, out BodyPart part)
+	{
+		part=null;
+		foreach (BodyPart iterPart in bodyParts)
+		{
+			if (iterPart.partType==type) {part=iterPart; return true;}
+		}
+		return false;
+	}
 	public int minDamage;
 	public int maxDamage;
 	public int staminaDamage=2;
+	public float damageMod=1f;
 	protected int maxAttackRange=0;
-	protected float movesPerTurn=1;
+	public float movesPerTurn=1;
 	protected float currentAccumulatedMoves=0;
 	//public int encounterCount=5;
 	public float moveChance=0.1f;//0.4f;
@@ -151,7 +172,7 @@ public abstract class EncounterEnemy
 	int xCoord;
 	int yCoord;
 	protected int visionRange=0;
-	int barricadeBashStrength=1;
+	protected int barricadeBashStrength=0;
 	
 	public delegate void StatusEffectDel();
 	public event StatusEffectDel StatusEffectsChanged;
@@ -240,14 +261,18 @@ public abstract class EncounterEnemy
 			//manager.DamagePlayerCharacter(manager.selectedMember,damage);
 			//See if damage gets blocked
 			int myDamageRoll=Random.Range(minDamage,maxDamage+1);
+			myDamageRoll=Mathf.RoundToInt(myDamageRoll*damageMod);
 			int realStaminaDamage=staminaDamage;
-			int realDmg=manager.memberTokens[attackedMember].DamageAssignedMember(myDamageRoll,ref realStaminaDamage);//attackedMember.TakeDamage(myDamageRoll);
+			int realDmg=0;//manager.memberTokens[attackedMember].DamageAssignedMember(myDamageRoll,ref realStaminaDamage);//attackedMember.TakeDamage(myDamageRoll);
+			//Have to assign this because value types can't be assigned null
+			PartyMember.BodyPartTypes hitMemberPart=PartyMember.BodyPartTypes.Hands;
+			bool hitConnected=manager.memberTokens[attackedMember].TryHitAssignedMember(myDamageRoll,out realDmg, out realStaminaDamage, out hitMemberPart);
 			bool blocked=realStaminaDamage!=0;
 			
 			//If damage is blocked, send stamina damage instead
-			if (blocked) {realDmg=realStaminaDamage;}
+			//if (blocked) {realDmg=realStaminaDamage;}
 			//manager.VisualizeDamageToMember(realDmg,blocked,attackedMember,this);
-			performedAttack=new EnemyAttack(realDmg,blocked,attackedMember,this);
+			performedAttack=new EnemyAttack(hitConnected,realDmg,blocked,attackedMember,this, hitMemberPart);
 			int attackNoiseIntensity=1;
 			manager.MakeNoise(GetCoords(),attackNoiseIntensity);
 			//StartCoroutine(manager.VisualizeAttack(realDmg,manager.enemyTokens[this],manager.memberTokens[attackedMember]));
@@ -413,6 +438,7 @@ public abstract class EncounterEnemy
 			}
 			else
 			{
+				EncounterCanvasHandler.main.AddNewLogMessage(name+" smashes a barricade for "+barricadeBashStrength);
 				moveRoom.BashBarricade(barricadeBashStrength);
 			}
 		}
@@ -539,13 +565,15 @@ public class QuickMass:EncounterEnemy
 	public QuickMass(Vector2 coords) : base(coords)
 	{
 		name="Quick mass";
-		health=100;
-		minDamage=10;
-		maxDamage=15;
-		moveChance=0.5f;
-		bodyParts.Add(new BodyPart("Vitals",health,null,(int newHealth)=>{this.health=newHealth;}));
-		bodyParts.Add(new BodyPart("Arms",20,()=>{this.AddStatusEffect(new NoArms(this));}));
-		//bodyParts.Add(new BodyPart("Legs",20,()=>{this.AddStatusEffect(new NoArms(this));}));
+		health=180;
+		minDamage=5;
+		maxDamage=8;
+		movesPerTurn=2;
+		moveChance=0.3f;
+		barricadeBashStrength=Mathf.RoundToInt(minDamage*0.5f);
+		bodyParts.Add(new BodyPart("Vitals",health,null,(int newHealth)=>{this.health=newHealth;},BodyPart.PartTypes.Vitals));
+		bodyParts.Add(new BodyPart("Arms",90,()=>{this.AddStatusEffect(new NoArms(this));},null,BodyPart.PartTypes.Hands,0.1f));
+		bodyParts.Add(new BodyPart("Legs",90,()=>{this.AddStatusEffect(new NoLegs(this));},null,BodyPart.PartTypes.Legs,-0.1f));
 	}
 }
 
@@ -554,11 +582,40 @@ public class Transient:EncounterEnemy
 	public Transient(Vector2 coords) : base(coords)
 	{
 		name="Transient";
-		health=100;
+		health=180;
 		minDamage=5;
-		maxDamage=18;
-		bodyParts.Add(new BodyPart("Vitals",health,null,(int newHealth)=>{this.health=newHealth;}));
-		bodyParts.Add(new BodyPart("Arms",20,()=>{this.AddStatusEffect(new NoArms(this));}));
+		maxDamage=8;
+		barricadeBashStrength=minDamage;
+		int armsHealth=90;
+		int legsHealth=90;
+		/*
+		if (Random.value<0.5f)
+		{
+			armsHealth=150;
+			legsHealth=90;
+		}
+		else 
+		{
+			armsHealth=90;
+			legsHealth=150;
+		}*/
+		float armsHitChanceDelta=0;
+		float legsHitChanceDelta=0;
+		
+		if (Random.value<0.5f)
+		{
+			armsHitChanceDelta=0.2f;
+			legsHitChanceDelta=-0.2f;
+		}
+		else 
+		{
+			armsHitChanceDelta=-0.2f;
+			legsHitChanceDelta=0.2f;
+		}
+		
+		bodyParts.Add(new BodyPart("Vitals",health,null,(int newHealth)=>{this.health=newHealth;},BodyPart.PartTypes.Vitals));
+		bodyParts.Add(new BodyPart("Arms",armsHealth,()=>{this.AddStatusEffect(new NoArms(this));},null,BodyPart.PartTypes.Hands,armsHitChanceDelta));
+		bodyParts.Add(new BodyPart("Legs",legsHealth,()=>{this.AddStatusEffect(new NoLegs(this));},null,BodyPart.PartTypes.Legs,legsHitChanceDelta));
 	}
 	
 	bool phasedIn=true;
@@ -613,13 +670,14 @@ public class Gasser:EncounterEnemy
 	public Gasser(Vector2 coords) : base(coords)
 	{
 		name="Gas spitter";
-		health=80;
-		minDamage=8;
-		maxDamage=15;
+		health=135;
+		minDamage=5;
+		maxDamage=8;
+		barricadeBashStrength=minDamage;
 		visionRange=1;
 		maxAttackRange=1;
-		bodyParts.Add(new BodyPart("Vitals",health,null,(int newHealth)=>{this.health=newHealth;}));
-		bodyParts.Add(new BodyPart("Arms",20,()=>{this.AddStatusEffect(new NoArms(this));}));
+		bodyParts.Add(new BodyPart("Vitals",health,null,(int newHealth)=>{this.health=newHealth;},BodyPart.PartTypes.Vitals));
+		bodyParts.Add(new BodyPart("Legs",90,()=>{this.AddStatusEffect(new NoLegs(this));},null,BodyPart.PartTypes.Legs,0.2f));
 	}
 	
 	//Potentially deprecate this mechanic later
@@ -655,11 +713,13 @@ public class FleshMass:EncounterEnemy
 	public FleshMass(Vector2 coords) : base(coords)
 	{
 		name="Flesh mass";
-		health=210;
-		minDamage=13;
-		maxDamage=18;
-		bodyParts.Add(new BodyPart("Vitals",health,null,(int newHealth)=>{this.health=newHealth;}));
-		bodyParts.Add(new BodyPart("Arms",20,()=>{this.AddStatusEffect(new NoArms(this));}));
+		health=270;
+		minDamage=7;
+		maxDamage=10;
+		barricadeBashStrength=minDamage;
+		bodyParts.Add(new BodyPart("Vitals",health,null,(int newHealth)=>{this.health=newHealth;},BodyPart.PartTypes.Vitals));
+		bodyParts.Add(new BodyPart("Arms",135,()=>{this.AddStatusEffect(new NoArms(this));},null,BodyPart.PartTypes.Hands,0.1f));
+		bodyParts.Add(new BodyPart("Legs",90,()=>{this.AddStatusEffect(new NoLegs(this));},null,BodyPart.PartTypes.Legs,0.1f));
 	}
 }
 
@@ -668,22 +728,23 @@ public class Spindler:EncounterEnemy
 	public Spindler(Vector2 coords) : base(coords)
 	{
 		name="Spindler";
-		health=190;
-		minDamage=9;
-		maxDamage=14;
-		bodyParts.Add(new BodyPart("Vitals",health,null,(int newHealth)=>{this.health=newHealth;}));
-		bodyParts.Add(new BodyPart("Arms",20,()=>{this.AddStatusEffect(new NoArms(this));}));
+		health=270;
+		minDamage=6;
+		maxDamage=9;
+		barricadeBashStrength=minDamage;
+		bodyParts.Add(new BodyPart("Systems",health,null,(int newHealth)=>{this.health=newHealth;},BodyPart.PartTypes.Vitals));
+		bodyParts.Add(new BodyPart("Blades",90,()=>{this.AddStatusEffect(new NoArms(this));},null,BodyPart.PartTypes.Hands,0.15f));
+		bodyParts.Add(new BodyPart("Legs",90,()=>{this.AddStatusEffect(new NoLegs(this));},null,BodyPart.PartTypes.Legs));
 	}
 	
 	public override EnemyAttack AttackAction (List<PartyMember> presentMembers)//Dictionary<PartyMember,Vector2> memberCoords)
 	{
 		EnemyAttack performedAttack=base.AttackAction(presentMembers);
 		PartyMember targetMember=performedAttack.attackedMember;//memberCoords);
+		//Stamina damage part makes sure it can't inflict bleed while under NoArms
 		if (targetMember!=null)
 		{
-			//EncounterCanvasHandler manager=EncounterCanvasHandler.main;
-			PartyManager.mainPartyManager.AddPartyMemberStatusEffect(targetMember,new Bleed(targetMember));
-			//EncounterCanvasHandler.main.DisplayNewMessage(name+" causes "+targetMember.name+" to bleed!");
+			if (staminaDamage>=2 && performedAttack.hitSuccesful) PartyManager.mainPartyManager.AddPartyMemberStatusEffect(targetMember,new Bleed(targetMember));
 		} 
 		else {throw new System.Exception("Spindler tried to assign bleed to null PartyMember");}
 		return performedAttack;
@@ -697,11 +758,13 @@ public class MuscleMass:EncounterEnemy
 	{
 		name="Muscle mass";
 		health=360;
-		minDamage=20;
-		maxDamage=35;
+		minDamage=10;
+		maxDamage=12;
+		barricadeBashStrength=minDamage;
 		staminaDamage=3;
-		bodyParts.Add(new BodyPart("Vitals",health,null,(int newHealth)=>{this.health=newHealth;}));
-		bodyParts.Add(new BodyPart("Arms",20,()=>{this.AddStatusEffect(new NoArms(this));}));
+		bodyParts.Add(new BodyPart("Vitals",health,null,(int newHealth)=>{this.health=newHealth;},BodyPart.PartTypes.Vitals));
+		bodyParts.Add(new BodyPart("Arms",135,()=>{this.AddStatusEffect(new NoArms(this));},null,BodyPart.PartTypes.Hands,0.1f));
+		bodyParts.Add(new BodyPart("Legs",135,()=>{this.AddStatusEffect(new NoLegs(this));},null,BodyPart.PartTypes.Legs,0.2f));
 	}
 }
 
@@ -713,12 +776,14 @@ public class SlimeMass:EncounterEnemy
 	{
 		name="Slime mass";
 		health=400;
-		minDamage=18;
-		maxDamage=24;
+		minDamage=11;
+		maxDamage=15;
+		barricadeBashStrength=minDamage;
 		moveChance=0.1f;
+		movesPerTurn=0;
 		staminaDamage=3;
-		bodyParts.Add(new BodyPart("Vitals",health,null,(int newHealth)=>{this.health=newHealth;}));
-		bodyParts.Add(new BodyPart("Arms",20,()=>{this.AddStatusEffect(new NoArms(this));}));
+		bodyParts.Add(new BodyPart("Vitals",health,null,(int newHealth)=>{this.health=newHealth;},BodyPart.PartTypes.Vitals));
+		bodyParts.Add(new BodyPart("Arms",135,()=>{this.AddStatusEffect(new NoArms(this));},null,BodyPart.PartTypes.Hands,0.1f));
 	}
 	
 	//int rangedResistance=3;

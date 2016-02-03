@@ -9,7 +9,7 @@ public interface IAttackAnimation
 
 public class MemberTokenHandler : MonoBehaviour, IAttackAnimation 
 {
-	const int defenseModifier=3;
+	//const int defenseModifier=3;
 	
 	public PartyMember myMember;
 	public GameObject mySelectedArrow;
@@ -37,6 +37,15 @@ public class MemberTokenHandler : MonoBehaviour, IAttackAnimation
 	}	
 	bool _selected=false;
 	
+	int currentAllowedMovesCount;
+	int maxAllowedMovesCount;
+	void RefreshMaxAllowedMovesCount()
+	{
+		maxAllowedMovesCount=2;
+		if (myMember.legsBroken) maxAllowedMovesCount-=1;
+		else if (myMember.isScout) maxAllowedMovesCount+=1;
+		if (currentAllowedMovesCount>maxAllowedMovesCount) currentAllowedMovesCount=maxAllowedMovesCount;
+	}
 	bool moveTaken
 	{
 		get {return _moveTaken;}
@@ -87,7 +96,7 @@ public class MemberTokenHandler : MonoBehaviour, IAttackAnimation
 		}
 	}
 	
-	bool _staminaRegenEnabled=true;
+	bool _staminaRegenEnabled=false;
 	
 	
 	public bool rangedMode
@@ -117,26 +126,31 @@ public class MemberTokenHandler : MonoBehaviour, IAttackAnimation
 		myMember=member;
 		nameText.text=member.name;
 		myImage.color=member.color;
+		RefreshMaxAllowedMovesCount();
+		currentAllowedMovesCount=maxAllowedMovesCount;
 		//myDefenceToken.DefenceStatusChanged(moveTaken,turnTaken);
 		myActionToken.ActionStatusChanged(turnTaken);
 		myMoveToken.MoveStatusChanged(moveTaken,turnTaken,myMember.stamina>=myMember.staminaMoveCost);
 		myStaminaRegenToken.StaminaRegenStatusChanged(staminaRegenEnabled);
 	}
 	
-	public int DamageAssignedMember(int damage, ref int staminaDamage)
+	public bool TryHitAssignedMember(int damage, out int realDamage, out int staminaDamage, out PartyMember.BodyPartTypes hitPart)
 	{
-		int extraArmorMod=0;
+		//int extraArmorMod=0;
 		//if (defenceMode) {extraArmorMod=damage;}
+		/*
 		if (myMember.stamina>=staminaDamage) 
 		{
 			extraArmorMod=damage; 
 			myMember.stamina-=staminaDamage;
-		}
-		else staminaDamage=0;
-		staminaRegenEnabled=false;
-		int realDmg=myMember.TakeDamage(damage,extraArmorMod,true);
-		//if (myMember.health<=0) EncounterCanvasHandler.main.RemoveEncounterMember(myMember);
-		return realDmg;
+		}*/
+		staminaDamage=0;//else staminaDamage=0;
+		realDamage=0;
+		//staminaRegenEnabled=false;
+		//int realDmg=myMember.TakeDamage(damage,extraArmorMod,true);
+		//return realDmg;
+		bool hitConnected=myMember.TryTakeDamage(damage,ref realDamage, out hitPart);
+		return hitConnected;
 	}
 	
 	public void FinishTurn(bool turnSkipped)
@@ -155,24 +169,35 @@ public class MemberTokenHandler : MonoBehaviour, IAttackAnimation
 		if (staminaRegenEnabled) myMember.stamina+=staminaRegenAmount;
 		moveTaken=false;
 		turnTaken=false;
+		RefreshMaxAllowedMovesCount();
+		currentAllowedMovesCount=maxAllowedMovesCount;
 		//defenceMode=false;
-		staminaRegenEnabled=true;
+		//staminaRegenEnabled=true;
 		//print ("next turn switched!");
 	}
+	/*
+	public bool CanMove()
+	{
+		
+	}*/
 	
 	public bool TryMove(out bool doTurnOver)
 	{
 		doTurnOver=false;
+		//This is necessary incase member legs get crippled as he moves out with 2 moves left
+		currentAllowedMovesCount-=1;
+		RefreshMaxAllowedMovesCount();
+		//Stamina cost is currently 0, deprecate this later
 		int moveStaminaCost=myMember.staminaMoveCost;
 		if (myMember.stamina>=moveStaminaCost) 
 		{
 			myMember.stamina-=moveStaminaCost;
 			staminaRegenEnabled=false;
-			if (moveTaken) 
+			if (currentAllowedMovesCount<=0) 
 			{
 				doTurnOver=true;
 			}
-			moveTaken=true;
+			if (currentAllowedMovesCount<=1) moveTaken=true;
 			return true;
 		}
 		else return false;
@@ -311,6 +336,8 @@ public class MemberTokenHandler : MonoBehaviour, IAttackAnimation
 	{
 		string text=myMember.name;
 		foreach (Perk perk in myMember.perks){text+="\n-"+perk.name;}
+		foreach (PartyMember.BodyPartTypes part in myMember.memberBodyParts.currentParts.Keys)//.currentParts.Keys)
+		{text+="\n"+part.ToString()+" "+(myMember.memberBodyParts.GetPartHitChance(part)*100).ToString()+"%";}
 		TooltipManager.main.CreateTooltip(text,transform);
 	}
 	
@@ -318,7 +345,10 @@ public class MemberTokenHandler : MonoBehaviour, IAttackAnimation
 	
 	void Update()
 	{
-		healthText.text=myMember.health.ToString();
+		//healthText.text=myMember.health.ToString();
+		healthText.text=myMember.memberBodyParts.currentParts[PartyMember.BodyPartTypes.Hands].health
+		+"|"+myMember.memberBodyParts.currentParts[PartyMember.BodyPartTypes.Legs].health
+		+"|"+myMember.memberBodyParts.currentParts[PartyMember.BodyPartTypes.Vitals].health;
 		staminaText.text=myMember.stamina.ToString();
 		//if (Input.GetMouseButtonDown(1)) {ToggleRangedMode();}
 	}

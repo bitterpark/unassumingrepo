@@ -208,9 +208,9 @@ public class GameEventManager : MonoBehaviour
 		possibleEvents.Add(new EventChance(new SearchForSurvivor(),0.04f));
 		
 		moraleEvents.Add (new EventChance(new LowMoraleSpiral(),0.2f));
-		moraleEvents.Add (new EventChance(new LowMoraleFight(),0.15f));
-		moraleEvents.Add (new EventChance(new LowMoraleEnmity(),0.15f));
-		moraleEvents.Add (new EventChance(new LowMoraleQuit(),0.15f));
+		moraleEvents.Add (new EventChance(new LowMoraleFight(),0.10f));
+		moraleEvents.Add (new EventChance(new LowMoraleEnmity(),0.10f));
+		moraleEvents.Add (new EventChance(new LowMoraleQuit(),0.05f));
 		
 		/*
 		//Add highest first for proper rolling

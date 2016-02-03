@@ -16,6 +16,7 @@ public class RoomButtonHandler : MonoBehaviour//, IDropHandler
 	public GameObject exitToken;
 	public GameObject barricadeBuildToken;
 	
+	public Transform barricadeGroup;
 	public Transform itemsGroup;
 	public Transform actorsGroup;
 	public Image floorItemPrefab;
@@ -121,8 +122,8 @@ public class RoomButtonHandler : MonoBehaviour//, IDropHandler
 	void SpawnNewBarricadeToken()
 	{
 		BarricadeToken newToken=Instantiate(barricadePrefab);
-		newToken.transform.SetParent(this.transform,false);
-		newToken.transform.position=transform.position;
+		newToken.transform.SetParent(barricadeGroup,false);
+		newToken.transform.position=barricadeGroup.position;
 		newToken.AssignBarricade(this);
 	}
 	
@@ -137,8 +138,10 @@ public class RoomButtonHandler : MonoBehaviour//, IDropHandler
 	public void BashBarricade(int bashStrength)
 	{
 		assignedRoom.BashBarricade(bashStrength);
+		BarricadeToken myBarricadeToken=GetComponentInChildren<BarricadeToken>();
+		EncounterCanvasHandler.main.SendFloatingMessage(bashStrength.ToString(),this.transform,Color.black);
 		if (assignedRoom.barricadeInRoom==null) {DespawnBarricadeToken();}
-		else {GetComponentInChildren<BarricadeToken>().UpdateHealth(assignedRoom.barricadeInRoom.health);}
+		else {myBarricadeToken.UpdateHealth(assignedRoom.barricadeInRoom.health);}
 	}
 	
 	public int AttackEnemyInRoom(int damage, BodyPart attackedPart, EncounterEnemy attackedEnemy, bool isRanged)
@@ -153,9 +156,7 @@ public class RoomButtonHandler : MonoBehaviour//, IDropHandler
 		//Set off traps
 		if (assignedRoom.trapInRoom!=null) 
 		{
-			assignedRoom.trapInRoom.SetOff();
-			//RemoveTrap(assignedRoom.trapInRoom);
-			//assignedRoom.trapInRoom=null;
+			assignedRoom.trapInRoom.SetOff(enemy);
 		}
 		
 		//Do hearing tokens

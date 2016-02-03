@@ -15,7 +15,7 @@ public abstract class InventoryItem
 	public virtual int GetWeight() {return 1;}
 	
 	//Deprecated
-	public enum LootItems {Medkits,Bandages,Food/*,PerishableFood*/,Ammo,Flashlight,Radio,SettableTrap,AssaultRifle,Shotgun,NineM,Pipe,Knife,Axe,ArmorVest}
+	public enum LootItems {Medkits,Bandages,Food/*,PerishableFood*/,Ammo,Flashlight,Radio,Bed,Backpack,SettableTrap,AssaultRifle,Shotgun,NineM,Pipe,Knife,Axe,ArmorVest}
 	public enum LootMetatypes {Medical,FoodItems,Melee,Guns,Equipment,Radio}
 	
 	//Deprecated, remove later!!!
@@ -165,19 +165,15 @@ public abstract class InventoryItem
 			}
 			case LootMetatypes.Equipment:
 			{
-				//Default <1 option
-				setItems.Add (new Flashlight());
-				//Other options
-				if (randomRoll<0.6f)
-				{
-					setItems.Clear();
-					setItems.Add (new ArmorVest());
-				}
-				if (randomRoll<0.04f)
-				{
-					setItems.Clear();
-					setItems.Add(new Bed());
-				}
+				ProbabilityList<InventoryItem> equipmentList=new ProbabilityList<InventoryItem>();
+				equipmentList.AddProbability(new SettableTrap(),0.5f);
+				equipmentList.AddProbability(new ArmorVest(),0.15f);
+				equipmentList.AddProbability(new Backpack(),0.15f);
+				equipmentList.AddProbability(new Bed(),0.2f);
+				
+				InventoryItem resultingItem=new SettableTrap();
+				if (equipmentList.RollProbability(out resultingItem)) setItems.Add(resultingItem);
+				else throw new System.Exception("Could not roll a positive result on equipment loot table!");
 				break;
 			}
 			case LootMetatypes.Radio:
@@ -222,7 +218,8 @@ public abstract class InventoryItem
 
 public class SettableTrap: InventoryItem
 {
-	System.Type myTrapType=typeof(Trap);
+	//System.Type myTrapType=typeof(Trap);
+	int legDamage=90;
 	
 	public SettableTrap (){itemName="Trap";}
 	
@@ -243,7 +240,7 @@ public class SettableTrap: InventoryItem
 			if (trappedRoomButton.assignedRoom.trapInRoom==null)
 			{
 				encounterHandler.roomButtons[encounterHandler.memberCoords[member]]
-				.SetTrap(new Trap(trappedRoomButton.assignedRoom),true);
+				.SetTrap(new Trap(trappedRoomButton.assignedRoom,legDamage),true);
 				trapSet=true;
 			}
 		}
@@ -279,14 +276,14 @@ public class Medkit:InventoryItem
 		itemName="Medkit";
 	}
 	
-	//int healAmount=20;
-	float healPercentage=0.35f;
+	int healAmount=15;
+	//float healPercentage=0.35f;
 	public override Sprite GetItemSprite() {return SpriteBase.mainSpriteBase.medkitSprite;}
 	
 	public override bool UseAction(PartyMember member)
 	{
 		bool healingPerformed=false;
-		int healAmount=Mathf.FloorToInt(member.maxHealth*healPercentage);
+		//int healAmount=Mathf.FloorToInt(member.maxHealth*healPercentage);
 		//do health
 		if (member.Heal(healAmount)){healingPerformed=true;}
 		
@@ -307,8 +304,8 @@ public class Medkit:InventoryItem
 	//Currently only works if tooltip is viewed from inventory screen
 	public override string GetMouseoverDescription ()
 	{
-		int healAmount=Mathf.FloorToInt(InventoryScreenHandler.mainISHandler.selectedMember.maxHealth*healPercentage);
-		return itemName+"\nHeals "+healAmount+"% of hp\nCures bleed";
+		//int healAmount=Mathf.FloorToInt(InventoryScreenHandler.mainISHandler.selectedMember.maxHealth*healPercentage);
+		return itemName+"\nHeals "+healAmount+" of hp for each body part\nCures bleed";
 	}
 }
 
@@ -496,6 +493,30 @@ public class Flashlight: EquippableItem
 	}
 }
 
+public class Backpack: EquippableItem
+{
+	int carryCapIncrease=1;
+	public Backpack()
+	{
+		itemName="Backpack";
+	}
+	
+	public override Sprite GetItemSprite() {return SpriteBase.mainSpriteBase.backpackSprite;}
+	public override void EquipEffect (PartyMember member)
+	{
+		member.ChangeMaxCarryCapacity(carryCapIncrease);
+	}
+	public override void UnequipEffect (PartyMember member)
+	{
+		member.ChangeMaxCarryCapacity(-carryCapIncrease);
+	}
+	
+	public override string GetMouseoverDescription ()
+	{
+		return itemName+"\nIncreases carry capacity by "+(carryCapIncrease).ToString();
+	}
+}
+
 public class ArmorVest:EquippableItem
 {
 	public ArmorVest()
@@ -524,13 +545,15 @@ public class ArmorVest:EquippableItem
 public abstract class Weapon:InventoryItem
 {	
 	//damage for display on mouseover text
-	public abstract int GetMaxDamage();
-	public abstract int GetMinDamage();
+	//public abstract int GetMaxDamage();
+	//public abstract int GetMinDamage();
+	public int baseDamage;
+	public float accuracyMod;
 	//damage for fight calculation
 	public virtual int GetDamage(float modifier) 
 	{
-		int rawDamage=Mathf.RoundToInt(GaussianRandom.GetFiveStepRange(GetMinDamage(),GetMaxDamage())+modifier);//Random.Range(GetMinDamage()-0.5f,GetMaxDamage()+0.5f)+modifier);
-		int actualDamage=Mathf.Clamp(rawDamage,GetMinDamage(),GetMaxDamage());
+		//int rawDamage=Mathf.RoundToInt(GaussianRandom.GetFiveStepRange(GetMinDamage(),GetMaxDamage())+modifier);//Random.Range(GetMinDamage()-0.5f,GetMaxDamage()+0.5f)+modifier);
+		int actualDamage=Mathf.RoundToInt(baseDamage+modifier);//Mathf.Clamp(rawDamage,GetMinDamage(),GetMaxDamage());
 		return actualDamage;
 	}
 	public virtual void Unequip(PartyMember member)//virtual void Unequip (PartyMember member) {}
@@ -544,7 +567,7 @@ public abstract class RangedWeapon:Weapon
 	public abstract int GetAmmoUsePerShot();
 	public override string GetMouseoverDescription ()
 	{
-		return itemName+"\nDamage:"+GetMinDamage()+"-"+GetMaxDamage()+"\nAmmo per shot:"+GetAmmoUsePerShot()+"\n Weight:"+GetWeight();
+		return itemName+"\nDamage:"+baseDamage+"\nAmmo per shot:"+GetAmmoUsePerShot()+"\n Weight:"+GetWeight();
 	}
 	//public override bool UseAction (PartyMember member) {return false;}
 }
@@ -554,15 +577,17 @@ public class NineM:RangedWeapon
 	public NineM()
 	{
 		itemName="9mm Pistol";
+		baseDamage=45;
+		accuracyMod=0.2f;
 	}
 	
 	//string name="9mm Pistol";
-	int weaponMaxDamage=100;
-	int weaponMinDamage=80;
+	//int weaponMaxDamage=100;
+	//int weaponMinDamage=80;
 	int ammoPerShot=1;
 	
-	public override int GetMaxDamage() {return weaponMaxDamage;}
-	public override int GetMinDamage() {return weaponMinDamage;}
+	//public override int GetMaxDamage() {return weaponMaxDamage;}
+	//public override int GetMinDamage() {return weaponMinDamage;}
 	public override int GetAmmoUsePerShot (){return ammoPerShot;}
 	
 	public override Sprite GetItemSprite ()
@@ -578,18 +603,23 @@ public class NineM:RangedWeapon
 
 public class Shotgun:RangedWeapon
 {
+	
 	public Shotgun()
 	{
 		itemName="Shotgun";
+		oneShotDamage=45;
+		accuracyMod=0;
+		baseDamage=oneShotDamage*ammoPerShot;
 	}
 	
-	int weaponMaxDamage=200;
-	int weaponMinDamage=160;
-	int oneShotMinDamage=80;
-	int oneShotMaxDamage=100;
+	//int weaponMaxDamage=200;
+	//int weaponMinDamage=160;
+	//int oneShotMinDamage=80;
+	//int oneShotMaxDamage=100;
+	int oneShotDamage;
 	int ammoPerShot=2;
-	public override int GetMaxDamage() {return weaponMaxDamage;}
-	public override int GetMinDamage() {return weaponMinDamage;}
+	//public override int GetMaxDamage() {return weaponMaxDamage;}
+	//public override int GetMinDamage() {return weaponMinDamage;}
 	public override int GetDamage(float modifier) 
 	{
 		int actualDamage=base.GetDamage(modifier);
@@ -598,20 +628,16 @@ public class Shotgun:RangedWeapon
 			actualDamage=0;
 			for (int i=0; i<PartyManager.mainPartyManager.ammo; i++)
 			{
-				int rawDamage=Mathf.RoundToInt(GaussianRandom.GetFiveStepRange(oneShotMinDamage,oneShotMaxDamage)+modifier);//Random.Range(oneShotMinDamage-0.5f,oneShotMaxDamage+0.5f)+modifier);
-				actualDamage+=Mathf.Clamp(rawDamage,oneShotMinDamage,oneShotMaxDamage);
+				//int rawDamage=Mathf.RoundToInt(GaussianRandom.GetFiveStepRange(oneShotMinDamage,oneShotMaxDamage)+modifier);//Random.Range(oneShotMinDamage-0.5f,oneShotMaxDamage+0.5f)+modifier);
+				actualDamage+=oneShotDamage;//Mathf.Clamp(rawDamage,oneShotMinDamage,oneShotMaxDamage);
 			}
+			actualDamage=Mathf.RoundToInt(actualDamage+modifier);
 			//actualDamage=oneShotDamage*PartyManager.mainPartyManager.ammo;
 		}
 		return actualDamage;
 	}
 	public override int GetAmmoUsePerShot () {return ammoPerShot;}
-	
-	public override Sprite GetItemSprite ()
-	{
-		return SpriteBase.mainSpriteBase.shotgunSprite;
-	}
-	
+	public override Sprite GetItemSprite (){return SpriteBase.mainSpriteBase.shotgunSprite;}
 }
 
 public class AssaultRifle:RangedWeapon
@@ -619,15 +645,18 @@ public class AssaultRifle:RangedWeapon
 	public AssaultRifle()
 	{
 		itemName="Assault Rifle";
+		oneShotDamage=90;
+		accuracyMod=-0.15f;
+		baseDamage=oneShotDamage*ammoPerShot;
 	}
-	
-	int weaponMaxDamage=360;
-	int weaponMinDamage=330;
-	int oneShotMinDamage=110;
-	int oneShotMaxDamage=120;
+	int oneShotDamage;
+	//int weaponMaxDamage=360;
+	//int weaponMinDamage=330;
+	//int oneShotMinDamage=110;
+	//int oneShotMaxDamage=120;
 	int ammoPerShot=3;
-	public override int GetMaxDamage() {return weaponMaxDamage;}
-	public override int GetMinDamage() {return weaponMinDamage;}
+	//public override int GetMaxDamage() {return weaponMaxDamage;}
+	//public override int GetMinDamage() {return weaponMinDamage;}
 	public override int GetDamage(float modifier) 
 	{
 		int actualDamage=base.GetDamage(modifier);
@@ -636,9 +665,10 @@ public class AssaultRifle:RangedWeapon
 			actualDamage=0;
 			for (int i=0; i<PartyManager.mainPartyManager.ammo; i++)
 			{
-				int rawDamage=Mathf.RoundToInt(GaussianRandom.GetFiveStepRange(oneShotMinDamage,oneShotMaxDamage)+modifier);//Random.Range(oneShotMinDamage-0.5f,oneShotMaxDamage+0.5f)+modifier);
-				actualDamage+=Mathf.Clamp(rawDamage,oneShotMinDamage,oneShotMaxDamage);
+				//int rawDamage=Mathf.RoundToInt(GaussianRandom.GetFiveStepRange(oneShotMinDamage,oneShotMaxDamage)+modifier);//Random.Range(oneShotMinDamage-0.5f,oneShotMaxDamage+0.5f)+modifier);
+				actualDamage+=oneShotDamage;//Mathf.Clamp(rawDamage,oneShotMinDamage,oneShotMaxDamage);
 			}
+			actualDamage=Mathf.RoundToInt(actualDamage+modifier);
 			//actualDamage=oneShotDamage*PartyManager.mainPartyManager.ammo;
 		}
 		return actualDamage;
@@ -661,27 +691,16 @@ public abstract class MeleeWeapon:Weapon
 	public abstract int GetStaminaUse();
 	public override string GetMouseoverDescription ()
 	{
-		return itemName+"\nDamage:"+GetMinDamage()+"-"+GetMaxDamage()+"\nStamina per hit:"+GetStaminaUse()+"\n Weight:"+GetWeight();
+		return itemName+"\nDamage:"+baseDamage+"\nAccuracy modifier:"+accuracyMod+"\nStamina per hit:"+GetStaminaUse()+"\n Weight:"+GetWeight();
 	}
-	public int GetDamage (float moraleModifier, float additionModifier)
+	public int GetDamage (float moraleModifier, int additionModifier)
 	{
-		//int actualDamage=base.GetDamage(modifier);
-		/*
-		int rawDamage=Mathf.RoundToInt(GaussianRandom.GetFiveStepRange(GetMinDamage(),GetMaxDamage())+modifier);//Random.Range(GetMinDamage()-0.5f,GetMaxDamage()+0.5f)+modifier);
-		int actualDamage=Mathf.Clamp(rawDamage,GetMinDamage(),GetMaxDamage());
-		return actualDamage;
-		*/
-		float missingStaminaMod=Mathf.Min(1f,(float)EncounterCanvasHandler.main.selectedMember.stamina/(float)GetStaminaUse());
-		//GameManager.DebugPrint("Dividing stamina mod result:"+(float)EncounterCanvasHandler.main.selectedMember.stamina/(float)GetStaminaUse());
-		//GameManager.DebugPrint("Missing stamina mod is:"+missingStaminaMod);
-		float adjustedMinDamage=(GetMinDamage()+additionModifier)*missingStaminaMod;
-		float adjustedMaxDamage=(GetMaxDamage()+additionModifier)*missingStaminaMod;
-		float rawDamage=GaussianRandom.GetFiveStepRange(adjustedMinDamage,adjustedMaxDamage)+moraleModifier;
-		//GameManager.DebugPrint("Actual min:"+adjustedMinDamage);
-		//GameManager.DebugPrint("Actual max:"+adjustedMaxDamage);
-		//GameManager.DebugPrint("Raw damage value"+rawDamage);
-		//GameManager.DebugPrint("Clamp Result:"+Mathf.Clamp(rawDamage,adjustedMinDamage,adjustedMaxDamage));
-		int actualDamage=Mathf.RoundToInt(Mathf.Clamp(rawDamage,adjustedMinDamage,adjustedMaxDamage));
+		//float missingStaminaMod=Mathf.Min(1f,Mathf.Max((float)EncounterCanvasHandler.main.selectedMember.stamina,0.5f)/(float)GetStaminaUse());
+		//float adjustedMinDamage=(GetMinDamage()+additionModifier)*missingStaminaMod;
+		//float adjustedMaxDamage=(GetMaxDamage()+additionModifier)*missingStaminaMod;
+		//float rawDamage=GaussianRandom.GetFiveStepRange(adjustedMinDamage,adjustedMaxDamage)+moraleModifier;
+
+		int actualDamage=baseDamage+additionModifier;//Mathf.RoundToInt(Mathf.Clamp(rawDamage,adjustedMinDamage,adjustedMaxDamage));
 		/*
 		if (EncounterCanvasHandler.main.selectedMember.stamina<GetStaminaUse()) 
 		{
@@ -700,14 +719,16 @@ public class Pipe:MeleeWeapon
 	public Pipe()
 	{
 		itemName="Pipe";
+		baseDamage=90;
+		accuracyMod=0;
 	}
 	
-	public int weaponMaxDamage=110;
-	public int weaponMinDamage=70;
-	int staminaUse=3;
+	//public int weaponMaxDamage=110;
+	//public int weaponMinDamage=70;
+	int staminaUse=2;
 	
-	public override int GetMaxDamage() {return weaponMaxDamage;}
-	public override int GetMinDamage() {return weaponMinDamage;}
+	// override int GetMaxDamage() {return weaponMaxDamage;}
+	//public override int GetMinDamage() {return weaponMinDamage;}
 	public override int GetStaminaUse() {return staminaUse;}
 	
 	
@@ -727,15 +748,17 @@ public class Knife:MeleeWeapon
 	public Knife()
 	{
 		itemName="Knife";
+		baseDamage=45;
+		accuracyMod=0.2f;
 	}
 	
-	public int weaponMaxDamage=50;
-	public int weaponMinDamage=10;
+	//public int weaponMaxDamage=50;
+	//public int weaponMinDamage=10;
 	
-	int staminaUse=2;
+	int staminaUse=1;
 	
-	public override int GetMaxDamage() {return weaponMaxDamage;}
-	public override int GetMinDamage() {return weaponMinDamage;}
+	//public override int GetMaxDamage() {return weaponMaxDamage;}
+	//public override int GetMinDamage() {return weaponMinDamage;}
 	public override int GetStaminaUse() {return staminaUse;}
 	
 	public override Sprite GetItemSprite ()
@@ -754,15 +777,17 @@ public class Axe:MeleeWeapon
 	public Axe()
 	{
 		itemName="Axe";
+		baseDamage=180;
+		accuracyMod=-0.1f;
 	}
 	
-	public int weaponMaxDamage=200;
-	public int weaponMinDamage=160;
+	//public int weaponMaxDamage=200;
+	//public int weaponMinDamage=160;
 	//int weakDamage=3;
-	int staminaUse=4;
+	int staminaUse=3;
 	
-	public override int GetMaxDamage() {return weaponMaxDamage;}
-	public override int GetMinDamage() {return weaponMinDamage;}
+	//public override int GetMaxDamage() {return weaponMaxDamage;}
+	//public override int GetMinDamage() {return weaponMinDamage;}
 	/*
 	public override int GetDamage() 
 	{

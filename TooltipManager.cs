@@ -7,7 +7,7 @@ public class TooltipManager : MonoBehaviour
 	public static TooltipManager main;
 	
 	public GameObject tooltipPrefab;
-	static GameObject activeTooltip;
+	static GameObject activeTooltip=null;
 	float edgeOffsetSize=5f;
 	float tooltipWidth=80f;
 	
@@ -15,6 +15,7 @@ public class TooltipManager : MonoBehaviour
 	
 	public void CreateTooltip(string tooltipText, Transform tooltipParent)
 	{
+		StopAllTooltips();
 		activeTooltip=Instantiate(tooltipPrefab);
 		foreach (Text textComponent in activeTooltip.GetComponentsInChildren<Text>()) 
 		{
@@ -34,5 +35,8 @@ public class TooltipManager : MonoBehaviour
 		activeTooltip.GetComponent<Canvas>().sortingOrder=100;
 	}	
 	
-	public void StopAllTooltips() {GameObject.Destroy(activeTooltip);}
+	public void StopAllTooltips() 
+	{
+		if (activeTooltip!=null) GameObject.Destroy(activeTooltip);
+	}
 }

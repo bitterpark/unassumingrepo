@@ -33,7 +33,7 @@ public class GameManager : MonoBehaviour {
 		mainMenu=new MainMenu();
 		myMapManager=gameObject.GetComponent<MapManager>();
 		Button startButton=startMenuCanvas.transform.FindChild("Start Game Button").GetComponent<Button>();
-		startButton.onClick.AddListener(()=>RegisterClick(startButton));
+		startButton.onClick.AddListener(()=>RegisterClick());
 		startMenuCanvas.gameObject.SetActive(true);
 		StartCoroutine(PrepareGamestartDelegate());
 		//partyStatusCanvas.enabled=false;
@@ -47,18 +47,22 @@ public class GameManager : MonoBehaviour {
 		while (PartyManager.mainPartyManager==null) yield return new WaitForFixedUpdate();
 		GameStart+=PartyManager.mainPartyManager.SetDefaultState;
 		gamestartPrepared=true;
+		//RegisterClick();
 		yield break;
 	}
 	
 	//lambda expression example
-	void RegisterClick(Button btn) 
+	void RegisterClick() 
 	{
-		gameStarted=true;
-		startMenuCanvas.gameObject.SetActive(false);
-		//partyStatusCanvas.gameObject.SetActive(true);
-		
-		//startMenuCanvas.enabled=false;
-		StartNewGame();
+		if (this.gamestartPrepared)
+		{
+			gameStarted=true;
+			startMenuCanvas.gameObject.SetActive(false);
+			//partyStatusCanvas.gameObject.SetActive(true);
+			
+			//startMenuCanvas.enabled=false;
+			StartNewGame();
+		}
 	}
 	
 	void Update() {if (Input.GetKeyDown(KeyCode.N)) EndCurrentGame(true);}
@@ -74,7 +78,7 @@ public class GameManager : MonoBehaviour {
 	
 	void StartNewGame()
 	{
-		if (GameStart!=null) {GameStart();}
+		if (GameStart!=null) GameStart();
 	}
 	
 	public void EndCurrentGame(bool win)

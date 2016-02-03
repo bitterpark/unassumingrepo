@@ -60,7 +60,7 @@ public class BarricadeToken : MonoBehaviour, IPointerEnterHandler,IPointerExitHa
 	{
 		string tooltipText="Blocks entrance into the room";
 		Vector2 selectedMemberCoords=EncounterCanvasHandler.main.memberCoords[EncounterCanvasHandler.main.selectedMember];
-		if ((selectedMemberCoords-assignedRoomButton.GetRoomCoords()).magnitude<=1) tooltipText+="\nClick: break barricade(1)";
+		if ((selectedMemberCoords-assignedRoomButton.GetRoomCoords()).magnitude<=1) tooltipText+="\nClick: break barricade";
 		TooltipManager.main.CreateTooltip(tooltipText,this.transform);
 	}
 	

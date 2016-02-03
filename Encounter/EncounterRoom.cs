@@ -10,6 +10,8 @@ public class Barricade
 
 public class EncounterRoom
 {
+	int barricadeBuildHealth=25;
+	
 	public Encounter parentEncounter;
 	public List<InventoryItem> floorItems=new List<InventoryItem>();
 	
@@ -257,7 +259,11 @@ public class EncounterRoom
 		else
 		{
 			barricadeInRoom.health-=bashStrength;
-			if (barricadeInRoom.health<=0) {barricadeInRoom=null;}
+			if (barricadeInRoom.health<=0) 
+			{
+				barricadeInRoom=null;
+				EncounterCanvasHandler.main.AddNewLogMessage("Barricade is broken!");
+			}
 		}
 	}
 	
@@ -267,11 +273,11 @@ public class EncounterRoom
 		if (barricadeInRoom==null) 
 		{
 			barricadeInRoom=new Barricade();
-			barricadeInRoom.health=3;
+			barricadeInRoom.health=barricadeBuildHealth;
 		}
 		else
 		{
-			barricadeInRoom.health+=3;
+			barricadeInRoom.health+=barricadeBuildHealth;
 		}
 		barricadeMaterials-=1;
 	}

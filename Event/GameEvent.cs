@@ -181,12 +181,12 @@ public class AmbushEvent:GameEvent
 		{
 			case"Continue": 
 			{
-				int minHealthLoss=10;
-				int maxHealthLoss=25;
+				int minHealthLoss=5;
+				int maxHealthLoss=20;
 				int actualHealthLoss=Random.Range(minHealthLoss,maxHealthLoss+1);
 				if (movedMembers.Count==1) eventResult=movedMembers[0].name+" loses "+actualHealthLoss+" health";
 				else  eventResult="Everyone loses "+actualHealthLoss+" health";
-				foreach (PartyMember member in movedMembers){member.health-=actualHealthLoss;}
+				foreach (PartyMember member in movedMembers){member.TakeDamage(actualHealthLoss,false);}//.health-=actualHealthLoss;}
 				break;
 			}
 		}
@@ -218,6 +218,9 @@ public class MonsterAttack:GameEvent
 	public override string DoChoice (string choiceString, MapRegion eventRegion, List<PartyMember> movedMembers)
 	{
 		string eventResult=null;
+		int fightDamage=25;
+		int runFatigue=-20;
+		int fightFatigue=-5;
 		
 		switch (choiceString)
 		{
@@ -226,20 +229,21 @@ public class MonsterAttack:GameEvent
 				//success
 				if (Random.value>0.5f)
 				{
-					eventResult="Seeing the creature so close, you decide it's too late to run.\nSurging with adrenaline, the party charges the monster with their weapons drawn! Surprised, the terrifying creature wilts under a rain of blows, dead\n\n -1 Stamina for everyone";
+					eventResult="Seeing the creature so close, you decide it's too late to run.\nSurging with adrenaline, the party charges the monster with their weapons drawn! Surprised, the terrifying creature wilts under a rain of blows, dead\n\n"+runFatigue+" fatigue for everyone";
 					foreach (PartyMember member in movedMembers)
 					{
-						member.stamina-=1;
+						member.ChangeFatigue(fightFatigue);//stamina-=1;
 					}
 				}
 				else
 				{
 					PartyMember hurtMember=movedMembers[Random.Range(0,movedMembers.Count)];
-					eventResult=hurtMember.name+" is the first to charge the creature, and bears the brunt of its ferocious attacks. The others run in to help and finish it off, but "+hurtMember.name+" is in a bad shape.\n\n-25% health for "+hurtMember.name;
+					eventResult=hurtMember.name+" is the first to charge the creature, and bears the brunt of its ferocious attacks. The others run in to help and finish it off, but "+hurtMember.name+" is in a bad shape.\n\n-"+fightDamage+" health for "+hurtMember.name;
 					//foreach (PartyMember member in eventRegion.localPartyMembers)
 					//{
-						if (hurtMember.health-25>0) {hurtMember.health-=25;}
-						else {hurtMember.health=1;}
+						int realDamage=fightDamage;
+						if (hurtMember.health<realDamage) realDamage=Mathf.Max(hurtMember.health-1,1);
+						hurtMember.TakeDamage(realDamage,false);
 						//PartyManager.mainPartyManager.foodSupply-=1;
 					//}
 					//PartyManager.mainPartyManager.foodSupply=Mathf.RoundToInt(PartyManager.mainPartyManager.foodSupply*0.5f);
@@ -248,16 +252,12 @@ public class MonsterAttack:GameEvent
 			}
 			case"Try to run":
 			{
-				eventResult="Surprised by the attack, the party turns tail. You run with your hearts in your ears, only stopping once you're about to keel over from exhaustion. You're not sure how long you ran, but the creature is nowhere in sight\n\n 2 hours pass";
+				eventResult="Surprised by the attack, the party turns tail. You run with your hearts in your ears, only stopping once you're about to keel over from exhaustion. You're not sure how long you ran, but the creature is nowhere in sight\n\n"+runFatigue+" fatigue for everyone";
 				
-				/*
-				foreach (PartyMember member in eventRegion.localPartyMembers)
+				foreach (PartyMember member in movedMembers)
 				{
-					member.stamina-=5;
-				}*/
-				//This might cause bugs!!!
-				PartyManager.mainPartyManager.PassTime(1);
-				PartyManager.mainPartyManager.PassTime(1);
+					member.ChangeFatigue(runFatigue);
+				}
 				break;
 			}
 		
@@ -325,6 +325,7 @@ public class LostInAnomaly:GameEvent
 public class CacheInAnomaly:GameEvent
 {	
 	string eventDescription="";
+	int fatiguePenalty=10;
 	
 	public override string GetDescription(MapRegion eventRegion, List<PartyMember> movedMembers) 
 	{
@@ -353,7 +354,7 @@ public class CacheInAnomaly:GameEvent
 				//success
 				if (Random.value<0.5f)
 				{
-					eventResult=volunteer.name+" volunteers to try and move across. The roofs are moist and slippery, and "+volunteer.name+" loses balance several times, but manages to recover and safely reaches the supplies. Loaded with bags,"+volunteer.name+" somehow makes it back across, covered in sweat but unharmed\n\n+2 food, +10 ammo, -1 stamina for "+volunteer.name;
+					eventResult=volunteer.name+" volunteers to try and move across. The roofs are moist and slippery, and "+volunteer.name+" loses balance several times, but manages to recover and safely reaches the supplies. Loaded with bags,"+volunteer.name+" somehow makes it back across, covered in sweat but unharmed\n\n+2 food, +10 ammo\n\n"+fatiguePenalty+" fatigue for "+volunteer.name;
 					eventRegion.StashItem(new FoodSmall());
 					eventRegion.StashItem(new FoodBig());
 					eventRegion.StashItem(new FoodBig());
@@ -361,7 +362,7 @@ public class CacheInAnomaly:GameEvent
 					//PartyManager.mainPartyManager.GainItems(new FoodBig());
 					//PartyManager.mainPartyManager.GainItems(new FoodBig());
 					PartyManager.mainPartyManager.ammo+=10;
-					volunteer.ChangeFatigue(10);
+					volunteer.ChangeFatigue(fatiguePenalty);
 				}
 				else
 				{
@@ -369,7 +370,7 @@ public class CacheInAnomaly:GameEvent
 					eventResult=volunteer.name+" navigates the first few cars with surprising nimbleness and grace, but an inclined hatchback roof knocks them off-balance.\n"+volunteer.name+" manages to grab an upper trunk of another nearby car at the last second, but their left foot dips into the drink all the way to their ankle. A terrible scream follows, but a surge of adrenaline causes "+volunteer.name+" to pull themselves up. With one foot badly boiled, they abandon the supplies, and somehow manage to crawl back to safety.\n\n-"+damage+" health for "+volunteer.name;
 					if (volunteer.health<damage) {damage=volunteer.health-1;}
 					volunteer.TakeDamage(damage,false);
-					volunteer.ChangeFatigue(10);
+					//volunteer.ChangeFatigue(fatiguePenalty);
 				}
 				break;
 			}
@@ -404,6 +405,8 @@ public class MedicalCache:GameEvent
 	public override string DoChoice (string choiceString, MapRegion eventRegion, List<PartyMember> movedMembers)
 	{
 		string eventResult=null;
+		int fatigueChangeSuccess=5;
+		int fatigueChangeFailure=20;
 		
 		switch (choiceString)
 		{
@@ -412,17 +415,23 @@ public class MedicalCache:GameEvent
 				//success
 				if (Random.value<0.5f)
 				{
-					eventResult="After an hour of wandering through deserted streets and alleyways, you find the remains of the emeregency camp in an emptied out parking lot.\nIt looks like they left in a hurry: a few tents stand abandoned amid discarded cellophane bags and other refuse.\nSearching the tents, you discover forgotten medical supplies\n\n1 hour passes. 2 medkits  2 bandages";
+					eventResult="After an hour of wandering through deserted streets and alleyways, you find the remains of the emeregency camp in an emptied out parking lot.\nIt looks like they left in a hurry: a few tents stand abandoned amid discarded cellophane bags and other refuse.\nSearching the tents, you discover forgotten medical supplies\n\n"+fatigueChangeSuccess+" fatigue to everyone\n\n 2 medkits  2 bandages gained";
 					eventRegion.StashItem(new Medkit());
 					eventRegion.StashItem(new Medkit());
 					eventRegion.StashItem(new Bandages());
 					eventRegion.StashItem(new Bandages());
-					PartyManager.mainPartyManager.PassTime(1);
+					foreach (PartyMember member in movedMembers)
+					{
+						member.ChangeFatigue(fatigueChangeSuccess);
+					}
 				}
 				else
 				{
-					eventResult="You search the winding streets and alleyways.\n The layout of this area seems strangely twisted, the street signs hard to find.\nAfter runnning into several dead ends and a few passageways inexplicably blocked by random debris, you find yourself looping back to where you started and give the search up.\n\n 1 hour passes.";
-					PartyManager.mainPartyManager.PassTime(1);
+					eventResult="You search the winding streets and alleyways.\n The layout of this area seems strangely twisted, the street signs hard to find.\nAfter runnning into several dead ends and a few passageways inexplicably blocked by random debris, you find yourself looping back to where you started and give the search up.\n\n"+fatigueChangeFailure+" fatigue to everyone";
+					foreach (PartyMember member in movedMembers)
+					{
+						member.ChangeFatigue(fatigueChangeFailure);
+					}
 				}
 				break;
 			}
@@ -456,8 +465,8 @@ public class SurvivorRescue:GameEvent
 	public override string DoChoice (string choiceString, MapRegion eventRegion, List<PartyMember> movedMembers)
 	{
 		string eventResult=null;
-		int failPartyDamage=-20;
-		int newMemberHealthPenalty=-40;
+		int failPartyDamage=10;
+		int newMemberHealthPenalty=20;
 		int ignoreMoralePenalty=-20;
 		
 		switch (choiceString)
@@ -467,27 +476,29 @@ public class SurvivorRescue:GameEvent
 				//success
 				if (Random.value<0.5f)
 				{
-					eventResult="You charge the creature before it can deliver another blow to the distressed survivor. Taken by surprise, it quickly succumbs to your attacks.\nThe survivor is shaken, but alive.\n\nA new survivor joins your party";
 					PartyMember newGuy=new PartyMember(eventRegion.GetCoords());
 					PartyManager.mainPartyManager.AddNewPartyMember(newGuy);
-					newGuy.health+=newMemberHealthPenalty;
+					eventResult="You charge the creature before it can deliver another blow to the distressed survivor. Taken by surprise, it quickly succumbs to your attacks.\nThe survivor is shaken, but alive.\n\n"+newGuy.name+" Joins your party."+"\n\n"+newGuy.name+" takes "+newMemberHealthPenalty+" damage";
+					newGuy.TakeDamage(newMemberHealthPenalty,false);
+					//newGuy.health+=newMemberHealthPenalty;
 				}
 				else
 				{
-					eventResult="Before you can close the distance, the creature reacts and lunges at you!\nAmid a flurry of vicious attacks, you barely manage to fight it off with the help of the lone survivor.\n\n"+failPartyDamage+" health for everyone. A new survivor joins your party";
-					//Order is
-					foreach (PartyMember member in movedMembers) {member.health+=failPartyDamage;}
-					//important
 					PartyMember newGuy=new PartyMember(eventRegion.GetCoords());
+					eventResult="Before you can close the distance, the creature reacts and lunges at you!\nAmid a flurry of vicious attacks, you barely manage to fight it off with the help of the survivor.\n\n"+newGuy.name+" joins your party\n\nEveryone takes "+failPartyDamage+" damage";
+					//Order is
+					foreach (PartyMember member in movedMembers) {member.TakeDamage(failPartyDamage,false);}//member.health+=failPartyDamage;}
+					//important
 					PartyManager.mainPartyManager.AddNewPartyMember(newGuy);
-					newGuy.health+=newMemberHealthPenalty;
+					newGuy.TakeDamage(failPartyDamage,false);
+					//newGuy.health+=newMemberHealthPenalty;
 				}
 				break;
 			}
 		case"Slip away while the creature is distracted":
 			{
-				eventResult="You quickly pass the fight by and leave the survivor to his fate. Eventually, the sounds of struggle behind you turn to stillness\n\n"+ignoreMoralePenalty+" morale for everyone";
-				foreach (PartyMember member in movedMembers) {member.morale-=ignoreMoralePenalty;}
+				eventResult="You quickly pass the fight by and leave the survivor to his fate. Eventually, the sounds of struggle behind you turn to silence\n\n"+ignoreMoralePenalty+" morale for everyone";
+				foreach (PartyMember member in movedMembers) {member.morale+=ignoreMoralePenalty;}
 				break;
 			}
 		}
@@ -516,6 +527,7 @@ public class SearchForSurvivor:GameEvent
 	{
 		string eventResult=null;
 		int ignoreMoralePenalty=-10;
+		int fatigueChangeFailure=10;
 		
 		switch (choiceString)
 		{
@@ -530,8 +542,11 @@ public class SearchForSurvivor:GameEvent
 				}
 				else
 				{
-					eventResult="You try to home in on the voice, but it seems to change direction and intensity several times, until, finally, it goes quiet.\n\n1 hour passes";
-					PartyManager.mainPartyManager.PassTime(1);
+					eventResult="You try to home in on the voice, but it seems to change direction and intensity several times, until, finally, it goes quiet.\n\n"+fatigueChangeFailure+" fatigue for everyone";
+					foreach (PartyMember member in movedMembers)
+					{
+						member.ChangeFatigue(fatigueChangeFailure);
+					}
 				}
 				break;
 			}
@@ -603,7 +618,7 @@ public class LowMoraleFight:GameEvent
 {	
 	string eventDescription="";
 	int moraleThreshold=20;
-	int healthPenalty=-10;
+	int healthPenalty=10;
 	
 	public override string GetDescription(MapRegion eventRegion, List<PartyMember> movedMembers) 
 	{
@@ -653,8 +668,10 @@ public class LowMoraleFight:GameEvent
 			{
 				//success
 				eventResult=angryMember.name+" and "+normalMember.name+" tear into eachother with desperate, frustrated viciousness!\nEventually the fight gets broken up, but not before they could do some damage.\n\n"+healthPenalty+" health for "+angryMember.name+" and "+normalMember.name;
-				angryMember.health+=healthPenalty;
-				normalMember.health+=healthPenalty;
+				//angryMember.health+=healthPenalty;
+				//normalMember.health+=healthPenalty;
+				angryMember.TakeDamage(healthPenalty,false);
+				normalMember.TakeDamage(healthPenalty,false);
 				break;
 			}
 		}

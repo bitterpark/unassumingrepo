@@ -45,7 +45,7 @@ public class MapScoutingHandler : MonoBehaviour {
 			newSelector.AssignMember(member);
 			newSelector.GetComponent<Button>().onClick.AddListener(()=>ToggleMissionMember(newSelector));
 			newSelector.transform.SetParent(memberSelectorGroup,false);
-			selectCountText.text=selectedForMission.Count+"/"+assignedRegion.regionalEncounter.requiredMembers;//+EncounterCanvasHandler.encounterMaxPlayerCount;
+			selectCountText.text=selectedForMission.Count+"/"+assignedRegion.regionalEncounter.maxAllowedMembers;//+EncounterCanvasHandler.encounterMaxPlayerCount;
 			selectionText.text="";
 		}
 	}
@@ -67,7 +67,8 @@ public class MapScoutingHandler : MonoBehaviour {
 	public void ToggleMissionMember(MissionSelectorHandler handler)
 	{
 		PartyMember member=handler.assignedMember;
-		if (!selectedForMission.Contains(member) && selectedForMission.Count<assignedRegion.regionalEncounter.requiredMembers)//EncounterCanvasHandler.encounterMaxPlayerCount) 
+		if (!selectedForMission.Contains(member) 
+		&& selectedForMission.Count<assignedRegion.regionalEncounter.maxAllowedMembers)//EncounterCanvasHandler.encounterMaxPlayerCount) 
 		{
 			selectedForMission.Add(member);
 			handler.selected=true;
@@ -77,7 +78,7 @@ public class MapScoutingHandler : MonoBehaviour {
 			selectedForMission.Remove(member);	
 			handler.selected=false;
 		}
-		selectCountText.text=selectedForMission.Count+"/"+assignedRegion.regionalEncounter.requiredMembers;
+		selectCountText.text=selectedForMission.Count+"/"+assignedRegion.regionalEncounter.maxAllowedMembers;
 		if (selectedForMission.Count==0) {selectionText.text="";}
 		else
 		{
@@ -92,12 +93,12 @@ public class MapScoutingHandler : MonoBehaviour {
 		if (!assignedRegion.scouted) 
 		{
 			assignedRegion.scouted=true;
-			PartyManager.mainPartyManager.PassTime(1);
 			UpdateAfterScouting();
 		}
 		else 
 		{
-			if (selectedForMission.Count==assignedRegion.regionalEncounter.requiredMembers)//>0)
+			if (selectedForMission.Count>=assignedRegion.regionalEncounter.minRequiredMembers 
+			&& selectedForMission.Count<=assignedRegion.regionalEncounter.maxAllowedMembers)//>0)
 			{
 				//EncounterCanvasHandler.mainEncounterCanvasHandler.StartNewEncounter(assignedRegion,selectedForMission);
 				//EndDialog();

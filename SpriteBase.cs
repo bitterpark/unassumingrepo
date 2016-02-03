@@ -26,6 +26,7 @@ public class SpriteBase : MonoBehaviour {
 	public Sprite radioSprite;
 	public Sprite settableTrapSprite;
 	public Sprite bedSprite;
+	public Sprite backpackSprite;
 	
 	//Assigned task sprites
 	public Sprite buildCampSprite;
@@ -38,6 +39,7 @@ public class SpriteBase : MonoBehaviour {
 	public Sprite bleedSprite;
 	public Sprite phasedOutSprite;
 	public Sprite brokenArmsSprite;
+	public Sprite brokenLegsSprite;
 	
 	public Color[] possibleMemberColors;
 	

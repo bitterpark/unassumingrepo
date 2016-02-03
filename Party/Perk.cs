@@ -54,23 +54,30 @@ public abstract class Perk
 //SPECIALTY PERKS
 public class Scout:Perk
 {	
+	float dodgeChanceDelta=0.25f;
 	public Scout()
 	{
 		name="Escape artist";
 	}
-	public override void ActivatePerk(PartyMember member){member.isScout=true;}//+=healthUpgrade;}
+	public override void ActivatePerk(PartyMember member)
+	{
+		member.isScout=true;
+		//member.dodgeChance+=0.25f;
+		
+	}//+=healthUpgrade;}
 	public override string GetMouseoverDescription (){return "Quick on his feet\n\nNever gets ambushed or triggers attacks of opportunity";}
 }
 public class Fighter:Perk
 {	
-	int meleeDamageChange=50;
+	//int meleeDamageChange=50;
+	float hitChanceDelta=0.2f;
 	public Fighter()
 	{
 		name="Powerhouse";
 		oppositePerk=typeof(WeakArm);
 	}
-	public override void ActivatePerk(PartyMember member) {member.meleeDamageMod+=meleeDamageChange;}
-	public override string GetMouseoverDescription () {return "Hits like a truck\n\n"+meleeDamageChange+" to melee damage";}
+	public override void ActivatePerk(PartyMember member) {member.meleeHitchanceMod+=hitChanceDelta;}//member.meleeDamageMod+=meleeDamageChange;}
+	public override string GetMouseoverDescription () {return "Hits like a truck\n\n"+hitChanceDelta+" to melee hit chance";}//+meleeDamageChange+" to melee damage";}
 }
 public class Carrier:Perk
 {
@@ -87,7 +94,7 @@ public class Carrier:Perk
 //GENERIC PERKS
 public class Tough:Perk
 {
-	float healthMod=0.25f;
+	float healthMod=1.3f;
 	//string name="Tough";
 	
 	//public override string GetName (){return name;}
@@ -96,13 +103,19 @@ public class Tough:Perk
 		name="Tough";
 		oppositePerk=typeof(Scrawny);
 	}
-	public override void ActivatePerk(PartyMember member){member.maxHealth=Mathf.Max(1,Mathf.RoundToInt(member.maxHealth*(1+healthMod)));}//+=healthUpgrade;}
+	public override void ActivatePerk(PartyMember member)
+	{
+		//member.maxHealth=Mathf.Max(1,Mathf.RoundToInt(member.maxHealth*(1+healthMod)));
+		member.handsMaxHealth=Mathf.RoundToInt(member.handsMaxHealth*healthMod);
+		member.legsMaxHealth=Mathf.RoundToInt(member.legsMaxHealth*healthMod);
+		member.vitalsMaxHealth=Mathf.RoundToInt(member.vitalsMaxHealth*healthMod);
+	}
 	public override string GetMouseoverDescription (){return "Takes more punishment\n\nIncreased max health";}
 }
 
 public class Scrawny:Perk
 {
-	float healthMod=-0.25f;
+	float healthMod=0.7f;
 	// name="Scrawny";
 	public Scrawny ()
 	{
@@ -110,7 +123,13 @@ public class Scrawny:Perk
 		oppositePerk=typeof(Tough);
 	}
 	//public override string GetName (){return name;}
-	public override void ActivatePerk(PartyMember member){member.maxHealth=Mathf.Max(1,Mathf.RoundToInt(member.maxHealth*(1+healthMod)));}
+	public override void ActivatePerk(PartyMember member)
+	{
+		member.handsMaxHealth=Mathf.RoundToInt(member.handsMaxHealth*healthMod);
+		member.legsMaxHealth=Mathf.RoundToInt(member.legsMaxHealth*healthMod);
+		member.vitalsMaxHealth=Mathf.RoundToInt(member.vitalsMaxHealth*healthMod);
+		//member.maxHealth=Mathf.Max(1,Mathf.RoundToInt(member.maxHealth*(1+healthMod)));
+	}
 	public override string GetMouseoverDescription (){return "Easy to kill\n\nReduced max health";}
 }
 
@@ -305,37 +324,40 @@ public class Powerhouse: Perk
 }*/
 public class WeakArm: Perk
 {
-	int meleeDamageChange=-10;
+	//int meleeDamageChange=-10;
+	float hitChanceDelta=-0.15f;
 	public WeakArm ()
 	{
 		name="Weak arm";
 		oppositePerk=typeof(Fighter);//Powerhouse);
 	}
-	public override void ActivatePerk(PartyMember member) {member.meleeDamageMod+=meleeDamageChange;}
-	public override string GetMouseoverDescription () {return "Hits like a pansy\n\n"+meleeDamageChange+" to melee damage";}
+	public override void ActivatePerk(PartyMember member) {member.meleeHitchanceMod+=hitChanceDelta;}//member.meleeDamageMod+=meleeDamageChange;}
+	public override string GetMouseoverDescription () {return "Hits like a pansy\n\n"+hitChanceDelta+" to melee hit chance";}//return "Hits like a pansy\n\n"+meleeDamageChange+" to melee damage";}
 }
 
 public class Deadeye: Perk
 {
-	int rangedDamageChange=20;
+	//int rangedDamageChange=20;
+	float rangedHitchanceChange=0.3f;
 	public Deadeye ()
 	{
 		name="Deadeye";
 		oppositePerk=typeof(PoorShot);
 	}
-	public override void ActivatePerk(PartyMember member) {member.rangedDamageMod+=rangedDamageChange;}
-	public override string GetMouseoverDescription () {return "Always hits the bullseye\n\n"+rangedDamageChange+" to ranged damage";}
+	public override void ActivatePerk(PartyMember member) {member.rangedHitchanceMod+=rangedHitchanceChange;}
+	public override string GetMouseoverDescription () {return "Always hits the bullseye\n\n"+rangedHitchanceChange+" to ranged hit chance";}//+rangedDamageChange+" to ranged damage";}
 }
 public class PoorShot: Perk
 {
-	int rangedDamageChange=-20;
+	//int rangedDamageChange=-20;
+	float rangedhitchanceChange=-0.2f;
 	public PoorShot ()
 	{
 		name="Poor shot";
 		oppositePerk=typeof(Deadeye);
 	}
-	public override void ActivatePerk(PartyMember member) {member.rangedDamageMod+=rangedDamageChange;}
-	public override string GetMouseoverDescription () {return "Can't hit the broad side of a barn\n\n"+rangedDamageChange+" to ranged damage";}
+	public override void ActivatePerk(PartyMember member) {member.rangedHitchanceMod+=rangedhitchanceChange;}
+	public override string GetMouseoverDescription () {return "Can't hit the broad side of a barn\n\n"+rangedhitchanceChange+" to ranged hit chance";}//+rangedDamageChange+" to ranged damage";}
 }
 /*
 public class StrongBack: Perk

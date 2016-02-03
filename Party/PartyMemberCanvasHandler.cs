@@ -8,6 +8,8 @@ public class PartyMemberCanvasHandler : MonoBehaviour {
 	PartyMember assignedMember;
 	public Text nameText;
 	public Text healthText;
+	public Text armsHealthText;
+	public Text legsHealthText;
 	public Text staminaText;
 	public Text hungerText;
 	public Text moraleText;
@@ -117,7 +119,7 @@ public class PartyMemberCanvasHandler : MonoBehaviour {
 				}
 				else
 				{
-					if (assignedMember.GetFatigue()>0)
+					if (assignedMember.CanRest())
 					{
 						assignmentButton.gameObject.SetActive(true);
 						string buttonText="Rest";
@@ -149,8 +151,16 @@ public class PartyMemberCanvasHandler : MonoBehaviour {
 	void Update()
 	{
 		nameText.text=""+assignedMember.name;
-		healthText.text="Health:"+assignedMember.health+"|"+assignedMember.maxHealth;
-		staminaText.text="Stamina:"+assignedMember.stamina+"|"+assignedMember.currentMaxStamina;
+		healthText.text=assignedMember.memberBodyParts.currentParts[PartyMember.BodyPartTypes.Vitals].health+"|"
+		+assignedMember.vitalsMaxHealth;
+		armsHealthText.text=assignedMember.memberBodyParts.currentParts[PartyMember.BodyPartTypes.Hands].health+"|"
+		+assignedMember.handsMaxHealth;
+		legsHealthText.text=assignedMember.memberBodyParts.currentParts[PartyMember.BodyPartTypes.Legs].health+"|"
+		+assignedMember.legsMaxHealth;
+		/*healthText.text="Health:"+assignedMember.memberBodyParts.currentParts[PartyMember.BodyPartTypes.Hands].health
+		+"|"+assignedMember.memberBodyParts.currentParts[PartyMember.BodyPartTypes.Legs].health
+		+"|"+assignedMember.memberBodyParts.currentParts[PartyMember.BodyPartTypes.Vitals].health;*///+assignedMember.health+"|"+assignedMember.maxHealth;
+		//staminaText.text="Stamina:"+assignedMember.stamina+"|"+assignedMember.currentMaxStamina;
 		hungerText.text="Hunger:"+assignedMember.GetHunger();
 		moraleText.text="Morale:"+assignedMember.morale;
 		fatigueText.text="Fatigue:"+assignedMember.GetFatigue();//

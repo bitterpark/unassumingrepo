@@ -91,7 +91,6 @@ public class PartyManager : MonoBehaviour
 	public PartyMemberCanvasHandler partyMemberCanvasPrefab;
 	public Dictionary<PartyMember,PartyMemberCanvasHandler> partyMemberCanvases; 
 	
-	const int moveFatigueCost=10;
 	//const int encounterFatigueCost=10;
 	
 	public int ammo
@@ -172,11 +171,10 @@ public class PartyManager : MonoBehaviour
 		
 		AddNewPartyMember(new PartyMember(startingPartyWorldCoords));
 		AddNewPartyMember(new PartyMember(startingPartyWorldCoords));
-		AddNewPartyMember(new PartyMember(startingPartyWorldCoords));
-		//AddNewPartyMember(new PartyMember());
-		//AddNewPartyMember(new PartyMember());
-		//AddNewPartyMember(new PartyMember());
-		//AddNewPartyMember(new PartyMember());
+		
+		//AddPartyMemberStatusEffect(partyMembers[0],new Bleed(partyMembers[0]));
+		//AddPartyMemberStatusEffect(partyMembers[0],new Bleed(partyMembers[0]));
+		//AddNewPartyMember(new PartyMember(startingPartyWorldCoords));
 		
 		MapRegion startingRegion=MapManager.main.GetRegion(startingPartyWorldCoords);
 		//MapManager.main.TeleportToRegion(startingRegion);
@@ -184,14 +182,25 @@ public class PartyManager : MonoBehaviour
 		startingRegion.StashItem(new FoodBig());
 		startingRegion.StashItem(new FoodSmall());
 		startingRegion.StashItem(new FoodSmall());
+		//startingRegion.StashItem(new SettableTrap());
+		//startingRegion.StashItem(new SettableTrap());
+		//startingRegion.StashItem(new Bandages());
+		//startingRegion.StashItem(new NineM());
+		//startingRegion.StashItem(new Shotgun());
+		//startingRegion.StashItem(new Medkit());
+		//startingRegion.StashItem(new Medkit());
+		//startingRegion.StashItem(new Backpack());
+		//startingRegion.StashItem(new Backpack());
+		//startingRegion.StashItem(new ArmorVest());
+		//startingRegion.StashItem(new ArmorVest());
 		//startingRegion.StashItem(new Bed());
 		//startingRegion.StashItem(new Bed());
 		//startingRegion.StashItem(new Pot());//
 		//Do this to setup proper background color
-		PassTime(1);
+		//PassTime(1);
 	}
 	
-	public void PassTime(int hoursPassed)
+	void PassTime(int hoursPassed)
 	{
 		timePassed+=hoursPassed;
 		dayTime=(int)Mathf.Repeat(dayTime+hoursPassed,24);
@@ -237,6 +246,10 @@ public class PartyManager : MonoBehaviour
 	{
 		if (Input.GetKeyDown(KeyCode.M)) 
 		{
+			//partyMembers[0].morale=0;
+			//partyMembers[0].TakeDamage(25,false,PartyMember.BodyPartTypes.Hands);
+			//partyMembers[0].TakeDamage(15,false,PartyMember.BodyPartTypes.Legs);
+			//AddPartyMemberStatusEffect(partyMembers[0],new Bleed(partyMembers[0]));
 		}
 		if (Input.GetKeyDown(KeyCode.Space))
 		{
@@ -355,7 +368,7 @@ public class PartyManager : MonoBehaviour
 				//Apply fatigue to all moved members
 				foreach (PartyMember member in movedList) 
 				{
-					member.ChangeFatigue(moveFatigueCost);
+					member.ChangeFatigue(PartyMember.mapMoveFatigueCost);
 					MapManager.main.memberTokens[member].moved=true;
 				}
 			} 
@@ -363,49 +376,6 @@ public class PartyManager : MonoBehaviour
 		}
 		return moveSuccesful;
 	}
-	
-	//for regular map movement
-	//public bool MovePartyToMapCoords(int x, int y) {return MovePartyToMapCoords(x,y,false);}
-	
-	//for event-based map jumps
-	/*
-	public void MovePartyToMapCoords(int x, int y)
-	{
-			int moveLength=Mathf.Abs(x-mapCoordX)+Mathf.Abs(y-mapCoordY);
-			mapCoordX=x;
-			mapCoordY=y;
-			if (moveLength>0) 
-			{
-				foreach(PartyMember member in partyMembers) {member.ChangeFatigue(moveFatigueCost);}
-				PassTime(1);
-			}
-	}*/
-	/*
-	public void EnterPartyIntoEncounter(List<PartyMember> encounterMembers)
-	{
-		PassTime(1);
-		foreach (PartyMember member in encounterMembers) member.ChangeFatigue(encounterFatigueCost);
-	}*/
-	/*
-	public void MemberLeavesEncounter(PartyMember leavingMember)
-	{
-		//PassTime(1);
-		//foreach (PartyMember member in encounterMembers) member.ChangeFatigue(encounterFatigueCost);
-		leavingMember.ChangeFatigue(encounterFatigueCost);
-	}*/
-	/*
-	public void GainItems(InventoryItem newItem)
-	{
-		partyInventory.Add(newItem);
-		InventoryChanged();
-	}	
-	
-	public void RemoveItems(InventoryItem lostItem)
-	{
-		partyInventory.Remove(lostItem);
-		InventoryChanged();
-	}*/
-	
 	
 	public void AddPartyMemberStatusEffect(PartyMember member, StatusEffect effect)//(int memberIndex, StatusEffect effect)
 	{

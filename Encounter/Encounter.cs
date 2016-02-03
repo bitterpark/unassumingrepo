@@ -14,7 +14,8 @@ public class Encounter
 	const int normalChestCountMin=2;
 	const int normalChestCountMax=3;
 	const float baselineEnemyPerRoomRatio=0.1f;
-	readonly public int requiredMembers=2;
+	readonly public int minRequiredMembers=1;
+	readonly public int maxAllowedMembers=20;
 	
 	public string lootDescription="";
 	public string enemyDescription="";
@@ -219,7 +220,7 @@ public class Encounter
 		if (enemiesRoll<=3) {encounterEnemyType=EncounterEnemy.EnemyTypes.Flesh;}
 		if (enemiesRoll<=2) {encounterEnemyType=EncounterEnemy.EnemyTypes.Quick;}
 		if (enemiesRoll<=1) {encounterEnemyType=EncounterEnemy.EnemyTypes.Slime;}
-		
+		//encounterEnemyType=EncounterEnemy.EnemyTypes.Spindler;
 		enemyDescription=EncounterEnemy.GetMapDescription(encounterEnemyType);
 		//GenerateEncounter();
 		GenerateEncounterFromPrefabMap(PrefabAssembler.assembler.SetupEncounterMap(this,encounterAreaType),1f);//0.15f);//0.3f);

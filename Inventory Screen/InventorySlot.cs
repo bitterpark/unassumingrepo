@@ -73,7 +73,6 @@ public class InventorySlot : MonoBehaviour, IDropHandler
 			if (oldItem!=null) {oldSlot.ItemSwapped(oldItem);}
 			//Update armor/damage/other stats on inventory screen
 			InventoryScreenHandler.mainISHandler.RefreshInventoryItems();
-			
 		}
 	}
 	

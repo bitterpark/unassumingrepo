@@ -8,8 +8,9 @@ public class EnemyTokenHandler : MonoBehaviour, IAttackAnimation
 	//because the coroutine is called from EncounterCanvasHandler, StopAllCoroutines called from this instance doesn't work. So, this is necessary
 	bool destroyed=false;
 	
-	float attackAnimationTime=0.6f;
-	float moveWaitTime=1f;
+	float attackAnimationTime=0.8f;
+	float moveWaitTime=0.3f;
+	readonly int lastseenMemberPriority=3;
 	
 	public Text healthText;
 	public EncounterEnemy assignedEnemy;
@@ -19,10 +20,12 @@ public class EnemyTokenHandler : MonoBehaviour, IAttackAnimation
 	{
 		public Vector2 pointCoords;
 		public Dictionary<Vector2, int> pointMoveMask;
-		public PointOfInterest (Vector2 coords,Dictionary<Vector2,int> mask)
+		public int POIPriority=0;
+		public PointOfInterest (Vector2 coords,Dictionary<Vector2,int> mask, int priority)
 		{
 			pointCoords=coords;
 			pointMoveMask=mask;
+			POIPriority=priority;
 		}
 	}
 	PointOfInterest currentPOI=null;
@@ -63,10 +66,12 @@ public class EnemyTokenHandler : MonoBehaviour, IAttackAnimation
 		yield break;
 	}
 	
-	public void AddNewPOI(Vector2 pointCoords, Dictionary<Vector2,int> moveMask)
+	public void AddNewPOI(Vector2 pointCoords, Dictionary<Vector2,int> moveMask, int priority)
 	{
 		//Dictionary<Vector2,int> newMask=new Dictionary<Vector2, int>();
-		currentPOI=new PointOfInterest(pointCoords,moveMask);//EncounterCanvasHandler.main.IterativeGrassfireMapper(pointCoords));
+		if (currentPOI==null) currentPOI=new PointOfInterest(pointCoords,moveMask,priority);
+		else 
+		{if (currentPOI.POIPriority<=priority) currentPOI=new PointOfInterest(pointCoords,moveMask,priority);}
 	}
 	
 	public void UpdateTokenVision()
@@ -82,7 +87,7 @@ public class EnemyTokenHandler : MonoBehaviour, IAttackAnimation
 				if (EncounterCanvasHandler.main.encounterMembers.Contains(lastSeenMembers[0]))
 				{
 					Vector2 newPOICoords=EncounterCanvasHandler.main.memberCoords[lastSeenMembers[0]];
-					AddNewPOI(newPOICoords,null);//new Dictionary<Vector2, int>(EncounterCanvasHandler.main.memberMoveMasks[lastSeenMembers[0]]));//IterativeGrassfireMapper(newPOICoords));
+					AddNewPOI(newPOICoords,null,lastseenMemberPriority);//new Dictionary<Vector2, int>(EncounterCanvasHandler.main.memberMoveMasks[lastSeenMembers[0]]));//IterativeGrassfireMapper(newPOICoords));
 				}
 			}
 			//If some members are seen currently, forget the POI and start pursuing them instead
@@ -98,8 +103,8 @@ public class EnemyTokenHandler : MonoBehaviour, IAttackAnimation
 		if (!destroyed && EncounterCanvasHandler.main.encounterOngoing) 
 		{
 			EnemyAttack attackInfo=assignedEnemy.AttackAction(new List<PartyMember>(membersWithinReach));
-			EncounterCanvasHandler.main.ShowDamageToPartyMember
-			(attackInfo.attackedMember,attackInfo.attackingEnemy,attackInfo.damageDealt,attackInfo.blocked);
+			EncounterCanvasHandler.main.ShowDamageToPartyMember(attackInfo);
+			//(attackInfo.attackedMember,attackInfo.attackingEnemy,attackInfo.damageDealt,attackInfo.blocked);
 			yield return StartCoroutine(AttackAnimation());
 		}
 		yield break;
@@ -118,8 +123,8 @@ public class EnemyTokenHandler : MonoBehaviour, IAttackAnimation
 			bool roundIsAttack=assignedEnemy.DoMyRound(masks,memberCoords,currentPOI,out attackInfo, out movesInfo);
 			if (roundIsAttack)
 			{
-				EncounterCanvasHandler.main.ShowDamageToPartyMember
-				(attackInfo.attackedMember,attackInfo.attackingEnemy,attackInfo.damageDealt,attackInfo.blocked);
+				EncounterCanvasHandler.main.ShowDamageToPartyMember(attackInfo);
+				//(attackInfo.attackedMember,attackInfo.attackingEnemy,attackInfo.damageDealt,attackInfo.blocked);
 				yield return StartCoroutine(AttackAnimation());
 			}
 			else

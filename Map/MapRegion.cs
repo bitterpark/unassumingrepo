@@ -293,10 +293,10 @@ public class MapRegion : MonoBehaviour, IPointerEnterHandler, IPointerExitHandle
 							areaDescription+="-"+InventoryItem.GetLootMetatypeDescription(metatype)+"\n";
 						}
 						areaDescription+="Enemies: "+regionalEncounter.enemyDescription+"\n";
-						areaDescription+="Ambush threat: "+threatLevel+"\n";
-						areaDescription+="Required team size: "+regionalEncounter.requiredMembers;
+						areaDescription+="Required team size: "+regionalEncounter.minRequiredMembers+"-"+regionalEncounter.maxAllowedMembers;
 						//if (isHive) {areaDescription+="\nHive";}
 					}
+					areaDescription+="\nAmbush threat: "+threatLevel;
 				}
 				else {textExists=false;}
 			}
