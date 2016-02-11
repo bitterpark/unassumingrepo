@@ -230,7 +230,7 @@ public class PartyMember
 	public string name;
 	public Color color;
 	
-	public Vector2 worldCoords;
+	public MapRegion currentRegion;
 	
 	static List<string> occupiedNames=new List<string>();
 	static string GenerateName()
@@ -397,7 +397,7 @@ public class PartyMember
 	//public int fatigueIncreasePerAction;
 	public int maxStaminaReductionFromFatigue=6;
 	const int fatigueIncreasePerEncounter=15;
-	public const int mapMoveFatigueCost=5;
+	public const int mapMoveFatigueCost=10;
 	
 	//MORALE
 	public int morale
@@ -473,21 +473,22 @@ public class PartyMember
 	public List<Perk> perks=new List<Perk>();
 	public Dictionary<PartyMember,Relationship> relationships=new Dictionary<PartyMember, Relationship>();
 	
-	public PartyMember (Vector2 startingWorldCoords)
+	public PartyMember (MapRegion startingRegion)//Vector2 startingWorldCoords)
 	{
-		GeneratePartyMember(GenerateName(), startingWorldCoords);
+		GeneratePartyMember(GenerateName(), startingRegion);
 	}
 	
-	public PartyMember(string memberName,Vector2 startingWorldCoords)//, params Perk[] assignedPerks)
+	public PartyMember(string memberName,MapRegion startingRegion)//, params Perk[] assignedPerks)
 	{
-		GeneratePartyMember(memberName, startingWorldCoords);
+		GeneratePartyMember(memberName, startingRegion);
 	}
 	
-	void GeneratePartyMember(string memberName, Vector2 startingCoords)
+	void GeneratePartyMember(string memberName, MapRegion startingRegion)
 	{
 		//Pick color out of ones left
-		worldCoords=startingCoords;
-		MapManager.main.GetRegion(startingCoords).localPartyMembers.Add(this);
+		//worldCoords=startingCoords;
+		currentRegion=startingRegion;
+		startingRegion.localPartyMembers.Add(this);
 		color=Color.white;
 		foreach (Color c in GetColors())
 		{
@@ -613,6 +614,30 @@ public class PartyMember
 	void DisposePartyMember()
 	{
 		//GameManager.DebugPrint("member disposed!");
+		//Drop carried items
+		//Pool together all items
+		List<InventoryItem> allItems=new List<InventoryItem>();
+		foreach (InventoryItem item in carriedItems) {allItems.Add(item);}
+		foreach (InventoryItem item in equippedItems) {allItems.Add(item);}
+		//May want to clear the lists after this
+		if (equippedRangedWeapon!=null) allItems.Add(equippedRangedWeapon);
+		if (equippedMeleeWeapon!=null) allItems.Add(equippedMeleeWeapon); 
+		//Drop in encounter
+		if (EncounterCanvasHandler.main.encounterOngoing)
+		{
+			if (EncounterCanvasHandler.main.encounterMembers.Contains(this))
+			{
+				RoomButtonHandler currentRoom=EncounterCanvasHandler.main.roomButtons[EncounterCanvasHandler.main.memberCoords[this]];
+				foreach (InventoryItem item in allItems) {currentRoom.DropItemOnFloor(item);}
+			}
+			else foreach (InventoryItem item in allItems) {currentRegion.StashItem(item);}
+		}
+		else
+		{
+			//Drop in map
+			foreach (InventoryItem item in allItems) {currentRegion.StashItem(item);}
+		}
+		
 		occupiedNames.Remove(name);
 		PartyManager.TimePassed-=TimePassEffect;
 		PartyManager.mainPartyManager.RemovePartyMember(this);
@@ -739,8 +764,8 @@ public class PartyMember
 				}
 			}
 			,()=>{RestEffect(restInBed);}
-			,()=>{MapManager.main.GetRegion(worldCoords).campInRegion.freeBeds-=1;}
-			,()=>{MapManager.main.GetRegion(worldCoords).campInRegion.freeBeds+=1;}
+			,()=>{currentRegion.campInRegion.freeBeds-=1;}
+			,()=>{currentRegion.campInRegion.freeBeds+=1;}
 			);
 		}
 		else
@@ -1032,7 +1057,7 @@ public class PartyMember
 					encounterHdlr.roomButtons[encounterHdlr.memberCoords[this]].DropItemOnFloor(item);	
 				} else {throw new System.Exception("Dropping items as a non-member of encounter!");}
 			}
-			else MapManager.main.GetRegion(worldCoords).StashItem(item);
+			else currentRegion.StashItem(item);
 			//{PartyManager.mainPartyManager.GainItems(item);}
 			
 		} else {throw new System.Exception("Dropped item does not exist in member's carriedItems!");}

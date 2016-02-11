@@ -5,6 +5,8 @@ using UnityEngine.EventSystems;
 
 public class MemberMapToken : MonoBehaviour, IPointerClickHandler, IPointerEnterHandler 
 {
+	public int mySortOrder;
+	
 	public Image actionStatusToken;
 	public Text nameText;
 	
@@ -33,7 +35,9 @@ public class MemberMapToken : MonoBehaviour, IPointerClickHandler, IPointerEnter
 		assignedMember=assigned;
 		nameText.text=assigned.name;
 		GetComponent<Image>().color=assigned.color;
-		MoveToken(MapManager.main.GetRegion(assignedMember.worldCoords).transform);
+		MoveToken(assignedMember.currentRegion.transform);
+		GetComponent<Canvas>().overrideSorting=true;
+		GetComponent<Canvas>().sortingOrder=mySortOrder;
 	}
 	
 	public void Select()

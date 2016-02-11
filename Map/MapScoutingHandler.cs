@@ -87,7 +87,7 @@ public class MapScoutingHandler : MonoBehaviour {
 			selectionText.text=selectionText.text.Remove(selectionText.text.LastIndexOf(","));
 		}
 	}
-	
+	//Enter button goes here (and scout button)
 	public void ConfirmPressed()
 	{
 		if (!assignedRegion.scouted) 

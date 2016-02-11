@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine.UI;
 using System.Linq;
+using Vectrosity;
 
 public class EncounterCanvasHandler : MonoBehaviour 
 {
@@ -100,9 +101,11 @@ public class EncounterCanvasHandler : MonoBehaviour
 	void FocusViewOnRoom(RectTransform roomTransform)
 	{
 		Vector2 newPosition=roomTransform.localPosition;
-		newPosition.x/=encounterMapGroup.GetComponent<RectTransform>().rect.width;
-		newPosition.y/=encounterMapGroup.GetComponent<RectTransform>().rect.height;//
-		encounterMapGroup.parent.GetComponent<ScrollRect>().normalizedPosition=newPosition;
+		Vector2 newFocus=Vector2.zero;
+		newFocus.x=newPosition.x/encounterMapGroup.GetComponent<RectTransform>().rect.width;
+		newFocus.y=newPosition.y/encounterMapGroup.GetComponent<RectTransform>().rect.height;/*(encounterMapGroup.GetComponent<RectTransform>().rect.height-Mathf.Abs(newPosition.y))
+		/encounterMapGroup.GetComponent<RectTransform>().rect.height;//*/
+		encounterMapGroup.parent.GetComponent<ScrollRect>().normalizedPosition=newFocus;
 	}
 	
 	IEnumerator EncounterStartViewFocus(RectTransform roomTransform)
@@ -141,6 +144,7 @@ public class EncounterCanvasHandler : MonoBehaviour
 			currentEncounter.RandomizeEnemyPositions();
 			DisableRender();
 			encounterOngoing=false;
+			PartyStatusCanvasHandler.main.RefreshAssignmentButtons();
 		}
 	}
 	
@@ -1110,7 +1114,7 @@ public class EncounterCanvasHandler : MonoBehaviour
 			if (handler!=selectedHandler) {handler.Deselect();}
 		}
 		selectedMember=selectedHandler.myMember;
-		//FocusViewOnRoom(roomButtons[memberCoords[selectedMember]].GetComponent<RectTransform>());
+		FocusViewOnRoom(roomButtons[memberCoords[selectedMember]].GetComponent<RectTransform>());
 	}
 	/*
 	//against enemies
@@ -1184,7 +1188,7 @@ public class EncounterCanvasHandler : MonoBehaviour
 			
 		}
 	}
-	
+
 	IEnumerator VisualizeAttack(int dmg, IAttackAnimation attacker, MonoBehaviour defender)
 	{
 		return VisualizeAttack(true,dmg,false,attacker,defender);
@@ -1199,6 +1203,7 @@ public class EncounterCanvasHandler : MonoBehaviour
 		if (hitSuccessful) newHandler.AssignNumber(dmg);
 		else newHandler.AssignText("Miss");
 		//If attacking member
+		IGotHitAnimation targetAnimation=null;
 		if (defender.GetType()==typeof(MemberTokenHandler))
 		{
 			MemberTokenHandler defenderToken=defender as MemberTokenHandler;
@@ -1208,6 +1213,7 @@ public class EncounterCanvasHandler : MonoBehaviour
 				else  newHandler.GetComponent<Text>().color=Color.red;
 				newHandler.transform.SetParent(defenderToken.transform,false);
 				newHandler.transform.position=defenderToken.transform.position;
+				if (hitSuccessful) targetAnimation=defenderToken;
 			}
 		}
 		if (defender.GetType()==typeof(EnemyTokenHandler))
@@ -1218,10 +1224,11 @@ public class EncounterCanvasHandler : MonoBehaviour
 				newHandler.GetComponent<Text>().color=Color.magenta;
 				newHandler.transform.SetParent(defenderToken.transform,false);
 				newHandler.transform.position=defenderToken.transform.position;
+				if (hitSuccessful) targetAnimation=defenderToken;
 			}
 		}
 		GetComponent<CanvasGroup>().interactable=false;
-		yield return StartCoroutine(attacker.AttackAnimation());
+		yield return StartCoroutine(attacker.AttackAnimation(targetAnimation));
 		GetComponent<CanvasGroup>().interactable=true;
 		//If attacking enemy
 		

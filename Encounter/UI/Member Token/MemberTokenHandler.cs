@@ -4,12 +4,20 @@ using UnityEngine.UI;
 
 public interface IAttackAnimation
 {
-	IEnumerator AttackAnimation();
+	IEnumerator AttackAnimation(IGotHitAnimation targetAnimation);
 }
 
-public class MemberTokenHandler : MonoBehaviour, IAttackAnimation 
+public interface IGotHitAnimation
+{
+	IEnumerator GotHitAnimation();
+}
+
+public class MemberTokenHandler : MonoBehaviour, IAttackAnimation, IGotHitAnimation 
 {
 	//const int defenseModifier=3;
+	
+	static float attackAnimationTime=0.6f;
+	static float gotHitAnimationTime=0.6f;
 	
 	public PartyMember myMember;
 	public GameObject mySelectedArrow;
@@ -289,7 +297,7 @@ public class MemberTokenHandler : MonoBehaviour, IAttackAnimation
 
 	#region AttackAnimation implementation
 
-	public IEnumerator AttackAnimation()
+	public IEnumerator AttackAnimation(IGotHitAnimation targetAnimation)
 	{
 		/*
 		foreach (Text child in GetComponentsInChildren<Text>())
@@ -298,7 +306,23 @@ public class MemberTokenHandler : MonoBehaviour, IAttackAnimation
 		}*/
 		//print ("starting attack animation!");
 		if (myImage!=null) myImage.transform.localScale=new Vector3(1.6f,1.6f,1f);
-		yield return new WaitForSeconds(0.6f);
+		else yield break;
+		if (targetAnimation!=null) yield return StartCoroutine(targetAnimation.GotHitAnimation());
+		else yield return new WaitForSeconds(attackAnimationTime);
+		//print ("yielding attack animation!");
+		if (myImage!=null) myImage.transform.localScale=new Vector3(1f,1f,1f);
+		yield break;
+	}
+
+	#endregion
+
+	#region IGotHitAnimation implementation
+
+	public IEnumerator GotHitAnimation ()
+	{
+		if (myImage!=null) myImage.transform.localScale=new Vector3(0.8f,0.8f,1f);
+		else yield break;
+		yield return new WaitForSeconds(gotHitAnimationTime);
 		//print ("yielding attack animation!");
 		if (myImage!=null) myImage.transform.localScale=new Vector3(1f,1f,1f);
 		yield break;

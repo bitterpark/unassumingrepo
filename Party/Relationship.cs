@@ -8,7 +8,7 @@ public class Relationship
 	
 	public enum RelationTypes {Enemy,Friend};
 	
-	int moraleModifierStrength=20;
+	int moraleModifierStrength=10;
 	
 	public int OnMissionTogether()
 	{

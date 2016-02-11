@@ -93,7 +93,7 @@ public class PartyMemberCanvasHandler : MonoBehaviour {
 		{
 			if (!MapManager.main.memberTokens[assignedMember].moved)
 			{
-				MapRegion checkedRegion=MapManager.main.GetRegion(assignedMember.worldCoords);
+				MapRegion checkedRegion=assignedMember.currentRegion;//MapManager.main.GetRegion(assignedMember.worldCoords);
 				if (!checkedRegion.hasCamp)
 				{
 					assignmentButton.gameObject.SetActive(true);

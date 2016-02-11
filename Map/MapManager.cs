@@ -10,158 +10,227 @@ public class MapManager : MonoBehaviour
 	public Transform regionsGridGroup;
 	
 	public MapRegion mapRegionPrefab;
-	public GameObject playerTokenPrefab;
+	//public GameObject playerTokenPrefab;
 	public MemberMapToken memberTokenPrefab;
 	
-	GameObject playerToken;
+	//GameObject playerToken;
 	
 	public int mapHeight=0;
 	public int mapWidth=0;
 	
 	public Dictionary<PartyMember,MemberMapToken> memberTokens;
-	public List<Horde> hordes;
-	public Dictionary<Horde,HordeTokenDrawer> hordeTokens;
 	public HordeTokenDrawer hordeTokenPrefab;
 	
 	public MapScoutingHandler scoutingHandler;
 	public bool hordeLocked=false;
 	//List<MapRegion> mapRegions=new List<MapRegion>();
-	Dictionary<Vector2,MapRegion> mapRegions=new Dictionary<Vector2, MapRegion>();
+	//Dictionary<Vector2,MapRegion> mapRegions=new Dictionary<Vector2, MapRegion>();
+	public List<MapRegion> mapRegions=new List<MapRegion>();
+	
+	//THIS METHOD CAUSES THE DISPLACEMENT BUG
+	public void FocusViewOnRegion(RectTransform regionTransform)
+	{
+		Vector2 newPosition=regionTransform.rect.center+(Vector2)regionTransform.localPosition;
+		//print ("Moving to local position:"+regionTransform.localPosition);
+		Vector2 scrollrectFocus=Vector2.zero;
+		scrollrectFocus.x=(newPosition.x/regionsGridGroup.GetComponent<RectTransform>().rect.width);
+		//!!!Y NEEDS TO BE CORRECTLY INVERTED!!! - in scrollrects, y=0 represents bottom, which is inverse to the way the rest of this setup works
+		scrollrectFocus.y=(regionsGridGroup.GetComponent<RectTransform>().rect.height-Mathf.Abs(newPosition.y))
+		/regionsGridGroup.GetComponent<RectTransform>().rect.height;
+		//scrollrectFocus=new Vector2(-5.0f,-5.0f);
+		//newPosition.x/=regionsGridGroup.GetComponent<RectTransform>().rect.width;
+		//newPosition.y/=regionsGridGroup.GetComponent<RectTransform>().rect.height;//
+		//print ("Scrollrect focus x is:"+scrollrectFocus.x+ToString());
+		/*
+		float testMod=0.5f;
+		print ("Zooming to x:"+(testMod*regionsGridGroup.GetComponent<RectTransform>().rect.width)
+		+", y:"+(testMod*regionsGridGroup.GetComponent<RectTransform>().rect.height));//*/
+		regionsGridGroup.parent.GetComponent<ScrollRect>().normalizedPosition=scrollrectFocus;
+		/*
+		CreateRegion(new Vector2
+		(testMod*regionsGridGroup.GetComponent<RectTransform>().rect.width
+		,-(regionsGridGroup.GetComponent<RectTransform>().rect.height-(testMod*regionsGridGroup.GetComponent<RectTransform>().rect.height))));
+		Canvas.ForceUpdateCanvases();//*/
+	}
+	
+	IEnumerator MapGenViewFocus(RectTransform regionTransform)
+	{
+		yield return new WaitForEndOfFrame();
+		FocusViewOnRegion(regionTransform);
+		yield break;
+	}
 	
 	public void GenerateNewMap()
 	{
-		regionsGridGroup.GetComponent<GridLayoutGroup>().constraintCount=mapWidth;
-		
-		float xElementSize=80;
-		float yElementSize=80;
-		float xElementOffset=xElementSize+10;
-		float yElementOffset=yElementSize+10;
-		float baseOffsetX=0;//360;
-		float baseOffsetY=GetComponent<RectTransform>().rect.height*0.5f;//380;
-		
-		for (int i=0; i<mapHeight; i++)
-		{
-			for (int j=0; j<mapWidth; j++)
-			{
-				Vector2 newPos=new Vector2(xElementOffset*j-baseOffsetX,-yElementOffset*i+baseOffsetY);
-				mapRegions.Add (new Vector2(j,i),CreateNewRegion(newPos,j,i));
-			}
-		}
-		//selectedMembers=new List<PartyMember>();
 		memberTokens=new Dictionary<PartyMember,MemberMapToken>();
-		//deprecate this later
-		hordes=new List<Horde>();
-		hordeTokens=new Dictionary<Horde, HordeTokenDrawer>();
-		//PartyManager.TimePassed+=MoveAllHordes;
-		//city generation step
-		//Initial mask boundaries
-		List<Vector2> doubleTownSpots=new List<Vector2>();
-		List<Vector2> tripleTownSpots=new List<Vector2>();
 		
-		for (int i=0; i<mapHeight; i++)
+		//Town-related boundaries
+		float townAreaSpriteSize=75f;
+		float townNodeGap=5f;
+		float townNodeWiggleRoom=80f;
+		float townNodeSideSize=townAreaSpriteSize+townNodeGap+townNodeWiggleRoom;
+		
+		int townNodeSlots=3;
+		
+		float largeTownSideSize=(townNodeSideSize+townNodeGap)*townNodeSlots;//375f;
+		//Vector2 smallTownSize=new Vector2(smallTownRadius,smallTownRadius);
+		Vector2 largeTownSize=new Vector2(largeTownSideSize,largeTownSideSize);
+		
+		//Map border boundaries
+		int horTownSlots=5;
+		int vertTownSlots=3;
+		
+		float borderOffset=50f;
+		
+		//float townMinX=40f;
+		//float townMinY=40f;
+		
+		
+		float townSlotWiggleRoom=300f;
+		float townSlotSideSize=largeTownSideSize+townSlotWiggleRoom;
+		
+		float gapBetweenTownSlots=10f;
+		float mapWidth=borderOffset*2+(townSlotSideSize+gapBetweenTownSlots)*horTownSlots;//2000f;
+		float mapHeight=borderOffset*2+(townSlotSideSize+gapBetweenTownSlots)*vertTownSlots;//1200f;
+		regionsGridGroup.GetComponent<RectTransform>().sizeDelta=new Vector2(mapWidth,mapHeight);
+		
+		
+		
+		//int horTownSlots=Mathf.FloorToInt(mapWidth/(townSlotSideSize+gapBetweenTownSlots));
+		//int vertTownSlots=Mathf.FloorToInt(mapHeight/(townSlotSideSize+gapBetweenTownSlots));
+		//print ("Horslots:"+horTownSlots+" Vertslots:"+vertTownSlots);
+		
+		
+		List<Vector2> townSlotCenters=new List<Vector2>();
+		for (int i=0; i<vertTownSlots; i++)
 		{
-			for (int j=0; j<mapWidth; j++)
+			for (int j=0; j<horTownSlots; j++)
 			{
-				if (i<mapHeight-1 && j<mapWidth-1) {doubleTownSpots.Add (new Vector2(i,j));}
-				if (i<mapHeight-2 && j<mapWidth-2) {tripleTownSpots.Add (new Vector2(i,j));}
+				//Y coord must be inverted because in UI elements higher Y goes up and lower Y goes down
+				Vector2 newTownUpperleftPos
+				=new Vector2(borderOffset+(townSlotSideSize+gapBetweenTownSlots)*j,-(borderOffset+(townSlotSideSize+gapBetweenTownSlots)*i));
+				townSlotCenters.Add(newTownUpperleftPos+new Vector2(townSlotSideSize*0.5f,-townSlotSideSize*0.5f));//new Vector2(townSlotSideSize*j,townSlotSideSize*i));
+				//print ("Slot:"+j+"|"+i+":"+newTownUpperleftPos);
 			}
 		}
-		//Adding in towns
-		int tripleTownDesiredCount=3;
-		int tripleTownCount=0;
-		//Add triples
-		while (tripleTownCount!=tripleTownDesiredCount && tripleTownSpots.Count>0)
+		
+		
+		int largeTownCount=3;
+		
+		List<Vector2> townCenters=new List<Vector2>();
+		Vector2 endgameCenter=Vector2.zero;
+		for (int i=0; i<=largeTownCount; i++)
 		{
-			Vector2 newTownTopLeft=tripleTownSpots[Random.Range(0,tripleTownSpots.Count)];
-			
-			for (int i=0; i<3; i++)
+			Vector2 randomPointInSlot=Random.insideUnitCircle*(Random.Range(1f,townSlotSideSize*0.5f-largeTownSideSize*0.5f));
+			int randomSlotIndex=Random.Range(0,townSlotCenters.Count);
+			Vector2 newTownCenterCoords=townSlotCenters[randomSlotIndex]+randomPointInSlot;
+			townSlotCenters.RemoveAt(randomSlotIndex);
+			//print ("new town center coords"+newTownCenterCoords);
+			//print("new town topleft coords:"+(newTownCenterCoords-new Vector2(largeTownSideSize*0.5f,-largeTownSideSize*0.5f)).ToString());
+			/*
+			Rect newTownRect=new Rect(newTownCenterCoords-new Vector2(largeTownSideSize*0.5f,largeTownSideSize*0.5f)
+			,new Vector2(largeTownSideSize,largeTownSideSize));*/
+			if (i<largeTownCount) townCenters.Add(newTownCenterCoords);
+			else endgameCenter=newTownCenterCoords; // - prepares endgame coordinates
+			//print ("new town center coords:"+newTownRect.center);
+		}
+		
+		//Create towns from rects
+		List<MapRegion> newTowns=new List<MapRegion>();
+		foreach (Vector2 townCenter in townCenters)
+		{
+			//Create new town
+			MapRegion newTown=CreateRegion(townCenter);
+			foreach(MapRegion region in newTowns) {newTown.AddConnectedRegion(region);}
+			//newRegion.SetConnectedRegions(new List<MapRegion>(mapRegions));
+			newTowns.Add(newTown);
+		}
+		
+		//POPULATE TOWNS		
+		List<Vector2> populatingOffsets=new List<Vector2>();
+		float startOffset=-townNodeSideSize;
+		for (int i=0; i<townNodeSlots; i++)
+		{
+			for (int j=0; j<townNodeSlots; j++)
 			{
-				for (int j=0; j<3; j++)
-				{
-					Vector2 addressVector=newTownTopLeft+new Vector2(i,j);
-					mapRegions[addressVector].GenerateEncounter(false);
-					tripleTownSpots.Remove(addressVector);
-					doubleTownSpots.Remove(addressVector);
-				}
-			}
-			tripleTownCount++;
-			//update masks
-			for (int i=-3; i<4; i++)
-			{
-				for (int j=-3; j<4; j++)
-				{
-					Vector2 addressVector=newTownTopLeft+new Vector2(i,j);
-					tripleTownSpots.Remove(addressVector);
-					if (i>-3 && j>-3) {doubleTownSpots.Remove(addressVector);}
-				}
+				if (!(j==1 && i==1)) populatingOffsets.Add(new Vector2(startOffset+townNodeSideSize*j,startOffset+townNodeSideSize*i));
 			}
 		}
-		int doubleTownDesiredCount=3;
-		int doubleTownCount=0;
-		//Add doubles
-		while (doubleTownCount!=doubleTownDesiredCount && doubleTownSpots.Count>0)
+
+		int nodeCount=5;
+		foreach(MapRegion town in newTowns)
 		{
-			Vector2 newTownTopLeft=doubleTownSpots[Random.Range(0,doubleTownSpots.Count)];
-			
-			for (int i=0; i<2; i++)
+			List<Vector2> unusedOffsets=new List<Vector2>(populatingOffsets);
+			for (int i=0; i<nodeCount; i++)
 			{
-				for (int j=0; j<2; j++)
-				{
-					Vector2 addressVector=newTownTopLeft+new Vector2(i,j);
-					mapRegions[addressVector].GenerateEncounter(false);//hasEncounter=true;
-					tripleTownSpots.Remove(addressVector);
-					doubleTownSpots.Remove(addressVector);
-				}
-			}
-			doubleTownCount++;
-			//update doubletown mask
-			for (int i=-2; i<3; i++)
-			{
-				for (int j=-2; j<3; j++)
-				{
-					Vector2 addressVector=newTownTopLeft+new Vector2(i,j);
-					doubleTownSpots.Remove(addressVector);
-				}
+				Vector2 randomPointInNode=Random.insideUnitCircle*(Random.Range(1f,townNodeSideSize*0.5f-townAreaSpriteSize*0.5f));
+				//Vector2 newNodeOffset=newNodeOffsetDir*Random.Range(minNodeDistance,maxNodeDistance);
+				Vector2 newNodeOffset=unusedOffsets[Random.Range(0,unusedOffsets.Count)];
+				unusedOffsets.Remove(newNodeOffset);
+				
+				MapRegion newNode=CreateRegion((Vector2)town.transform.localPosition+newNodeOffset+randomPointInNode);
+				newNode.AddConnectedRegion(town);
 			}
 		}
+		
+		
 		//Add endgame encounter
-		Vector2 radioStationAddress=new Vector2(Random.Range(0,mapHeight),Random.Range(0,mapWidth));
-		mapRegions[radioStationAddress].GenerateEncounter(true);
-		//mapRegions[radioStationAddress].regionalEncounter=new Encounter(true);
+		//randomPointInSlot=Random.insideUnitCircle*(Random.Range(1f,townSlotSideSize*0.5f-largeTownSideSize*0.5f));
+		//randomSlotIndex=Random.Range(0,townSlotCenters.Count);
+		//Vector2 endgameCenterCoords=townSlotCenters[randomSlotIndex]+randomPointInSlot;
+		//townSlotCenters.RemoveAt(randomSlotIndex);
+		MapRegion endgameEncounter=CreateRegion(endgameCenter);
+		foreach(MapRegion region in newTowns) {endgameEncounter.AddConnectedRegion(region);}
 		
-		//final step - party placement
-		if (playerToken!=null) {GameObject.Destroy(playerToken);}
-		playerToken=Instantiate(playerTokenPrefab) as GameObject;
-		Canvas.ForceUpdateCanvases();
-		GetComponentInChildren<ScrollRect>().normalizedPosition=new Vector2(0,1);
-		//DiscoverRegions(0,0);
-		//TeleportToRegion(mapRegions[new Vector2(0,0)]);
+		//Final step - party placement
+		//StartCoroutine(MapGenViewFocus(mapRegions[0].GetComponent<RectTransform>()));
+		//regionsGridGroup.parent.GetComponent<ScrollRect>().normalizedPosition=Vector2.zero;
+		//regionsGridGroup.GetComponent<RectTransform>().localPosition=Vector2.zero;
+		//Canvas.ForceUpdateCanvases();//
+		
 	}
 	
+	void Update()
+	{
+		if (Input.GetKeyDown(KeyCode.H)) {FocusViewOnRegion(mapRegions[0].GetComponent<RectTransform>());}
+	}
+	
+	/*
 	MapRegion CreateNewRegion(Vector2 newRegionPos, int xCoord, int yCoord)
 	{
 		MapRegion newRegion=Instantiate(mapRegionPrefab,newRegionPos,Quaternion.identity) as MapRegion;
 		newRegion.xCoord=xCoord;
 		newRegion.yCoord=yCoord;
 		newRegion.transform.SetParent(regionsGridGroup);
-		/*
-		float rand=Random.value;
-		if (rand<0.5) {newRegion.hasEncounter=true;}
-		*/
+		return newRegion;
+	}*/
+	/*
+	MapRegion CreateNewTownRegion(Vector2 newRegionPos)
+	{
+		MapRegion newRegion=Instantiate(mapRegionPrefab,newRegionPos,Quaternion.identity) as MapRegion;
+		newRegion.transform.SetParent(regionsGridGroup);
+		newRegion.GenerateEncounter(false);
+		return newRegion;
+	}*/
+	
+	MapRegion CreateRegion(Vector2 newRegionPos)
+	{
+		MapRegion newRegion=Instantiate(mapRegionPrefab,newRegionPos,Quaternion.identity) as MapRegion;
+		newRegion.transform.SetParent(regionsGridGroup);
+		newRegion.transform.localPosition=newRegionPos;
+		newRegion.GenerateEncounter(false);
+		mapRegions.Add(newRegion);
 		return newRegion;
 	}
 	
 	public void ClearMap()
 	{
-		foreach(MapRegion region in mapRegions.Values) 
+		foreach(MapRegion region in mapRegions)//.Values) 
 		{
 			GameObject.Destroy(region.gameObject);
 		}
 		mapRegions.Clear();
-		hordes.Clear();
-		foreach (HordeTokenDrawer token in hordeTokens.Values) {GameObject.Destroy(token.gameObject);}
-		hordeTokens.Clear();
-		GameObject.Destroy(playerToken);
+		//GameObject.Destroy(playerToken);
 	}
 	
 	public void AddMemberToken(PartyMember member)
@@ -184,16 +253,15 @@ public class MapManager : MonoBehaviour
 		else throw new System.Exception("Attempting to delete nonexistent map member token!");
 	}
 	
-	
-	public MapRegion GetRegion(int coordX,int coordY) {return GetRegion(new Vector2(coordX,coordY));}
-	public MapRegion GetRegion(Vector2 coords) {return mapRegions[coords];}
+	//deprecated
+	//public MapRegion GetRegion(int coordX,int coordY) {return GetRegion(new Vector2(coordX,coordY));}
+	//public MapRegion GetRegion(Vector2 coords) {return mapRegions[coords];}
 	
 	public void RegionClicked(MapRegion clickedRegion)
 	{	
 		if (PartyManager.mainPartyManager.selectedMembers.Count>0)
 		{
-			if (!EncounterCanvasHandler.main.encounterOngoing 
-			    && mapRegions[PartyManager.mainPartyManager.selectedMembers[0].worldCoords].hordeEncounter==null)
+			if (!EncounterCanvasHandler.main.encounterOngoing)
 			{
 				//See which of the selected party members are capable of moving
 				/*
@@ -205,7 +273,7 @@ public class MapManager : MonoBehaviour
 				//If none of the selected members are capable of moving, quit
 				if (movedMembers.Count==0) return;*/
 				List<PartyMember> movedMembers;
-				if (PartyManager.mainPartyManager.ConfirmMapMovement(clickedRegion.xCoord,clickedRegion.yCoord, out movedMembers))//.MovePartyToMapCoords(clickedRegion.xCoord,clickedRegion.yCoord))
+				if (PartyManager.mainPartyManager.ConfirmMapMovement(clickedRegion, out movedMembers))//.MovePartyToMapCoords(clickedRegion.xCoord,clickedRegion.yCoord))
 				{
 					bool noEventBasedMove=true;
 					bool eventHappened=GameEventManager.mainEventManager.RollEvents(ref noEventBasedMove,clickedRegion,movedMembers);
@@ -216,7 +284,7 @@ public class MapManager : MonoBehaviour
 						//{
 							MoveMembersToRegion(clickedRegion,movedMembers.ToArray());
 						//}
-						DiscoverRegions(clickedRegion.GetCoords());
+						//DiscoverRegions(clickedRegion.GetCoords());
 						//Threat level roll
 						
 						//Searches if a scout is included in the party, if so - no ambushes trigger
@@ -245,48 +313,26 @@ public class MapManager : MonoBehaviour
 		}	
 	}
 	/*
-	//for special events
-	public void TeleportToRegion(MapRegion teleportRegion)
-	{
-		MovePartyToRegion(teleportRegion);
-	}
-	//for regular movement
-	void MovePartyToRegion(MapRegion newRegion)
-	{
-		PartyManager.mainPartyManager.MovePartyToMapCoords(newRegion.xCoord,newRegion.yCoord);
-		DiscoverRegions(newRegion.xCoord,newRegion.yCoord);
-		UpdatePartyToken(newRegion);
-		scoutingHandler.EndDialog();
-		//CheckPartyRegionForHordes(newRegion);
-	}
-	
-	void UpdatePartyToken(MapRegion newRegion)
-	{
-		Vector3 newTokenPos=newRegion.transform.position;
-		newTokenPos.z=playerToken.transform.position.z;
-		playerToken.transform.position=newTokenPos;
-		playerToken.transform.SetParent(newRegion.transform);
-	}*/
-	
 	public void MoveMembersToRegion(Vector2 newRegionCoords, params PartyMember[] movedMembers)
 	{
 		MoveMembersToRegion(GetRegion(newRegionCoords),movedMembers);
-	}
+	}*/
 	
 	public void MoveMembersToRegion(MapRegion newRegion, params PartyMember[] movedMembers)
 	{
 		foreach (PartyMember movedMember in movedMembers)
 		{
-			mapRegions[movedMember.worldCoords].localPartyMembers.Remove(movedMember);
-			movedMember.worldCoords=newRegion.GetCoords();
+			movedMember.currentRegion.localPartyMembers.Remove(movedMember);
+			movedMember.currentRegion=newRegion;//.worldCoords=newRegion.GetCoords();
 			newRegion.localPartyMembers.Add(movedMember);
-			memberTokens[movedMember].MoveToken(newRegion.transform);
+			memberTokens[movedMember].MoveToken(newRegion.memberTokenGroup);
 		}
-		DiscoverRegions(newRegion.GetCoords());
+		//DiscoverRegions(newRegion.GetCoords());
 		PartyStatusCanvasHandler.main.RefreshAssignmentButtons(PartyManager.mainPartyManager.selectedMembers);
 		
 	}	
-	
+	//deprecated
+	/*
 	void DiscoverRegions(Vector2 coords) {DiscoverRegions((int)coords.x,(int)coords.y);}
 	
 	void DiscoverRegions(int originXCoord, int originYCoord)
@@ -303,21 +349,13 @@ public class MapManager : MonoBehaviour
 			}
 			else {region.visible=false;}
 		}
-	}
-	/*
-	void CheckPartyRegionForHordes(MapRegion region)
-	{
-		if (region.hordeEncounter!=null && !EncounterCanvasHandler.main.encounterOngoing) 
-		{
-			//EnterEncounter(region.hordeEncounter,PartyManager.mainPartyManager.partyMembers);
-			hordeLocked=true;
-		}
 	}*/
 
 	public void EnterEncounter(Encounter newEncounter, List<PartyMember> team, bool isAmbush)
 	{
 		EncounterCanvasHandler.main.StartNewEncounter(newEncounter,team,isAmbush);
 		scoutingHandler.EndDialog();
+		PartyStatusCanvasHandler.main.RefreshAssignmentButtons();
 	}
 	/*
 	public void AddHorde(Vector2 hiveCoords,EncounterEnemy.EnemyTypes hordeType)

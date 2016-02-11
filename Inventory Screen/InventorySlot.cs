@@ -29,7 +29,7 @@ public class InventorySlot : MonoBehaviour, IDropHandler
 			.roomButtons[EncounterCanvasHandler.main.memberCoords[InventoryScreenHandler.mainISHandler.selectedMember]];
 			affectedRoom.DropItemOnFloor(newSlotItem.assignedItem);
 		}
-		else {MapManager.main.GetRegion(InventoryScreenHandler.mainISHandler.selectedMember.worldCoords).StashItem(newSlotItem.assignedItem);}
+		else {InventoryScreenHandler.mainISHandler.selectedMember.currentRegion.StashItem(newSlotItem.assignedItem);}
 		//PartyManager.mainPartyManager.GainItems(newSlotItem.assignedItem);}
 	}
 	
@@ -109,7 +109,7 @@ public class InventorySlot : MonoBehaviour, IDropHandler
 				.roomButtons[EncounterCanvasHandler.main.memberCoords[InventoryScreenHandler.mainISHandler.selectedMember]];
 				affectedRoom.PickUpFloorItem(filledItem.assignedItem);
 			}
-			else MapManager.main.GetRegion(InventoryScreenHandler.mainISHandler.selectedMember.worldCoords).TakeStashItem(filledItem.assignedItem);
+			else InventoryScreenHandler.mainISHandler.selectedMember.currentRegion.TakeStashItem(filledItem.assignedItem);
 			//{PartyManager.mainPartyManager.RemoveItems(filledItem.assignedItem);}
 		}
 		filledItem=null;

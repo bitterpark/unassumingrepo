@@ -72,7 +72,7 @@ public class PartyStatusCanvasHandler : MonoBehaviour {
 		{
 			assignmentButton.gameObject.SetActive(false);
 			exploreButton.gameObject.SetActive(false);
-			MapRegion checkedRegion=MapManager.main.GetRegion(selected[0].worldCoords);
+			MapRegion checkedRegion=selected[0].currentRegion;
 			List<PartyMember> membersFreeToAct=new List<PartyMember>();
 			
 			foreach (PartyMember member in selected)

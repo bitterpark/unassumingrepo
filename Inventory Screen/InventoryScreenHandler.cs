@@ -65,8 +65,8 @@ public class InventoryScreenHandler : MonoBehaviour
 				
 				if (!EncounterCanvasHandler.main.encounterOngoing)
 				{
-					campingCanvas.AssignCamp(MapManager.main.GetRegion(selectedMember.worldCoords).campInRegion
-					,MapManager.main.GetRegion(selectedMember.worldCoords).hasCamp);
+					campingCanvas.AssignCamp(selectedMember.currentRegion.campInRegion
+					,selectedMember.currentRegion.hasCamp);
 				}
 			}
 		} 
@@ -182,7 +182,7 @@ public class InventoryScreenHandler : MonoBehaviour
 			EncounterCanvasHandler encounterManager=EncounterCanvasHandler.main;
 			activeList=encounterManager.currentEncounter.encounterMap[encounterManager.memberCoords[selectedMember]].floorItems;
 		}
-		else {activeList=MapManager.main.GetRegion(selectedMember.worldCoords).GetStashedItems();}//PartyManager.mainPartyManager.GetPartyInventory();}
+		else {activeList=selectedMember.currentRegion.GetStashedItems();}//PartyManager.mainPartyManager.GetPartyInventory();}
 		//Use floor or inventory list
 		for (int i=0; i<slotCount; i++)
 		{
@@ -235,7 +235,7 @@ public class InventoryScreenHandler : MonoBehaviour
 					//EncounterCanvasHandler.main.displayedRoom.RemoveFloorItem(clickedItem);
 					encounterHandler.roomButtons[encounterHandler.memberCoords[selectedMember]].PickUpFloorItem(clickedItem);
 				}
-				else MapManager.main.GetRegion(selectedMember.worldCoords).TakeStashItem(clickedItem);
+				else selectedMember.currentRegion.TakeStashItem(clickedItem);
 				//{PartyManager.mainPartyManager.RemoveItems(clickedItem);}
 				
 			}

@@ -3,12 +3,13 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine.UI;
 
-public class EnemyTokenHandler : MonoBehaviour, IAttackAnimation
+public class EnemyTokenHandler : MonoBehaviour, IAttackAnimation, IGotHitAnimation
 {
 	//because the coroutine is called from EncounterCanvasHandler, StopAllCoroutines called from this instance doesn't work. So, this is necessary
 	bool destroyed=false;
 	
-	float attackAnimationTime=0.8f;
+	float attackAnimationTime=0.6f;
+	float gotHitAnimationTime=0.6f;
 	float moveWaitTime=0.3f;
 	readonly int lastseenMemberPriority=3;
 	
@@ -57,14 +58,29 @@ public class EnemyTokenHandler : MonoBehaviour, IAttackAnimation
 		StartCoroutine(AttackAnimation());
 	}*/
 	
-	public IEnumerator AttackAnimation()
+	public IEnumerator AttackAnimation(IGotHitAnimation targetAnimation)
 	{
-		if (!destroyed) myImage.transform.localScale=new Vector3(1.5f,1.5f,1f);
+		if (!destroyed) myImage.transform.localScale=new Vector3(1.6f,1.6f,1f);
 		else yield break;
-		yield return new WaitForSeconds(attackAnimationTime);
+		if (targetAnimation!=null) yield return StartCoroutine(targetAnimation.GotHitAnimation());
+		else yield return new WaitForSeconds(attackAnimationTime);
 		if (!destroyed) myImage.transform.localScale=new Vector3(1f,1f,1f);
 		yield break;
 	}
+
+	#region IGotHitAnimation implementation
+
+	public IEnumerator GotHitAnimation ()
+	{
+		if (!destroyed) myImage.transform.localScale=new Vector3(0.8f,0.8f,1f);
+		else yield break;
+		yield return new WaitForSeconds(gotHitAnimationTime);
+		//print ("yielding attack animation!");
+		if (!destroyed) myImage.transform.localScale=new Vector3(1f,1f,1f);
+		yield break;
+	}
+
+	#endregion
 	
 	public void AddNewPOI(Vector2 pointCoords, Dictionary<Vector2,int> moveMask, int priority)
 	{
@@ -104,8 +120,14 @@ public class EnemyTokenHandler : MonoBehaviour, IAttackAnimation
 		{
 			EnemyAttack attackInfo=assignedEnemy.AttackAction(new List<PartyMember>(membersWithinReach));
 			EncounterCanvasHandler.main.ShowDamageToPartyMember(attackInfo);
+			IGotHitAnimation targetAnimation=null;
+			if (attackInfo.hitSuccesful)
+			{
+				if (EncounterCanvasHandler.main.memberTokens.ContainsKey(attackInfo.attackedMember)) 
+				targetAnimation=EncounterCanvasHandler.main.memberTokens[attackInfo.attackedMember];
+			}
 			//(attackInfo.attackedMember,attackInfo.attackingEnemy,attackInfo.damageDealt,attackInfo.blocked);
-			yield return StartCoroutine(AttackAnimation());
+			yield return StartCoroutine(AttackAnimation(targetAnimation));
 		}
 		yield break;
 	}
@@ -124,8 +146,14 @@ public class EnemyTokenHandler : MonoBehaviour, IAttackAnimation
 			if (roundIsAttack)
 			{
 				EncounterCanvasHandler.main.ShowDamageToPartyMember(attackInfo);
+				IGotHitAnimation targetAnimation=null;
+				if (attackInfo.hitSuccesful)
+				{
+					if (EncounterCanvasHandler.main.memberTokens.ContainsKey(attackInfo.attackedMember)) 
+					targetAnimation=EncounterCanvasHandler.main.memberTokens[attackInfo.attackedMember];
+				}
 				//(attackInfo.attackedMember,attackInfo.attackingEnemy,attackInfo.damageDealt,attackInfo.blocked);
-				yield return StartCoroutine(AttackAnimation());
+				yield return StartCoroutine(AttackAnimation(targetAnimation));
 			}
 			else
 			{

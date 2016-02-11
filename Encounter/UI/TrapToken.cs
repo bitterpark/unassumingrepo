@@ -16,7 +16,7 @@ public class TrapToken : MonoBehaviour, IAttackAnimation
 	
 	#region AttackAnimation implementation
 	
-	public IEnumerator AttackAnimation()
+	public IEnumerator AttackAnimation(IGotHitAnimation targetAnimation)
 	{
 		/*
 		foreach (Text child in GetComponentsInChildren<Text>())
@@ -27,7 +27,8 @@ public class TrapToken : MonoBehaviour, IAttackAnimation
 		transform.localScale=new Vector3(1.6f,1.6f,1f);
 		//print ("trap token doing yeld return waitforseconds");
 		//see if it transfers control back to encounter canvas handler here or on yield break
-		yield return new WaitForSeconds(0.6f);
+		if (targetAnimation!=null) yield return StartCoroutine(targetAnimation.GotHitAnimation());
+		else yield return new WaitForSeconds(0.6f);
 		//print ("yeld return waitforseconds done, finishing scaling and yield break");
 		//print ("yielding attack animation!");
 		transform.localScale=new Vector3(1f,1f,1f);

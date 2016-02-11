@@ -6,9 +6,25 @@ using UnityEngine.UI;
 
 public class MapRegion : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, IPointerDownHandler
 {
-	public int xCoord=0;
-	public int yCoord=0;
-	public Vector2 GetCoords() {return new Vector2(xCoord,yCoord);}
+	//public Vector2 GetCoords() {return new Vector2(xCoord,yCoord);}
+	public List<MapRegion> connectedRegions=new List<MapRegion>();
+	public VectorUI roadLinePrefab;
+	public void AddConnectedRegion(MapRegion region)
+	{	
+		if (!connectedRegions.Contains(region))
+		{
+			connectedRegions.Add(region);
+			if (!region.connectedRegions.Contains(this))
+			{
+				VectorUI newVectorUI=Instantiate(roadLinePrefab);
+				List<Vector2> roadPoints=new List<Vector2>();
+				roadPoints.Add(transform.position);
+				roadPoints.Add(region.transform.position);
+				newVectorUI.AssignVectorLine("Road Line",transform.parent,false,roadPoints,8f,Color.black);
+				region.AddConnectedRegion(this);
+			}
+		}
+	}
 	
 	public Sprite undiscoveredLocSprite;
 	public Sprite emptyLocSprite;
@@ -26,6 +42,8 @@ public class MapRegion : MonoBehaviour, IPointerEnterHandler, IPointerExitHandle
 	
 	public Image stashToken;
 	public Image campToken;
+	
+	public Transform memberTokenGroup;
 	
 	public bool discovered
 	{

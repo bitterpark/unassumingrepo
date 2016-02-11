@@ -33,7 +33,7 @@ public class NewSurvivor:GameEvent
 		{
 			case"Accept them": 
 			{
-				PartyMember newGuy=new PartyMember(eventRegion.GetCoords());
+				PartyMember newGuy=new PartyMember(eventRegion);
 				PartyManager.mainPartyManager.AddNewPartyMember(newGuy);//.partyMembers.Add (newGuy);
 				break;
 			}
@@ -476,7 +476,7 @@ public class SurvivorRescue:GameEvent
 				//success
 				if (Random.value<0.5f)
 				{
-					PartyMember newGuy=new PartyMember(eventRegion.GetCoords());
+					PartyMember newGuy=new PartyMember(eventRegion);
 					PartyManager.mainPartyManager.AddNewPartyMember(newGuy);
 					eventResult="You charge the creature before it can deliver another blow to the distressed survivor. Taken by surprise, it quickly succumbs to your attacks.\nThe survivor is shaken, but alive.\n\n"+newGuy.name+" Joins your party."+"\n\n"+newGuy.name+" takes "+newMemberHealthPenalty+" damage";
 					newGuy.TakeDamage(newMemberHealthPenalty,false);
@@ -484,7 +484,7 @@ public class SurvivorRescue:GameEvent
 				}
 				else
 				{
-					PartyMember newGuy=new PartyMember(eventRegion.GetCoords());
+					PartyMember newGuy=new PartyMember(eventRegion);
 					eventResult="Before you can close the distance, the creature reacts and lunges at you!\nAmid a flurry of vicious attacks, you barely manage to fight it off with the help of the survivor.\n\n"+newGuy.name+" joins your party\n\nEveryone takes "+failPartyDamage+" damage";
 					//Order is
 					foreach (PartyMember member in movedMembers) {member.TakeDamage(failPartyDamage,false);}//member.health+=failPartyDamage;}
@@ -537,7 +537,7 @@ public class SearchForSurvivor:GameEvent
 				if (Random.value<0.5f)
 				{
 					eventResult="The voice grows louder as you close in on the source, and eventually starts responding to your calls, quickly guiding you to another survivor\n\nA new survivor joins your party";
-					PartyMember newGuy=new PartyMember(eventRegion.GetCoords());
+					PartyMember newGuy=new PartyMember(eventRegion);
 					PartyManager.mainPartyManager.AddNewPartyMember(newGuy);
 				}
 				else

@@ -3,8 +3,9 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
+using Vectrosity;
 
-public class RoomButtonHandler : MonoBehaviour//, IDropHandler
+public class RoomButtonHandler : MonoBehaviour, IPointerEnterHandler//, IDropHandler
 {
 
 	public int roomX;
@@ -43,6 +44,9 @@ public class RoomButtonHandler : MonoBehaviour//, IDropHandler
 	public Transform membersGroup;
 
 	public Color wallColor;
+	
+	public VectorUI aimLinePrefab;
+	protected static VectorUI aimLine;
 	
 	public void AttachEnemyToken(Transform tokenTransform)
 	{
@@ -433,4 +437,99 @@ public class RoomButtonHandler : MonoBehaviour//, IDropHandler
 	}
 
 	#endregion*/
+
+	void Update()
+	{
+		// if selected member is switched, remove aimline
+		if (Input.GetKeyDown(KeyCode.Q)) 
+		{
+			if (aimLine!=null)GameObject.Destroy(aimLine.gameObject);
+		}
+	}
+
+	#region IPointerEnterHandler implementation
+	public void OnPointerEnter (PointerEventData eventData)
+	{
+		//List<Vector2> lineCoords=new List<Vector2>();
+		//print ("Room coords:"+transform.position);
+		/*
+		Vector3 newPoint;
+		RectTransformUtility.ScreenPointToWorldPointInRectangle
+		(GetComponent<RectTransform>()
+		 ,GetComponent<RectTransform>().rect.center
+		 ,Camera.main,
+		 out newPoint);
+		lineCoords.Add(newPoint);
+		RectTransform otherRect=EncounterCanvasHandler.main.roomButtons[EncounterCanvasHandler.main.memberCoords[EncounterCanvasHandler.main.selectedMember]]
+		.GetComponent<RectTransform>();
+		RectTransformUtility.ScreenPointToWorldPointInRectangle
+		(otherRect
+		 ,otherRect.rect.center
+		 ,Camera.main,
+		 out newPoint);
+		lineCoords.Add(newPoint);*/
+		
+		//lineCoords.Add(EncounterCanvasHandler.main.roomButtons[EncounterCanvasHandler.main.memberCoords[EncounterCanvasHandler.main.selectedMember]]
+		//.GetComponent<RectTransform>().position);
+		//List<Vector2> lineCoords=new List<Vector2>();
+		//For brevity
+		EncounterCanvasHandler handler=EncounterCanvasHandler.main;
+		//Dispose the old aimline
+		if (aimLine!=null)GameObject.Destroy(aimLine.gameObject);
+		if (handler.memberTokens.ContainsKey(handler.selectedMember))
+		{
+			MemberTokenHandler currentToken=handler.memberTokens[handler.selectedMember];
+			if (currentToken.rangedMode)
+			{
+				List<Vector2> linePointCoords=new List<Vector2>();
+				List<Color32> lineSegmentColors=new List<Color32>();
+				Color currentLineColor=Color.black;
+				int selectedX=(int)handler.memberCoords[handler.selectedMember].x;
+				int selectedY=(int)handler.memberCoords[handler.selectedMember].y;
+				int endX=(int)GetRoomCoords().x;
+				int endY=(int)GetRoomCoords().y;
+				//Second - see if any walls are blocking member (for ranged attacks)
+				//if (attackRange>0)
+				//{
+					BresenhamLines.Line(selectedX,selectedY,endX,endY,(int x, int y)=>
+					{
+						//Set color for the preceeding line segment
+						if (handler.roomButtons[new Vector2(x,y)].assignedRoom.isWall) currentLineColor=Color.red;
+						lineSegmentColors.Add(currentLineColor);
+						//Set point coords
+						linePointCoords.Add((Vector2)handler.roomButtons[new Vector2(x,y)].transform.position);
+						return true;
+						//bool visionClear=true;
+						//if (handler.currentEncounter.encounterMap[new Vector2(x,y)].isWall) {enemyReachable=false;}
+						//return enemyReachable;
+					});
+				//}
+				//If there are enough points - plot the path of the shooting count algorithm
+				if (linePointCoords.Count>1)
+				{
+					aimLine=Instantiate(aimLinePrefab);
+					VectorLine aimVectorProperties=new VectorLine("Aim Vector",linePointCoords,2f);
+					//This makes sure the number of entries in color array does not exceed the number of line segments
+					//(Each new point sets color for the previous segment, first point's has no following segment and must be removed)
+					lineSegmentColors.RemoveAt(0);
+					aimVectorProperties.lineType=LineType.Continuous;
+					aimVectorProperties.SetColors(lineSegmentColors);
+					aimLine.AssignVectorLine(aimVectorProperties,transform.parent,true);//"Aim Vector",lineCoords,2f,Color.black,transform.parent);
+				}
+			}
+		}
+		/*
+		lineCoords.Add((Vector2)transform.position);//GetComponent<RectTransform>().rect.position);
+		lineCoords.Add((Vector2)EncounterCanvasHandler.main.roomButtons[EncounterCanvasHandler.main.memberCoords[EncounterCanvasHandler.main.selectedMember]]
+		.transform.position);*///GetComponent<RectTransform>().rect.position);
+		//lineCoords.Add(Vector3.zero);
+		//testLine=new VectorLine("testLine",lineCoords,3f);
+		//testLine.color=Color.black;
+		/*
+		VectorUI newThing=Instantiate(testThing);
+		newThing.AssignVectorLine(testLine,transform.parent);
+		myThing=newThing;*/
+	}
+
+	#endregion
 }

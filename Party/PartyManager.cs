@@ -148,10 +148,13 @@ public class PartyManager : MonoBehaviour
 	}
 	//public PartyMemberSelector selectorPrefab;
 	
+	//public void SetDefaultState() {}
+	
 	//Setup start of game
 	public void SetDefaultState()
 	{
 		Vector2 startingPartyWorldCoords=new Vector2(0,0);
+		MapRegion startingRegion=MapManager.main.mapRegions[0];
 		//partyStatusCanvas.gameObject.SetActive(true);
 		statusCanvas.EnableStatusDisplay();
 		partyMemberCanvases=new Dictionary<PartyMember, PartyMemberCanvasHandler>();
@@ -161,7 +164,7 @@ public class PartyManager : MonoBehaviour
 		//mapCoordY=0;
 		//partyVisibilityMod=0;
 		//foodSupply=0;//2;
-		ammo=0;//500;//5;
+		ammo=500;//500;//5;
 		
 		partyMembers=new List<PartyMember>();
 		selectedMembers=new List<PartyMember>();
@@ -169,19 +172,22 @@ public class PartyManager : MonoBehaviour
 		//selectors=new List<PartyMemberSelector>();
 		//statusEffectTokens=new Dictionary<int, List<StatusEffectDrawer>>();
 		
-		AddNewPartyMember(new PartyMember(startingPartyWorldCoords));
-		AddNewPartyMember(new PartyMember(startingPartyWorldCoords));
+		AddNewPartyMember(new PartyMember(startingRegion));
+		AddNewPartyMember(new PartyMember(startingRegion));
 		
 		//AddPartyMemberStatusEffect(partyMembers[0],new Bleed(partyMembers[0]));
 		//AddPartyMemberStatusEffect(partyMembers[0],new Bleed(partyMembers[0]));
 		//AddNewPartyMember(new PartyMember(startingPartyWorldCoords));
 		
-		MapRegion startingRegion=MapManager.main.GetRegion(startingPartyWorldCoords);
+		
 		//MapManager.main.TeleportToRegion(startingRegion);
 		startingRegion.StashItem(new FoodBig());
 		startingRegion.StashItem(new FoodBig());
 		startingRegion.StashItem(new FoodSmall());
 		startingRegion.StashItem(new FoodSmall());
+		
+		MapManager.main.FocusViewOnRegion(startingRegion.GetComponent<RectTransform>());
+		
 		//startingRegion.StashItem(new SettableTrap());
 		//startingRegion.StashItem(new SettableTrap());
 		//startingRegion.StashItem(new Bandages());
@@ -246,8 +252,8 @@ public class PartyManager : MonoBehaviour
 	{
 		if (Input.GetKeyDown(KeyCode.M)) 
 		{
-			//partyMembers[0].morale=0;
-			//partyMembers[0].TakeDamage(25,false,PartyMember.BodyPartTypes.Hands);
+			//partyMembers[0].morale=0;//
+			//partyMembers[0].TakeDamage(70,false,PartyMember.BodyPartTypes.Vitals);
 			//partyMembers[0].TakeDamage(15,false,PartyMember.BodyPartTypes.Legs);
 			//AddPartyMemberStatusEffect(partyMembers[0],new Bleed(partyMembers[0]));
 		}
@@ -273,7 +279,7 @@ public class PartyManager : MonoBehaviour
 		partyMemberCanvases.Add(newMember,newPartyMemberCanvas);
 		
 		MapManager.main.AddMemberToken(newMember);
-		MapManager.main.MoveMembersToRegion(newMember.worldCoords,newMember);
+		MapManager.main.MoveMembersToRegion(newMember.currentRegion,newMember);
 		
 		statusCanvas.NewNotification(newMember.name+" has joined the party");
 	}
@@ -301,10 +307,10 @@ public class PartyManager : MonoBehaviour
 			{
 				if (member.relationships.ContainsKey(removedMember))
 				{
-					member.morale-=50;
+					member.morale-=40;
 					member.RemoveRelatonship(removedMember);
 				}
-				else member.morale-=35;
+				else member.morale-=25;
 			}
 		}
 	}
@@ -323,7 +329,7 @@ public class PartyManager : MonoBehaviour
 				List<PartyMember> membersInWrongLocation=new List<PartyMember>();
 				foreach (PartyMember member in selectedMembers)
 				{
-					if (member.worldCoords!=selectedMember.worldCoords) membersInWrongLocation.Add(member);
+					if (member.currentRegion!=selectedMember.currentRegion) membersInWrongLocation.Add(member);
 				}
 				foreach(PartyMember member in membersInWrongLocation) 
 				{
@@ -336,7 +342,7 @@ public class PartyManager : MonoBehaviour
 		}
 	}
 	//Makes sure members can't move too far away, and takes care of move penalties
-	public bool ConfirmMapMovement(int x, int y, out List<PartyMember> movedList)
+	public bool ConfirmMapMovement(MapRegion moveRegion, out List<PartyMember> movedList)
 	{
 		bool moveSuccesful=false;
 		//cancel if not enough stamina to move
@@ -346,14 +352,14 @@ public class PartyManager : MonoBehaviour
 			if (member.stamina<1) {return moveSuccesful;}
 		}*/
 		movedList=new List<PartyMember>();
-		float moveLength=(new Vector2(x,y)-selectedMembers[0].worldCoords).magnitude;//Mathf.Abs(x-mapCoordX)+Mathf.Abs(y-mapCoordY);//Mathf.Max (Mathf.Abs(x-mapCoordX),Mathf.Abs(y-mapCoordY));
-		if (moveLength==1)
+		//float moveLength=1f;//(new Vector2(x,y)-selectedMembers[0].worldCoords).magnitude;//Mathf.Abs(x-mapCoordX)+Mathf.Abs(y-mapCoordY);//Mathf.Max (Mathf.Abs(x-mapCoordX),Mathf.Abs(y-mapCoordY));
+		if (selectedMembers[0].currentRegion!=moveRegion && selectedMembers[0].currentRegion.connectedRegions.Contains(moveRegion))
 		{
 			moveSuccesful=true;
 			
 			foreach (PartyMember member in selectedMembers)
 			{
-				if	(!MapManager.main.memberTokens[member].moved) movedList.Add(member);
+				if	(member.GetFatigue()+PartyMember.mapMoveFatigueCost<=100) movedList.Add(member);//!MapManager.main.memberTokens[member].moved) movedList.Add(member);
 			}
 			
 			if (movedList.Count>0)
