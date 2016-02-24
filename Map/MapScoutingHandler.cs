@@ -38,8 +38,8 @@ public class MapScoutingHandler : MonoBehaviour {
 	void UpdateAfterScouting()
 	{
 		descriptionText.text=assignedRegion.regionalEncounter.lootDescription+" infested with "+assignedRegion.regionalEncounter.enemyDescription;
-		confirmButtonText.text="Enter";
-		foreach (PartyMember member in PartyManager.mainPartyManager.selectedMembers) 
+		confirmButtonText.text="Enter ("+PartyMember.fatigueIncreasePerEncounter+" fatigue)";
+		foreach (PartyMember member in assignedRegion.localPartyMembers)//PartyManager.mainPartyManager.selectedMembers) 
 		{
 			MissionSelectorHandler newSelector=Instantiate (memberSelectorPrefab) as MissionSelectorHandler;
 			newSelector.AssignMember(member);
@@ -67,8 +67,11 @@ public class MapScoutingHandler : MonoBehaviour {
 	public void ToggleMissionMember(MissionSelectorHandler handler)
 	{
 		PartyMember member=handler.assignedMember;
-		if (!selectedForMission.Contains(member) 
-		&& selectedForMission.Count<assignedRegion.regionalEncounter.maxAllowedMembers)//EncounterCanvasHandler.encounterMaxPlayerCount) 
+		AssignedTaskTypes emptyOutVar;
+		if (!selectedForMission.Contains(member)
+		&& selectedForMission.Count<assignedRegion.regionalEncounter.maxAllowedMembers
+		&& handler.assignedMember.GetFatigue()+PartyMember.fatigueIncreasePerEncounter<=100
+		&& !PartyManager.mainPartyManager.GetAssignedTask(member, out emptyOutVar))//EncounterCanvasHandler.encounterMaxPlayerCount) 
 		{
 			selectedForMission.Add(member);
 			handler.selected=true;
@@ -103,6 +106,8 @@ public class MapScoutingHandler : MonoBehaviour {
 				//EncounterCanvasHandler.mainEncounterCanvasHandler.StartNewEncounter(assignedRegion,selectedForMission);
 				//EndDialog();
 				//PartyManager.mainPartyManager.EnterPartyIntoEncounter(selectedForMission);
+				//Use this to indicate encounter having been visited
+				assignedRegion.visible=true;
 				MapManager.main.EnterEncounter(assignedRegion.regionalEncounter,selectedForMission,false);
 			}
 		}

@@ -294,7 +294,7 @@ public class PartyMember
 	public float baseAttackHitChance=0.66f;
 	public float meleeHitchanceMod=0;
 	public float rangedHitchanceMod=0;
-	float hitChanceReductionPerStaminaPoint=0.05f;//0.05f;
+	float hitChanceReductionPerStaminaPoint=0.025f;//0.05f;
 	public float GetCurrentAttackHitChance(bool rangedMode)
 	{
 		float currentAttackHitChance=baseAttackHitChance;
@@ -351,7 +351,7 @@ public class PartyMember
 		{
 			_hunger=value;
 			if (_hunger<0) {_hunger=0;}
-			if (_hunger>100) {_hunger=100;}
+			//if (_hunger>100) {_hunger=100;}
 		}
 	}
 	int _hunger;
@@ -391,13 +391,16 @@ public class PartyMember
 	}
 	public void ChangeFatigue(int fatigueDelta)
 	{
-		if (fatigue<100) SetFatigue(fatigue+fatigueDelta);
-		else ChangeHunger(fatigueDelta);
+		SetFatigue(fatigue+fatigueDelta);
+		//else ChangeHunger(fatigueDelta);
 	}
+	public int fatigueRestoreWait=30;
+	
 	//public int fatigueIncreasePerAction;
 	public int maxStaminaReductionFromFatigue=6;
-	const int fatigueIncreasePerEncounter=15;
-	public const int mapMoveFatigueCost=10;
+	public const int fatigueIncreasePerEncounter=0;
+	//public const int mapMoveFatigueCost=25;
+	public const int campSetupFatigueCost=25;
 	
 	//MORALE
 	public int morale
@@ -553,13 +556,13 @@ public class PartyMember
 		moraleDecayPerHour=1;
 		
 		hunger=0;
-		hungerIncreasePerHour=5;
+		hungerIncreasePerHour=50;
 		
 		fatigue=0;
 		//fatigueIncreasePerAction=10;
 		
 		armorValue=0;
-		maxCarryCapacity=4;//
+		maxCarryCapacity=3;//
 		visibilityMod=0;
 		moraleDamageMod=0;//0.02f;
 		moraleChangeFromKills=0;
@@ -693,13 +696,29 @@ public class PartyMember
 		
 		//REGEN/LOSE HEALTH
 		//if (hunger<100){health+=2*hoursPassed;}
-		if (hunger==100)
+		
+		//DO HUNGER INCREASE
+		float cookMult=1;
+		foreach (PartyMember member in PartyManager.mainPartyManager.partyMembers)
 		{
-			TakeDamage(2*hoursPassed,false,BodyPartTypes.Hands);
-			TakeDamage(2*hoursPassed,false,BodyPartTypes.Legs);
-			TakeDamage(2*hoursPassed,false,BodyPartTypes.Vitals);
+			if (member.isCook) {cookMult=Cook.hungerIncreaseMult; break;}
+		}	
+		ChangeHunger((int)(hungerIncreasePerHour*cookMult)*hoursPassed);
+		//Calculate OverHunger
+		int hungerOverload=Mathf.FloorToInt((hunger-100)*0.1f);
+		//Reset hunger from over 100
+		if (hunger>100) SetHunger(100);
+		//If hunger reached >100
+		if (hungerOverload>0)
+		{
+			hoursPassed*=hungerOverload;
+		//if (hunger==100)
+		//{
+			TakeDamage(1*hoursPassed,false,BodyPartTypes.Hands);
+			TakeDamage(1*hoursPassed,false,BodyPartTypes.Legs);
+			TakeDamage(1*hoursPassed,false,BodyPartTypes.Vitals);
 			//{health-=2*hoursPassed;}
-		}		
+		//}		
 		
 		//DO MAX STAMINA
 		/*
@@ -708,7 +727,8 @@ public class PartyMember
 		stamina=currentMaxStamina;*/
 		//DO MORALE
 		//if party is starving, morale drops
-		if (hunger>=100) {morale-=moraleDecayPerHour*hoursPassed;}
+			morale-=moraleDecayPerHour*hoursPassed;
+		}
 		else
 		{
 			if (morale!=baseMorale)
@@ -731,17 +751,12 @@ public class PartyMember
 					else {morale+=moraleChange;}
 				}
 			}
+			//hunger+=(int)(hungerIncreasePerHour*cookMult)*hoursPassed;
 		}
 		
-		//DO HUNGER INCREASE
-		float cookMult=1;
-		foreach (PartyMember member in PartyManager.mainPartyManager.partyMembers)
-		{
-			if (member.isCook) {cookMult=Cook.hungerIncreaseMult; break;}
-		}	
-		//hunger+=(int)(hungerIncreasePerHour*cookMult)*hoursPassed;
-		ChangeHunger((int)(hungerIncreasePerHour*cookMult)*hoursPassed);
-		
+		//Make sure members can't get stuck outside of camps
+		ChangeFatigue(-fatigueRestoreWait);
+					
 		//DO RELATIONSHIPS
 		RollRelationships();
 	}
@@ -755,13 +770,11 @@ public class PartyMember
 			return new AssignedTask(this,taskType
 			,()=>
 			{
-				if (this.fatigue>0 
-				|| this.health<this.maxHealth
-				|| this.memberBodyParts.currentParts[BodyPartTypes.Hands].health<this.memberBodyParts.currentParts[BodyPartTypes.Hands].maxHealth) return true;
-				else 
-				{
-					return false;
-				}
+				if (this.fatigue>0 || this.health<this.maxHealth
+				|| this.memberBodyParts.GetPartHealth(BodyPartTypes.Hands)<handsMaxHealth
+				|| this.memberBodyParts.GetPartHealth(BodyPartTypes.Legs)<legsMaxHealth) return true;
+				else return false;
+				
 			}
 			,()=>{RestEffect(restInBed);}
 			,()=>{currentRegion.campInRegion.freeBeds-=1;}
@@ -773,7 +786,10 @@ public class PartyMember
 			return new AssignedTask(this,taskType
 			,()=>
 			{
-				return this.CanRest();
+				if (this.fatigue>0 || this.health<this.maxHealth
+				|| this.memberBodyParts.GetPartHealth(BodyPartTypes.Hands)<handsMaxHealth
+				|| this.memberBodyParts.GetPartHealth(BodyPartTypes.Legs)<legsMaxHealth) return true;
+				else return false;
 			}
 			,()=>{RestEffect(restInBed);}
 			);
@@ -782,24 +798,25 @@ public class PartyMember
 	
 	public bool CanRest()
 	{
-		if (this.fatigue>0 || this.health<this.maxHealth
+		if (!MapManager.main.memberTokens[this].moved &&
+		(this.fatigue>0 || this.health<this.maxHealth
 		|| this.memberBodyParts.GetPartHealth(BodyPartTypes.Hands)<handsMaxHealth
-		|| this.memberBodyParts.GetPartHealth(BodyPartTypes.Legs)<legsMaxHealth) return true;
+		|| this.memberBodyParts.GetPartHealth(BodyPartTypes.Legs)<legsMaxHealth)) return true;
 		else return false;
 	}
 	
 	void RestEffect(bool hasBed)
 	{	
-		int bedModifier=5;
-		int totalRest=5;
+		int bedModifier=20;
+		int totalRest=80-fatigueRestoreWait;
 		if (hasBed) totalRest+=bedModifier;
-		int newFatigue=_fatigue-=totalRest;//Mathf.RoundToInt(maxFatigueRestoreReductionFromHunger*hunger*0.01f);
+		int newFatigue=_fatigue-totalRest;//Mathf.RoundToInt(maxFatigueRestoreReductionFromHunger*hunger*0.01f);
 		SetFatigue(newFatigue);
 		//Regen is currently disabled
 		
 		if (hunger<100)
 		{
-			float healthRegen=1f;//healthRegenPercentage;//-maxHealthRegenReductionFromHunger*hunger*0.01f;
+			float healthRegen=5f;//healthRegenPercentage;//-maxHealthRegenReductionFromHunger*hunger*0.01f;
 			memberBodyParts.currentParts[BodyPartTypes.Vitals].Heal(Mathf.RoundToInt(healthRegen));//memberBodyParts.currentParts[BodyPartTypes.Vitals].health*healthRegen));
 			memberBodyParts.currentParts[BodyPartTypes.Hands].Heal(Mathf.RoundToInt(healthRegen));//memberBodyParts.currentParts[BodyPartTypes.Hands].health*healthRegen));
 			memberBodyParts.currentParts[BodyPartTypes.Legs].Heal(Mathf.RoundToInt(healthRegen));//memberBodyParts.currentParts[BodyPartTypes.Legs].health*healthRegen));

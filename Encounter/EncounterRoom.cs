@@ -133,18 +133,28 @@ public class EncounterRoom
 	public Barricade barricadeInRoom=null;
 	//public bool isVisible=false;
 	
+	public bool hideImage=false;
+	
 	public string description="";
 	
 	public int xCoord=0;
 	public int yCoord=0;
 	
 	public Vector2 GetCoords() {return new Vector2(xCoord,yCoord);}
+	public void SetCoords(Vector2 newCoords) {xCoord=(int)newCoords.x; yCoord=(int)newCoords.y;}
 	
 	public EncounterRoom(Encounter parent, int x, int y)
 	{
 		xCoord=x;
 		yCoord=y;
 		parentEncounter=parent;
+	}
+	
+	public EncounterRoom(Encounter parent, Vector2 coords )
+	{
+		xCoord=(int)coords.x;
+		yCoord=(int)coords.y;
+		parentEncounter=parent;	
 	}
 	
 	public EncounterRoom(Encounter parent) {parentEncounter=parent;}

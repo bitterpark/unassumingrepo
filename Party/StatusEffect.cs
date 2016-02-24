@@ -27,9 +27,9 @@ public class Bleed:StatusEffect
 	}
 	//int affectedPartyMemberIndex;
 	PartyMember affectedMember;
-	int hoursDuration=3;
+	int hoursDuration=2;
 	int hoursPassed=0;
-	int bleedDmg=1;
+	int bleedDmg=10;
 	
 	public override void TimePassEffect(int timePassed)
 	{

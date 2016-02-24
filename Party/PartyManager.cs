@@ -60,8 +60,10 @@ public class PartyManager : MonoBehaviour
 
 	public static PartyManager mainPartyManager;//mainPlayerState;
 	
-	public int dayTime;//=0;
-	public int timePassed=0;
+	//public int dayTime;//=0;
+	//public int timePassed=0;
+	public int daysPassed=0;
+	public int dayTime=12;
 	
 	//public int mapCoordX;//=0;
 	//public int mapCoordY;//=0;
@@ -158,7 +160,7 @@ public class PartyManager : MonoBehaviour
 		//partyStatusCanvas.gameObject.SetActive(true);
 		statusCanvas.EnableStatusDisplay();
 		partyMemberCanvases=new Dictionary<PartyMember, PartyMemberCanvasHandler>();
-		dayTime=5;
+		//dayTime=5;
 		
 		//mapCoordX=0;
 		//mapCoordY=0;
@@ -191,8 +193,8 @@ public class PartyManager : MonoBehaviour
 		//startingRegion.StashItem(new SettableTrap());
 		//startingRegion.StashItem(new SettableTrap());
 		//startingRegion.StashItem(new Bandages());
-		//startingRegion.StashItem(new NineM());
-		//startingRegion.StashItem(new Shotgun());
+		//startingRegion.StashItem(new AssaultRifle());
+		//startingRegion.StashItem(new AssaultRifle());
 		//startingRegion.StashItem(new Medkit());
 		//startingRegion.StashItem(new Medkit());
 		//startingRegion.StashItem(new Backpack());
@@ -208,22 +210,31 @@ public class PartyManager : MonoBehaviour
 	
 	void PassTime(int hoursPassed)
 	{
-		timePassed+=hoursPassed;
-		dayTime=(int)Mathf.Repeat(dayTime+hoursPassed,24);
+		
+		dayTime=(int)Mathf.Repeat(dayTime+12,24);//hoursPassed;
+		string timePassageText="";
+		if (dayTime>0) timePassageText="Daytime";
+		else 
+		{
+			timePassageText="Night";
+			daysPassed+=1;
+		}
+		PartyStatusCanvasHandler.main.NewNotification(timePassageText);
+		//dayTime=(int)Mathf.Repeat(dayTime+hoursPassed,24);
 		//foreach (PartyMember member in partyMembers) {member.hunger+=10*hoursPassed;}
 		if (TimePassed!=null) {TimePassed(hoursPassed);}
 		
 		//Adjust camera bg color
 		float lightBottomThreshold=0.5f;
 		float noonLightLevelBonus=0.5f;
-		float newb=lightBottomThreshold+noonLightLevelBonus-(noonLightLevelBonus/12)*(Mathf.Abs(dayTime-12));//Mathf.Repeat(Camera.main.backgroundColor.b-0.083//+0.0416f*hoursPassed,1);
+		//float newb=lightBottomThreshold+noonLightLevelBonus-(noonLightLevelBonus/12)*(Mathf.Abs(dayTime-12));//Mathf.Repeat(Camera.main.backgroundColor.b-0.083//+0.0416f*hoursPassed,1);
 		//Camera.main.backgroundColor=new Color(0,0,newb);//
 	}
 	
-	void AdvanceMapTurn()
+	public void AdvanceMapTurn()
 	{
-		//Make sure the rest tasks and time skip occur in proper order
 		PassTime(1);
+		//Make sure the rest tasks and time skip occur in proper order
 		foreach (MemberMapToken token in MapManager.main.memberTokens.Values) 
 		if (!assignedTasks.ContainsKey(token.assignedMember)) token.moved=false;
 		//Perform assigned tasks
@@ -241,7 +252,6 @@ public class PartyManager : MonoBehaviour
 		{
 			if (!assignedTasks[member].preconditionCheck()) RemoveMemberTask(member);
 		}
-		
 		//This may cause issues on gameover
 		PartyStatusCanvasHandler.main.RefreshAssignmentButtons(selectedMembers);
 		//PartyStatusCanvasHandler.main.StartTimeFlash();
@@ -257,6 +267,7 @@ public class PartyManager : MonoBehaviour
 			//partyMembers[0].TakeDamage(15,false,PartyMember.BodyPartTypes.Legs);
 			//AddPartyMemberStatusEffect(partyMembers[0],new Bleed(partyMembers[0]));
 		}
+		/*
 		if (Input.GetKeyDown(KeyCode.Space))
 		{
 			if (GameManager.main.gameStarted && !EncounterCanvasHandler.main.encounterOngoing && !GameEventManager.mainEventManager.drawingEvent)
@@ -264,7 +275,7 @@ public class PartyManager : MonoBehaviour
 				AdvanceMapTurn();
 				//foreach (MemberMapToken token in MapManager.main.memberTokens) token.moved=false;
 			}
-		}
+		}*/
 	}
 	
 	public int PartyMemberCount() {return partyMembers.Count;}
@@ -353,13 +364,14 @@ public class PartyManager : MonoBehaviour
 		}*/
 		movedList=new List<PartyMember>();
 		//float moveLength=1f;//(new Vector2(x,y)-selectedMembers[0].worldCoords).magnitude;//Mathf.Abs(x-mapCoordX)+Mathf.Abs(y-mapCoordY);//Mathf.Max (Mathf.Abs(x-mapCoordX),Mathf.Abs(y-mapCoordY));
-		if (selectedMembers[0].currentRegion!=moveRegion && selectedMembers[0].currentRegion.connectedRegions.Contains(moveRegion))
+		if (selectedMembers[0].currentRegion!=moveRegion 
+		&& selectedMembers[0].currentRegion.connections.ContainsKey(moveRegion))
 		{
 			moveSuccesful=true;
 			
 			foreach (PartyMember member in selectedMembers)
 			{
-				if	(member.GetFatigue()+PartyMember.mapMoveFatigueCost<=100) movedList.Add(member);//!MapManager.main.memberTokens[member].moved) movedList.Add(member);
+				if	(member.GetFatigue()+member.currentRegion.connections[moveRegion].moveFatigueCost<=100) movedList.Add(member);//!MapManager.main.memberTokens[member].moved) movedList.Add(member);
 			}
 			
 			if (movedList.Count>0)
@@ -374,7 +386,7 @@ public class PartyManager : MonoBehaviour
 				//Apply fatigue to all moved members
 				foreach (PartyMember member in movedList) 
 				{
-					member.ChangeFatigue(PartyMember.mapMoveFatigueCost);
+					member.ChangeFatigue(member.currentRegion.connections[moveRegion].moveFatigueCost);
 					MapManager.main.memberTokens[member].moved=true;
 				}
 			} 

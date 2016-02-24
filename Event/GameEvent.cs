@@ -181,8 +181,8 @@ public class AmbushEvent:GameEvent
 		{
 			case"Continue": 
 			{
-				int minHealthLoss=5;
-				int maxHealthLoss=20;
+				int minHealthLoss=3;
+				int maxHealthLoss=10;
 				int actualHealthLoss=Random.Range(minHealthLoss,maxHealthLoss+1);
 				if (movedMembers.Count==1) eventResult=movedMembers[0].name+" loses "+actualHealthLoss+" health";
 				else  eventResult="Everyone loses "+actualHealthLoss+" health";
@@ -219,7 +219,7 @@ public class MonsterAttack:GameEvent
 	{
 		string eventResult=null;
 		int fightDamage=25;
-		int runFatigue=-20;
+		int runFatigue=20;
 		int fightFatigue=-5;
 		
 		switch (choiceString)
@@ -526,7 +526,7 @@ public class SearchForSurvivor:GameEvent
 	public override string DoChoice (string choiceString, MapRegion eventRegion, List<PartyMember> movedMembers)
 	{
 		string eventResult=null;
-		int ignoreMoralePenalty=-10;
+		int ignoreMoralePenalty=10;
 		int fatigueChangeFailure=10;
 		
 		switch (choiceString)
@@ -552,7 +552,7 @@ public class SearchForSurvivor:GameEvent
 			}
 		case"Ignore it and move on":
 			{
-				eventResult="You decide not to take any chances searching for strangers and move on.\n\n"+ignoreMoralePenalty+" morale for everyone";
+				eventResult="You decide not to take any chances searching for strangers and move on.\n\n-"+ignoreMoralePenalty+" morale for everyone";
 				foreach (PartyMember member in movedMembers) {member.morale-=ignoreMoralePenalty;}
 				break;
 			}

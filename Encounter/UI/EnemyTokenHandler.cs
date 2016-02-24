@@ -136,10 +136,6 @@ public class EnemyTokenHandler : MonoBehaviour, IAttackAnimation, IGotHitAnimati
 	{
 		if (!destroyed && EncounterCanvasHandler.main.encounterOngoing)
 		{
-			if (currentPOI!=null) 
-			{
-				if (currentPOI.pointCoords==assignedEnemy.GetCoords()) currentPOI=null;
-			}
 			EnemyAttack attackInfo;//=new EnemyAttack();
 			EnemyMove movesInfo;
 			bool roundIsAttack=assignedEnemy.DoMyRound(masks,memberCoords,currentPOI,out attackInfo, out movesInfo);
@@ -176,6 +172,11 @@ public class EnemyTokenHandler : MonoBehaviour, IAttackAnimation, IGotHitAnimati
 						yield return new WaitForSeconds(moveWaitTime);
 					}*/
 				}
+			}
+			//Clear POI if it has been reached
+			if (currentPOI!=null) 
+			{
+				if (currentPOI.pointCoords==assignedEnemy.GetCoords()) currentPOI=null;
 			}
 			yield break;
 			//UpdateVisionStatusDisplay();

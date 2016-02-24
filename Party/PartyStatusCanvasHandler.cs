@@ -12,7 +12,7 @@ public class PartyStatusCanvasHandler : MonoBehaviour {
 	public Text timeText;
 	public Text ammoText;
 	public Button assignmentButton;
-	public Button exploreButton;
+	public Button turnButton;
 	public Transform memberCanvasGroup;
 	
 	public static PartyStatusCanvasHandler main;
@@ -33,7 +33,14 @@ public class PartyStatusCanvasHandler : MonoBehaviour {
 	public void EnableStatusDisplay()
 	{
 		GetComponent<Canvas>().enabled=true;
+		turnButton.onClick.RemoveAllListeners();
+		turnButton.onClick.AddListener(()=>
+		{
+			PartyManager.mainPartyManager.AdvanceMapTurn();
+			this.ResetTimeTurnButton(true);
+		});
 		displayEnabled=true;
+		ResetTimeTurnButton(true);
 	}
 	public void DisableStatusDisplay()
 	{
@@ -56,6 +63,28 @@ public class PartyStatusCanvasHandler : MonoBehaviour {
 		timeText.GetComponentInParent<Image>().CrossFadeAlpha(0.5f,flashingTime,false);
 	}*/
 	
+	public void ResetTimeTurnButton(bool enableButton)
+	{
+		/*
+		turnButton.gameObject.SetActive(false);
+		if (GameManager.main.gameStarted)
+		{
+			if (!EncounterCanvasHandler.main.encounterOngoing && !GameEventManager.mainEventManager.drawingEvent)
+			{
+				
+			}
+		}*/
+		if (enableButton)
+		{
+			turnButton.gameObject.SetActive(true);
+			string buttonText="";
+			if (PartyManager.mainPartyManager.dayTime==12) buttonText="Daytime";
+			else buttonText="Night";
+			turnButton.GetComponentInChildren<Text>().text=buttonText;
+		}
+		else turnButton.gameObject.SetActive(false);
+	}
+	
 	public void RefreshAssignmentButtons()
 	{
 		RefreshAssignmentButtons(PartyManager.mainPartyManager.selectedMembers);
@@ -63,6 +92,7 @@ public class PartyStatusCanvasHandler : MonoBehaviour {
 	
 	public void RefreshAssignmentButtons(List<PartyMember> selected)
 	{
+		/*
 		if (selected.Count==0 || EncounterCanvasHandler.main.encounterOngoing)
 		{
 			assignmentButton.gameObject.SetActive(false);
@@ -73,14 +103,17 @@ public class PartyStatusCanvasHandler : MonoBehaviour {
 			assignmentButton.gameObject.SetActive(false);
 			exploreButton.gameObject.SetActive(false);
 			MapRegion checkedRegion=selected[0].currentRegion;
+			
 			List<PartyMember> membersFreeToAct=new List<PartyMember>();
 			
+			//Make sure members don't have an active task
 			foreach (PartyMember member in selected)
 			{
-				if (!MapManager.main.memberTokens[member].moved)
-				{
-					membersFreeToAct.Add(member);
-				}
+				//if (!MapManager.main.memberTokens[member].moved)
+				//{
+					AssignedTaskTypes emptyVar;
+					if (!PartyManager.mainPartyManager.GetAssignedTask(member,out emptyVar)) membersFreeToAct.Add(member);
+				//}
 			}
 			//First-see if you can add non-acting members to acting members
 			if (membersFreeToAct.Count>0)
@@ -100,7 +133,7 @@ public class PartyStatusCanvasHandler : MonoBehaviour {
 				}
 			}
 		}
-		
+		*/
 		foreach (PartyMemberCanvasHandler memberCanvas in PartyManager.mainPartyManager.partyMemberCanvases.Values)
 		{
 			memberCanvas.RefreshAssignmentButton();
@@ -114,9 +147,29 @@ public class PartyStatusCanvasHandler : MonoBehaviour {
 	{
 		if (displayEnabled)
 		{
+			if (turnButton.gameObject.activeInHierarchy)
+			{
+				if (GameManager.main.gameStarted)
+				{
+					if (EncounterCanvasHandler.main.encounterOngoing || GameEventManager.mainEventManager.drawingEvent)
+					{
+						ResetTimeTurnButton(false);
+					}
+				}
+			}
+			else
+			{
+				if (GameManager.main.gameStarted)
+				{
+					if (!EncounterCanvasHandler.main.encounterOngoing && !GameEventManager.mainEventManager.drawingEvent)
+					{
+						ResetTimeTurnButton(true);
+					}
+				}
+			}	
 			//mapXText.text="X:"+PartyManager.mainPartyManager.mapCoordX.ToString();
 			//mapYText.text="Y:"+PartyManager.mainPartyManager.mapCoordY.ToString();
-			timeText.text="Time:"+PartyManager.mainPartyManager.dayTime.ToString()+":00";
+			timeText.text="Day:"+PartyManager.mainPartyManager.daysPassed;//PartyManager.mainPartyManager.dayTime.ToString()+":00";
 			ammoText.text="Ammo:"+PartyManager.mainPartyManager.ammo.ToString();
 		}
 	}

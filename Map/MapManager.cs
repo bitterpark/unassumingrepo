@@ -27,6 +27,9 @@ public class MapManager : MonoBehaviour
 	//Dictionary<Vector2,MapRegion> mapRegions=new Dictionary<Vector2, MapRegion>();
 	public List<MapRegion> mapRegions=new List<MapRegion>();
 	
+	public const int townNodeFatigueCost=25;
+	public const int townToTownFatigueCost=75;
+	
 	//THIS METHOD CAUSES THE DISPLACEMENT BUG
 	public void FocusViewOnRegion(RectTransform regionTransform)
 	{
@@ -67,7 +70,7 @@ public class MapManager : MonoBehaviour
 		//Town-related boundaries
 		float townAreaSpriteSize=75f;
 		float townNodeGap=5f;
-		float townNodeWiggleRoom=80f;
+		float townNodeWiggleRoom=100f;
 		float townNodeSideSize=townAreaSpriteSize+townNodeGap+townNodeWiggleRoom;
 		
 		int townNodeSlots=3;
@@ -80,13 +83,13 @@ public class MapManager : MonoBehaviour
 		int horTownSlots=5;
 		int vertTownSlots=3;
 		
-		float borderOffset=50f;
+		float borderOffset=20f;
 		
 		//float townMinX=40f;
 		//float townMinY=40f;
 		
 		
-		float townSlotWiggleRoom=300f;
+		float townSlotWiggleRoom=200f;
 		float townSlotSideSize=largeTownSideSize+townSlotWiggleRoom;
 		
 		float gapBetweenTownSlots=10f;
@@ -117,14 +120,24 @@ public class MapManager : MonoBehaviour
 		
 		int largeTownCount=3;
 		
+		System.Func<float,Vector2,Vector2> slotOffsetter=(float sidePaddingMaxOffset,Vector2 slotCoords)=>
+		{
+			Vector2 randomSlotOffset=Random.insideUnitCircle*(Random.Range(1f,sidePaddingMaxOffset));
+			Vector2 newTownCenterCoords=slotCoords+randomSlotOffset;
+			return newTownCenterCoords;
+		};
+		
 		List<Vector2> townCenters=new List<Vector2>();
 		Vector2 endgameCenter=Vector2.zero;
 		for (int i=0; i<=largeTownCount; i++)
 		{
-			Vector2 randomPointInSlot=Random.insideUnitCircle*(Random.Range(1f,townSlotSideSize*0.5f-largeTownSideSize*0.5f));
-			int randomSlotIndex=Random.Range(0,townSlotCenters.Count);
-			Vector2 newTownCenterCoords=townSlotCenters[randomSlotIndex]+randomPointInSlot;
-			townSlotCenters.RemoveAt(randomSlotIndex);
+			//Vector2 randomPointInSlot=Random.insideUnitCircle*(Random.Range(1f,townSlotSideSize*0.5f-largeTownSideSize*0.5f));
+			//int randomSlotIndex=Random.Range(0,townSlotCenters.Count);
+			//Vector2 newTownCenterCoords=townSlotCenters[randomSlotIndex]+randomPointInSlot;
+			//townSlotCenters.RemoveAt(randomSlotIndex);
+			Vector2 randomSlot=townSlotCenters[Random.Range(0,townSlotCenters.Count)];
+			Vector2 newTownCenterCoords=slotOffsetter.Invoke(Random.Range(1f,townSlotSideSize*0.5f-largeTownSideSize*0.5f),randomSlot);
+			townSlotCenters.Remove(randomSlot);
 			//print ("new town center coords"+newTownCenterCoords);
 			//print("new town topleft coords:"+(newTownCenterCoords-new Vector2(largeTownSideSize*0.5f,-largeTownSideSize*0.5f)).ToString());
 			/*
@@ -141,12 +154,13 @@ public class MapManager : MonoBehaviour
 		{
 			//Create new town
 			MapRegion newTown=CreateRegion(townCenter);
-			foreach(MapRegion region in newTowns) {newTown.AddConnectedRegion(region);}
+			foreach(MapRegion region in newTowns) {newTown.AddConnectedRegion(region,80);}
 			//newRegion.SetConnectedRegions(new List<MapRegion>(mapRegions));
 			newTowns.Add(newTown);
 		}
 		
-		//POPULATE TOWNS		
+		//POPULATE TOWNS
+		//Create slot coords		
 		List<Vector2> populatingOffsets=new List<Vector2>();
 		float startOffset=-townNodeSideSize;
 		for (int i=0; i<townNodeSlots; i++)
@@ -156,20 +170,85 @@ public class MapManager : MonoBehaviour
 				if (!(j==1 && i==1)) populatingOffsets.Add(new Vector2(startOffset+townNodeSideSize*j,startOffset+townNodeSideSize*i));
 			}
 		}
-
-		int nodeCount=5;
+		//Fill in nodes
+		
+		
 		foreach(MapRegion town in newTowns)
 		{
-			List<Vector2> unusedOffsets=new List<Vector2>(populatingOffsets);
-			for (int i=0; i<nodeCount; i++)
+			int nodeCount=Random.Range(6,9);
+			int loopCount=0;
+			int gauntletCount=0;
+			
+			float randomRoll=Random.value;
+			//See if town will have any special nodes at all
+			if (randomRoll<=0.8f)
 			{
-				Vector2 randomPointInNode=Random.insideUnitCircle*(Random.Range(1f,townNodeSideSize*0.5f-townAreaSpriteSize*0.5f));
-				//Vector2 newNodeOffset=newNodeOffsetDir*Random.Range(minNodeDistance,maxNodeDistance);
-				Vector2 newNodeOffset=unusedOffsets[Random.Range(0,unusedOffsets.Count)];
-				unusedOffsets.Remove(newNodeOffset);
+				//See if it will have only loops, gauntlets, or both
+				if (Random.value>0.66f) {loopCount=1; gauntletCount=1;}
+				if (Random.value<=0.66f) {loopCount=2; gauntletCount=0;}
+				if (Random.value<=0.33f) {loopCount=0; gauntletCount=2;}
+			}
+			
+			List<Vector2> unusedOffsets=new List<Vector2>(populatingOffsets);
+			//Create gauntlets and loops
+			int specialNodesPerLoop=Random.Range(2,4);
+			int specialNodesPerGauntlet=2;
+			int nodesRemaining=nodeCount;
+			
+			//print ("Town gauntlets:"+gauntletCount+", town loops:"+loopCount);
+			//print ("Nodes per:"+specialNodesPer);
+			//print ("Total slots:"+unusedOffsets.Count);
+			//Do gauntlets
+			for (int i=0; i<gauntletCount;i++)
+			{
+				int startingSlotIndex=Random.Range(0,unusedOffsets.Count-specialNodesPerGauntlet);
 				
-				MapRegion newNode=CreateRegion((Vector2)town.transform.localPosition+newNodeOffset+randomPointInNode);
-				newNode.AddConnectedRegion(town);
+				List<MapRegion> previousNodes=new List<MapRegion>();
+				for (int j=0; j<specialNodesPerGauntlet; j++)
+				{
+					Vector2 usedSlot=unusedOffsets[startingSlotIndex+j];
+					
+					Vector2 newOffset=slotOffsetter.Invoke(Random.Range(1f,townNodeSideSize*0.5f-townAreaSpriteSize*0.5f),usedSlot);
+					MapRegion newNode=CreateRegion((Vector2)town.transform.localPosition+newOffset);
+					if (j>0) newNode.AddConnectedRegion(previousNodes[previousNodes.Count-1],10);
+					else newNode.AddConnectedRegion(town,townNodeFatigueCost);
+					previousNodes.Add(newNode);
+					nodesRemaining--;
+				}
+				//This is necesary to properly iterate and dispose indices
+				unusedOffsets.RemoveRange(startingSlotIndex,specialNodesPerGauntlet);
+			}
+			//Do loops
+			for (int i=0; i<loopCount;i++)
+			{
+				if (specialNodesPerLoop==3 && specialNodesPerLoop>=nodesRemaining) specialNodesPerLoop--;
+				int startingSlotIndex=Random.Range(0,unusedOffsets.Count-specialNodesPerLoop);
+				
+				List<MapRegion> previousNodes=new List<MapRegion>();
+				for (int j=0; j<specialNodesPerLoop; j++)
+				{
+					Vector2 usedSlot=unusedOffsets[startingSlotIndex+j];
+					
+					Vector2 newOffset=slotOffsetter.Invoke(Random.Range(1f,townNodeSideSize*0.5f-townAreaSpriteSize*0.5f),usedSlot);
+					MapRegion newNode=CreateRegion((Vector2)town.transform.localPosition+newOffset);
+					if (j>0) newNode.AddConnectedRegion(previousNodes[previousNodes.Count-1],10);
+					if (j==0 || j==specialNodesPerLoop-1) newNode.AddConnectedRegion(town,townNodeFatigueCost);
+					previousNodes.Add(newNode);
+					nodesRemaining--;//
+				}
+				//This is necessary to properly track indices and dispose
+				unusedOffsets.RemoveRange(startingSlotIndex,specialNodesPerLoop);
+			}
+			
+			for (int i=0; i<nodesRemaining; i++)
+			{
+				//Vector2 randomPointInNode=Random.insideUnitCircle*(Random.Range(1f,townNodeSideSize*0.5f-townAreaSpriteSize*0.5f));
+				Vector2 usedSlot=unusedOffsets[Random.Range(0,unusedOffsets.Count)];
+				unusedOffsets.Remove(usedSlot);
+				Vector2 newOffset=slotOffsetter.Invoke(Random.Range(1f,townNodeSideSize*0.5f-townAreaSpriteSize*0.5f),usedSlot);
+				
+				MapRegion newNode=CreateRegion((Vector2)town.transform.localPosition+newOffset);
+				newNode.AddConnectedRegion(town,townNodeFatigueCost);
 			}
 		}
 		
@@ -180,7 +259,7 @@ public class MapManager : MonoBehaviour
 		//Vector2 endgameCenterCoords=townSlotCenters[randomSlotIndex]+randomPointInSlot;
 		//townSlotCenters.RemoveAt(randomSlotIndex);
 		MapRegion endgameEncounter=CreateRegion(endgameCenter);
-		foreach(MapRegion region in newTowns) {endgameEncounter.AddConnectedRegion(region);}
+		foreach(MapRegion region in newTowns) {endgameEncounter.AddConnectedRegion(region,townToTownFatigueCost);}
 		
 		//Final step - party placement
 		//StartCoroutine(MapGenViewFocus(mapRegions[0].GetComponent<RectTransform>()));
@@ -259,12 +338,17 @@ public class MapManager : MonoBehaviour
 	
 	public void RegionClicked(MapRegion clickedRegion)
 	{	
+		bool tryingPartyMove=false;
 		if (PartyManager.mainPartyManager.selectedMembers.Count>0)
 		{
-			if (!EncounterCanvasHandler.main.encounterOngoing)
+			//IF MOVING PARTY
+			if (PartyManager.mainPartyManager.selectedMembers[0].currentRegion!=clickedRegion)
 			{
-				//See which of the selected party members are capable of moving
-				/*
+				if (!EncounterCanvasHandler.main.encounterOngoing)
+				{
+					tryingPartyMove=true;
+					//See which of the selected party members are capable of moving
+					/*
 				List<PartyMember> movedMembers=new List<PartyMember>();
 				foreach (PartyMember member in PartyManager.mainPartyManager.selectedMembers)
 				{
@@ -272,45 +356,54 @@ public class MapManager : MonoBehaviour
 				}
 				//If none of the selected members are capable of moving, quit
 				if (movedMembers.Count==0) return;*/
-				List<PartyMember> movedMembers;
-				if (PartyManager.mainPartyManager.ConfirmMapMovement(clickedRegion, out movedMembers))//.MovePartyToMapCoords(clickedRegion.xCoord,clickedRegion.yCoord))
-				{
-					bool noEventBasedMove=true;
-					bool eventHappened=GameEventManager.mainEventManager.RollEvents(ref noEventBasedMove,clickedRegion,movedMembers);
-					if (noEventBasedMove)
+					
+					List<PartyMember> movedMembers;
+					if (PartyManager.mainPartyManager.ConfirmMapMovement(clickedRegion, out movedMembers))//.MovePartyToMapCoords(clickedRegion.xCoord,clickedRegion.yCoord))
 					{
-						//MovePartyToRegion(clickedRegion);
-						//foreach (PartyMember member in movedMembers)
-						//{
+						bool noEventBasedMove=true;
+						bool eventHappened=GameEventManager.mainEventManager.RollEvents(ref noEventBasedMove,clickedRegion,movedMembers);
+						if (noEventBasedMove)
+						{
+							//MovePartyToRegion(clickedRegion);
+							//foreach (PartyMember member in movedMembers)
+							//{
 							MoveMembersToRegion(clickedRegion,movedMembers.ToArray());
-						//}
-						//DiscoverRegions(clickedRegion.GetCoords());
-						//Threat level roll
-						
-						//Searches if a scout is included in the party, if so - no ambushes trigger
-						bool membersCanBeAmbushed=true;
-						foreach (PartyMember member in movedMembers)
-						{
-							if (member.isScout) {membersCanBeAmbushed=false; break;}
-						}
-						
-						if (clickedRegion.hasEncounter && !eventHappened && membersCanBeAmbushed)
-						{
-							float randomAttackChance=0;
-							switch(clickedRegion.threatLevel)
+							//}
+							//DiscoverRegions(clickedRegion.GetCoords());
+							//Threat level roll
+							
+							//Searches if a scout is included in the party, if so - no ambushes trigger
+							bool membersCanBeAmbushed=true;
+							foreach (PartyMember member in movedMembers)
 							{
-							case MapRegion.ThreatLevels.Low: {randomAttackChance=0.1f; break;}
-							case MapRegion.ThreatLevels.Medium: {randomAttackChance=0.25f; break;}
-							case MapRegion.ThreatLevels.High: {randomAttackChance=0.4f; break;}
+								if (member.isScout) {membersCanBeAmbushed=false; break;}
 							}
-							if (Random.value<randomAttackChance) 
-							GameEventManager.mainEventManager.DoEvent(new AmbushEvent(),clickedRegion,movedMembers);
-							//EnterEncounter(new RandomAttack(clickedRegion.regionalEncounter.encounterEnemyType),movedMembers,true);
-						}//*/
+							
+							if (clickedRegion.hasEncounter && !eventHappened && membersCanBeAmbushed)
+							{
+								float randomAttackChance=0;
+								switch(clickedRegion.threatLevel)
+								{
+								case MapRegion.ThreatLevels.Low: {randomAttackChance=0.1f; break;}
+								case MapRegion.ThreatLevels.Medium: {randomAttackChance=0.25f; break;}
+								case MapRegion.ThreatLevels.High: {randomAttackChance=0.4f; break;}
+								}
+								if (Random.value<randomAttackChance) 
+									GameEventManager.mainEventManager.DoEvent(new AmbushEvent(),clickedRegion,movedMembers);
+								//EnterEncounter(new RandomAttack(clickedRegion.regionalEncounter.encounterEnemyType),movedMembers,true);
+							}//*/
+						}
 					}
 				}
 			}
-		}	
+		}
+		//IF ENTERING ENCOUNTER INSTEAD
+		if (!tryingPartyMove)
+		{
+			if (clickedRegion.hasEncounter && clickedRegion.localPartyMembers.Count>0) 
+			MapManager.main.scoutingHandler.StartDialog(clickedRegion);
+		}
+		
 	}
 	/*
 	public void MoveMembersToRegion(Vector2 newRegionCoords, params PartyMember[] movedMembers)

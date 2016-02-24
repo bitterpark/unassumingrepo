@@ -6,22 +6,46 @@ using UnityEngine.UI;
 
 public class MapRegion : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, IPointerDownHandler
 {
-	//public Vector2 GetCoords() {return new Vector2(xCoord,yCoord);}
-	public List<MapRegion> connectedRegions=new List<MapRegion>();
-	public VectorUI roadLinePrefab;
-	public void AddConnectedRegion(MapRegion region)
-	{	
-		if (!connectedRegions.Contains(region))
+	public class RegionConnection
+	{
+		public VectorUI roadLine;
+		public List<MapRegion> connectsRegions;
+		public int moveFatigueCost;
+		public RegionConnection (VectorUI road,int moveCost, params MapRegion[] connectingRegions)
 		{
-			connectedRegions.Add(region);
-			if (!region.connectedRegions.Contains(this))
+			roadLine=road;
+			moveFatigueCost=moveCost;
+			connectsRegions=new List<MapRegion>(connectingRegions);
+		}
+	}
+	
+	//public Vector2 GetCoords() {return new Vector2(xCoord,yCoord);}
+	public Dictionary<MapRegion,RegionConnection> connections=new Dictionary<MapRegion,RegionConnection>();
+	
+	public VectorUI roadLinePrefab;
+	
+	//For creating connections in MapManager mapgen
+	public void AddConnectedRegion(MapRegion region, int fatigueCost)
+	{
+		//Create graphic
+		VectorUI newVectorUI=Instantiate(roadLinePrefab);
+		List<Vector2> roadPoints=new List<Vector2>();
+		roadPoints.Add(transform.position);
+		roadPoints.Add(region.transform.position);
+		newVectorUI.AssignVectorLine("Road Line",transform.parent,false,roadPoints,8f,Color.black);
+		//Create connection
+		RegionConnection newConnection=new RegionConnection(newVectorUI,fatigueCost,this,region);
+		region.AddConnectedRegion(this,newConnection);
+		connections.Add(region,newConnection);
+	}
+	//For adding created connections to point B of the connection
+	public void AddConnectedRegion(MapRegion region, RegionConnection connection)
+	{	
+		if (!connections.ContainsKey(region))
+		{
+			if (!region.connections.ContainsKey(this))
 			{
-				VectorUI newVectorUI=Instantiate(roadLinePrefab);
-				List<Vector2> roadPoints=new List<Vector2>();
-				roadPoints.Add(transform.position);
-				roadPoints.Add(region.transform.position);
-				newVectorUI.AssignVectorLine("Road Line",transform.parent,false,roadPoints,8f,Color.black);
-				region.AddConnectedRegion(this);
+				connections.Add(region,connection);
 			}
 		}
 	}
@@ -234,9 +258,9 @@ public class MapRegion : MonoBehaviour, IPointerEnterHandler, IPointerExitHandle
 			if (threatRoll<0.7f) threatLevel=ThreatLevels.Medium;
 			if (threatRoll<0.3f) threatLevel=ThreatLevels.High;
 		}
-		if (threatLevel==ThreatLevels.Low) campSetupTimeRemaining+=2;
-		if (threatLevel==ThreatLevels.Medium) campSetupTimeRemaining+=4;
-		if (threatLevel==ThreatLevels.High) campSetupTimeRemaining+=6;
+		//if (threatLevel==ThreatLevels.Low) campSetupTimeRemaining+=2;
+		//if (threatLevel==ThreatLevels.Medium) campSetupTimeRemaining+=4;
+		//if (threatLevel==ThreatLevels.High) campSetupTimeRemaining+=6;
 	}
 	
 	public void GenerateHorde(int emptySigVar)
@@ -319,6 +343,18 @@ public class MapRegion : MonoBehaviour, IPointerEnterHandler, IPointerExitHandle
 				else {textExists=false;}
 			}
 		}
+		if (PartyManager.mainPartyManager.selectedMembers.Count>0)
+		{
+			MapRegion cursorRegion=PartyManager.mainPartyManager.selectedMembers[0].currentRegion;
+			if (cursorRegion.connections.ContainsKey(this))
+			{
+				if (textExists) areaDescription+="\n";
+				textExists=true;
+				areaDescription+="Move cost:"+cursorRegion.connections[this].moveFatigueCost;
+				
+			}
+		}
+		
 		if (textExists)	TooltipManager.main.CreateTooltip(areaDescription,this.transform);
 	}
 

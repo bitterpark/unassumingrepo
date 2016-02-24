@@ -163,7 +163,7 @@ public class Slob:Perk
 
 public class LeanEater:Perk
 {
-	int hungerReduction=2;
+	int hungerReduction=20;
 	//string name="Lean Eater";
 	public LeanEater ()
 	{
@@ -177,7 +177,7 @@ public class LeanEater:Perk
 
 public class BigEater:Perk
 {
-	int hungerIncrease=2;
+	int hungerIncrease=25;
 	//string name="Big Eater";
 	public BigEater ()
 	{
@@ -395,7 +395,7 @@ public class Medic: Perk
 }
 public class Cook: Perk
 {
-	public static float hungerIncreaseMult=0.5f;
+	public static float hungerIncreaseMult=0.2f;
 	public Cook ()
 	{
 		name="Cook";

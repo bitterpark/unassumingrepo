@@ -45,6 +45,7 @@ public class EncounterCanvasHandler : MonoBehaviour
 	public MemberTokenHandler memberTokenPrefab;
 	//REAL		
 	public Dictionary<Vector2,RoomButtonHandler> roomButtons=new Dictionary<Vector2, RoomButtonHandler>();
+	List<GameObject> wallPaddingButtons=new List<GameObject>();
 	
 	//public EnemyPortrait enemyPortrait;
 	//public Dictionary<PartyMember,CombatSelectorHandler> selectors;
@@ -118,16 +119,21 @@ public class EncounterCanvasHandler : MonoBehaviour
 	public void StartNewEncounter(Encounter newEncounter, List<PartyMember> membersOnMission, bool isAmbush)
 	{
 		encounterOngoing=true;
-		
 		//do party bonds
 		encounterMembers.Clear();
-		memberCoords.Clear();
+		memberCoords.Clear();//
+		
+		Vector2 entranceCoords=Vector2.zero;
+		foreach (EncounterRoom room in newEncounter.encounterMap.Values) 
+		{
+			if (room.isEntrance) entranceCoords=room.GetCoords();
+		}
 		
 		encounterMembers.AddRange(membersOnMission.ToArray());
 		foreach (PartyMember encounterMember in encounterMembers) 
 		{
 			encounterMember.EncounterStartTrigger(encounterMembers);
-			memberCoords.Add(encounterMember,Vector2.zero);
+			memberCoords.Add(encounterMember,entranceCoords);
 			
 		}
 		currentEncounter=newEncounter;
@@ -201,8 +207,8 @@ public class EncounterCanvasHandler : MonoBehaviour
 			//if last party member didn't die moving away
 			if (encounterOngoing) 
 			{
+				MakeNoise(startingRoom.GetCoords(),1);
 				MovePartyMemberToRoom(selectedMember,roomHandler,false);
-				MakeNoise(roomHandler.GetRoomCoords(),1);
 				DeadMemberCleanupCheck();
 				
 				if (encounterOngoing)
@@ -310,13 +316,14 @@ public class EncounterCanvasHandler : MonoBehaviour
 			int visionRange=1;
 			//int verticalVisionRange=3;
 			//int horizontalVisionRange=4;
+			/*
 			if (PartyManager.mainPartyManager.dayTime<6 | PartyManager.mainPartyManager.dayTime>18) 
 			{
-				//Nighttime range
-				//visionRange=1;
-				//Nighttime range with flashlight
-				//if (member.hasLight) {visionRange+=2;}
-			}
+				Nighttime range
+				visionRange=1;
+				Nighttime range with flashlight
+				if (member.hasLight) {visionRange+=2;}
+			}*/
 			//////
 			//Make sure this is >= to max of the visionrange values
 			int hearingRange=2;
@@ -804,6 +811,8 @@ public class EncounterCanvasHandler : MonoBehaviour
 		//selectors=new Dictionary<PartyMember, CombatSelectorHandler>();
 		//enemySelectors=new Dictionary<EncounterEnemy, EnemySelectorHandler>();
 		roomButtons=new Dictionary<Vector2, RoomButtonHandler>();
+		wallPaddingButtons=new List<GameObject>();
+		
 		enemyTokens=new Dictionary<EncounterEnemy, EnemyTokenHandler>();
 		memberTokens=new Dictionary<PartyMember, MemberTokenHandler>();
 		
@@ -819,7 +828,9 @@ public class EncounterCanvasHandler : MonoBehaviour
 			{
 				EncounterRoom room=currentEncounter.encounterMap[new Vector2(j,i)];
 				RoomButtonHandler newRoomButton=Instantiate(roomPrefab);
-				roomButtons.Add(new Vector2(j,i),newRoomButton);
+				//Keep "invisible" wall objects in a separate collection, so they don't needlessly pad the proper room operations
+				if (!room.hideImage) roomButtons.Add(new Vector2(j,i),newRoomButton);
+				else wallPaddingButtons.Add(newRoomButton.gameObject);
 				newRoomButton.AssignRoom(room);
 				newRoomButton.transform.SetParent(encounterMapGroup,false);
 				
@@ -915,20 +926,9 @@ public class EncounterCanvasHandler : MonoBehaviour
 		enemyTokens.Clear();
 		
 		//clean map rooms
-		foreach (RoomButtonHandler handler in roomButtons.Values) 
-		{
-			/*
-			if (handler.assignedRoom.hasEnemies)
-			{
-				foreach (EncounterEnemy enemy in handler.assignedRoom.enemiesInRoom) 
-				{
-					EMoveEnemies-=enemyTokens[enemy].DoTokenMove;//enemy.Move;
-					EMemberMoved-=enemyTokens[enemy].UpdateTokenVision;//enemy.VisionUpdate;
-				}
-			}*/
-			GameObject.Destroy(handler.gameObject);
-		}
+		foreach (RoomButtonHandler handler in roomButtons.Values) {GameObject.Destroy(handler.gameObject);}
 		roomButtons.Clear();
+		foreach (GameObject invisibleWall in wallPaddingButtons) {GameObject.Destroy(invisibleWall);}
 		
 		
 	}
@@ -1114,7 +1114,7 @@ public class EncounterCanvasHandler : MonoBehaviour
 			if (handler!=selectedHandler) {handler.Deselect();}
 		}
 		selectedMember=selectedHandler.myMember;
-		FocusViewOnRoom(roomButtons[memberCoords[selectedMember]].GetComponent<RectTransform>());
+		//FocusViewOnRoom(roomButtons[memberCoords[selectedMember]].GetComponent<RectTransform>());
 	}
 	/*
 	//against enemies
@@ -1307,11 +1307,11 @@ public class EncounterCanvasHandler : MonoBehaviour
 	
 	
 	//Used by callbacks from member tokens and also by set off traps
-	public void RegisterDamage(int damage, BodyPart attackedPart, bool isRanged,EncounterEnemy attackedEnemy, IAttackAnimation attackingEntity)
+	public IEnumerator RegisterDamage(int damage, BodyPart attackedPart, bool isRanged,EncounterEnemy attackedEnemy, IAttackAnimation attackingEntity)
 	{
-		RegisterDamage(true,damage,attackedPart,isRanged,attackedEnemy,attackingEntity);
+		return RegisterDamage(true,damage,attackedPart,isRanged,attackedEnemy,attackingEntity);
 	}
-	public void RegisterDamage(bool hitSuccessful, int damage
+	public IEnumerator RegisterDamage(bool hitSuccessful, int damage
 	, BodyPart attackedPart, bool isRanged,EncounterEnemy attackedEnemy, IAttackAnimation attackingEntity)//Object attackingEntity)//PartyMember attackingMember)
 	{
 		//EncounterRoom currentRoom=currentEncounter.encounterMap[memberCoords[selectedMember]];
@@ -1320,7 +1320,7 @@ public class EncounterCanvasHandler : MonoBehaviour
 		if (hitSuccessful) actualDmg=roomButtons[attackedEnemy.GetCoords()].AttackEnemyInRoom(damage,attackedPart,attackedEnemy,isRanged);
 		
 		//bool blockInteraction=attackingEntity.GetType()==typeof(MemberTokenHandler);
-		StartCoroutine(VisualizeAttack(hitSuccessful,actualDmg,attackingEntity,enemyTokens[attackedEnemy]));//VisualizeAttackOnEnemy(actualDmg,attackedEnemy, attackingEntity));
+		yield return StartCoroutine(VisualizeAttack(hitSuccessful,actualDmg,attackingEntity,enemyTokens[attackedEnemy]));//VisualizeAttackOnEnemy(actualDmg,attackedEnemy, attackingEntity));
 		MemberTokenHandler attackingMemberToken=null;
 		//Find if attacker is member or trap
 		if (attackingEntity.GetType()==typeof(MemberTokenHandler)) attackingMemberToken=attackingEntity as MemberTokenHandler;
@@ -1357,6 +1357,7 @@ public class EncounterCanvasHandler : MonoBehaviour
 			GameObject.Destroy(enemyTokens[attackedEnemy].gameObject);
 			enemyTokens.Remove(attackedEnemy);
 		}
+		yield break;
 	}
 	/*
 	//If the attack is blocked, damage is stamina damage, else damage is health damage
@@ -1444,6 +1445,10 @@ public class EncounterCanvasHandler : MonoBehaviour
 	
 	public void AttackOnEnemy(EncounterEnemy enemy, bool ranged, BodyPart attackedPart, float hitChance)
 	{
+		StartCoroutine(AttackAnimationTurnoverSequence(enemy,ranged,attackedPart,hitChance));
+	}
+	IEnumerator AttackAnimationTurnoverSequence(EncounterEnemy enemy, bool ranged, BodyPart attackedPart, float hitChance)
+	{
 		int actualDmg=0;
 		bool hitSuccessful=false;
 		if (Random.value<=hitChance) hitSuccessful=true;
@@ -1451,7 +1456,7 @@ public class EncounterCanvasHandler : MonoBehaviour
 			if (ranged) actualDmg=selectedMember.RangedAttack();
 			else actualDmg=selectedMember.MeleeAttack();
 		}
-		RegisterDamage(hitSuccessful,actualDmg,attackedPart,ranged,enemy,memberTokens[selectedMember]);
+		yield return StartCoroutine(RegisterDamage(hitSuccessful,actualDmg,attackedPart,ranged,enemy,memberTokens[selectedMember]));
 		TurnOver(selectedMember,roomButtons[memberCoords[selectedMember]].assignedRoom,false);
 	}
 	

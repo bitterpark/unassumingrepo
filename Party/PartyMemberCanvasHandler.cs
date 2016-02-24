@@ -91,19 +91,25 @@ public class PartyMemberCanvasHandler : MonoBehaviour {
 		}
 		else
 		{
-			if (!MapManager.main.memberTokens[assignedMember].moved)
-			{
+			//if (!MapManager.main.memberTokens[assignedMember].moved)
+			//{
 				MapRegion checkedRegion=assignedMember.currentRegion;//MapManager.main.GetRegion(assignedMember.worldCoords);
 				if (!checkedRegion.hasCamp)
 				{
+					if (assignedMember.GetFatigue()+PartyMember.campSetupFatigueCost<=100)
+					{
 					assignmentButton.gameObject.SetActive(true);
-					assignmentButton.GetComponentInChildren<Text>().text="Build camp("+checkedRegion.campSetupTimeRemaining+")";
+					assignmentButton.GetComponentInChildren<Text>().text="Build camp("+PartyMember.campSetupFatigueCost+")";
 					assignmentButton.onClick.RemoveAllListeners();
 					assignmentButton.onClick.AddListener(
 					()=>
 					{
 						int totalInvestedHours=0;
+						assignedMember.ChangeFatigue(PartyMember.campSetupFatigueCost);
+						checkedRegion.SetUpCamp(1);
+						MapManager.main.memberTokens[assignedMember].moved=true;
 						//PartyManager.mainPartyManager.PassTime(campSetupTime);
+						/*
 						AssignedTask campBuildingTask=new AssignedTask(assignedMember,AssignedTaskTypes.BuildCamp
 						,()=>
 						{
@@ -112,10 +118,11 @@ public class PartyMemberCanvasHandler : MonoBehaviour {
 						}
 						,()=>{checkedRegion.SetUpCamp(1);}
 						);
-						PartyManager.mainPartyManager.AssignMemberNewTask(campBuildingTask);
+						PartyManager.mainPartyManager.AssignMemberNewTask(campBuildingTask);*/
 						PartyStatusCanvasHandler.main.RefreshAssignmentButtons();
 					}
 					);
+					}
 				}
 				else
 				{
@@ -138,7 +145,7 @@ public class PartyMemberCanvasHandler : MonoBehaviour {
 						});
 					}
 				}
-			}
+			//}
 		}
 	}
 	

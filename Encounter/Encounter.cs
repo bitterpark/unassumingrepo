@@ -4,10 +4,10 @@ using System.Collections.Generic;
 
 public class Encounter 
 {
-	public int minX=0;
-	public int minY=0;
-	public int maxX=0;
-	public int maxY=0;
+	public int minX=int.MaxValue;
+	public int minY=int.MaxValue;
+	public int maxX=int.MinValue;
+	public int maxY=int.MinValue;
 	
 	protected const int safeDistanceFromEntrance=1;
 	const float barricadeChance=0.15f;//0.08f;
@@ -223,10 +223,10 @@ public class Encounter
 		//encounterEnemyType=EncounterEnemy.EnemyTypes.Spindler;
 		enemyDescription=EncounterEnemy.GetMapDescription(encounterEnemyType);
 		//GenerateEncounter();
-		GenerateEncounterFromPrefabMap(PrefabAssembler.assembler.SetupEncounterMap(this,encounterAreaType),1f);//0.15f);//0.3f);
+		GenerateEncounterFromPrefabMap(PrefabAssembler.assembler.GenerateEncounterMap(this),1f);//.SetupEncounterMap(this,encounterAreaType),1f);//0.15f);//0.3f);
 		//GameManager.DebugPrint("New encounter added, maxX:"+maxX);
 	}
-	
+	//enemy count modifier is no longer used
 	protected void GenerateEncounterFromPrefabMap(List<EncounterRoom> prefabMap, float enemyCountModifier)
 	{
 		
@@ -310,7 +310,7 @@ public class Encounter
 		}
 		
 	}
-	//Called after an encounter finishes to reshuffle enemies and simulate the passing of time
+	//Called after an encounter finishes to reshuffle enemies, respawn dead enemies and simulate the passing of time
 	public void RandomizeEnemyPositions()
 	{
 		List<EncounterRoom> emptyRooms=new List<EncounterRoom>();
@@ -319,15 +319,18 @@ public class Encounter
 		EncounterRoom entranceRoom=null;
 		foreach (EncounterRoom room in encounterMap.Values)
 		{
-			if (room.isEntrance) {entranceRoom=room;}
-			if (room.hasEnemies) {roomsWithEnemies.Add(room);}
+			if (room.isEntrance) entranceRoom=room;
+			if (room.hasEnemies) 
+			{
+				roomsWithEnemies.Add(room);
+			}
 			else 
 			{
 				if (!room.isWall) {emptyRooms.Add(room);}
 			}
 		}
 		
-		
+		//Remove rooms that are too close to the entrance from consideration
 		foreach (EncounterRoom emptyRoom in new List<EncounterRoom>(emptyRooms))
 		{
 			if (Mathf.Abs(emptyRoom.xCoord-entranceRoom.xCoord)+Mathf.Abs(emptyRoom.yCoord-entranceRoom.yCoord)<=safeDistanceFromEntrance)
@@ -335,7 +338,7 @@ public class Encounter
 				emptyRooms.Remove(emptyRoom);
 			}
 		}
-		
+		//Reshuffle enemies around different rooms
 		while (emptyRooms.Count>0 && roomsWithEnemies.Count>0)
 		{
 			EncounterRoom startRoom=roomsWithEnemies[Random.Range(0,roomsWithEnemies.Count)];
@@ -348,8 +351,25 @@ public class Encounter
 				endRoom.enemiesInRoom[i].SetCoords(endRoom.GetCoords());
 			}	
 			roomsWithEnemies.Remove(startRoom);
+			if (Mathf.Abs(startRoom.xCoord-entranceRoom.xCoord)+Mathf.Abs(startRoom.yCoord-entranceRoom.yCoord)>safeDistanceFromEntrance)
+			{
+				emptyRooms.Add(startRoom);
+			}
 			emptyRooms.Remove(endRoom);
 		}
+		//Determine the number of additional enemies required
+		int currentEnemyCount=0;
+		int desiredEnemyCount=
+		Mathf.RoundToInt(emptyRooms.Count*EncounterEnemy.GetEnemyCountModifier(encounterEnemyType)*baselineEnemyPerRoomRatio);
+		
+		//Respawn missing enemies
+		for (int i=currentEnemyCount; (i<desiredEnemyCount && emptyRooms.Count>0);i++)
+		{
+			EncounterRoom randomlySelectedRoom=emptyRooms[Random.Range(0,emptyRooms.Count)];
+			randomlySelectedRoom.GenerateEnemy(encounterEnemyType);
+			emptyRooms.Remove(randomlySelectedRoom);
+		}
+		
 	}
 }
 

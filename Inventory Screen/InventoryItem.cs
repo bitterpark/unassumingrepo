@@ -567,7 +567,7 @@ public abstract class RangedWeapon:Weapon
 	public abstract int GetAmmoUsePerShot();
 	public override string GetMouseoverDescription ()
 	{
-		return itemName+"\nDamage:"+baseDamage+"\nAmmo per shot:"+GetAmmoUsePerShot()+"\n Weight:"+GetWeight();
+		return itemName+"\nDamage:"+baseDamage+"\nAccuracy modifier:"+accuracyMod+"\nAmmo per shot:"+GetAmmoUsePerShot()+"\n Weight:"+GetWeight();
 	}
 	//public override bool UseAction (PartyMember member) {return false;}
 }

@@ -83,28 +83,32 @@ public class RoomButtonHandler : MonoBehaviour, IPointerEnterHandler//, IDropHan
 	
 	public void AssignRoom(EncounterRoom newRoom)
 	{
-		assignedRoom=newRoom;
-		//because unassigned bool==false, this is necessary
-		isWall=assignedRoom.isWall;
-		isExit=assignedRoom.isExit;
-		isDiscovered=assignedRoom.isDiscovered;
-		hasEnemies=assignedRoom.hasEnemies;
-		hasLoot=assignedRoom.hasLoot;
-		lootIsLocked=assignedRoom.lootIsLocked;
-		canBarricade=assignedRoom.canBarricade;
-		
-		if (assignedRoom.trapInRoom!=null) SetTrap(assignedRoom.trapInRoom,false);
-		if (assignedRoom.barricadeInRoom!=null) {SpawnNewBarricadeToken();}
-		//this is FOR DEBUG PURPOSES ONLY!!!
-		roomX=newRoom.xCoord;
-		roomY=newRoom.yCoord;
-		
-		isVisible=false;
-		isWithinHearingRange=false;
-		//isVisible=assignedRoom.isVisible;
-		GetComponent<Button>().onClick.AddListener(()=>EncounterCanvasHandler.main.RoomClicked(this));
-		
-		foreach (InventoryItem item in newRoom.floorItems) {AddFloorItem(item);}
+		if (!newRoom.hideImage)
+		{
+			assignedRoom=newRoom;
+			//because unassigned bool==false, this is necessary
+			isWall=assignedRoom.isWall;
+			isExit=assignedRoom.isExit;
+			isDiscovered=assignedRoom.isDiscovered;
+			hasEnemies=assignedRoom.hasEnemies;
+			hasLoot=assignedRoom.hasLoot;
+			lootIsLocked=assignedRoom.lootIsLocked;
+			canBarricade=assignedRoom.canBarricade;
+			
+			if (assignedRoom.trapInRoom!=null) SetTrap(assignedRoom.trapInRoom,false);
+			if (assignedRoom.barricadeInRoom!=null) {SpawnNewBarricadeToken();}
+			//this is FOR DEBUG PURPOSES ONLY!!!
+			roomX=newRoom.xCoord;
+			roomY=newRoom.yCoord;
+			
+			isVisible=false;
+			isWithinHearingRange=false;
+			//isVisible=assignedRoom.isVisible;
+			GetComponent<Button>().onClick.AddListener(()=>EncounterCanvasHandler.main.RoomClicked(this));
+			
+			foreach (InventoryItem item in newRoom.floorItems) {AddFloorItem(item);}
+		}
+		else GetComponent<Image>().enabled=false;
 	}
 	
 	public void SetVisibility(bool visible)
