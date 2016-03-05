@@ -11,6 +11,8 @@ public class PartyStatusCanvasHandler : MonoBehaviour {
 	public Text mapYText;
 	public Text timeText;
 	public Text ammoText;
+	public Text fuelText;
+	public Text timeOfDayText;
 	public Button assignmentButton;
 	public Button turnButton;
 	public Transform memberCanvasGroup;
@@ -78,9 +80,19 @@ public class PartyStatusCanvasHandler : MonoBehaviour {
 		{
 			turnButton.gameObject.SetActive(true);
 			string buttonText="";
-			if (PartyManager.mainPartyManager.dayTime==12) buttonText="Daytime";
-			else buttonText="Night";
+			string timeOfDayString="";
+			if (PartyManager.mainPartyManager.dayTime==12) 
+			{
+				timeOfDayString="Noon";
+				buttonText="Go to night";
+			}
+			else 
+			{
+				timeOfDayString="Night";
+				buttonText="Go to noon";
+			}
 			turnButton.GetComponentInChildren<Text>().text=buttonText;
+			timeOfDayText.text=timeOfDayString;
 		}
 		else turnButton.gameObject.SetActive(false);
 	}
@@ -171,6 +183,7 @@ public class PartyStatusCanvasHandler : MonoBehaviour {
 			//mapYText.text="Y:"+PartyManager.mainPartyManager.mapCoordY.ToString();
 			timeText.text="Day:"+PartyManager.mainPartyManager.daysPassed;//PartyManager.mainPartyManager.dayTime.ToString()+":00";
 			ammoText.text="Ammo:"+PartyManager.mainPartyManager.ammo.ToString();
+			fuelText.text="Gas:"+PartyManager.mainPartyManager.gas.ToString();
 		}
 	}
 }

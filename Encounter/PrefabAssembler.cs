@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 public class PrefabAssembler : MonoBehaviour 
 {
-
+	/*
 	public GameObject apartmentPreset;
 	public GameObject warehousePreset;
 	public GameObject storePreset;
@@ -12,6 +12,110 @@ public class PrefabAssembler : MonoBehaviour
 	public GameObject hospitalPreset;
 	public GameObject radioPreset;
 	public GameObject hordePreset;
+	*/
+	public List<GameObject> warehousePresets=new List<GameObject>();
+	public List<GameObject> policeStationPresets=new List<GameObject>();
+	public List<GameObject> apartmentPresets=new List<GameObject>();
+	public List<GameObject> hospitalPresets=new List<GameObject>();
+	public List<GameObject> storePresets=new List<GameObject>();
+	public List<GameObject> radioPresets=new List<GameObject>();
+	
+	List<GameObject> GetRandomPresetsList(Encounter.AreaTypes areaType, int segmentCount)
+	{
+		if (segmentCount<=0) throw new System.Exception("Trying to gain list of encounter segments <=0!");
+		List<GameObject> resultList=new List<GameObject>();
+		switch (areaType)
+		{
+			case Encounter.AreaTypes.Warehouse:
+			{
+				for (int i=0; i<segmentCount; i++)
+				{
+					resultList.Add(warehousePresets[Random.Range(0,warehousePresets.Count)]);
+				}
+				break;
+			}
+			case Encounter.AreaTypes.Police:
+			{
+				for (int i=0; i<segmentCount; i++)
+				{
+					resultList.Add(policeStationPresets[Random.Range(0,policeStationPresets.Count)]);
+				}
+				break;
+			}
+			case Encounter.AreaTypes.Apartment:
+			{
+				for (int i=0; i<segmentCount; i++)
+				{
+					resultList.Add(apartmentPresets[Random.Range(0,apartmentPresets.Count)]);
+				}
+				break;
+			}
+			case Encounter.AreaTypes.Hospital:
+			{
+				for (int i=0; i<segmentCount; i++)
+				{
+					resultList.Add(hospitalPresets[Random.Range(0,hospitalPresets.Count)]);
+				}
+				break;
+			}
+			case Encounter.AreaTypes.Store:
+			{
+				for (int i=0; i<segmentCount; i++)
+				{
+					resultList.Add(storePresets[Random.Range(0,storePresets.Count)]);
+				}
+				break;
+			}
+			case Encounter.AreaTypes.Endgame:
+			{
+				for (int i=0; i<segmentCount; i++)
+				{
+					resultList.Add(radioPresets[Random.Range(0,radioPresets.Count)]);
+				}
+				break;
+			}
+		}
+		return resultList;
+	}
+	List<GameObject> GetAllPresetsList(Encounter.AreaTypes areaType)
+	{
+		List<GameObject> resultList=new List<GameObject>();
+		switch (areaType)
+		{
+			case Encounter.AreaTypes.Warehouse:
+			{
+				resultList=warehousePresets;
+				break;
+			}
+			case Encounter.AreaTypes.Store:
+			{
+				resultList=storePresets;
+				break;
+			}
+			case Encounter.AreaTypes.Police:
+			{
+				resultList=policeStationPresets;
+				break;
+			}
+			case Encounter.AreaTypes.Apartment:
+			{
+				resultList=apartmentPresets;
+				break;
+			}
+			case Encounter.AreaTypes.Hospital:
+			{
+				resultList=hospitalPresets;
+				break;
+			}
+			case Encounter.AreaTypes.Endgame:
+			{
+				resultList=radioPresets;
+				break;
+			}
+		}
+		return resultList;
+	}
+	
 	public static PrefabAssembler assembler;
 	
 	public class DungeonSlot
@@ -47,28 +151,30 @@ public class PrefabAssembler : MonoBehaviour
 		}
 	}*/
 	
-	public List<EncounterRoom> GenerateEncounterMap(Encounter mappedEncounter)
+	public Dictionary<Vector2,Dictionary<Vector2,EncounterRoom>> GenerateEncounterMap(Encounter mappedEncounter, Encounter.AreaTypes generatedAreaType
+	, int maxTeamSize, out List<EncounterRoom> nonSegmentRooms)
 	{
 		int slotsPerSide=3;
 		//Determine width and height of segments used in setup, then make width=max possible width and height=max possible height
 		//List<EncounterSegmentPrefab> prefabSegments=new List<EncounterSegmentPrefab>();
-		Dictionary<Encounter.AreaTypes,Vector2> prefabTypeDimensions=new Dictionary<Encounter.AreaTypes, Vector2>();
+		Dictionary<GameObject,Vector2> prefabTypeDimensions=new Dictionary<GameObject, Vector2>();
+		/*
 		List<Encounter.AreaTypes> prefabTypes=new List<Encounter.AreaTypes>();
 		prefabTypes.Add(Encounter.AreaTypes.Police);
-		prefabTypes.Add(Encounter.AreaTypes.Warehouse);
-		//prefabSegments.Add(SetupPrefabMap(mappedEncounter,Encounter.AreaTypes.Police,false));
-		//prefabSegments.Add(SetupPrefabMap(mappedEncounter,Encounter.AreaTypes.Warehouse,false));
-		//int roomsPerSlotSide=15;
+		prefabTypes.Add(Encounter.AreaTypes.Warehouse);*/
+
+		//Encounter.AreaTypes generatedAreaType=Encounter.AreaTypes.Warehouse;
 		int roomsPerVertSide=0;
 		int roomsPerHorSide=0;
-		foreach(Encounter.AreaTypes areaType in prefabTypes)
+		foreach(GameObject segmentPrefab in GetAllPresetsList(generatedAreaType))//Encounter.AreaTypes areaType in prefabTypes)
 		{
 			//EncounterSegmentPrefab segment=SetupPrefabMap(mappedEncounter,areaType,false);
-			Vector2 prefabMapDimensions=GetPrefabMapDimensions(areaType);
-			prefabTypeDimensions.Add(areaType,prefabMapDimensions);
+			Vector2 prefabMapDimensions=GetSegmentDimensions(segmentPrefab);
+			prefabTypeDimensions.Add(segmentPrefab,prefabMapDimensions);
 			roomsPerHorSide=Mathf.Max(roomsPerHorSide,(int)prefabMapDimensions.x);
 			roomsPerVertSide=Mathf.Max(roomsPerVertSide,(int)prefabMapDimensions.y);
 		}
+		//print ("Slot side dimensions: "+roomsPerHorSide+";"+roomsPerVertSide);
 		
 		int gapBetweenSlots=1;
 		//Create slots for encounter sections
@@ -127,8 +233,16 @@ public class PrefabAssembler : MonoBehaviour
 		int entranceSlotX=1;
 		int entranceSlotY=1;
 		Dictionary<Vector2,Dictionary<Vector2,EncounterRoom>> prefabsBySlot=new Dictionary<Vector2, Dictionary<Vector2, EncounterRoom>>();
+		Dictionary<Vector2,EncounterRoom> connectorRooms=new Dictionary<Vector2, EncounterRoom>();
 		
-		int roomsCount=4;
+		//print ("Creating dungeon");
+		int roomsCount=maxTeamSize;
+		List<GameObject> usedPrefabs=GetRandomPresetsList(generatedAreaType,roomsCount);
+		foreach (GameObject prefabSegment in usedPrefabs)
+		{
+			//print ("Segment used:"+prefabSegment.name);
+		}
+		
 		for (int i=0; i<roomsCount; i++)
 		{
 			DungeonSlot usedSlot;
@@ -169,9 +283,10 @@ public class PrefabAssembler : MonoBehaviour
 			
 				//Fit start coords to slot
 				usedSlot=encounterSlots[usedSlotCoords];
-				Encounter.AreaTypes selectedPrefabType=prefabTypes[Random.Range(0,prefabTypes.Count)];
-				int freeHorSpace=(int)(usedSlot.GetWidth()-prefabTypeDimensions[selectedPrefabType].x);
-				int freeVertSpace=(int)(usedSlot.GetHeight()-prefabTypeDimensions[selectedPrefabType].y);
+				GameObject selectedSegmentPrefab=usedPrefabs[i];//Random.Range(0,usedPrefabs.Count)];
+				int freeHorSpace=(int)(usedSlot.GetWidth()-prefabTypeDimensions[selectedSegmentPrefab].x);
+				int freeVertSpace=(int)(usedSlot.GetHeight()-prefabTypeDimensions[selectedSegmentPrefab].y);
+				
 				if (freeHorSpace>0)
 				{
 					if (freeHorSpace%2>0)
@@ -179,8 +294,6 @@ public class PrefabAssembler : MonoBehaviour
 						freeHorSpace-=1;
 						if (Random.value<0.5f) usedSlot.minX+=1;
 					}
-					//print ("Offsetting minx of a used slot");
-					//print ("old minx is:"+usedSlot.minX);
 					usedSlot.minX+=freeHorSpace/2;
 					//print ("New minx is:"+usedSlot.minX);
 				}
@@ -195,9 +308,11 @@ public class PrefabAssembler : MonoBehaviour
 				}
 				//Create rooms
 				bool entrance=i==0;
-				prefabsBySlot.Add(usedSlotCoords,SetupPrefabMap(mappedEncounter,selectedPrefabType,entrance,usedSlot));
+				//print ("Segment used:"+selectedSegmentPrefab.name);
+				//print ("Segment location:"+new Vector2(usedSlot.minX,usedSlot.minY));
+				prefabsBySlot.Add(usedSlotCoords,SetupSegmentRooms(mappedEncounter,selectedSegmentPrefab,entrance,usedSlot));
 				//Mark used slot as occupied (marked as negative?)
-				if (!entrance) ConnectRoom(usedSlotCoords,roomToExpandFrom,ref prefabsBySlot,mappedEncounter);
+				if (!entrance) ConnectRoom(usedSlotCoords,roomToExpandFrom,mappedEncounter,prefabsBySlot,ref connectorRooms);
 				usedSlot.SetOccupied();
 				roomsToMoveFrom.Add(usedSlotCoords);
 				//.Remove(expandSlotKey);
@@ -209,6 +324,7 @@ public class PrefabAssembler : MonoBehaviour
 		int maxY=int.MinValue;
 		int maxX=int.MinValue;
 		int minY=int.MaxValue;
+		//Add prefab template rooms into the mix
 		foreach (Vector2 slotCoord in prefabsBySlot.Keys)//EncounterRoom room in encounterRooms.Values)
 		{
 			foreach (Vector2 roomCoord in prefabsBySlot[slotCoord].Keys)
@@ -218,11 +334,37 @@ public class PrefabAssembler : MonoBehaviour
 				maxY=Mathf.Max(maxY,room.yCoord);
 				minX=Mathf.Min (minX,room.xCoord);
 				minY=Mathf.Min (minY,room.yCoord);
+				if (encounterRooms.ContainsKey(roomCoord)) throw new System.Exception("Coords repeat at:"+roomCoord);
 				encounterRooms.Add(roomCoord,room);
 			}
 			//Vector2 existingCoords=new Vector2(room.xCoord,room.yCoord);
 			//if (encounterRooms.ContainsKey(existingCoords)) print("Coords repeat at:"+existingCoords);
 		}
+		
+		nonSegmentRooms=new List<EncounterRoom>();
+		//Add connection rooms
+		foreach (Vector2 roomCoord in connectorRooms.Keys)
+		{
+			EncounterRoom room=connectorRooms[roomCoord];
+			maxX=Mathf.Max(maxX,room.xCoord);
+			maxY=Mathf.Max(maxY,room.yCoord);
+			minX=Mathf.Min (minX,room.xCoord);
+			minY=Mathf.Min (minY,room.yCoord);
+			if (encounterRooms.ContainsKey(roomCoord)) throw new System.Exception("Coords repeat at:"+roomCoord);
+			encounterRooms.Add(roomCoord,room);
+			nonSegmentRooms.Add(room);
+		}
+		
+		System.Func <Dictionary<Vector2,EncounterRoom>,Vector2, bool> HideImageCheck=(Dictionary<Vector2,EncounterRoom> roomsDict,Vector2 cursor)=>
+		{
+			bool hideImage=true;
+			if (roomsDict.ContainsKey(cursor)) 
+			{
+				if (!roomsDict[cursor].isWall) hideImage=false; 
+			}
+			return hideImage;
+		};
+		
 		//Fill in walls
 		for (int i=minY-1; i<=maxY+1; i++)
 		{
@@ -233,31 +375,32 @@ public class PrefabAssembler : MonoBehaviour
 				{
 					EncounterRoom newRoom=new EncounterRoom(mappedEncounter,j,i);
 					encounterRooms.Add(new Vector2(j,i),newRoom);
+					nonSegmentRooms.Add(newRoom);
 					newRoom.isWall=true;
 					//Hide the image if no non-wall rooms are adjacent
 					newRoom.hideImage=true;
 					//Goes clockwise
 					//Check up
-					if (encounterRooms.ContainsKey(coords+Vector2.down)) newRoom.hideImage=false;
+					if (!HideImageCheck.Invoke(encounterRooms,coords+Vector2.down)) newRoom.hideImage=false;
 					//Top right
-					if (encounterRooms.ContainsKey(coords+Vector2.down+Vector2.right)) newRoom.hideImage=false;
+					if (!HideImageCheck.Invoke(encounterRooms,coords+Vector2.down+Vector2.right)) newRoom.hideImage=false;
 					//Right etc
-					if (encounterRooms.ContainsKey(coords+Vector2.right)) newRoom.hideImage=false;
-					if (encounterRooms.ContainsKey(coords+Vector2.right+Vector2.up)) newRoom.hideImage=false;
-					if (encounterRooms.ContainsKey(coords+Vector2.up)) newRoom.hideImage=false;
-					if (encounterRooms.ContainsKey(coords+Vector2.up+Vector2.left)) newRoom.hideImage=false;
-					if (encounterRooms.ContainsKey(coords+Vector2.left)) newRoom.hideImage=false;
-					if (encounterRooms.ContainsKey(coords+Vector2.left+Vector2.down)) newRoom.hideImage=false;
+					if (!HideImageCheck.Invoke(encounterRooms,coords+Vector2.right)) newRoom.hideImage=false;
+					if (!HideImageCheck.Invoke(encounterRooms,coords+Vector2.right+Vector2.up)) newRoom.hideImage=false;
+					if (!HideImageCheck.Invoke(encounterRooms,coords+Vector2.up)) newRoom.hideImage=false;
+					if (!HideImageCheck.Invoke(encounterRooms,coords+Vector2.up+Vector2.left)) newRoom.hideImage=false;
+					if (!HideImageCheck.Invoke(encounterRooms,coords+Vector2.left)) newRoom.hideImage=false;
+					if (!HideImageCheck.Invoke(encounterRooms,coords+Vector2.left+Vector2.down)) newRoom.hideImage=false;
 				}
 			}
 		}
 		
-		return new List<EncounterRoom>(encounterRooms.Values);
+		return prefabsBySlot;//new List<EncounterRoom>(encounterRooms.Values);
 		
 	}
 	//prefabsBySlot segmentsDict
-	void ConnectRoom(Vector2 fromSlot, Vector2 toSlot, 
-	ref Dictionary<Vector2,Dictionary<Vector2,EncounterRoom>> regionsBySlot, Encounter mappedEncounter)//,int minXCurrent, int maxXCurrent, int minYCurrent, int maxYCurrent, int minXPrevious, int maxXPrevious, int minYPrevious, int maxYPrevious)
+	void ConnectRoom(Vector2 fromSlot, Vector2 toSlot,Encounter mappedEncounter
+	,Dictionary<Vector2,Dictionary<Vector2,EncounterRoom>> regionsBySlot, ref Dictionary<Vector2,EncounterRoom> connectorRoomDict)//,int minXCurrent, int maxXCurrent, int minYCurrent, int maxYCurrent, int minXPrevious, int maxXPrevious, int minYPrevious, int maxYPrevious)
 	{
 		Dictionary<Vector2, EncounterRoom> toRoomDict=regionsBySlot[toSlot];
 		Dictionary<Vector2, EncounterRoom> fromRoomDict=regionsBySlot[fromSlot];
@@ -387,35 +530,35 @@ public class PrefabAssembler : MonoBehaviour
 		{
 			Vector2 cursor=potentialStartRooms[Random.Range(0,potentialStartRooms.Count-1)].GetCoords();
 			cursor+=connectDirection;
-			while (!regionsBySlot[toSlot].ContainsKey(cursor))
+			while (!regionsBySlot[toSlot].ContainsKey(cursor) && !connectorRoomDict.ContainsKey(cursor))
 			{
 				EncounterRoom connectionRoom=new EncounterRoom(mappedEncounter,cursor);
-				regionsBySlot[fromSlot].Add(cursor,connectionRoom);
+				connectorRoomDict.Add(cursor,connectionRoom);
 				cursor+=connectDirection;
 			}	
 		}
 	}
 	
-	Vector2 GetPrefabMapDimensions(Encounter.AreaTypes areaType)
+	Vector2 GetSegmentDimensions(GameObject segmentPrefab)//Encounter.AreaTypes areaType)
 	{
 		Vector2 res;
-		Dictionary<Vector2,EncounterRoom> rooms=SetupPrefabMap(null,areaType,false,new DungeonSlot(0,0,100,100), out res);
+		Dictionary<Vector2,EncounterRoom> rooms=SetupSegmentRooms(null,segmentPrefab,false,new DungeonSlot(0,0,100,100), out res);
 
 		return res;
 	}
 	
-	Dictionary<Vector2,EncounterRoom> SetupPrefabMap(Encounter mappedEncounter, Encounter.AreaTypes areaType, bool makeEntrance, DungeonSlot slotInfo)
+	Dictionary<Vector2,EncounterRoom> SetupSegmentRooms(Encounter mappedEncounter, GameObject segmentPrefab/*Encounter.AreaTypes areaType*/, bool makeEntrance, DungeonSlot slotInfo)
 	{
 		Vector2 emptyOut;
-		return SetupPrefabMap(mappedEncounter,areaType,makeEntrance,slotInfo,out emptyOut);
+		return SetupSegmentRooms(mappedEncounter,segmentPrefab,makeEntrance,slotInfo,out emptyOut);
 	}
 	
-	Dictionary<Vector2,EncounterRoom> SetupPrefabMap(Encounter mappedEncounter, Encounter.AreaTypes areaType, bool makeEntrance, DungeonSlot slotInfo
+	Dictionary<Vector2,EncounterRoom> SetupSegmentRooms(Encounter mappedEncounter, GameObject segmentPrefab/*Encounter.AreaTypes areaType*/, bool makeEntrance, DungeonSlot slotInfo
 	, out Vector2 dimensions)
 	{
 		//return SetupEncounterMap(mappedEncounter,areaType,true);
-		GameObject copyBuffer=null;
-		
+		GameObject copyBuffer=Instantiate(segmentPrefab,new Vector3(0,0,-2),Quaternion.identity) as GameObject; //null;
+		/*
 		switch (areaType)
 		{
 		case Encounter.AreaTypes.Warehouse: 
@@ -453,7 +596,7 @@ public class PrefabAssembler : MonoBehaviour
 			copyBuffer=Instantiate(hordePreset,new Vector3(0,0,-2),Quaternion.identity) as GameObject;
 			break;
 		}
-		}
+		}*/
 		
 		//List<Vector2> prefabAreas=new List<Vector2>();
 		//foreach (EncounterRoomDrawer child in apartmentPreset.GetComponentsInChildren<EncounterRoomDrawer>())
@@ -504,6 +647,7 @@ public class PrefabAssembler : MonoBehaviour
 		return roomDict;//new EncounterSegmentPrefab(roomList,xMax-xMin+1,yMax-yMin+1);//roomList;
 	}
 	//Deprecate this later
+	/*
 	public List<EncounterRoom> SetupEncounterMap(Encounter mappedEncounter, Encounter.AreaTypes areaType)
 	{
 	
@@ -595,12 +739,9 @@ public class PrefabAssembler : MonoBehaviour
 				}
 			}
 		}
-		//GameManager.DebugPrint("New horde added, maxX:"+xMax);
-		//}
-		//}
 		GameObject.Destroy(copyBuffer);
 		return roomList;
-	}
+	}*/
 	
 	
 	

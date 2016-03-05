@@ -10,7 +10,7 @@ public class EnemyTokenHandler : MonoBehaviour, IAttackAnimation, IGotHitAnimati
 	
 	float attackAnimationTime=0.6f;
 	float gotHitAnimationTime=0.6f;
-	float moveWaitTime=0.3f;
+	float moveWaitTime=1f;
 	readonly int lastseenMemberPriority=3;
 	
 	public Text healthText;
@@ -158,10 +158,19 @@ public class EnemyTokenHandler : MonoBehaviour, IAttackAnimation, IGotHitAnimati
 				{
 					for (int i=0; i<totalMovesCount; i++)
 					{
+						
+						//if (EncounterCanvasHandler.main.roomButtons[movesInfo.enemyMoveCoords[i]]);
 						EncounterCanvasHandler.main.roomButtons[movesInfo.enemyMoveCoords[i]].AttachEnemyToken(transform);
 						UpdateTokenVision();
+						bool doMoveAnimation=false;
+						Vector2 animationStartRoomCoords=Vector2.zero;
+						if (i==0) animationStartRoomCoords=movesInfo.startCoords;
+						else animationStartRoomCoords=movesInfo.enemyMoveCoords[i-1];
+						if (EncounterCanvasHandler.main.roomButtons[animationStartRoomCoords].isVisible 
+						|| EncounterCanvasHandler.main.roomButtons[movesInfo.enemyMoveCoords[i]].isVisible) 
+						doMoveAnimation=true;
 						//totalMovesCount--;
-						yield return new WaitForSeconds(moveWaitTime);
+						if (doMoveAnimation) yield return new WaitForSeconds(moveWaitTime);
 					}
 					/*
 					while (totalMovesCount>0)

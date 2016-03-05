@@ -198,6 +198,7 @@ public class EncounterRoom
 			{
 				//hasEnemies=false;
 				//EncounterCanvasHandler.main.DisplayNewMessage(damagedEnemy.name+" killed!");
+				/*
 				if (parentEncounter.GetType()==typeof(Horde)) 
 				{
 					Horde parentHorde=parentEncounter as Horde;
@@ -207,7 +208,7 @@ public class EncounterRoom
 				{
 					Hive parentHive=parentEncounter as Hive;
 					parentHive.DeadEnemyReport();
-				}
+				}*/
 				//check if any more enemies remain in room
 				enemiesInRoom.Remove(damagedEnemy);
 				if (enemiesInRoom.Count==0) {hasEnemies=false;}

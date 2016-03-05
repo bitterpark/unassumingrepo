@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine.UI;
 
 public class CampCanvas : MonoBehaviour {
@@ -14,6 +15,10 @@ public class CampCanvas : MonoBehaviour {
 	public Transform bedSlotGroup;
 	public Text freeBedsCount;
 	
+	public Transform craftGroup;
+	public RecipeGroup recipePrefab;
+	public List<CraftRecipe> availableRecipes=new List<CraftRecipe>();
+	
 	public Camp assignedCamp;
 	
 	public void AssignCamp(Camp newCamp, bool regionHasCamp)
@@ -22,6 +27,10 @@ public class CampCanvas : MonoBehaviour {
 		{
 			campShown=true;
 			assignedCamp=newCamp;
+			availableRecipes.Clear();
+			availableRecipes.Add(new FoodRecipe());
+			availableRecipes.Add(new TrapRecipe());
+			
 			GetComponent<Canvas>().enabled=true;
 			RefreshSlots();
 		}
@@ -32,21 +41,34 @@ public class CampCanvas : MonoBehaviour {
 	{
 		
 		//Remove old cooking slot
-		Image oldCookingSlot=cookingSlotPlacement.GetComponentInChildren<Image>();
-		if (oldCookingSlot!=null) GameObject.Destroy(oldCookingSlot.gameObject);
+		//Image oldCookingSlot=cookingSlotPlacement.GetComponentInChildren<Image>();
+		//if (oldCookingSlot!=null) {GameObject.Destroy(oldCookingSlot.gameObject); print ("Old cooking slot deleted!");}
+		// {print ("Old cooking slot not found!");}
+		foreach (Image oldCookingSlot in cookingSlotPlacement.GetComponentsInChildren<Image>())//.GetComponentsInChildren<Button>())
+		{
+			//print ("Old cooking slot deleted!");
+			GameObject.Destroy(oldCookingSlot.gameObject);
+		}
 		
 		//Remove old bed slots
 		foreach (Image oldBedSlot in bedSlotGroup.GetComponentsInChildren<Image>())//.GetComponentsInChildren<Button>())
 		{
 			GameObject.Destroy(oldBedSlot.gameObject);
 		}
+		
+		//Remove old crafting recipes
+		foreach (HorizontalLayoutGroup oldRecipeGroup in craftGroup.GetComponentsInChildren<HorizontalLayoutGroup>()) 
+		{GameObject.Destroy(oldRecipeGroup.gameObject);}
+		
 		if (assignedCamp!=null)
 		{
 			//Refresh cooking slot
+			//print ("New cooking slot created!");
 			CookingSlot newCookingSlot=Instantiate(cookingSlotPrefab);
 			newCookingSlot.transform.SetParent(cookingSlotPlacement,false);
 			if (assignedCamp.cookingImplement!=null)
 			{
+				
 				SlotItem cookingImplement=Instantiate(slotItemPrefab);
 				cookingImplement.AssignItem(assignedCamp.cookingImplement);
 				newCookingSlot.AssignItem(cookingImplement);
@@ -75,7 +97,16 @@ public class CampCanvas : MonoBehaviour {
 			}
 			freeBedsCount.text="Free beds:"+assignedCamp.freeBeds;
 			
-		} else {print ("Assigned camp is null");}
+			//Refresh crafting recipes
+			foreach (CraftRecipe recipe in availableRecipes)
+			{
+				RecipeGroup newRecipeDisplay=Instantiate(recipePrefab);
+				newRecipeDisplay.transform.SetParent(craftGroup);
+				newRecipeDisplay.AssignRecipe(recipe);
+				
+			}
+			
+		}
 	}
 	
 	public void CloseScreen()

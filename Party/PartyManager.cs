@@ -106,6 +106,7 @@ public class PartyManager : MonoBehaviour
 	}
 	int _ammo;
 	
+	public int gas;
 	//public int partyVisibilityMod;
 	
 	//List<InventoryItem> partyInventory;
@@ -167,6 +168,7 @@ public class PartyManager : MonoBehaviour
 		//partyVisibilityMod=0;
 		//foodSupply=0;//2;
 		ammo=500;//500;//5;
+		gas=1;
 		
 		partyMembers=new List<PartyMember>();
 		selectedMembers=new List<PartyMember>();
@@ -368,29 +370,45 @@ public class PartyManager : MonoBehaviour
 		&& selectedMembers[0].currentRegion.connections.ContainsKey(moveRegion))
 		{
 			moveSuccesful=true;
-			
-			foreach (PartyMember member in selectedMembers)
+			//If moving between towns, remove gas cost, else - reduce fatigue
+			if (selectedMembers[0].currentRegion.connections[moveRegion].isIntercity)
 			{
-				if	(member.GetFatigue()+member.currentRegion.connections[moveRegion].moveFatigueCost<=100) movedList.Add(member);//!MapManager.main.memberTokens[member].moved) movedList.Add(member);
+				if (PartyManager.mainPartyManager.gas-selectedMembers[0].currentRegion.connections[moveRegion].moveCost>-1)
+				{
+					moveSuccesful=true;
+					PartyManager.mainPartyManager.gas-=selectedMembers[0].currentRegion.connections[moveRegion].moveCost;
+					foreach (PartyMember member in selectedMembers)
+					{
+						movedList.Add(member);
+					}
+				}
 			}
-			
-			if (movedList.Count>0)
+			else
 			{
-				moveSuccesful=true;
-				//Deselect all non-moved members
-				List<PartyMember> cachedSelectedMembers=new List<PartyMember>(selectedMembers);
-				foreach (PartyMember member in cachedSelectedMembers)
+				//IF MOVING BETWEEN TOWN NODES
+				foreach (PartyMember member in selectedMembers)
 				{
-					if (!movedList.Contains(member)) MapManager.main.memberTokens[member].Deselect();
+					if	(member.GetFatigue()+member.currentRegion.connections[moveRegion].moveCost<=100) movedList.Add(member);//!MapManager.main.memberTokens[member].moved) movedList.Add(member);
 				}
-				//Apply fatigue to all moved members
-				foreach (PartyMember member in movedList) 
+				
+				if (movedList.Count>0)
 				{
-					member.ChangeFatigue(member.currentRegion.connections[moveRegion].moveFatigueCost);
-					MapManager.main.memberTokens[member].moved=true;
-				}
-			} 
-			else moveSuccesful=false;
+					moveSuccesful=true;
+					//Deselect all non-moved members
+					List<PartyMember> cachedSelectedMembers=new List<PartyMember>(selectedMembers);
+					foreach (PartyMember member in cachedSelectedMembers)
+					{
+						if (!movedList.Contains(member)) MapManager.main.memberTokens[member].Deselect();
+					}
+					//Apply fatigue to all moved members
+					foreach (PartyMember member in movedList) 
+					{
+						member.ChangeFatigue(member.currentRegion.connections[moveRegion].moveCost);
+						MapManager.main.memberTokens[member].moved=true;
+					}
+				} 
+				else moveSuccesful=false;
+			}
 		}
 		return moveSuccesful;
 	}

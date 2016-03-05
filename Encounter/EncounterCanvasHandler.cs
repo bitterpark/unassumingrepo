@@ -104,7 +104,11 @@ public class EncounterCanvasHandler : MonoBehaviour
 		Vector2 newPosition=roomTransform.localPosition;
 		Vector2 newFocus=Vector2.zero;
 		newFocus.x=newPosition.x/encounterMapGroup.GetComponent<RectTransform>().rect.width;
-		newFocus.y=newPosition.y/encounterMapGroup.GetComponent<RectTransform>().rect.height;/*(encounterMapGroup.GetComponent<RectTransform>().rect.height-Mathf.Abs(newPosition.y))
+		//This is necessary due to usual coords fuckery (scrollrect y pos 0 is bottom, but room coords 0 is top)
+		newFocus.y=(encounterMapGroup.GetComponent<RectTransform>().rect.height-Mathf.Abs(newPosition.y))
+		/encounterMapGroup.GetComponent<RectTransform>().rect.height;
+		
+		/*(encounterMapGroup.GetComponent<RectTransform>().rect.height-Mathf.Abs(newPosition.y))
 		/encounterMapGroup.GetComponent<RectTransform>().rect.height;//*/
 		encounterMapGroup.parent.GetComponent<ScrollRect>().normalizedPosition=newFocus;
 	}
@@ -112,7 +116,9 @@ public class EncounterCanvasHandler : MonoBehaviour
 	IEnumerator EncounterStartViewFocus(RectTransform roomTransform)
 	{
 		yield return new WaitForEndOfFrame();
+		//Canvas.ForceUpdateCanvases();
 		FocusViewOnRoom(roomTransform);
+		//Canvas.ForceUpdateCanvases();
 		yield break;
 	}
 	
@@ -822,6 +828,21 @@ public class EncounterCanvasHandler : MonoBehaviour
 		encounterMapGroup.GetComponent<GridLayoutGroup>().constraintCount=(currentEncounter.maxX+1)-currentEncounter.minX;
 		
 		EncounterRoom entranceRoom=null;
+		float eventLogTopOffset=eventLogText.transform.parent.parent.GetComponent<RectTransform>().rect.height;//220;
+		
+		float elementGap=0;
+		float elementSize=roomPrefab.GetComponent<RectTransform>().rect.width;
+		float elementSkipLength=elementGap+elementSize;
+		
+		//print ("setting up encounter with minx:"+currentEncounter.minX+", miny:"+currentEncounter.miny);
+		//print ("adjusted minx:"+currentEncounter.minX-xCoordAdjustment+", miny:"+currentEncounter.miny-yCoordAdjustment);
+		float gridStartX=elementSize*0.5f;//currentEncounter.minX*elementSize;
+		float gridStartY=-elementSize*0.5f-eventLogTopOffset;//currentEncounter.minY*elementSize;
+		
+		//float minX=Mathf.Infinity;
+		float minY=Mathf.Infinity;
+		float maxX=Mathf.NegativeInfinity;
+		//float maxY=maxX;
 		for (int i=currentEncounter.minY; i<=currentEncounter.maxY;i++)
 		{
 			for (int j=currentEncounter.minX; j<=currentEncounter.maxX;j++)
@@ -831,8 +852,15 @@ public class EncounterCanvasHandler : MonoBehaviour
 				//Keep "invisible" wall objects in a separate collection, so they don't needlessly pad the proper room operations
 				if (!room.hideImage) roomButtons.Add(new Vector2(j,i),newRoomButton);
 				else wallPaddingButtons.Add(newRoomButton.gameObject);
-				newRoomButton.AssignRoom(room);
+				Vector2 newRoomLocalCoords
+				=new Vector2(gridStartX+elementSkipLength*(j-currentEncounter.minX),gridStartY+elementSkipLength*-(i-currentEncounter.minY));
+				//minX=Mathf.Min(minX,newRoomLocalCoords.x);
+				minY=Mathf.Min(minY,newRoomLocalCoords.y);
+				maxX=Mathf.Max(maxX,newRoomLocalCoords.x);
+				//maxY=Mathf.Max(maxY,newRoomLocalCoords.y);
 				newRoomButton.transform.SetParent(encounterMapGroup,false);
+				newRoomButton.transform.localPosition=newRoomLocalCoords;
+				newRoomButton.AssignRoom(room);
 				
 				//Add enemy token if room has enemy
 				if (room.hasEnemies) 
@@ -855,6 +883,13 @@ public class EncounterCanvasHandler : MonoBehaviour
 				}
 			}
 		}
+		
+		/*
+		Vector2 newSizeDelta=new Vector2(encounterMapGroup.transform.parent.GetComponent<RectTransform>().rect.width
+		,encounterMapGroup.transform.parent.GetComponent<RectTransform>().rect.height);
+		newSizeDelta=new Vector2(Mathf.Max(maxX+elementSize,newSizeDelta.x),Mathf.Max(Mathf.Abs(minY)+elementSize,newSizeDelta.y));*/
+		encounterMapGroup.GetComponent<RectTransform>().sizeDelta=/*newSizeDelta;*/new Vector2(maxX+elementSize,Mathf.Abs(minY)+elementSize);
+		//
 		
 		//Create party tokens
 		foreach (PartyMember member in encounterMembers)
@@ -889,9 +924,9 @@ public class EncounterCanvasHandler : MonoBehaviour
 			PlacePartyMemberAtEntrance(member,entranceRoom,roomsSortedByDistanceFromEntrance);
 		}
 		SelectMember(memberTokens[encounterMembers[0]]);
-		//Necessary for correct spawn sequencing 
+		//Necessary for correct spawn sequencing
 		StartCoroutine(EncounterStartViewFocus(roomButtons[memberCoords[encounterMembers[0]]].GetComponent<RectTransform>()));
-		
+		//FocusViewOnRoom(roomButtons[memberCoords[encounterMembers[0]]].GetComponent<RectTransform>());
 		//MovePartyToRoom(entranceRoom);
 	}
 	

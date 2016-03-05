@@ -10,12 +10,16 @@ public class MapRegion : MonoBehaviour, IPointerEnterHandler, IPointerExitHandle
 	{
 		public VectorUI roadLine;
 		public List<MapRegion> connectsRegions;
-		public int moveFatigueCost;
-		public RegionConnection (VectorUI road,int moveCost, params MapRegion[] connectingRegions)
+		public int moveCost;
+		public bool isIntercity;
+		public RegionConnection (VectorUI road,int cost,bool intercity, params MapRegion[] connectingRegions)
 		{
 			roadLine=road;
-			moveFatigueCost=moveCost;
+			isIntercity=intercity;
+			//This can be fatigue cost or gas cost, depending on whether or not it's intercity
+			moveCost=cost;
 			connectsRegions=new List<MapRegion>(connectingRegions);
+			
 		}
 	}
 	
@@ -25,7 +29,7 @@ public class MapRegion : MonoBehaviour, IPointerEnterHandler, IPointerExitHandle
 	public VectorUI roadLinePrefab;
 	
 	//For creating connections in MapManager mapgen
-	public void AddConnectedRegion(MapRegion region, int fatigueCost)
+	public void AddConnectedRegion(MapRegion region, bool intercity, int moveCost)
 	{
 		//Create graphic
 		VectorUI newVectorUI=Instantiate(roadLinePrefab);
@@ -34,7 +38,7 @@ public class MapRegion : MonoBehaviour, IPointerEnterHandler, IPointerExitHandle
 		roadPoints.Add(region.transform.position);
 		newVectorUI.AssignVectorLine("Road Line",transform.parent,false,roadPoints,8f,Color.black);
 		//Create connection
-		RegionConnection newConnection=new RegionConnection(newVectorUI,fatigueCost,this,region);
+		RegionConnection newConnection=new RegionConnection(newVectorUI,moveCost,intercity,this,region);
 		region.AddConnectedRegion(this,newConnection);
 		connections.Add(region,newConnection);
 	}
@@ -153,6 +157,7 @@ public class MapRegion : MonoBehaviour, IPointerEnterHandler, IPointerExitHandle
 	public bool _hasEncounter=false;*/
 	public Encounter regionalEncounter;
 	
+	/*
 	bool hasHorde=false;
 	public Horde hordeEncounter
 	{
@@ -168,7 +173,8 @@ public class MapRegion : MonoBehaviour, IPointerEnterHandler, IPointerExitHandle
 			SetSprite();
 		}
 	}
-	Horde _hordeEncounter;
+	Horde _hordeEncounter;*/
+	/*
 	//hive is rolled on hasEncounter=true
 	public bool isHive
 	{
@@ -186,7 +192,7 @@ public class MapRegion : MonoBehaviour, IPointerEnterHandler, IPointerExitHandle
 		}
 	}
 	bool _isHive=false;
-	
+	*/
 	bool drawMouseoverText=false;
 	
 	void SetSprite()
@@ -229,11 +235,12 @@ public class MapRegion : MonoBehaviour, IPointerEnterHandler, IPointerExitHandle
 				}
 			}
 			
-			if (isHive) GetComponent<Image>().color=Color.red;
+			//if (isHive) GetComponent<Image>().color=Color.red;
 			if (visible)
 			{
-				if (hasHorde) {GetComponent<Image>().color=Color.red;} 
-				else {GetComponent<Image>().color=Color.white;}
+				//if (hasHorde) {GetComponent<Image>().color=Color.red;} 
+				//else {GetComponent<Image>().color=Color.white;}
+				GetComponent<Image>().color=Color.white;
 			}
 			else
 			{
@@ -316,11 +323,12 @@ public class MapRegion : MonoBehaviour, IPointerEnterHandler, IPointerExitHandle
 		if (!discovered) {areaDescription="Undiscovered";}
 		else 
 		{
+			/*
 			if (hasHorde)
 			{
 				areaDescription+=hordeEncounter.lootDescription;
 			}
-			else
+			else*/
 			{
 				if (hasEncounter)
 				{
@@ -350,7 +358,9 @@ public class MapRegion : MonoBehaviour, IPointerEnterHandler, IPointerExitHandle
 			{
 				if (textExists) areaDescription+="\n";
 				textExists=true;
-				areaDescription+="Move cost:"+cursorRegion.connections[this].moveFatigueCost;
+				areaDescription+="Move cost:"+cursorRegion.connections[this].moveCost;
+				if (cursorRegion.connections[this].isIntercity) areaDescription+=" gas";
+				else areaDescription+=" fatigue";
 				
 			}
 		}

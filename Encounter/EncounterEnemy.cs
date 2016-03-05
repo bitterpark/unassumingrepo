@@ -65,7 +65,12 @@ public struct EnemyAttack
 public struct EnemyMove
 {
 	public List<Vector2> enemyMoveCoords;
-	public EnemyMove(List<Vector2> moves){enemyMoveCoords=moves;}
+	public Vector2 startCoords;
+	public EnemyMove(List<Vector2> moves, Vector2 start)
+	{
+		startCoords=start;
+		enemyMoveCoords=moves;
+	}
 }
 
 public abstract class EncounterEnemy 
@@ -457,6 +462,11 @@ public abstract class EncounterEnemy
 	//Returns a list of currently visible members
 	public List<PartyMember> VisionCheck(Dictionary<Vector2,EncounterRoom> encounterMap, Dictionary<PartyMember,Vector2> memberCoords)
 	{
+		return VisionCheck(encounterMap,memberCoords,new Vector2((int)xCoord,(int)yCoord));
+	}
+	
+	public List<PartyMember> VisionCheck(Dictionary<Vector2,EncounterRoom> encounterMap, Dictionary<PartyMember,Vector2> memberCoords, Vector2 pointOfView)
+	{
 		//First - find members within vision range
 		List<PartyMember> visibleMembers=new List<PartyMember>();
 		foreach (PartyMember key in memberCoords.Keys)
@@ -464,7 +474,7 @@ public abstract class EncounterEnemy
 			//See if member passes vision range check
 			//if (Mathf.Abs(memberCoords[key].x-xCoord)+Mathf.Abs(memberCoords[key].y-yCoord)
 			// <=Mathf.Max(visionRange+key.visibilityMod,1))
-			if (Mathf.Abs(memberCoords[key].x-xCoord)<=visionRange && Mathf.Abs(memberCoords[key].y-yCoord)<=visionRange) 
+			if (Mathf.Abs(memberCoords[key].x-(int)pointOfView.x)<=visionRange && Mathf.Abs(memberCoords[key].y-(int)pointOfView.y)<=visionRange) 
 			{
 				bool memberVisible=true;
 				//Second - see if any walls are blocking member
@@ -488,7 +498,9 @@ public abstract class EncounterEnemy
 		//This lets the controlling enemy token know an attack needs to be animated
 		bool roundIsAttack=false;
 		//This lets the token know how many move stops it must do
-		move=new EnemyMove(new List<Vector2>());
+		//Save start coords to update the move info after they change due to moving
+		Vector2 startingCoords=GetCoords();
+		move=new EnemyMove(new List<Vector2>(),GetCoords());
 		performedAttack=new EnemyAttack();
 		//Ensure enemies don't move after EncounterCanvasHandler shut down encounter render
 		if (EncounterCanvasHandler.main.encounterOngoing)
@@ -539,9 +551,23 @@ public abstract class EncounterEnemy
 						for (totalMovesDone=0; totalMovesDone<currentAccumulatedMoves; totalMovesDone++)
 						{
 							Vector2 newMove=new Vector2();
-							if (TryMove(visibleMembers,currentPOI,map,memberCoords, out newMove)) movesCoords.Add(newMove);
+							if (TryMove(visibleMembers,currentPOI,map,memberCoords, out newMove)) 
+							{
+								movesCoords.Add(newMove);
+								//If any members are within attack range, stop mid-movement
+								visibleMembers=VisionCheck(map,memberCoords,newMove);
+								membersWithinAttackRange=new List<PartyMember>();
+								foreach (PartyMember member in visibleMembers) 
+								{
+									if (Mathf.Abs(memberCoords[member].x-xCoord)+Mathf.Abs(memberCoords[member].y-yCoord)<=maxAttackRange)
+									{
+										membersWithinAttackRange.Add(member);
+									}
+								}
+								if (membersWithinAttackRange.Count>0) break;
+							}
 						}
-						move=new EnemyMove(movesCoords);
+						move=new EnemyMove(movesCoords,startingCoords);
 						currentAccumulatedMoves-=totalMovesDone;
 						//movesCount=totalMovesDone;
 					}

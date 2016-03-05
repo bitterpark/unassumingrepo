@@ -61,13 +61,13 @@ public class InventoryScreenHandler : MonoBehaviour
 				GetComponent<Canvas>().enabled=true;
 				inventoryShown=true;
 				memberNameText.text=newMember.name;		
-				RefreshInventoryItems();
-				
+			
 				if (!EncounterCanvasHandler.main.encounterOngoing)
 				{
 					campingCanvas.AssignCamp(selectedMember.currentRegion.campInRegion
 					,selectedMember.currentRegion.hasCamp);
 				}
+				RefreshInventoryItems();
 			}
 		} 
 		else 
@@ -220,6 +220,9 @@ public class InventoryScreenHandler : MonoBehaviour
 			newRelImage.AssignRelation(memberRelation);
 			newRelImage.transform.SetParent(transform.FindChild("Inventory Panel").FindChild("Relations Group"),false);
 		}
+		
+		//Refresh camp
+		campingCanvas.RefreshSlots();
 	}
 	
 	public void InventoryItemClicked(InventoryItem clickedItem,InventorySlot originSlot)
@@ -242,7 +245,8 @@ public class InventoryScreenHandler : MonoBehaviour
 			//if item came from member inventory
 			if (originSlot.GetType()==typeof(MemberInventorySlot))
 			{
-				selectedMember.carriedItems.Remove(clickedItem);
+				//selectedMember.carriedItems.Remove(clickedItem);
+				selectedMember.RemoveCarriedItem(clickedItem);
 			}
 			RefreshInventoryItems();
 		} 

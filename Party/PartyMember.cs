@@ -471,6 +471,11 @@ public class PartyMember
 	public int meleeDamageMod;
 	public List<InventoryItem> equippedItems=new List<InventoryItem>();
 	public List<InventoryItem> carriedItems=new List<InventoryItem>();
+	public void RemoveCarriedItem(InventoryItem item)
+	{
+		if (!carriedItems.Contains(item)) throw new System.Exception("No carried item!");
+		else carriedItems.Remove(item);
+	}
 	
 	public List<StatusEffect> activeStatusEffects=new List<StatusEffect>();
 	public List<Perk> perks=new List<Perk>();

@@ -30,7 +30,7 @@ public class RoomButtonHandler : MonoBehaviour, IPointerEnterHandler//, IDropHan
 	bool isWall;
 	bool isExit;
 	bool isEntrance;
-	bool isVisible;
+	public bool isVisible;
 	bool isWithinHearingRange;
 	bool isDiscovered;
 	public bool hasEnemies;
@@ -83,6 +83,8 @@ public class RoomButtonHandler : MonoBehaviour, IPointerEnterHandler//, IDropHan
 	
 	public void AssignRoom(EncounterRoom newRoom)
 	{
+		roomX=newRoom.xCoord;
+		roomY=newRoom.yCoord;
 		if (!newRoom.hideImage)
 		{
 			assignedRoom=newRoom;
@@ -98,8 +100,7 @@ public class RoomButtonHandler : MonoBehaviour, IPointerEnterHandler//, IDropHan
 			if (assignedRoom.trapInRoom!=null) SetTrap(assignedRoom.trapInRoom,false);
 			if (assignedRoom.barricadeInRoom!=null) {SpawnNewBarricadeToken();}
 			//this is FOR DEBUG PURPOSES ONLY!!!
-			roomX=newRoom.xCoord;
-			roomY=newRoom.yCoord;
+			
 			
 			isVisible=false;
 			isWithinHearingRange=false;

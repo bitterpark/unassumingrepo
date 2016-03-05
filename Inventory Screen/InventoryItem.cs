@@ -15,7 +15,7 @@ public abstract class InventoryItem
 	public virtual int GetWeight() {return 1;}
 	
 	//Deprecated
-	public enum LootItems {Medkits,Bandages,Food/*,PerishableFood*/,Ammo,Flashlight,Radio,Bed,Backpack,SettableTrap,AssaultRifle,Shotgun,NineM,Pipe,Knife,Axe,ArmorVest}
+	public enum LootItems {Medkits,Bandages,Food,Junkfood/*,PerishableFood*/,Ammo,Flashlight,Radio,Bed,Backpack,SettableTrap,AssaultRifle,Shotgun,NineM,Pipe,Knife,Axe,ArmorVest}
 	public enum LootMetatypes {Medical,FoodItems,Melee,Guns,Equipment,Radio}
 	
 	//Deprecated, remove later!!!
@@ -192,7 +192,8 @@ public abstract class InventoryItem
 		{
 			case LootItems.Ammo:{lootedItem=new AmmoBox(); break;}
 			//FOOD
-			//case LootItems.Food:{lootedItem=new Food(); break;}
+			case LootItems.Food:{lootedItem=new FoodBig(); break;}
+			case LootItems.Junkfood: {lootedItem=new FoodSmall(); break;}
 			//case LootItems.PerishableFood: {lootedItem=new PerishableFood(PartyManager.mainPartyManager.timePassed); break;}
 			//MEDS
 			case LootItems.Medkits:{lootedItem=new Medkit(); break;}

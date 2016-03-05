@@ -196,7 +196,10 @@ public class Encounter
 		encounterAreaType=AreaTypes.Endgame;
 		possibleLootTypes=Encounter.GetLootTypesList(encounterAreaType,out lootDescription);
 		encounterEnemyType=EncounterEnemy.EnemyTypes.Muscle; enemyDescription="muscle masses";
-		GenerateEncounterFromPrefabMap(PrefabAssembler.assembler.SetupEncounterMap(this,encounterAreaType),1.5f);
+		List<EncounterRoom> nonSegmentRooms=null;
+		Dictionary<Vector2,Dictionary<Vector2,EncounterRoom>> newEncounterSegments
+		=PrefabAssembler.assembler.GenerateEncounterMap(this,encounterAreaType,3,out nonSegmentRooms);
+		GenerateEncounterFromPrefabMap(newEncounterSegments,nonSegmentRooms,1.5f);
 	}
 	//regular constructor
 	public Encounter ()
@@ -222,50 +225,87 @@ public class Encounter
 		if (enemiesRoll<=1) {encounterEnemyType=EncounterEnemy.EnemyTypes.Slime;}
 		//encounterEnemyType=EncounterEnemy.EnemyTypes.Spindler;
 		enemyDescription=EncounterEnemy.GetMapDescription(encounterEnemyType);
+		
+		//Determine member requirement
+		minRequiredMembers=1;
+		maxAllowedMembers=0;
+		float sizeRoll=Random.value;
+		if (sizeRoll<1f) maxAllowedMembers=1;
+		if (sizeRoll<0.5f) maxAllowedMembers=2;
+		if (sizeRoll<0.25f) maxAllowedMembers=3;
+		
 		//GenerateEncounter();
-		GenerateEncounterFromPrefabMap(PrefabAssembler.assembler.GenerateEncounterMap(this),1f);//.SetupEncounterMap(this,encounterAreaType),1f);//0.15f);//0.3f);
+		List<EncounterRoom> nonSegmentRooms=null;
+		Dictionary<Vector2,Dictionary<Vector2,EncounterRoom>> newEncounterSegments
+		=PrefabAssembler.assembler.GenerateEncounterMap(this,encounterAreaType,maxAllowedMembers,out nonSegmentRooms);
+		GenerateEncounterFromPrefabMap(newEncounterSegments,nonSegmentRooms,1f);//.SetupEncounterMap(this,encounterAreaType),1f);//0.15f);//0.3f);
 		//GameManager.DebugPrint("New encounter added, maxX:"+maxX);
 	}
 	//enemy count modifier is no longer used
-	protected void GenerateEncounterFromPrefabMap(List<EncounterRoom> prefabMap, float enemyCountModifier)
+	protected void GenerateEncounterFromPrefabMap(
+	Dictionary<Vector2,Dictionary<Vector2,EncounterRoom>> prefabMap, List<EncounterRoom> nonSegmentRooms
+	, float enemyCountModifier)
 	{
-		
+		int segmentCount=0;
+		//Dictionary<Vector2,List<EncounterRoom>> segmentRoomsEligibleForEnemyPlacement=new Dictionary<Vector2,List<EncounterRoom>>();
+		List<List<EncounterRoom>> segmentRoomsEligibleForLootPlacement=new List<List<EncounterRoom>>();
 		encounterMap.Clear();
 		List<EncounterRoom> roomsEligibleForEnemyPlacement=new List<EncounterRoom>();
-		List<EncounterRoom> roomsEligibleForLootPlacement=new List<EncounterRoom>();
+		//List<EncounterRoom> roomsEligibleForLootPlacement=new List<EncounterRoom>();
 		EncounterRoom entranceRoom=null;
-		foreach (EncounterRoom room in prefabMap)
+		foreach (Vector2 segmentKey in prefabMap.Keys)
 		{
-			encounterMap.Add (new Vector2(room.xCoord,room.yCoord),room);
+			//segmentRoomsEligibleForEnemyPlacement.Add(segmentKey,new List<EncounterRoom>(prefabMap[segmentKey].Values));
+			List<EncounterRoom> segmentLootRooms=new List<EncounterRoom>(prefabMap[segmentKey].Values);
+			segmentRoomsEligibleForLootPlacement.Add(segmentLootRooms);
+			segmentCount++;
+			foreach (Vector2 roomCoord in prefabMap[segmentKey].Keys)
+			{
+				EncounterRoom room=prefabMap[segmentKey][roomCoord];
+				encounterMap.Add (roomCoord,room);
+				//find coordinate range within map
+				minX=Mathf.Min(minX,room.xCoord);
+				minY=Mathf.Min(minY,room.yCoord);
+				maxX=Mathf.Max(maxX,room.xCoord);
+				maxY=Mathf.Max(maxY,room.yCoord);
+				
+				
+				if (!room.isWall)
+				{
+					if (room.isEntrance) {entranceRoom=room;}
+					else 
+					{
+						roomsEligibleForEnemyPlacement.Add (room);
+						//segmentRoomsEligibleForEnemyPlacement[segmentKey].Add(room);
+						if (!room.isExit && Random.value<barricadeChance) room.canBarricade=true;//barricadeInRoom=new Barricade(); 
+					}
+					if (room.hasLoot) 
+					{
+						room.hasLoot=false;
+						segmentLootRooms.Add(room);//roomsEligibleForLootPlacement.Add (room); 
+					}
+				}
+			}
+		}
+		foreach (EncounterRoom room in nonSegmentRooms)
+		{
+			encounterMap.Add (room.GetCoords(),room);
 			//find coordinate range within map
 			minX=Mathf.Min(minX,room.xCoord);
 			minY=Mathf.Min(minY,room.yCoord);
 			maxX=Mathf.Max(maxX,room.xCoord);
 			maxY=Mathf.Max(maxY,room.yCoord);
-			
-			
-			if (!room.isWall)
-			{
-				if (room.isEntrance) {entranceRoom=room;}
-				else 
-				{
-					roomsEligibleForEnemyPlacement.Add (room);
-					if (!room.isExit && Random.value<barricadeChance) room.canBarricade=true;//barricadeInRoom=new Barricade(); 
-				}
-				if (room.hasLoot) 
-				{
-					room.hasLoot=false;
-					roomsEligibleForLootPlacement.Add (room); 
-				}
-			}
+			//Non-segment rooms cannot be eligible for enemy or treasure placement
 		}
 		
 		//Generate loot placement
-		int requiredChestCount=Random.Range(normalChestCountMin,normalChestCountMax+1);
-		int currentChestCount=0;
-		while (currentChestCount<requiredChestCount && roomsEligibleForLootPlacement.Count>0)
+		foreach (List<EncounterRoom> eligibleSegmentRooms in segmentRoomsEligibleForLootPlacement)
 		{
-			/*
+			int requiredChestCount=Random.Range(normalChestCountMin,normalChestCountMax+1);
+			int currentChestCount=0;
+			while (currentChestCount<requiredChestCount && eligibleSegmentRooms.Count>0)
+			{
+				/*
 			float randomRes=Random.value;
 			
 			InventoryItem.LootItems item=InventoryItem.LootItems.Ammo; //the compiler made me assign this, it should be unassigned/null
@@ -275,17 +315,17 @@ public class Encounter
 				if (randomRes<=chance) {item=lootChances[chance]; lootFound=true;}
 			}
 			*/
-			
-			//if (lootFound)
-			//{
+				
+				//if (lootFound)
+				//{
 				InventoryItem.LootMetatypes chestType=GetChestType(encounterAreaType);
-				EncounterRoom randomlySelectedRoom=roomsEligibleForLootPlacement[Random.Range(0,roomsEligibleForLootPlacement.Count)];
+				EncounterRoom randomlySelectedRoom=eligibleSegmentRooms[Random.Range(0,eligibleSegmentRooms.Count)];
 				foreach (InventoryItem lootItem in InventoryItem.GenerateLootSet(chestType)) randomlySelectedRoom.AddLootItem(lootItem);
 				currentChestCount++;
-				roomsEligibleForLootPlacement.Remove(randomlySelectedRoom);//
-			//}
+				eligibleSegmentRooms.Remove(randomlySelectedRoom);//
+				//}
+			}
 		}
-		
 		//Generate enemy placement
 		List<EncounterRoom> cachedList=new List<EncounterRoom> (roomsEligibleForEnemyPlacement);
 		//Requires a second pass, when the exit is known
@@ -372,7 +412,7 @@ public class Encounter
 		
 	}
 }
-
+/*
 public class RandomAttack:Encounter
 {
 	public RandomAttack(EncounterEnemy.EnemyTypes enemyType):base(0)
@@ -380,10 +420,10 @@ public class RandomAttack:Encounter
 		encounterAreaType=AreaTypes.Horde;
 		possibleLootTypes=Encounter.GetLootTypesList(encounterAreaType);
 		encounterEnemyType=enemyType; enemyDescription=EncounterEnemy.GetMapDescription(enemyType);
-		GenerateEncounterFromPrefabMap(PrefabAssembler.assembler.SetupEncounterMap(this,encounterAreaType),1f);
+		GenerateEncounterFromPrefabMap(PrefabAssembler.assembler.GenerateEncounterMap(this,encounterAreaType),1f);
 	}
-}
-
+}*/
+/*
 public class Hive:Encounter
 {
 	public MapRegion hiveRegion;
@@ -408,12 +448,13 @@ public class Hive:Encounter
 		
 		encounterEnemyType=enemyType;
 		enemyDescription=EncounterEnemy.GetMapDescription(encounterEnemyType);
-		GenerateEncounterFromPrefabMap(PrefabAssembler.assembler.SetupEncounterMap(this,lootType),1.5f);
+		GenerateEncounterFromPrefabMap(PrefabAssembler.assembler.GenerateEncounterMap(this,encounterAreaType),1.5f);
 		foreach (EncounterRoom room in encounterMap.Values) 
 		{if (room.hasEnemies) {enemyCount++;}}
 	}
 }
-
+*/
+/*
 public class Horde:Encounter
 {
 	public int mapX;
@@ -445,10 +486,10 @@ public class Horde:Encounter
 		possibleLootTypes=Encounter.GetLootTypesList(encounterAreaType);
 		string enemyDesc=EncounterEnemy.GetMapDescription(encounterEnemyType);
 		lootDescription="A horde of "+enemyDesc+" !";
-		GenerateEncounterFromPrefabMap(PrefabAssembler.assembler.SetupEncounterMap(this,encounterAreaType),1.5f);
+		GenerateEncounterFromPrefabMap(PrefabAssembler.assembler.GenerateEncounterMap(this,encounterAreaType),1.5f);
 		//assign enemy count
 		foreach (EncounterRoom room in encounterMap.Values) 
 		{if (room.hasEnemies) {enemyCount++;}}
 	}
 
-}
+}*/

@@ -28,7 +28,7 @@ public class MapManager : MonoBehaviour
 	public List<MapRegion> mapRegions=new List<MapRegion>();
 	
 	public const int townNodeFatigueCost=25;
-	public const int townToTownFatigueCost=75;
+	public const int townToTownGasCost=1;
 	
 	//THIS METHOD CAUSES THE DISPLACEMENT BUG
 	public void FocusViewOnRegion(RectTransform regionTransform)
@@ -95,7 +95,7 @@ public class MapManager : MonoBehaviour
 		float gapBetweenTownSlots=10f;
 		float mapWidth=borderOffset*2+(townSlotSideSize+gapBetweenTownSlots)*horTownSlots;//2000f;
 		float mapHeight=borderOffset*2+(townSlotSideSize+gapBetweenTownSlots)*vertTownSlots;//1200f;
-		regionsGridGroup.GetComponent<RectTransform>().sizeDelta=new Vector2(mapWidth,mapHeight);
+		//regionsGridGroup.GetComponent<RectTransform>().sizeDelta=new Vector2(mapWidth,mapHeight);
 		
 		
 		
@@ -127,6 +127,13 @@ public class MapManager : MonoBehaviour
 			return newTownCenterCoords;
 		};
 		
+		//Randomly select town slots to use, and offset them slightly off center, also
+		//Find slot coord offset, to remove empty space from scrollrect, while keeping all used slots in the same places relative to eachother
+		float mapMinX=Mathf.Infinity;
+		float mapMinY=mapMinX;
+		float mapMaxX=Mathf.NegativeInfinity;
+		float mapMaxY=mapMaxX;
+		
 		List<Vector2> townCenters=new List<Vector2>();
 		Vector2 endgameCenter=Vector2.zero;
 		for (int i=0; i<=largeTownCount; i++)
@@ -138,29 +145,70 @@ public class MapManager : MonoBehaviour
 			Vector2 randomSlot=townSlotCenters[Random.Range(0,townSlotCenters.Count)];
 			Vector2 newTownCenterCoords=slotOffsetter.Invoke(Random.Range(1f,townSlotSideSize*0.5f-largeTownSideSize*0.5f),randomSlot);
 			townSlotCenters.Remove(randomSlot);
-			//print ("new town center coords"+newTownCenterCoords);
-			//print("new town topleft coords:"+(newTownCenterCoords-new Vector2(largeTownSideSize*0.5f,-largeTownSideSize*0.5f)).ToString());
-			/*
-			Rect newTownRect=new Rect(newTownCenterCoords-new Vector2(largeTownSideSize*0.5f,largeTownSideSize*0.5f)
-			,new Vector2(largeTownSideSize,largeTownSideSize));*/
+			
+			//Find min and max slot edge coords (Mind the rule that bigger Y is higher and lesser Y is lower)
+			Vector2 adjustedSlotMinEdgeCoords=newTownCenterCoords-new Vector2(townSlotSideSize*0.5f,townSlotSideSize*0.5f);
+			Vector2 adjustedSlotMaxEdgeCoords=newTownCenterCoords+new Vector2(townSlotSideSize*0.5f,townSlotSideSize*0.5f);
+			mapMinX=Mathf.Min(adjustedSlotMinEdgeCoords.x,mapMinX);
+			mapMinY=Mathf.Min(adjustedSlotMinEdgeCoords.y,mapMinY);
+			mapMaxX=Mathf.Max(adjustedSlotMaxEdgeCoords.x,mapMaxX);
+			mapMaxY=Mathf.Max(adjustedSlotMaxEdgeCoords.y,mapMaxY);
+			//Add final slot to townCenters to be used for town placement
 			if (i<largeTownCount) townCenters.Add(newTownCenterCoords);
 			else endgameCenter=newTownCenterCoords; // - prepares endgame coordinates
 			//print ("new town center coords:"+newTownRect.center);
 		}
 		
+		//Offset all town slot coords to fit top used slot to scrollrect top, and leftmost used slot to scrollrect left, also
+		//Find final map dimensions
+		
+		float townslotsXOffset=-(mapMinX-borderOffset);
+		float townslotsYOffset=-borderOffset-mapMaxY;
+		//Nullify min and max values again
+		mapMinX=Mathf.Infinity;
+		mapMinY=mapMinX;
+		mapMaxX=Mathf.NegativeInfinity;
+		mapMaxY=mapMaxX;
+		
+		for (int i=0; i<townCenters.Count; i++)//each (Vector2 townCenter in townCenters)
+		{
+			Vector2 adjustedTownCenter=new Vector2(townCenters[i].x+townslotsXOffset,townCenters[i].y+townslotsYOffset);
+			townCenters[i]=adjustedTownCenter;
+			Vector2 adjustedSlotMinEdgeCoords=adjustedTownCenter-new Vector2(townSlotSideSize*0.5f,townSlotSideSize*0.5f);
+			Vector2 adjustedSlotMaxEdgeCoords=adjustedTownCenter+new Vector2(townSlotSideSize*0.5f,townSlotSideSize*0.5f);
+			mapMinX=Mathf.Min(adjustedSlotMinEdgeCoords.x,mapMinX);
+			mapMinY=Mathf.Min(adjustedSlotMinEdgeCoords.y,mapMinY);
+			mapMaxX=Mathf.Max(adjustedSlotMaxEdgeCoords.x,mapMaxX);
+			mapMaxY=Mathf.Max(adjustedSlotMaxEdgeCoords.y,mapMaxY);
+		}
+		endgameCenter+=new Vector2(townslotsXOffset,townslotsYOffset);
+		//Include endgame region into estimation
+		Vector2 adjustedEndgameSlotMinEdgeCoords=endgameCenter-new Vector2(townSlotSideSize*0.5f,townSlotSideSize*0.5f);
+		Vector2 adjustedEndgameSlotMaxEdgeCoords=endgameCenter+new Vector2(townSlotSideSize*0.5f,townSlotSideSize*0.5f);
+		mapMinX=Mathf.Min(adjustedEndgameSlotMinEdgeCoords.x,mapMinX);
+		mapMinY=Mathf.Min(adjustedEndgameSlotMinEdgeCoords.y,mapMinY);
+		mapMaxX=Mathf.Max(adjustedEndgameSlotMaxEdgeCoords.x,mapMaxX);
+		mapMaxY=Mathf.Max(adjustedEndgameSlotMaxEdgeCoords.y,mapMaxY);
+		
+		//Determine final size of scrollgroup
+		float mapFinalWidth=borderOffset*2+Mathf.Abs(mapMaxX-mapMinX);
+		float mapFinalHeight=borderOffset*2+Mathf.Abs(mapMaxY-mapMinY);
+		regionsGridGroup.GetComponent<RectTransform>().sizeDelta=new Vector2(mapFinalWidth,mapFinalHeight);
+		
 		//Create towns from rects
+		
 		List<MapRegion> newTowns=new List<MapRegion>();
 		foreach (Vector2 townCenter in townCenters)
 		{
 			//Create new town
 			MapRegion newTown=CreateRegion(townCenter);
-			foreach(MapRegion region in newTowns) {newTown.AddConnectedRegion(region,80);}
+			foreach(MapRegion region in newTowns) {newTown.AddConnectedRegion(region,true,townToTownGasCost);}
 			//newRegion.SetConnectedRegions(new List<MapRegion>(mapRegions));
-			newTowns.Add(newTown);
+			newTowns.Add(newTown);	
 		}
 		
 		//POPULATE TOWNS
-		//Create slot coords		
+		//Create node slot coords		
 		List<Vector2> populatingOffsets=new List<Vector2>();
 		float startOffset=-townNodeSideSize;
 		for (int i=0; i<townNodeSlots; i++)
@@ -210,8 +258,8 @@ public class MapManager : MonoBehaviour
 					
 					Vector2 newOffset=slotOffsetter.Invoke(Random.Range(1f,townNodeSideSize*0.5f-townAreaSpriteSize*0.5f),usedSlot);
 					MapRegion newNode=CreateRegion((Vector2)town.transform.localPosition+newOffset);
-					if (j>0) newNode.AddConnectedRegion(previousNodes[previousNodes.Count-1],10);
-					else newNode.AddConnectedRegion(town,townNodeFatigueCost);
+					if (j>0) newNode.AddConnectedRegion(previousNodes[previousNodes.Count-1],false,townNodeFatigueCost);
+					else newNode.AddConnectedRegion(town,false,townNodeFatigueCost);
 					previousNodes.Add(newNode);
 					nodesRemaining--;
 				}
@@ -231,8 +279,8 @@ public class MapManager : MonoBehaviour
 					
 					Vector2 newOffset=slotOffsetter.Invoke(Random.Range(1f,townNodeSideSize*0.5f-townAreaSpriteSize*0.5f),usedSlot);
 					MapRegion newNode=CreateRegion((Vector2)town.transform.localPosition+newOffset);
-					if (j>0) newNode.AddConnectedRegion(previousNodes[previousNodes.Count-1],10);
-					if (j==0 || j==specialNodesPerLoop-1) newNode.AddConnectedRegion(town,townNodeFatigueCost);
+					if (j>0) newNode.AddConnectedRegion(previousNodes[previousNodes.Count-1],false,townNodeFatigueCost);
+					if (j==0 || j==specialNodesPerLoop-1) newNode.AddConnectedRegion(town,false,townNodeFatigueCost);
 					previousNodes.Add(newNode);
 					nodesRemaining--;//
 				}
@@ -248,7 +296,7 @@ public class MapManager : MonoBehaviour
 				Vector2 newOffset=slotOffsetter.Invoke(Random.Range(1f,townNodeSideSize*0.5f-townAreaSpriteSize*0.5f),usedSlot);
 				
 				MapRegion newNode=CreateRegion((Vector2)town.transform.localPosition+newOffset);
-				newNode.AddConnectedRegion(town,townNodeFatigueCost);
+				newNode.AddConnectedRegion(town,false,townNodeFatigueCost);
 			}
 		}
 		
@@ -259,7 +307,7 @@ public class MapManager : MonoBehaviour
 		//Vector2 endgameCenterCoords=townSlotCenters[randomSlotIndex]+randomPointInSlot;
 		//townSlotCenters.RemoveAt(randomSlotIndex);
 		MapRegion endgameEncounter=CreateRegion(endgameCenter);
-		foreach(MapRegion region in newTowns) {endgameEncounter.AddConnectedRegion(region,townToTownFatigueCost);}
+		foreach(MapRegion region in newTowns) {endgameEncounter.AddConnectedRegion(region,true,townToTownGasCost);}
 		
 		//Final step - party placement
 		//StartCoroutine(MapGenViewFocus(mapRegions[0].GetComponent<RectTransform>()));
@@ -467,15 +515,16 @@ public class MapManager : MonoBehaviour
 		}
 	}
 	*/
+	/*
 	public void RemoveHorde(Horde removedHorde)
 	{
-		/*
+		
 		Vector2 removedHordeCoords=new Vector2(removedHorde.mapX,removedHorde.mapY);
 		mapRegions[removedHordeCoords].hordeEncounter=null;
 		hordes.Remove(removedHorde);
 		GameObject.Destroy(hordeTokens[removedHorde].gameObject);
-		hordeTokens.Remove(removedHorde);*/
-	}
+		hordeTokens.Remove(removedHorde);
+	}*/
 	/*
 	public void MoveAllHordes(int timeVar)
 	{
