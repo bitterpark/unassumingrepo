@@ -14,6 +14,7 @@ public class SpriteBase : MonoBehaviour {
 	public Sprite knifeSprite;
 	public Sprite axeSprite;
 	//Items
+	//Usable
 	public Sprite ammoBoxSprite;
 	public Sprite medkitSprite;
 	public Sprite bandageSprite;
@@ -21,12 +22,18 @@ public class SpriteBase : MonoBehaviour {
 	public Sprite foodSprite;
 	public Sprite foodSpriteSmall;
 	public Sprite foodSpriteBig;
-	public Sprite flashlightSprite;
-	public Sprite armorvestSprite;
 	public Sprite radioSprite;
 	public Sprite settableTrapSprite;
-	public Sprite bedSprite;
+	public Sprite gasolineSprite;
 	public Sprite backpackSprite;
+	//Equippable
+	public Sprite flashlightSprite;
+	public Sprite armorvestSprite;
+	//Crafting ingredients
+	public Sprite gunpowderSprite;
+	public Sprite scrapSprite;
+	//Misc
+	public Sprite bedSprite;
 	
 	//Assigned task sprites
 	public Sprite buildCampSprite;

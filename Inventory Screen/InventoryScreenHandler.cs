@@ -7,13 +7,16 @@ public class InventoryScreenHandler : MonoBehaviour
 {
 	public PartyMember selectedMember;
 	//public ItemImageHandler itemPrefab;
-	public PerkTextHandler perkPrefab;
+	public TraitUIHandler traitPrefab;
 	public RelationTextHandler relationPrefab;
 	
 	public Text memberNameText;
 	public Text meleeDamageText;
 	public Text rangedDamageText;
 	public Text armorValueText;
+	
+	public Text skillpointCounterText;
+	
 	public CampCanvas campingCanvas;
 	public static InventoryScreenHandler mainISHandler;
 	public bool inventoryShown=false;
@@ -33,7 +36,9 @@ public class InventoryScreenHandler : MonoBehaviour
 	public Transform equipmentGroup;
 	public Transform inventoryGroup;
 	public Transform memberInventoryGroup;
-	
+	public Transform traitGroup;
+	public Transform skillGroup;
+	public Transform relationsGroup;
 	
 	/*
 	public void InventoryChangeHandler() 
@@ -91,6 +96,8 @@ public class InventoryScreenHandler : MonoBehaviour
 	
 	public void RefreshInventoryItems()
 	{
+		if (inventoryShown)
+		{
 		//Update armor value
 		armorValueText.text="Armor:"+selectedMember.armorValue;
 		
@@ -197,20 +204,30 @@ public class InventoryScreenHandler : MonoBehaviour
 			}
 		}
 		
-		//Refresh perks
-		foreach (Image oldPerkImage in transform.FindChild("Inventory Panel").FindChild("Perks Group").GetComponentsInChildren<Image>())
+		//Refresh traits
+		//Refresh skillpoint counter
+		skillpointCounterText.text="Skillpoints:"+selectedMember.skillpoints;
+		//Delete old traits
+		foreach (Image oldTraitImage in traitGroup.GetComponentsInChildren<Image>())
 		{
-			GameObject.Destroy(oldPerkImage.gameObject);
-		}	
-		foreach (Perk memberPerk in selectedMember.perks)
+			GameObject.Destroy(oldTraitImage.gameObject);
+		}
+		//Delete old skills
+		foreach (Image oldSkillImage in skillGroup.GetComponentsInChildren<Image>())
 		{
-			PerkTextHandler newPerkImage=Instantiate(perkPrefab);
-			newPerkImage.AssignPerk(memberPerk);
-			newPerkImage.transform.SetParent(transform.FindChild("Inventory Panel").FindChild("Perks Group"),false);
+			GameObject.Destroy(oldSkillImage.gameObject);
+		}
+		//Repopulate skills and traits	
+		foreach (Trait memberTrait in selectedMember.traits)
+		{
+			TraitUIHandler newPerkImage=Instantiate(traitPrefab);
+			newPerkImage.AssignTrait(memberTrait);
+			if (memberTrait.GetType().BaseType==typeof(Trait)) newPerkImage.transform.SetParent(traitGroup,false);
+			else newPerkImage.transform.SetParent(skillGroup,false);
 		}
 		
 		//Refresh relations
-		foreach (Image oldRelImage in transform.FindChild("Inventory Panel").FindChild("Relations Group").GetComponentsInChildren<Image>())
+		foreach (Image oldRelImage in relationsGroup.GetComponentsInChildren<Image>())
 		{
 			GameObject.Destroy(oldRelImage.gameObject);
 		}	
@@ -218,11 +235,12 @@ public class InventoryScreenHandler : MonoBehaviour
 		{
 			RelationTextHandler newRelImage=Instantiate(relationPrefab);
 			newRelImage.AssignRelation(memberRelation);
-			newRelImage.transform.SetParent(transform.FindChild("Inventory Panel").FindChild("Relations Group"),false);
+			newRelImage.transform.SetParent(relationsGroup,false);
 		}
 		
 		//Refresh camp
 		campingCanvas.RefreshSlots();
+		}
 	}
 	
 	public void InventoryItemClicked(InventoryItem clickedItem,InventorySlot originSlot)

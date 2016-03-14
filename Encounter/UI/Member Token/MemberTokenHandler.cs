@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using System.Collections;
 using UnityEngine.UI;
 
@@ -51,7 +51,7 @@ public class MemberTokenHandler : MonoBehaviour, IAttackAnimation, IGotHitAnimat
 	{
 		maxAllowedMovesCount=2;
 		if (myMember.legsBroken) maxAllowedMovesCount-=1;
-		else if (myMember.isScout) maxAllowedMovesCount+=1;
+		else if (myMember.extraMoveEnabled) maxAllowedMovesCount+=1;
 		if (currentAllowedMovesCount>maxAllowedMovesCount) currentAllowedMovesCount=maxAllowedMovesCount;
 	}
 	bool moveTaken
@@ -359,7 +359,17 @@ public class MemberTokenHandler : MonoBehaviour, IAttackAnimation, IGotHitAnimat
 	public void MouseEnter()
 	{
 		string text=myMember.name;
-		foreach (Perk perk in myMember.perks){text+="\n-"+perk.name;}
+		foreach (Trait trait in myMember.traits)
+		{
+		 	bool showTrait=false;
+			if (trait.GetType().BaseType==typeof(Trait)) showTrait=true;
+		 	else 
+		 	{
+		 		Skill memberSkill=trait as Skill;
+				if (memberSkill.learned==true) showTrait=true;
+		 	}
+			if (showTrait) text+="\n-"+trait.name;
+		}
 		foreach (PartyMember.BodyPartTypes part in myMember.memberBodyParts.currentParts.Keys)//.currentParts.Keys)
 		{text+="\n"+part.ToString()+" "+(myMember.memberBodyParts.GetPartHitChance(part)*100).ToString()+"%";}
 		TooltipManager.main.CreateTooltip(text,transform);

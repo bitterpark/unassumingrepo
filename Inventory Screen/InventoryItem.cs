@@ -16,7 +16,7 @@ public abstract class InventoryItem
 	
 	//Deprecated
 	public enum LootItems {Medkits,Bandages,Food,Junkfood/*,PerishableFood*/,Ammo,Flashlight,Radio,Bed,Backpack,SettableTrap,AssaultRifle,Shotgun,NineM,Pipe,Knife,Axe,ArmorVest}
-	public enum LootMetatypes {Medical,FoodItems,Melee,Guns,Equipment,Radio}
+	public enum LootMetatypes {Medical,FoodItems,Melee,Guns,Equipment,Radio,Salvage}
 	
 	//Deprecated, remove later!!!
 	public static string GetLootingDescription(LootItems itemType)
@@ -179,6 +179,36 @@ public abstract class InventoryItem
 			case LootMetatypes.Radio:
 			{
 				setItems.Add(new Radio());
+				break;
+			}
+			case LootMetatypes.Salvage:
+			{
+				ProbabilityList<List<InventoryItem>> equipmentList=new ProbabilityList<List<InventoryItem>>();
+				List<InventoryItem> setOne=new List<InventoryItem>();
+				setOne.Add(new Scrap());
+				setOne.Add(new Scrap());
+				setOne.Add(new Scrap());
+				equipmentList.AddProbability(setOne,0.5f);
+				
+				List<InventoryItem> setTwo=new List<InventoryItem>();
+				setTwo.Add(new Scrap());
+				setTwo.Add(new Gunpowder());
+				equipmentList.AddProbability(setTwo,0.2f);
+				//Scrap(),0.5f);
+				
+				List<InventoryItem> setThree=new List<InventoryItem>();
+				setThree.Add(new Scrap());
+				setThree.Add(new FoodSmall());
+				setThree.Add(new FoodSmall());
+				equipmentList.AddProbability(setThree,0.15f);
+				
+				List<InventoryItem> setFour=new List<InventoryItem>();
+				setFour.Add(new Medkit());
+				equipmentList.AddProbability(setFour,0.15f);
+				
+				List<InventoryItem> resultingSet=setOne;
+				if (equipmentList.RollProbability(out resultingSet)) setItems.AddRange(resultingSet);
+				else throw new System.Exception("Could not roll a positive result on equipment loot table!");
 				break;
 			}
 		}
@@ -779,13 +809,13 @@ public class Axe:MeleeWeapon
 	{
 		itemName="Axe";
 		baseDamage=180;
-		accuracyMod=-0.1f;
+		accuracyMod=-0.15f;
 	}
 	
 	//public int weaponMaxDamage=200;
 	//public int weaponMinDamage=160;
 	//int weakDamage=3;
-	int staminaUse=3;
+	int staminaUse=4;
 	
 	//public override int GetMaxDamage() {return weaponMaxDamage;}
 	//public override int GetMinDamage() {return weaponMinDamage;}
@@ -845,5 +875,64 @@ public class Pot:InventoryItem
 	public override string GetMouseoverDescription ()
 	{
 		return itemName+"\nRestores "+nutritionAmount+" hunger";
+	}
+}
+
+public class Gasoline:InventoryItem
+{
+	int volume=1;
+	public Gasoline()
+	{
+		itemName="Gasoline";
+	}
+	public override Sprite GetItemSprite() {return SpriteBase.mainSpriteBase.gasolineSprite;}
+	
+	public override bool UseAction(PartyMember member)
+	{
+		PartyManager.mainPartyManager.gas+=1;
+		return true;
+	}
+	
+	public override string GetMouseoverDescription ()
+	{
+		return itemName+"\nFuels trips between towns";
+	}
+}
+
+public class Scrap:InventoryItem
+{
+	public Scrap()
+	{
+		itemName="Scrap";
+	}
+	public override Sprite GetItemSprite() {return SpriteBase.mainSpriteBase.scrapSprite;}
+	
+	public override bool UseAction(PartyMember member)
+	{
+		return false;
+	}
+	
+	public override string GetMouseoverDescription ()
+	{
+		return itemName+"\nUsed for crafting traps";
+	}
+}
+
+public class Gunpowder:InventoryItem
+{
+	public Gunpowder()
+	{
+		itemName="Gunpowder";
+	}
+	public override Sprite GetItemSprite() {return SpriteBase.mainSpriteBase.gunpowderSprite;}
+	
+	public override bool UseAction(PartyMember member)
+	{
+		return false;
+	}
+	
+	public override string GetMouseoverDescription ()
+	{
+		return itemName+"\nUsed for crafting traps and bullets";
 	}
 }

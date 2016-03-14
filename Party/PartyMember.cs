@@ -291,10 +291,10 @@ public class PartyMember
 	public int vitalsMaxHealth=50;
 	
 	//ATTACK HIT CHANCE
-	public float baseAttackHitChance=0.66f;
+	public float baseAttackHitChance=0f;
 	public float meleeHitchanceMod=0;
 	public float rangedHitchanceMod=0;
-	float hitChanceReductionPerStaminaPoint=0.025f;//0.05f;
+	float hitChanceReductionPerStaminaPoint=0f;//0.025f;//0.05f;
 	public float GetCurrentAttackHitChance(bool rangedMode)
 	{
 		float currentAttackHitChance=baseAttackHitChance;
@@ -436,12 +436,22 @@ public class PartyMember
 	
 	public float friendshipChance;
 	
-	public bool legsBroken;
-	public bool hasLight;
-	public bool isCook;
-	public bool isLockExpert;
-	public bool isMedic;
-	public bool isScout;
+	public int skillpoints=0;
+	
+	public bool legsBroken=false;
+	public bool hasLight=false;
+	public bool isCook=false;
+	public bool isLockExpert=false;
+	public bool isMedic=false;
+	
+	//Scout
+	public bool isScout=false;
+	public bool extraMoveEnabled=false; 
+	public bool barricadeAvoidanceEnabled=false;
+	public bool isQuiet=false;
+	//Fighter
+	public bool hitAndRunEnabled=false;
+	
 	public int armorValue;
 	public int maxCarryCapacity;
 	public void ChangeMaxCarryCapacity(int changeDelta)
@@ -468,6 +478,7 @@ public class PartyMember
 	//int minUnarmedDamage=0;
 	//int maxUnarmedDamage=4;
 	int unarmedDamage=30;
+	int unarmedAttackStaminaUse=1;
 	public int meleeDamageMod;
 	public List<InventoryItem> equippedItems=new List<InventoryItem>();
 	public List<InventoryItem> carriedItems=new List<InventoryItem>();
@@ -478,7 +489,7 @@ public class PartyMember
 	}
 	
 	public List<StatusEffect> activeStatusEffects=new List<StatusEffect>();
-	public List<Perk> perks=new List<Perk>();
+	public List<Trait> traits=new List<Trait>();
 	public Dictionary<PartyMember,Relationship> relationships=new Dictionary<PartyMember, Relationship>();
 	
 	public PartyMember (MapRegion startingRegion)//Vector2 startingWorldCoords)
@@ -508,11 +519,23 @@ public class PartyMember
 			if (!colorTaken) {color=c; break;}
 		}
 		
-		//Fill out perk lists
-		List<Perk> possibleSpecialtyPerks=Perk.GetSpecialtyPerkList();
-		List<Perk> possibleGenericPerks=Perk.GetPerkList();
 		
-		//Randomly pick out a specialty perk
+		//Randomly pick out a specialty
+		List<Trait> possibleSpecialtyPerks=Trait.GetRandomSkillTree();
+		traits.AddRange(possibleSpecialtyPerks);
+		//Pick out a starting specialty perk
+		Skill startingLearnedSkill=traits[Random.Range(0,traits.Count)] as Skill;
+		startingLearnedSkill.learned=true;
+		
+		//Fill out trait list
+		List<Trait> possibleGenericPerks=Trait.GetTraitList();
+		//Deactivate the opposite traits of the starting perk
+		foreach(Trait genericPerk in possibleGenericPerks)
+		{
+			if (genericPerk.GetType()==startingLearnedSkill.oppositePerk) {possibleGenericPerks.Remove(genericPerk); break;}
+		}
+		
+		/*
 		int requiredSpecialtyPerks=1;
 		while (requiredSpecialtyPerks>0)
 		{
@@ -531,20 +554,26 @@ public class PartyMember
 					if (possiblePerk.GetType()==newPerk.oppositePerk) {possibleGenericPerks.Remove(possiblePerk); break;}
 				}
 			}
-		}
+		}*/
 		
 		//Randomly pick out generic perks
 		int necessaryPerkCount=2;
-		while (perks.Count-1<necessaryPerkCount)
+		int addedPerksCount=0;
+		while (addedPerksCount<necessaryPerkCount)
 		{
-			Perk newPerk=possibleGenericPerks[Random.Range(0,possibleGenericPerks.Count)];
-			perks.Add(newPerk);
+			Trait newPerk=possibleGenericPerks[Random.Range(0,possibleGenericPerks.Count)];
+			traits.Add(newPerk);
+			addedPerksCount++;
 			possibleGenericPerks.Remove(newPerk);
 			if (newPerk.oppositePerk!=null) 
 			{
-				foreach (Perk possiblePerk in possibleGenericPerks) 
+				foreach (Trait possibleGenericPerk in possibleGenericPerks) 
 				{
-					if (possiblePerk.GetType()==newPerk.oppositePerk) {possibleGenericPerks.Remove(possiblePerk); break;}
+					if (possibleGenericPerk.GetType()==newPerk.oppositePerk) {possibleGenericPerks.Remove(possibleGenericPerk); break;}
+				}
+				foreach (Trait possibleSpecialtyPerk in possibleSpecialtyPerks) 
+				{
+					if (possibleSpecialtyPerk.GetType()==newPerk.oppositePerk) {possibleGenericPerks.Remove(possibleSpecialtyPerk); break;}
 				}
 			}
 		}
@@ -579,9 +608,14 @@ public class PartyMember
 		isMedic=false;
 		isLockExpert=false;
 		isScout=false;
-		foreach (Perk myPerk in perks)
+		foreach (Trait myPerk in traits)
 		{
-			myPerk.ActivatePerk(this);
+			if (myPerk.GetType().BaseType==typeof(Trait)) myPerk.ActivatePerk(this);
+			else
+			{
+				Skill mySkill=myPerk as Skill;
+				if (mySkill.learned) mySkill.ActivatePerk(this);
+			}
 		}
 		//make sure perks trigger before these to properly use modified values of maxHealth and maxStamina
 		//health=maxHealth;
@@ -656,7 +690,7 @@ public class PartyMember
 	
 	void RollRelationships()
 	{
-		if (Random.value<0.1f)
+		if (Random.value<0f)
 		{
 			PartyMember newRelationGuy=PartyManager.mainPartyManager.partyMembers[Random.Range(0,PartyManager.mainPartyManager.partyMembers.Count)];
 			if (newRelationGuy!=this & !relationships.ContainsKey(newRelationGuy)) 
@@ -917,45 +951,37 @@ public class PartyMember
 	public string GetMeleeAttackDescription()
 	{
 		string res="Hit for ";
-		int requiredStamina=1;
+		int requiredStamina=unarmedAttackStaminaUse;
+		int baseDamage=unarmedDamage;
 		if (equippedMeleeWeapon!=null) 
 		{
 			requiredStamina=equippedMeleeWeapon.GetStaminaUse();
-			float staminaMod=Mathf.Min(1f,(float)stamina/(float)requiredStamina);
-			res+=(equippedMeleeWeapon.baseDamage+meleeDamageMod).ToString();/*(Mathf.RoundToInt((equippedMeleeWeapon.GetMinDamage()+meleeDamageMod)*staminaMod))
+			//float staminaMod=Mathf.Min(1f,(float)stamina/(float)requiredStamina);
+			baseDamage=equippedMeleeWeapon.baseDamage;
+			/*(Mathf.RoundToInt((equippedMeleeWeapon.GetMinDamage()+meleeDamageMod)*staminaMod))
 			+"-"+(Mathf.RoundToInt((equippedMeleeWeapon.GetMaxDamage()+meleeDamageMod)*staminaMod));*/
 		}
-		else {res+=(unarmedDamage+meleeDamageMod).ToString();}//(Mathf.Max(minUnarmedDamage+meleeDamageMod,0))+"-"+(maxUnarmedDamage+meleeDamageMod);}
+		if (stamina<requiredStamina) baseDamage=Mathf.CeilToInt(baseDamage*0.5f);
+		res+=(baseDamage+meleeDamageMod).ToString();
 		res+=" damage\n("+requiredStamina+" stamina)";
 		return res;
 	}
 	
 	public int MeleeAttack()
 	{
-		int damage=0;
+		int damage=unarmedDamage;
+		int requiredStamina=unarmedAttackStaminaUse;
 		if (equippedMeleeWeapon!=null)
 		{
 		//if (stamina<equippedMeleeWeapon.GetStaminaUse()) {EncounterCanvasHandler.main.DisplayNewMessage(name+"'s attack is weak!");}
 		//if (stamina>0) 
 		//{
-			damage=equippedMeleeWeapon.GetDamage((morale-baseMorale)*moraleDamageMod,meleeDamageMod);
-			stamina-=equippedMeleeWeapon.GetStaminaUse();
+			damage=equippedMeleeWeapon.GetDamage((morale-baseMorale)*moraleDamageMod,0);
+			requiredStamina=equippedMeleeWeapon.GetStaminaUse();
 		}
-		else
-		{
-			//int minUnarmedDamage=0;
-			//int maxUnarmedDamage=4;
-			int unarmedAttackStaminaUse=1;
-			damage=unarmedDamage+meleeDamageMod;//minUnarmedDamage;
-			/*
-			if (stamina<unarmedAttackStaminaUse) 
-			{
-				//EncounterCanvasHandler.main.DisplayNewMessage(name+"'s attack is weak!");
-				stamina-=unarmedAttackStaminaUse;
-				damage=minUnarmedDamage;
-			}
-			else Random.Range(minUnarmedDamage,maxUnarmedDamage+1);*/
-		}
+		if (stamina<requiredStamina) damage=Mathf.CeilToInt(damage*0.5f);
+		stamina-=requiredStamina;
+		damage+=meleeDamageMod;
 		return damage;
 	}
 	

@@ -248,7 +248,7 @@ public class Encounter
 	{
 		int segmentCount=0;
 		//Dictionary<Vector2,List<EncounterRoom>> segmentRoomsEligibleForEnemyPlacement=new Dictionary<Vector2,List<EncounterRoom>>();
-		List<List<EncounterRoom>> segmentRoomsEligibleForLootPlacement=new List<List<EncounterRoom>>();
+		List<List<EncounterRoom>> lootRoomsBySegment=new List<List<EncounterRoom>>();
 		encounterMap.Clear();
 		List<EncounterRoom> roomsEligibleForEnemyPlacement=new List<EncounterRoom>();
 		//List<EncounterRoom> roomsEligibleForLootPlacement=new List<EncounterRoom>();
@@ -256,8 +256,8 @@ public class Encounter
 		foreach (Vector2 segmentKey in prefabMap.Keys)
 		{
 			//segmentRoomsEligibleForEnemyPlacement.Add(segmentKey,new List<EncounterRoom>(prefabMap[segmentKey].Values));
-			List<EncounterRoom> segmentLootRooms=new List<EncounterRoom>(prefabMap[segmentKey].Values);
-			segmentRoomsEligibleForLootPlacement.Add(segmentLootRooms);
+			List<EncounterRoom> segmentLootRooms=new List<EncounterRoom>();//(prefabMap[segmentKey].Values);
+			lootRoomsBySegment.Add(segmentLootRooms);
 			segmentCount++;
 			foreach (Vector2 roomCoord in prefabMap[segmentKey].Keys)
 			{
@@ -299,7 +299,7 @@ public class Encounter
 		}
 		
 		//Generate loot placement
-		foreach (List<EncounterRoom> eligibleSegmentRooms in segmentRoomsEligibleForLootPlacement)
+		foreach (List<EncounterRoom> eligibleSegmentRooms in lootRoomsBySegment)
 		{
 			int requiredChestCount=Random.Range(normalChestCountMin,normalChestCountMax+1);
 			int currentChestCount=0;

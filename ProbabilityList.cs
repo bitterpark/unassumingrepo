@@ -20,7 +20,7 @@ public class ProbabilityList <T> where T: class
 			combinedPositiveProbabilitySpace+=chance;
 		}
 		probabilities.Add(newItem,Mathf.Min(1-combinedPositiveProbabilitySpace,newChance));
-		if (newChance>1-combinedPositiveProbabilitySpace) GameManager.DebugPrint("Probability in list adds up to >1!");
+		//if (newChance>1-combinedPositiveProbabilitySpace) GameManager.DebugPrint("Probability in list adds up to >1!");
 	}
 	
 	public bool RollProbability(out T pickedItem)

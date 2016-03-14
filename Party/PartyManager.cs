@@ -167,7 +167,7 @@ public class PartyManager : MonoBehaviour
 		//mapCoordY=0;
 		//partyVisibilityMod=0;
 		//foodSupply=0;//2;
-		ammo=500;//500;//5;
+		ammo=0;//500;//5;
 		gas=1;
 		
 		partyMembers=new List<PartyMember>();
@@ -192,7 +192,7 @@ public class PartyManager : MonoBehaviour
 		
 		MapManager.main.FocusViewOnRegion(startingRegion.GetComponent<RectTransform>());
 		
-		//startingRegion.StashItem(new SettableTrap());
+		startingRegion.StashItem(new SettableTrap());
 		//startingRegion.StashItem(new SettableTrap());
 		//startingRegion.StashItem(new Bandages());
 		//startingRegion.StashItem(new AssaultRifle());
@@ -220,6 +220,7 @@ public class PartyManager : MonoBehaviour
 		{
 			timePassageText="Night";
 			daysPassed+=1;
+			foreach (PartyMember member in partyMembers) member.skillpoints+=1;
 		}
 		PartyStatusCanvasHandler.main.NewNotification(timePassageText);
 		//dayTime=(int)Mathf.Repeat(dayTime+hoursPassed,24);
@@ -229,6 +230,7 @@ public class PartyManager : MonoBehaviour
 		//Adjust camera bg color
 		float lightBottomThreshold=0.5f;
 		float noonLightLevelBonus=0.5f;
+		InventoryScreenHandler.mainISHandler.RefreshInventoryItems();
 		//float newb=lightBottomThreshold+noonLightLevelBonus-(noonLightLevelBonus/12)*(Mathf.Abs(dayTime-12));//Mathf.Repeat(Camera.main.backgroundColor.b-0.083//+0.0416f*hoursPassed,1);
 		//Camera.main.backgroundColor=new Color(0,0,newb);//
 	}
@@ -239,6 +241,8 @@ public class PartyManager : MonoBehaviour
 		//Make sure the rest tasks and time skip occur in proper order
 		foreach (MemberMapToken token in MapManager.main.memberTokens.Values) 
 		if (!assignedTasks.ContainsKey(token.assignedMember)) token.moved=false;
+		List<PartyMember> membersRestingAtCamp=new List<PartyMember>();
+		MapRegion campRegion=null;
 		//Perform assigned tasks
 		foreach (PartyMember member in new List<PartyMember>(assignedTasks.Keys)) 
 		{
@@ -246,6 +250,12 @@ public class PartyManager : MonoBehaviour
 			else
 			{
 				assignedTasks[member].actionToPerform.Invoke();
+				if (assignedTasks[member].taskType==AssignedTaskTypes.Rest) 
+				{
+					membersRestingAtCamp.Add(member);
+					//THIS WILL CAUSE ISSUES IF MEMBERS DO NOT ALL REST IN THE SAME REGION/TOWN
+					campRegion=member.currentRegion;
+				}
 				if (!assignedTasks[member].preconditionCheck()) RemoveMemberTask(member);
 			}
 		}
@@ -254,6 +264,10 @@ public class PartyManager : MonoBehaviour
 		{
 			if (!assignedTasks[member].preconditionCheck()) RemoveMemberTask(member);
 		}
+		
+		//Do morale and other camp events
+		if (membersRestingAtCamp.Count>1) GameEventManager.mainEventManager.RollCampEvents(campRegion,membersRestingAtCamp);
+		
 		//This may cause issues on gameover
 		PartyStatusCanvasHandler.main.RefreshAssignmentButtons(selectedMembers);
 		//PartyStatusCanvasHandler.main.StartTimeFlash();
@@ -264,6 +278,7 @@ public class PartyManager : MonoBehaviour
 	{
 		if (Input.GetKeyDown(KeyCode.M)) 
 		{
+			GameManager.main.EndCurrentGame(true);
 			//partyMembers[0].morale=0;//
 			//partyMembers[0].TakeDamage(70,false,PartyMember.BodyPartTypes.Vitals);
 			//partyMembers[0].TakeDamage(15,false,PartyMember.BodyPartTypes.Legs);

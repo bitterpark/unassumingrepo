@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using System.Collections;
 
 using UnityEngine.UI;
@@ -97,7 +97,7 @@ public class CombatSelectorHandler : MonoBehaviour
 			float lineHeight=20;
 			string text=assignedMember.name;
 			float height=lineHeight;
-			foreach (Perk perk in assignedMember.perks)
+			foreach (Trait perk in assignedMember.traits)
 			{
 				text+="\n-"+perk.name;
 				height+=lineHeight;

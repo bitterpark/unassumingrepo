@@ -14,6 +14,21 @@ public class GameEventManager : MonoBehaviour
 	string currentDescription=null;
 	public bool drawingEvent=false;
 	bool choiceMade=false;
+	List<NewEventInfo> queuedEvents=new List<NewEventInfo>();
+	
+	public struct NewEventInfo
+	{
+		public GameEvent newEvent;
+		public MapRegion eventRegion;
+		public List<PartyMember> eventMembers;
+		public NewEventInfo(GameEvent addedEvent, MapRegion region, List<PartyMember> members)
+		{
+			newEvent=addedEvent;
+			eventRegion=region;
+			eventMembers=members;
+		}
+	
+	}
 	
 	public EventCanvasHandler eventScreenPrefab;
 	/*
@@ -57,35 +72,72 @@ public class GameEventManager : MonoBehaviour
 		}
 	}
 	
-	public bool RollEvents(ref bool moveAllowed, MapRegion eventRegion, List<PartyMember> movedMembers)
+	public void RollCampEvents(MapRegion eventRegion,List<PartyMember> presentMembers)
 	{
-		bool eventFired=false;
 		float eventsRoll=Random.value;
 		EventChance trackedEventRecord=new EventChance();
-		GameEvent resEvent=PickRandomEvent(moraleEvents, ref trackedEventRecord,eventsRoll, eventRegion, movedMembers);
-		//If no morale events fired, do other events
-		if (resEvent==null)
+		GameEvent resEvent=PickRandomEvent(moraleEvents, ref trackedEventRecord,eventsRoll, eventRegion, presentMembers);
+		if (resEvent!=null) StartEventDraw(resEvent, eventRegion, presentMembers);
+	}
+	
+	public void RollEvents(ref bool moveAllowed, MapRegion eventRegion, List<PartyMember> movedMembers, bool queueEvent)
+	{
+		//bool eventFired=false;
+		GameEvent resEvent=null;
+		if (eventRegion.hasGasoline)resEvent=new GasolineEvent();
+		else
 		{
+			float eventsRoll=Random.value;
+			EventChance trackedEventRecord=new EventChance();
 			resEvent=PickRandomEvent(possibleEvents, ref trackedEventRecord,eventsRoll,eventRegion, movedMembers);
-			//If a regular event fired, remove it from events list
-			if (resEvent!=null) possibleEvents.Remove(trackedEventRecord);
+			if (!resEvent.repeatable) possibleEvents.Remove(trackedEventRecord);
 		}
-		
+		//If a regular event fired, remove it from events list
 		if (resEvent!=null) 
 		{
-			eventFired=true;
-			StartEventDraw(resEvent, eventRegion, movedMembers);
+			//eventFired=true;
+			if (queueEvent) {QueueEvent(resEvent,eventRegion,movedMembers);}
+			else StartEventDraw(resEvent, eventRegion, movedMembers);
 			moveAllowed=resEvent.AllowMapMove();
 		}
 		else moveAllowed=true;
 		
-		return eventFired;
+		//return eventFired;
 	}
 	
 	public void DoEvent(GameEvent newEvent, MapRegion eventRegion, List<PartyMember> eventMembers)
 	{
 		StartEventDraw(newEvent, eventRegion, eventMembers);
 	}
+	
+	public void QueueEvent(GameEvent newEvent, MapRegion eventRegion, List<PartyMember> eventMembers)
+	{
+		//StartEventDraw(newEvent, eventRegion, eventMembers);
+		queuedEvents.Add(new NewEventInfo(newEvent,eventRegion,eventMembers));
+	}
+	public void QueueEventToStart(GameEvent newEvent, MapRegion eventRegion, List<PartyMember> eventMembers)
+	{
+		//StartEventDraw(newEvent, eventRegion, eventMembers);
+		queuedEvents.Insert(0,new NewEventInfo(newEvent,eventRegion,eventMembers));
+	}
+	public void TryNextQueuedEvent()
+	{
+		if (queuedEvents.Count>0)
+		{
+			//FIFO
+			NewEventInfo firingEvent=queuedEvents[0];
+			queuedEvents.Remove(firingEvent);
+			//Update members list to remove ones who died
+			List<PartyMember> survivingMovedMembers=new List<PartyMember>();
+			foreach (PartyMember member in firingEvent.eventMembers)
+			{
+				if (PartyManager.mainPartyManager.partyMembers.Contains(member)) survivingMovedMembers.Add(member);
+			}
+			if (survivingMovedMembers.Count>0) DoEvent(firingEvent.newEvent,firingEvent.eventRegion,survivingMovedMembers);
+			else return;
+		} 
+	}
+	
 	
 	GameEvent PickRandomEvent(List<EventChance> eventsList, ref EventChance eventRecord, float roll
 	, MapRegion eventRegion,List<PartyMember> movedMembers)
@@ -193,13 +245,18 @@ public class GameEventManager : MonoBehaviour
 		drawingEvent=false;
 		choiceMade=false;*/
 		drawingEvent=false;
+		TryNextQueuedEvent();
 	}
+	
+	void ClearEventQueue() {queuedEvents.Clear();}
 	
 	void Start()
 	{
 		mainEventManager=this;
 		//possibleEvents.Add (new EventChance(new FoodSpoilage(),0.04f));
-		possibleEvents.Add (new EventChance(new MonsterAttack(),0.04f));
+		//possibleEvents.Add (new EventChance(new MonsterAttack(),0.04f));
+		//Putting total probability space to >1 should work properly, as long as it is done as the first probability
+		possibleEvents.Add(new EventChance(new ScavengeEventOne(),1f));
 		possibleEvents.Add (new EventChance(new CacheInAnomaly(),0.04f));
 		//possibleEvents.Add (new EventChance(new LostInAnomaly(),0.04f));
 		possibleEvents.Add( new EventChance(new NewSurvivor(),0.04f));
@@ -212,6 +269,7 @@ public class GameEventManager : MonoBehaviour
 		moraleEvents.Add (new EventChance(new LowMoraleEnmity(),0.10f));
 		moraleEvents.Add (new EventChance(new LowMoraleQuit(),0.05f));
 		
+		GameManager.GameOver+=ClearEventQueue;
 		/*
 		//Add highest first for proper rolling
 		eventPossibilities.Add (0.16f,new LostInAnomaly());

@@ -170,7 +170,7 @@ public class EncounterCanvasHandler : MonoBehaviour
 		if (GetComponent<CanvasGroup>().interactable
 		&& moveDistance==1 
 		&& !roomHandler.assignedRoom.isWall 
-		&& (roomHandler.assignedRoom.barricadeInRoom==null || selectedMember.isScout)) //&& !currentEncounter.encounterMap[memberCoords[selectedMember]].hasEnemies)//new Vector2(encounterPlayerX,encounterPlayerY)].hasEnemies)
+		&& (roomHandler.assignedRoom.barricadeInRoom==null || selectedMember.barricadeAvoidanceEnabled)) //&& !currentEncounter.encounterMap[memberCoords[selectedMember]].hasEnemies)//new Vector2(encounterPlayerX,encounterPlayerY)].hasEnemies)
 		{
 			StartCoroutine(MoveMemberToRoom(roomHandler));
 		}//
@@ -213,7 +213,7 @@ public class EncounterCanvasHandler : MonoBehaviour
 			//if last party member didn't die moving away
 			if (encounterOngoing) 
 			{
-				MakeNoise(startingRoom.GetCoords(),1);
+				if (!selectedMember.isQuiet) MakeNoise(startingRoom.GetCoords(),1);
 				MovePartyMemberToRoom(selectedMember,roomHandler,false);
 				DeadMemberCleanupCheck();
 				
@@ -829,6 +829,7 @@ public class EncounterCanvasHandler : MonoBehaviour
 		
 		EncounterRoom entranceRoom=null;
 		float eventLogTopOffset=eventLogText.transform.parent.parent.GetComponent<RectTransform>().rect.height;//220;
+		float leftBorderOffset=200f;
 		
 		float elementGap=0;
 		float elementSize=roomPrefab.GetComponent<RectTransform>().rect.width;
@@ -836,7 +837,7 @@ public class EncounterCanvasHandler : MonoBehaviour
 		
 		//print ("setting up encounter with minx:"+currentEncounter.minX+", miny:"+currentEncounter.miny);
 		//print ("adjusted minx:"+currentEncounter.minX-xCoordAdjustment+", miny:"+currentEncounter.miny-yCoordAdjustment);
-		float gridStartX=elementSize*0.5f;//currentEncounter.minX*elementSize;
+		float gridStartX=leftBorderOffset+elementSize*0.5f;//currentEncounter.minX*elementSize;
 		float gridStartY=-elementSize*0.5f-eventLogTopOffset;//currentEncounter.minY*elementSize;
 		
 		//float minX=Mathf.Infinity;
@@ -1340,12 +1341,13 @@ public class EncounterCanvasHandler : MonoBehaviour
 	}
 	*/
 	
-	
-	//Used by callbacks from member tokens and also by set off traps
-	public IEnumerator RegisterDamage(int damage, BodyPart attackedPart, bool isRanged,EncounterEnemy attackedEnemy, IAttackAnimation attackingEntity)
+	//Damage dealt to enemies
+	//Used by callbacks from set off traps
+	public void RegisterDamage(int damage, BodyPart attackedPart, bool isRanged,EncounterEnemy attackedEnemy, IAttackAnimation attackingEntity)
 	{
-		return RegisterDamage(true,damage,attackedPart,isRanged,attackedEnemy,attackingEntity);
+		StartCoroutine(RegisterDamage(true,damage,attackedPart,isRanged,attackedEnemy,attackingEntity));
 	}
+	//Used by callbacks from member tokens (and also daisy-chained by the overload above)
 	public IEnumerator RegisterDamage(bool hitSuccessful, int damage
 	, BodyPart attackedPart, bool isRanged,EncounterEnemy attackedEnemy, IAttackAnimation attackingEntity)//Object attackingEntity)//PartyMember attackingMember)
 	{
@@ -1492,7 +1494,9 @@ public class EncounterCanvasHandler : MonoBehaviour
 			else actualDmg=selectedMember.MeleeAttack();
 		}
 		yield return StartCoroutine(RegisterDamage(hitSuccessful,actualDmg,attackedPart,ranged,enemy,memberTokens[selectedMember]));
-		TurnOver(selectedMember,roomButtons[memberCoords[selectedMember]].assignedRoom,false);
+		bool doTurnover=true;
+		if (selectedMember.hitAndRunEnabled) memberTokens[selectedMember].TryMove(out doTurnover);
+		if (doTurnover) TurnOver(selectedMember,roomButtons[memberCoords[selectedMember]].assignedRoom,false);
 	}
 	
 	public void AddNewLogMessage(string newMessage)
@@ -1623,6 +1627,26 @@ public class EncounterCanvasHandler : MonoBehaviour
 			{
 				MakeNoise(memberCoords[selectedMember],2);
 				AddNewLogMessage(selectedMember.name+" makes some noise");
+			}
+			if (Input.GetAxis("Mouse ScrollWheel")<0)
+			{
+				encounterMapGroup.transform.localScale=encounterMapGroup.transform.localScale*0.9f;
+				//Canvas.ForceUpdateCanvases();
+				Vector2 newMapgroupPos=encounterMapGroup.GetComponent<RectTransform>().anchoredPosition;
+				Vector2 adjustedPosition=newMapgroupPos;
+				if (newMapgroupPos.x<0) adjustedPosition=new Vector2(0,adjustedPosition.y);
+				if (newMapgroupPos.y>0) adjustedPosition=new Vector2(adjustedPosition.x,0);
+				//encounterMapGroup.GetComponent<RectTransform>().anchoredPosition=adjustedPosition;
+			}
+			if (Input.GetAxis("Mouse ScrollWheel")>0)
+			{
+				encounterMapGroup.transform.localScale=encounterMapGroup.transform.localScale/0.9f;
+				//Canvas.ForceUpdateCanvases();
+				Vector2 newMapgroupPos=encounterMapGroup.GetComponent<RectTransform>().anchoredPosition;
+				Vector2 adjustedPosition=newMapgroupPos;
+				if (newMapgroupPos.x<0) adjustedPosition=new Vector2(0,adjustedPosition.y);
+				if (newMapgroupPos.y>0) adjustedPosition=new Vector2(adjustedPosition.x,0);
+				//encounterMapGroup.GetComponent<RectTransform>().anchoredPosition=adjustedPosition;
 			}
 			
 		}

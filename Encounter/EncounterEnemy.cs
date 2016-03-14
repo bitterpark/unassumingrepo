@@ -597,9 +597,11 @@ public class QuickMass:EncounterEnemy
 		movesPerTurn=2;
 		moveChance=0.3f;
 		barricadeBashStrength=Mathf.RoundToInt(minDamage*0.5f);
-		bodyParts.Add(new BodyPart("Vitals",health,null,(int newHealth)=>{this.health=newHealth;},BodyPart.PartTypes.Vitals));
-		bodyParts.Add(new BodyPart("Arms",90,()=>{this.AddStatusEffect(new NoArms(this));},null,BodyPart.PartTypes.Hands,0.1f));
-		bodyParts.Add(new BodyPart("Legs",90,()=>{this.AddStatusEffect(new NoLegs(this));},null,BodyPart.PartTypes.Legs,-0.1f));
+		//Base member hit chance is 50%, Fighters get bonus 25%, Knife provides extra +20%, Axe gives -15%
+		//Body must have high hitchance, even for axe, but also high hitpoints. The limbs should only have high (75%+) chance for fighter with knife
+		bodyParts.Add(new BodyPart("Vitals",health,null,(int newHealth)=>{this.health=newHealth;},BodyPart.PartTypes.Vitals,0.8f));
+		bodyParts.Add(new BodyPart("Arms",45,()=>{this.AddStatusEffect(new NoArms(this));},null,BodyPart.PartTypes.Hands,0.3f));
+		bodyParts.Add(new BodyPart("Legs",45,()=>{this.AddStatusEffect(new NoLegs(this));},null,BodyPart.PartTypes.Legs,0.5f));
 	}
 }
 
@@ -612,22 +614,23 @@ public class Transient:EncounterEnemy
 		minDamage=5;
 		maxDamage=8;
 		barricadeBashStrength=minDamage;
-		int armsHealth=90;
-		int legsHealth=90;
-		/*
+		int armsHealth=45;
+		int legsHealth=45;
+		
 		if (Random.value<0.5f)
 		{
-			armsHealth=150;
+			armsHealth=45;
 			legsHealth=90;
 		}
 		else 
 		{
 			armsHealth=90;
-			legsHealth=150;
-		}*/
-		float armsHitChanceDelta=0;
-		float legsHitChanceDelta=0;
+			legsHealth=45;
+		}
 		
+		float armsHitChanceDelta=0.5f;
+		float legsHitChanceDelta=0.5f;
+		/*
 		if (Random.value<0.5f)
 		{
 			armsHitChanceDelta=0.2f;
@@ -637,9 +640,9 @@ public class Transient:EncounterEnemy
 		{
 			armsHitChanceDelta=-0.2f;
 			legsHitChanceDelta=0.2f;
-		}
+		}*/
 		
-		bodyParts.Add(new BodyPart("Vitals",health,null,(int newHealth)=>{this.health=newHealth;},BodyPart.PartTypes.Vitals));
+		bodyParts.Add(new BodyPart("Vitals",health,null,(int newHealth)=>{this.health=newHealth;},BodyPart.PartTypes.Vitals,0.85f));
 		bodyParts.Add(new BodyPart("Arms",armsHealth,()=>{this.AddStatusEffect(new NoArms(this));},null,BodyPart.PartTypes.Hands,armsHitChanceDelta));
 		bodyParts.Add(new BodyPart("Legs",legsHealth,()=>{this.AddStatusEffect(new NoLegs(this));},null,BodyPart.PartTypes.Legs,legsHitChanceDelta));
 	}
@@ -696,14 +699,14 @@ public class Gasser:EncounterEnemy
 	public Gasser(Vector2 coords) : base(coords)
 	{
 		name="Gas spitter";
-		health=135;
+		health=90;
 		minDamage=5;
-		maxDamage=8;
+		maxDamage=7;
 		barricadeBashStrength=minDamage;
 		visionRange=1;
 		maxAttackRange=1;
-		bodyParts.Add(new BodyPart("Vitals",health,null,(int newHealth)=>{this.health=newHealth;},BodyPart.PartTypes.Vitals));
-		bodyParts.Add(new BodyPart("Legs",90,()=>{this.AddStatusEffect(new NoLegs(this));},null,BodyPart.PartTypes.Legs,0.2f));
+		bodyParts.Add(new BodyPart("Vitals",health,null,(int newHealth)=>{this.health=newHealth;},BodyPart.PartTypes.Vitals,0.8f));
+		bodyParts.Add(new BodyPart("Legs",45,()=>{this.AddStatusEffect(new NoLegs(this));},null,BodyPart.PartTypes.Legs,0.6f));
 	}
 	
 	//Potentially deprecate this mechanic later
@@ -741,11 +744,11 @@ public class FleshMass:EncounterEnemy
 		name="Flesh mass";
 		health=270;
 		minDamage=7;
-		maxDamage=10;
+		maxDamage=9;
 		barricadeBashStrength=minDamage;
-		bodyParts.Add(new BodyPart("Vitals",health,null,(int newHealth)=>{this.health=newHealth;},BodyPart.PartTypes.Vitals));
-		bodyParts.Add(new BodyPart("Arms",135,()=>{this.AddStatusEffect(new NoArms(this));},null,BodyPart.PartTypes.Hands,0.1f));
-		bodyParts.Add(new BodyPart("Legs",90,()=>{this.AddStatusEffect(new NoLegs(this));},null,BodyPart.PartTypes.Legs,0.1f));
+		bodyParts.Add(new BodyPart("Vitals",health,null,(int newHealth)=>{this.health=newHealth;},BodyPart.PartTypes.Vitals,0.9f));
+		bodyParts.Add(new BodyPart("Arms",45,()=>{this.AddStatusEffect(new NoArms(this));},null,BodyPart.PartTypes.Hands,0.5f));
+		bodyParts.Add(new BodyPart("Legs",90,()=>{this.AddStatusEffect(new NoLegs(this));},null,BodyPart.PartTypes.Legs,0.6f));
 	}
 }
 
@@ -754,13 +757,13 @@ public class Spindler:EncounterEnemy
 	public Spindler(Vector2 coords) : base(coords)
 	{
 		name="Spindler";
-		health=270;
-		minDamage=6;
-		maxDamage=9;
+		health=180;
+		minDamage=3;
+		maxDamage=6;
 		barricadeBashStrength=minDamage;
-		bodyParts.Add(new BodyPart("Systems",health,null,(int newHealth)=>{this.health=newHealth;},BodyPart.PartTypes.Vitals));
-		bodyParts.Add(new BodyPart("Blades",90,()=>{this.AddStatusEffect(new NoArms(this));},null,BodyPart.PartTypes.Hands,0.15f));
-		bodyParts.Add(new BodyPart("Legs",90,()=>{this.AddStatusEffect(new NoLegs(this));},null,BodyPart.PartTypes.Legs));
+		bodyParts.Add(new BodyPart("Systems",health,null,(int newHealth)=>{this.health=newHealth;},BodyPart.PartTypes.Vitals,0.85f));
+		bodyParts.Add(new BodyPart("Blades",45,()=>{this.AddStatusEffect(new NoArms(this));},null,BodyPart.PartTypes.Hands,0.35f));
+		bodyParts.Add(new BodyPart("Legs",90,()=>{this.AddStatusEffect(new NoLegs(this));},null,BodyPart.PartTypes.Legs,0.5f));
 	}
 	
 	public override EnemyAttack AttackAction (List<PartyMember> presentMembers)//Dictionary<PartyMember,Vector2> memberCoords)
@@ -788,9 +791,9 @@ public class MuscleMass:EncounterEnemy
 		maxDamage=12;
 		barricadeBashStrength=minDamage;
 		staminaDamage=3;
-		bodyParts.Add(new BodyPart("Vitals",health,null,(int newHealth)=>{this.health=newHealth;},BodyPart.PartTypes.Vitals));
-		bodyParts.Add(new BodyPart("Arms",135,()=>{this.AddStatusEffect(new NoArms(this));},null,BodyPart.PartTypes.Hands,0.1f));
-		bodyParts.Add(new BodyPart("Legs",135,()=>{this.AddStatusEffect(new NoLegs(this));},null,BodyPart.PartTypes.Legs,0.2f));
+		bodyParts.Add(new BodyPart("Vitals",health,null,(int newHealth)=>{this.health=newHealth;},BodyPart.PartTypes.Vitals,0.9f));
+		bodyParts.Add(new BodyPart("Arms",90,()=>{this.AddStatusEffect(new NoArms(this));},null,BodyPart.PartTypes.Hands,0.5f));
+		bodyParts.Add(new BodyPart("Legs",90,()=>{this.AddStatusEffect(new NoLegs(this));},null,BodyPart.PartTypes.Legs,0.4f));
 	}
 }
 
@@ -801,15 +804,15 @@ public class SlimeMass:EncounterEnemy
 	public SlimeMass(Vector2 coords) : base(coords)
 	{
 		name="Slime mass";
-		health=400;
-		minDamage=11;
-		maxDamage=15;
+		health=360;
+		minDamage=5;
+		maxDamage=10;
 		barricadeBashStrength=minDamage;
 		moveChance=0.1f;
 		movesPerTurn=0;
 		staminaDamage=3;
-		bodyParts.Add(new BodyPart("Vitals",health,null,(int newHealth)=>{this.health=newHealth;},BodyPart.PartTypes.Vitals));
-		bodyParts.Add(new BodyPart("Arms",135,()=>{this.AddStatusEffect(new NoArms(this));},null,BodyPart.PartTypes.Hands,0.1f));
+		bodyParts.Add(new BodyPart("Vitals",health,null,(int newHealth)=>{this.health=newHealth;},BodyPart.PartTypes.Vitals,0.95f));
+		bodyParts.Add(new BodyPart("Arms",135,()=>{this.AddStatusEffect(new NoArms(this));},null,BodyPart.PartTypes.Hands,0.6f));
 	}
 	
 	//int rangedResistance=3;

@@ -107,8 +107,30 @@ public class MapRegion : MonoBehaviour, IPointerEnterHandler, IPointerExitHandle
 	}
 	public bool _visible=false;
 	
-	public enum ThreatLevels {Low,Medium,High};
-	public ThreatLevels threatLevel=ThreatLevels.Low;
+	public bool hasGasoline=false;
+	
+	public enum ThreatLevels {None,Low,Medium,High};
+	//public ThreatLevels threatLevel=ThreatLevels.Low;
+	public ThreatLevels CalculateThreatLevel(List<PartyMember> movingMembers)
+	{
+		ThreatLevels estimatedThreat=ThreatLevels.None;
+		if (hasEncounter)
+		{
+			bool partyHasScout=false;
+			foreach(PartyMember member in movingMembers)
+			{
+				if (member.isScout) {partyHasScout=true; break;}
+			}
+			if (!partyHasScout)
+			{
+				int requiredMemberDifference=regionalEncounter.maxAllowedMembers-movingMembers.Count;
+				if (requiredMemberDifference>0) estimatedThreat=ThreatLevels.Low;
+				if (requiredMemberDifference>1) estimatedThreat=ThreatLevels.Medium;
+				if (requiredMemberDifference>2) estimatedThreat=ThreatLevels.High;
+			}
+		}
+		return estimatedThreat;
+	}
 	
 	public bool hasEncounter=false;
 	
@@ -255,15 +277,16 @@ public class MapRegion : MonoBehaviour, IPointerEnterHandler, IPointerExitHandle
 		if (isEndgame) 
 		{
 			regionalEncounter=new Encounter(true);
-			threatLevel=ThreatLevels.High;
+			//threatLevel=ThreatLevels.High;
 		}
 		else 
 		{
 			regionalEncounter=new Encounter();
+			/*
 			float threatRoll=Random.value;
 			if (threatRoll<1f) threatLevel=ThreatLevels.Low;
 			if (threatRoll<0.7f) threatLevel=ThreatLevels.Medium;
-			if (threatRoll<0.3f) threatLevel=ThreatLevels.High;
+			if (threatRoll<0.3f) threatLevel=ThreatLevels.High;*/
 		}
 		//if (threatLevel==ThreatLevels.Low) campSetupTimeRemaining+=2;
 		//if (threatLevel==ThreatLevels.Medium) campSetupTimeRemaining+=4;
@@ -299,6 +322,11 @@ public class MapRegion : MonoBehaviour, IPointerEnterHandler, IPointerExitHandle
 	
 	//void Start() {transform.Rotate(new Vector3(-90,0,0));}
 	void Start() {SetSprite();}
+
+	void OnDestroy()
+	{
+		foreach (RegionConnection connection in connections.Values){GameObject.Destroy(connection.roadLine.gameObject);}
+	}
 
 	#region IPointerDownHandler implementation
 
@@ -343,10 +371,12 @@ public class MapRegion : MonoBehaviour, IPointerEnterHandler, IPointerExitHandle
 							areaDescription+="-"+InventoryItem.GetLootMetatypeDescription(metatype)+"\n";
 						}
 						areaDescription+="Enemies: "+regionalEncounter.enemyDescription+"\n";
-						areaDescription+="Required team size: "+regionalEncounter.minRequiredMembers+"-"+regionalEncounter.maxAllowedMembers;
+						
 						//if (isHive) {areaDescription+="\nHive";}
 					}
-					areaDescription+="\nAmbush threat: "+threatLevel;
+					areaDescription+="\nRequired team size: "+regionalEncounter.minRequiredMembers+"-"+regionalEncounter.maxAllowedMembers;
+					if (PartyManager.mainPartyManager.selectedMembers.Count>0)
+					areaDescription+="\nAmbush threat: "+CalculateThreatLevel(PartyManager.mainPartyManager.selectedMembers);
 				}
 				else {textExists=false;}
 			}

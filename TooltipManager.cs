@@ -28,7 +28,21 @@ public class TooltipManager : MonoBehaviour
 		activeTooltip.transform.SetParent(tooltipParent,false);
 		//tooltipWidth=activeTooltip.GetComponent<RectTransform>().rect.width;
 		//print ("width is:"+activeTooltip.GetComponent<RectTransform>().rect.width);
-		activeTooltip.GetComponent<RectTransform>().SetInsetAndSizeFromParentEdge(RectTransform.Edge.Right,-(tooltipWidth+edgeOffsetSize),tooltipWidth);
+		RectTransform.Edge tooltipSide=RectTransform.Edge.Right;
+		
+		//print ("Object position:"+tooltipParent.position);
+		/*
+		print ("Object screen position:"+Camera.main.WorldToScreenPoint(tooltipParent.position-new Vector3(Screen.width*0.5f,Screen.height*0.5f,0)));
+		print ("Tooltip edge position:"+(Camera.main.WorldToScreenPoint(tooltipParent.position-new Vector3(Screen.width*0.5f,Screen.height*0.5f,0)).x
+		+tooltipParent.GetComponent<RectTransform>().rect.width
+		+tooltipWidth+edgeOffsetSize));
+		print ("parent width:"+tooltipParent.GetComponent<RectTransform>().rect.width);
+		print ("tooltip width and offset:"+(tooltipWidth+edgeOffsetSize));*/
+		//print ("Screen width:"+Screen.width);
+		if (Camera.main.WorldToScreenPoint(tooltipParent.position-new Vector3(Screen.width*0.5f,Screen.height*0.5f,0)).x
+		+tooltipParent.GetComponent<RectTransform>().rect.width+tooltipWidth+edgeOffsetSize>Screen.width) 
+		tooltipSide=RectTransform.Edge.Left;//.GetComponent<RectTransform>().rect.xMax+tooltipWidth+edgeOffsetSize>Screen.width)tooltipSide=RectTransform.Edge.Right;
+		activeTooltip.GetComponent<RectTransform>().SetInsetAndSizeFromParentEdge(tooltipSide,-(tooltipWidth+edgeOffsetSize),tooltipWidth);
 		//if (realScaling) activeTooltip.transform.localScale/=80;
 		activeTooltip.GetComponent<Canvas>().enabled=true;
 		activeTooltip.GetComponent<Canvas>().overrideSorting=true;
