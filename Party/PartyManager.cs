@@ -141,13 +141,21 @@ public class PartyManager : MonoBehaviour
 			//MapManager.main.memberTokens[newTask.performingMember].moved=true;
 		}
 	}
+	
+	public void TryRemoveMemberTask(PartyMember member)
+	{
+		if (assignedTasks.ContainsKey(member))
+		{
+			assignedTasks[member].DoEndAction();
+			assignedTasks.Remove(member);
+			MapManager.main.memberTokens[member].TaskRemoved();//.moved=false;
+			PartyStatusCanvasHandler.main.RefreshAssignmentButtons(selectedMembers);
+		}
+	}
 	public void RemoveMemberTask(PartyMember member)
 	{
 		if (!assignedTasks.ContainsKey(member)) throw new System.Exception("Trying to remove task from member with no task!");
-		assignedTasks[member].DoEndAction();
-		assignedTasks.Remove(member);
-		MapManager.main.memberTokens[member].TaskRemoved();//.moved=false;
-		PartyStatusCanvasHandler.main.RefreshAssignmentButtons(selectedMembers);
+		else TryRemoveMemberTask(member);
 	}
 	//public PartyMemberSelector selectorPrefab;
 	
@@ -189,10 +197,16 @@ public class PartyManager : MonoBehaviour
 		startingRegion.StashItem(new FoodBig());
 		startingRegion.StashItem(new FoodSmall());
 		startingRegion.StashItem(new FoodSmall());
+		startingRegion.StashItem(new Scrap());
+		startingRegion.StashItem(new Scrap());
+		startingRegion.StashItem(new Scrap());
+		startingRegion.StashItem(new Scrap());
+		startingRegion.StashItem(new Gunpowder());
 		
 		MapManager.main.FocusViewOnRegion(startingRegion.GetComponent<RectTransform>());
 		
-		startingRegion.StashItem(new SettableTrap());
+		//startingRegion.StashItem(new SettableTrap());
+		startingRegion.SetCar(true);
 		//startingRegion.StashItem(new SettableTrap());
 		//startingRegion.StashItem(new Bandages());
 		//startingRegion.StashItem(new AssaultRifle());
@@ -385,13 +399,13 @@ public class PartyManager : MonoBehaviour
 		&& selectedMembers[0].currentRegion.connections.ContainsKey(moveRegion))
 		{
 			moveSuccesful=true;
-			//If moving between towns, remove gas cost, else - reduce fatigue
+			//If moving between towns, confirm to prime for the event, else - reduce fatigue
 			if (selectedMembers[0].currentRegion.connections[moveRegion].isIntercity)
 			{
-				if (PartyManager.mainPartyManager.gas-selectedMembers[0].currentRegion.connections[moveRegion].moveCost>-1)
+				//if (PartyManager.mainPartyManager.gas-selectedMembers[0].currentRegion.connections[moveRegion].moveCost>-1)
 				{
 					moveSuccesful=true;
-					PartyManager.mainPartyManager.gas-=selectedMembers[0].currentRegion.connections[moveRegion].moveCost;
+					//PartyManager.mainPartyManager.gas-=selectedMembers[0].currentRegion.connections[moveRegion].moveCost;
 					foreach (PartyMember member in selectedMembers)
 					{
 						movedList.Add(member);

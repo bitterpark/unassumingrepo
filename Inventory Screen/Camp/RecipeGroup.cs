@@ -70,7 +70,7 @@ public class RecipeGroup : MonoBehaviour
 			canMakeItem=enoughIngredients;
 		}*/
 		//Refres make button
-		makeButton.AssignMadeItem(assignedRecipe.resultItem,newRecipe);
+		makeButton.AssignMadeItem(assignedRecipe);
 		//if (canMakeItem) makeButton.GetComponent<Button>().interactable=true;
 		//else makeButton.GetComponent<Button>().interactable=false;
 	}

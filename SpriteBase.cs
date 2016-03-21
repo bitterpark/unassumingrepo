@@ -16,6 +16,7 @@ public class SpriteBase : MonoBehaviour {
 	//Items
 	//Usable
 	public Sprite ammoBoxSprite;
+	public Sprite bulletSprite;
 	public Sprite medkitSprite;
 	public Sprite bandageSprite;
 	public Sprite perishableFoodSprite;

@@ -23,6 +23,8 @@ public class MapRegion : MonoBehaviour, IPointerEnterHandler, IPointerExitHandle
 		}
 	}
 	
+	//Actual town centers have this set to null, nodes radiating from them have it set to their center
+	public MapRegion townCenter=null;
 	//public Vector2 GetCoords() {return new Vector2(xCoord,yCoord);}
 	public Dictionary<MapRegion,RegionConnection> connections=new Dictionary<MapRegion,RegionConnection>();
 	
@@ -70,6 +72,7 @@ public class MapRegion : MonoBehaviour, IPointerEnterHandler, IPointerExitHandle
 	
 	public Image stashToken;
 	public Image campToken;
+	public Image carToken;
 	
 	public Transform memberTokenGroup;
 	
@@ -108,6 +111,17 @@ public class MapRegion : MonoBehaviour, IPointerEnterHandler, IPointerExitHandle
 	public bool _visible=false;
 	
 	public bool hasGasoline=false;
+	public bool hasCar
+	{
+		get {return _hasCar;}
+	}
+	bool _hasCar=false;
+	public void SetCar(bool carIsInregion)
+	{
+		_hasCar=carIsInregion;
+		if (_hasCar) carToken.enabled=true;
+		else carToken.enabled=false;
+	}
 	
 	public enum ThreatLevels {None,Low,Medium,High};
 	//public ThreatLevels threatLevel=ThreatLevels.Low;
@@ -389,7 +403,7 @@ public class MapRegion : MonoBehaviour, IPointerEnterHandler, IPointerExitHandle
 				if (textExists) areaDescription+="\n";
 				textExists=true;
 				areaDescription+="Move cost:"+cursorRegion.connections[this].moveCost;
-				if (cursorRegion.connections[this].isIntercity) areaDescription+=" gas";
+				if (cursorRegion.connections[this].isIntercity) areaDescription+=" gas or 100 fatigue";
 				else areaDescription+=" fatigue";
 				
 			}

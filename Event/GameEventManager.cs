@@ -8,6 +8,7 @@ public class GameEventManager : MonoBehaviour
 	//Dictionary<float,GameEvent> eventPossibilities=new Dictionary<float, GameEvent>();
 	List<EventChance> possibleEvents=new List<EventChance>();
 	List<EventChance> moraleEvents=new List<EventChance>();
+	List<EventChance> scavengingEvents=new List<EventChance>();
 	public static GameEventManager mainEventManager;
 	
 	GameEvent drawnEvent=null;
@@ -79,7 +80,14 @@ public class GameEventManager : MonoBehaviour
 		GameEvent resEvent=PickRandomEvent(moraleEvents, ref trackedEventRecord,eventsRoll, eventRegion, presentMembers);
 		if (resEvent!=null) StartEventDraw(resEvent, eventRegion, presentMembers);
 	}
-	
+	public void RollScavengeEvents(MapRegion eventRegion,List<PartyMember> presentMembers)
+	{
+		float eventsRoll=Random.value;
+		EventChance trackedEventRecord=new EventChance();
+		GameEvent resEvent=PickRandomEvent(scavengingEvents, ref trackedEventRecord,eventsRoll, eventRegion, presentMembers);
+		if (resEvent!=null) StartEventDraw(resEvent, eventRegion, presentMembers);
+	}
+	//Currently unused
 	public void RollEvents(ref bool moveAllowed, MapRegion eventRegion, List<PartyMember> movedMembers, bool queueEvent)
 	{
 		//bool eventFired=false;
@@ -256,13 +264,21 @@ public class GameEventManager : MonoBehaviour
 		//possibleEvents.Add (new EventChance(new FoodSpoilage(),0.04f));
 		//possibleEvents.Add (new EventChance(new MonsterAttack(),0.04f));
 		//Putting total probability space to >1 should work properly, as long as it is done as the first probability
-		possibleEvents.Add(new EventChance(new ScavengeEventOne(),1f));
-		possibleEvents.Add (new EventChance(new CacheInAnomaly(),0.04f));
+		
 		//possibleEvents.Add (new EventChance(new LostInAnomaly(),0.04f));
+		/*
 		possibleEvents.Add( new EventChance(new NewSurvivor(),0.04f));
 		possibleEvents.Add( new EventChance(new MedicalCache(),0.04f));
 		possibleEvents.Add (new EventChance(new SurvivorRescue(),0.04f));
 		possibleEvents.Add(new EventChance(new SearchForSurvivor(),0.04f));
+		*/
+		scavengingEvents.Add(new EventChance(new ScavengeEventOne(),1f));
+		scavengingEvents.Add(new EventChance(new CarFindEvent(),0.1f));
+		scavengingEvents.Add (new EventChance(new CacheInAnomaly(),0.04f));
+		scavengingEvents.Add( new EventChance(new NewSurvivor(),0.04f));
+		scavengingEvents.Add( new EventChance(new MedicalCache(),0.04f));
+		scavengingEvents.Add (new EventChance(new SurvivorRescue(),0.04f));
+		scavengingEvents.Add(new EventChance(new SearchForSurvivor(),0.04f));
 		
 		moraleEvents.Add (new EventChance(new LowMoraleSpiral(),0.2f));
 		moraleEvents.Add (new EventChance(new LowMoraleFight(),0.10f));

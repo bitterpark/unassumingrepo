@@ -389,7 +389,6 @@ public class ScavengeEventOne:GameEvent
 		eventDescription+="\nare mashed together and conjoined. Others are bisected apart with impossible";
 		eventDescription+="\nprecision, interiors displayed in neat rows.";
 		eventDescription+="\nYour party sets to work searching for supplies.";
-		foreach (PartyMember member in movedMembers) {eventDescription+=member.name;}
 		
 		return eventDescription;
 	}
@@ -440,7 +439,7 @@ public class GasolineEvent:GameEvent
 	public override string GetDescription(MapRegion eventRegion, List<PartyMember> movedMembers) 
 	{
 		string noticingPartyMemberName=movedMembers[Random.Range(0,movedMembers.Count)].name;
-		eventDescription="The buildings in this block seem almost normal, save for the cold-blue lights"; 
+		eventDescription="The buildings in this block seem almost normal, save for the cold blue lights"; 
 		eventDescription+="\nflickering on and off in some of the windows. You can't make out anything inside";
 		eventDescription+="\nYour party sets to work searching for supplies.";
 		
@@ -471,6 +470,68 @@ public class GasolineEvent:GameEvent
 				{
 					eventRegion.StashItem(new Gasoline());
 				}	
+				break;
+			}
+		}
+		return eventResult;
+	}
+}
+
+public class CarFindEvent:GameEvent
+{
+	string eventDescription="";
+	
+	public CarFindEvent()
+	{
+		repeatable=true;
+	}
+	
+	public override bool PreconditionsMet (MapRegion eventRegion, List<PartyMember> movedMembers)
+	{
+		bool allowEvent=true;
+		if (eventRegion.hasGasoline) allowEvent=false;
+		else 
+		{
+			if (eventRegion.townCenter==null)
+			{
+				if (eventRegion.hasCar) allowEvent=false;
+			}
+			else if (eventRegion.townCenter.hasCar) allowEvent=false;
+		}
+		return allowEvent;
+	}
+	
+	public override string GetDescription(MapRegion eventRegion, List<PartyMember> movedMembers) 
+	{
+		string noticingPartyMemberName=movedMembers[Random.Range(0,movedMembers.Count)].name;
+		eventDescription="The buildings in this block seem almost normal, save for the cold blue lights"; 
+		eventDescription+="\nflickering on and off in some of the windows. You can't make out anything inside";
+		eventDescription+="\nYour party sets to work searching for supplies.";
+		
+		return eventDescription;
+	}
+	public override List<string> GetChoices(MapRegion eventRegion, List<PartyMember> movedMembers)
+	{
+		List<string> choicesList=new List<string>();
+		choicesList.Add("Scavenge");
+		return choicesList;
+	}
+	
+	public override string DoChoice (string choiceString,MapRegion eventRegion, List<PartyMember> movedMembers)
+	{
+		string eventResult=null;
+		int gasCanisterCount=1;
+		
+		switch (choiceString)
+		{
+		case"Scavenge":
+			{
+				eventResult="The few cars that still remain on warped streets are in various states of disrepair,";
+				eventResult+="\nbut you get lucky and stumble on one that's still functioning, with barely enough gas.";
+				eventResult+="\nin the tank to bring it back to the town's center.";
+				
+				if (eventRegion.townCenter==null) eventRegion.SetCar(true);
+				else eventRegion.townCenter.SetCar(true);	
 				break;
 			}
 		}
@@ -532,7 +593,7 @@ public class CacheInAnomaly:GameEvent
 			}
 		case"Leave it and move on":
 			{
-				eventResult="You decide not to expose yourselves to whatever strange phenomenon caused this pileup, and leave the supplies. Better safe than sorry.";
+				eventResult="You decide not to test whatever strange phenomenon caused this pileup, and leave the supplies. Better safe than sorry.";
 				break;
 			}
 		}
@@ -948,4 +1009,78 @@ public class LowMoraleQuit:GameEvent
 		}
 		return eventResult;
 	}
+}
+
+public class TownMove:GameEvent
+{
+	string eventDescription="";
+	int gasCost=MapManager.townToTownGasCost;
+	int fatiguePenaltyCost=100;
+	
+	public override string GetDescription(MapRegion eventRegion, List<PartyMember> movedMembers) 
+	{
+		eventDescription="You decide it's time to move on to the next town";
+		eventDescription+="\n\n";
+		if (PartyManager.mainPartyManager.gas>=gasCost && movedMembers[0].currentRegion.hasCar)
+		eventDescription+="The car can carry all the items in the town center to the next town";
+		eventDescription+="\n\n(Party members outside the town center will be abandoned)";
+		return eventDescription;
+	}
+	
+	public override List<string> GetChoices(MapRegion eventRegion, List<PartyMember> movedMembers)
+	{
+		List<string> choicesList=new List<string>();
+		if (PartyManager.mainPartyManager.gas>=gasCost && movedMembers[0].currentRegion.hasCar) choicesList.Add("Take the car (-"+gasCost+" gas)");
+		choicesList.Add("Go on foot ("+fatiguePenaltyCost+" fatigue for everyone)");
+		choicesList.Add("Cancel");
+		return choicesList;
+	}
+	public override string DoChoice (string choiceString, MapRegion eventRegion, List<PartyMember> movedMembers)
+	{
+		string eventResult=null;
+		
+		if (choiceString=="Take the car (-"+gasCost+" gas)") 
+		{
+				//success
+				eventResult="You load up your meager supplies, refill the tank and begin driving down the silent, empty road";
+				PartyManager.mainPartyManager.gas-=gasCost;
+				//Abandon members left behind
+				foreach (PartyMember member in new List<PartyMember>(PartyManager.mainPartyManager.partyMembers))
+				{
+					if (!movedMembers.Contains(member)) PartyManager.mainPartyManager.RemovePartyMember(member);
+				}
+				//Remove car from previous region
+				MapRegion startingRegion=movedMembers[0].currentRegion;
+				startingRegion.SetCar(false);
+				foreach (InventoryItem item in new List<InventoryItem>(startingRegion.GetStashedItems()))
+				{
+					startingRegion.TakeStashItem(item);
+					eventRegion.StashItem(item);
+				}
+				//Put car in the next region
+				MapManager.main.MoveMembersToRegion(eventRegion,movedMembers.ToArray());
+				eventRegion.SetCar(true);
+				return eventResult;
+		}
+		if (choiceString=="Go on foot ("+fatiguePenaltyCost+" fatigue for everyone)") 
+		{
+			//success
+			eventResult="You take only what you can carry, and prepare for a long, gruelling walk to the next town";
+			foreach (PartyMember member in new List<PartyMember>(PartyManager.mainPartyManager.partyMembers))
+			{
+				if (!movedMembers.Contains(member)) PartyManager.mainPartyManager.RemovePartyMember(member);
+				else member.SetFatigue(fatiguePenaltyCost);
+			}
+			MapManager.main.MoveMembersToRegion(eventRegion,movedMembers.ToArray());
+			return eventResult;
+		}
+		if (choiceString=="Cancel") 
+		{
+			//success
+			eventResult="You decide to stay awhile longer, before braving the road";
+			return eventResult;
+		}
+		return eventResult;
+	}
+	
 }

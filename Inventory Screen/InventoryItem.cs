@@ -15,7 +15,17 @@ public abstract class InventoryItem
 	public virtual int GetWeight() {return 1;}
 	
 	//Deprecated
-	public enum LootItems {Medkits,Bandages,Food,Junkfood/*,PerishableFood*/,Ammo,Flashlight,Radio,Bed,Backpack,SettableTrap,AssaultRifle,Shotgun,NineM,Pipe,Knife,Axe,ArmorVest}
+	public enum LootItems 
+	{Medkits,Bandages
+	,Gas
+	,Food,Junkfood/*,PerishableFood*/
+	,Ammopack,Ammo
+	,Flashlight,Radio,Bed,Backpack
+	,Scrap,Gunpowder
+	,SettableTrap
+	,AssaultRifle,Shotgun,NineM
+	,Pipe,Knife,Axe
+	,ArmorVest}
 	public enum LootMetatypes {Medical,FoodItems,Melee,Guns,Equipment,Radio,Salvage}
 	
 	//Deprecated, remove later!!!
@@ -220,7 +230,10 @@ public abstract class InventoryItem
 		InventoryItem lootedItem=null;
 		switch (itemType)
 		{
-			case LootItems.Ammo:{lootedItem=new AmmoBox(); break;}
+			//AMMO
+			case LootItems.Ammopack:{lootedItem=new AmmoBox(); break;}
+			case LootItems.Ammo:{lootedItem=new Bullet(); break;}
+			
 			//FOOD
 			case LootItems.Food:{lootedItem=new FoodBig(); break;}
 			case LootItems.Junkfood: {lootedItem=new FoodSmall(); break;}
@@ -242,6 +255,10 @@ public abstract class InventoryItem
 			//MISC
 			case LootItems.Radio:{lootedItem=new Radio(); break;}
 			case LootItems.SettableTrap: {lootedItem=new SettableTrap(); break;}
+			case LootItems.Gas:{lootedItem=new Gasoline(); break;}
+			//INGREDIENTS
+			case LootItems.Scrap:{lootedItem=new Scrap(); break;}
+			case LootItems.Gunpowder:{lootedItem=new Gunpowder(); break;}
 		}
 		return lootedItem;
 	}
@@ -288,6 +305,27 @@ public class AmmoBox:InventoryItem
 	
 	int ammoAmount=12;
 	public override Sprite GetItemSprite() {return SpriteBase.mainSpriteBase.ammoBoxSprite;}
+	
+	public override bool UseAction(PartyMember member)
+	{
+		PartyManager.mainPartyManager.ammo+=ammoAmount;
+		return true;
+	}
+	public override string GetMouseoverDescription ()
+	{
+		return itemName+"\nAdds "+ammoAmount+" ammo";
+	}
+}
+
+public class Bullet:InventoryItem
+{
+	public Bullet()
+	{
+		itemName="Bullet";
+	}
+	
+	int ammoAmount=1;
+	public override Sprite GetItemSprite() {return SpriteBase.mainSpriteBase.bulletSprite;}
 	
 	public override bool UseAction(PartyMember member)
 	{

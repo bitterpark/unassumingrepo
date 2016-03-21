@@ -96,7 +96,9 @@ public class MapScoutingHandler : MonoBehaviour {
 		if (!assignedRegion.scouted) 
 		{
 			assignedRegion.scouted=true;
-			UpdateAfterScouting();
+			EndDialog();
+			GameEventManager.mainEventManager.RollScavengeEvents(assignedRegion,assignedRegion.localPartyMembers);
+			//UpdateAfterScouting();
 		}
 		else 
 		{

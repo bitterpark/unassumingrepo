@@ -7,12 +7,16 @@ using UnityEngine.UI;
 public class RecipeMakeButton : MonoBehaviour,IPointerEnterHandler,IPointerExitHandler
 {
 	
-	InventoryItem madeItem=null;
+	public Text resultItemCountText;
 	
-	public void AssignMadeItem(InventoryItem.LootItems itemType, CraftRecipe newRecipe)
+	InventoryItem.LootItems madeItemType;
+	
+	public void AssignMadeItem(CraftRecipe newRecipe)
 	{
-		madeItem=InventoryItem.GetLootingItem(itemType);
-		GetComponent<Image>().sprite=madeItem.GetItemSprite();
+		madeItemType=newRecipe.resultItem;
+		//This is very badly written
+		GetComponent<Image>().sprite=InventoryItem.GetLootingItem(madeItemType).GetItemSprite();
+		resultItemCountText.text="x"+newRecipe.resultItemCount;
 		//Find out if item can be made
 		bool canMakeItem=false;
 		List<InventoryItem> usedLocalItems=new List<InventoryItem>();
@@ -69,8 +73,11 @@ public class RecipeMakeButton : MonoBehaviour,IPointerEnterHandler,IPointerExitH
 				PartyMember creator=InventoryScreenHandler.mainISHandler.selectedMember;
 				creator.ChangeFatigue(newRecipe.requiredFatigue);	
 				foreach(InventoryItem usedLocalItem in usedLocalItems) creator.currentRegion.TakeStashItem(usedLocalItem);
-				foreach(InventoryItem usedCarriedItem in creator.carriedItems) creator.RemoveCarriedItem(usedCarriedItem);
-				creator.currentRegion.StashItem(madeItem);
+				foreach(InventoryItem usedCarriedItem in usedCarriedItems) creator.RemoveCarriedItem(usedCarriedItem);
+				for(int i=0; i<newRecipe.resultItemCount; i++) 
+				{
+					creator.currentRegion.StashItem(InventoryItem.GetLootingItem(madeItemType));
+				}
 				InventoryScreenHandler.mainISHandler.RefreshInventoryItems();
 			});
 		}
@@ -81,7 +88,7 @@ public class RecipeMakeButton : MonoBehaviour,IPointerEnterHandler,IPointerExitH
 	#region IPointerEnterHandler implementation
 	public void OnPointerEnter (PointerEventData eventData)
 	{
-		if (madeItem!=null) TooltipManager.main.CreateTooltip(madeItem.GetMouseoverDescription(),this.transform); 
+		TooltipManager.main.CreateTooltip(InventoryItem.GetLootingItem(madeItemType).GetMouseoverDescription(),this.transform); 
 	}
 	#endregion
 

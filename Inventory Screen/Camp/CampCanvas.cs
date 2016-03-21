@@ -28,8 +28,7 @@ public class CampCanvas : MonoBehaviour {
 			campShown=true;
 			assignedCamp=newCamp;
 			availableRecipes.Clear();
-			availableRecipes.Add(new FoodRecipe());
-			availableRecipes.Add(new TrapRecipe());
+			availableRecipes=CraftRecipe.GetAllRecipes();
 			
 			GetComponent<Canvas>().enabled=true;
 			RefreshSlots();

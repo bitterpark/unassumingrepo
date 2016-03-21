@@ -29,6 +29,10 @@ public class MemberTokenHandler : MonoBehaviour, IAttackAnimation, IGotHitAnimat
 	public Text nameText;
 	public Text staminaText;
 	
+	public Text armsHealthText;
+	public Text legsHealthText;
+	public Text vitalsHealthText;
+	
 	public ActionToken myActionToken;
 	public MoveToken myMoveToken;
 	public DefenceToken myDefenceToken;
@@ -380,9 +384,13 @@ public class MemberTokenHandler : MonoBehaviour, IAttackAnimation, IGotHitAnimat
 	void Update()
 	{
 		//healthText.text=myMember.health.ToString();
+		/*
 		healthText.text=myMember.memberBodyParts.currentParts[PartyMember.BodyPartTypes.Hands].health
 		+"|"+myMember.memberBodyParts.currentParts[PartyMember.BodyPartTypes.Legs].health
-		+"|"+myMember.memberBodyParts.currentParts[PartyMember.BodyPartTypes.Vitals].health;
+		+"|"+myMember.memberBodyParts.currentParts[PartyMember.BodyPartTypes.Vitals].health;*/
+		armsHealthText.text=myMember.memberBodyParts.currentParts[PartyMember.BodyPartTypes.Hands].health.ToString();
+		legsHealthText.text=myMember.memberBodyParts.currentParts[PartyMember.BodyPartTypes.Legs].health.ToString();
+		vitalsHealthText.text=myMember.memberBodyParts.currentParts[PartyMember.BodyPartTypes.Vitals].health.ToString();
 		staminaText.text=myMember.stamina.ToString();
 		//if (Input.GetMouseButtonDown(1)) {ToggleRangedMode();}
 	}

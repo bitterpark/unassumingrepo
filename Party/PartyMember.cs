@@ -394,13 +394,17 @@ public class PartyMember
 		SetFatigue(fatigue+fatigueDelta);
 		//else ChangeHunger(fatigueDelta);
 	}
-	public int fatigueRestoreWait=30;
+	public int fatigueRestoreWait=40;
+	//These are applied on top of fatigueRestoreWait (both are actually applied by two different methods)
+	public int fatigueRestoreSleep=40;
+	public int fatigueRestoreSleepInBed=60;
 	
 	//public int fatigueIncreasePerAction;
 	public int maxStaminaReductionFromFatigue=6;
 	public const int fatigueIncreasePerEncounter=0;
 	//public const int mapMoveFatigueCost=25;
-	public const int campSetupFatigueCost=25;
+	public const int campSetupFatigueCost=20;
+	public const int fatigueMoveCost=20;
 	
 	//MORALE
 	public int morale
@@ -596,7 +600,7 @@ public class PartyMember
 		//fatigueIncreasePerAction=10;
 		
 		armorValue=0;
-		maxCarryCapacity=3;//
+		maxCarryCapacity=4;//
 		visibilityMod=0;
 		moraleDamageMod=0;//0.02f;
 		moraleChangeFromKills=0;
@@ -837,7 +841,7 @@ public class PartyMember
 	
 	public bool CanRest()
 	{
-		if (!MapManager.main.memberTokens[this].moved &&
+		if (//!MapManager.main.memberTokens[this].moved &&
 		(this.fatigue>0 || this.health<this.maxHealth
 		|| this.memberBodyParts.GetPartHealth(BodyPartTypes.Hands)<handsMaxHealth
 		|| this.memberBodyParts.GetPartHealth(BodyPartTypes.Legs)<legsMaxHealth)) return true;
@@ -846,9 +850,9 @@ public class PartyMember
 	
 	void RestEffect(bool hasBed)
 	{	
-		int bedModifier=20;
-		int totalRest=80-fatigueRestoreWait;
-		if (hasBed) totalRest+=bedModifier;
+		//int bedModifier=20;
+		int totalRest=fatigueRestoreSleep;//80-fatigueRestoreWait;
+		if (hasBed) totalRest=fatigueRestoreSleepInBed;//+=bedModifier;
 		int newFatigue=_fatigue-totalRest;//Mathf.RoundToInt(maxFatigueRestoreReductionFromHunger*hunger*0.01f);
 		SetFatigue(newFatigue);
 		//Regen is currently disabled

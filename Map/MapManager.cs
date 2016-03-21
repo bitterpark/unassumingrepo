@@ -27,7 +27,7 @@ public class MapManager : MonoBehaviour
 	//Dictionary<Vector2,MapRegion> mapRegions=new Dictionary<Vector2, MapRegion>();
 	public List<MapRegion> mapRegions=new List<MapRegion>();
 	
-	public const int townNodeFatigueCost=25;
+	//public const int townNodeFatigueCost=25;
 	public const int townToTownGasCost=1;
 	
 	//THIS METHOD CAUSES THE DISPLACEMENT BUG
@@ -258,8 +258,9 @@ public class MapManager : MonoBehaviour
 					Vector2 newOffset=slotOffsetter.Invoke(Random.Range(1f,townNodeSideSize*0.5f-townAreaSpriteSize*0.5f),usedSlot);
 					MapRegion newNode=CreateRegion((Vector2)town.transform.localPosition+newOffset);
 					createdTownRegions.Add(newNode);
-					if (j>0) newNode.AddConnectedRegion(previousNodes[previousNodes.Count-1],false,townNodeFatigueCost);
-					else newNode.AddConnectedRegion(town,false,townNodeFatigueCost);
+					newNode.townCenter=town;
+					if (j>0) newNode.AddConnectedRegion(previousNodes[previousNodes.Count-1],false,PartyMember.fatigueMoveCost);
+					else newNode.AddConnectedRegion(town,false,PartyMember.fatigueMoveCost);
 					previousNodes.Add(newNode);
 					nodesRemaining--;
 				}
@@ -280,8 +281,9 @@ public class MapManager : MonoBehaviour
 					Vector2 newOffset=slotOffsetter.Invoke(Random.Range(1f,townNodeSideSize*0.5f-townAreaSpriteSize*0.5f),usedSlot);
 					MapRegion newNode=CreateRegion((Vector2)town.transform.localPosition+newOffset);
 					createdTownRegions.Add(newNode);
-					if (j>0) newNode.AddConnectedRegion(previousNodes[previousNodes.Count-1],false,townNodeFatigueCost);
-					if (j==0 || j==specialNodesPerLoop-1) newNode.AddConnectedRegion(town,false,townNodeFatigueCost);
+					newNode.townCenter=town;
+					if (j>0) newNode.AddConnectedRegion(previousNodes[previousNodes.Count-1],false,PartyMember.fatigueMoveCost);
+					if (j==0 || j==specialNodesPerLoop-1) newNode.AddConnectedRegion(town,false,PartyMember.fatigueMoveCost);
 					previousNodes.Add(newNode);
 					nodesRemaining--;//
 				}
@@ -299,7 +301,8 @@ public class MapManager : MonoBehaviour
 				
 				MapRegion newNode=CreateRegion((Vector2)town.transform.localPosition+newOffset);
 				createdTownRegions.Add(newNode);
-				newNode.AddConnectedRegion(town,false,townNodeFatigueCost);
+				newNode.townCenter=town;
+				newNode.AddConnectedRegion(town,false,PartyMember.fatigueMoveCost);
 			}
 			
 			//Add node with gasoline
@@ -312,7 +315,7 @@ public class MapManager : MonoBehaviour
 		//randomSlotIndex=Random.Range(0,townSlotCenters.Count);
 		//Vector2 endgameCenterCoords=townSlotCenters[randomSlotIndex]+randomPointInSlot;
 		//townSlotCenters.RemoveAt(randomSlotIndex);
-		MapRegion endgameEncounter=CreateRegion(endgameCenter);
+		MapRegion endgameEncounter=CreateRegion(endgameCenter,true);
 		foreach(MapRegion region in newTowns) {endgameEncounter.AddConnectedRegion(region,true,townToTownGasCost);}
 		
 		//Final step - party placement
@@ -345,13 +348,18 @@ public class MapManager : MonoBehaviour
 		newRegion.GenerateEncounter(false);
 		return newRegion;
 	}*/
-	
+	//For regular regions
 	MapRegion CreateRegion(Vector2 newRegionPos)
+	{
+		return CreateRegion(newRegionPos,false);
+	}
+	//For endgame region
+	MapRegion CreateRegion(Vector2 newRegionPos, bool isEndgame)
 	{
 		MapRegion newRegion=Instantiate(mapRegionPrefab,newRegionPos,Quaternion.identity) as MapRegion;
 		newRegion.transform.SetParent(regionsGridGroup);
 		newRegion.transform.localPosition=newRegionPos;
-		newRegion.GenerateEncounter(false);
+		newRegion.GenerateEncounter(isEndgame);
 		mapRegions.Add(newRegion);
 		return newRegion;
 	}
@@ -414,9 +422,22 @@ public class MapManager : MonoBehaviour
 					List<PartyMember> movedMembers;
 					if (PartyManager.mainPartyManager.ConfirmMapMovement(clickedRegion, out movedMembers))//.MovePartyToMapCoords(clickedRegion.xCoord,clickedRegion.yCoord))
 					{
+						bool intercityMove=clickedRegion.connections[PartyManager.mainPartyManager.selectedMembers[0].currentRegion].isIntercity;
+						//This bool is really awkward because of a bunch of unconnected changes I made over time
 						bool noEventBasedMove=true;
+						if (intercityMove) 
+						{
+							movedMembers=movedMembers[0].currentRegion.localPartyMembers;
+							noEventBasedMove=false;
+							GameEventManager.mainEventManager.DoEvent(new TownMove(),clickedRegion,movedMembers);
+						}
+						
+						/*else 
+						{
+							if (!clickedRegion.scouted) GameEventManager.mainEventManager.RollEvents(ref noEventBasedMove,clickedRegion,movedMembers,true);
+						}*/
 						//bool eventHappened=false;
-						if (!clickedRegion.scouted) GameEventManager.mainEventManager.RollEvents(ref noEventBasedMove,clickedRegion,movedMembers,true);
+						
 						if (noEventBasedMove)
 						{
 							//MovePartyToRegion(clickedRegion);
@@ -450,6 +471,7 @@ public class MapManager : MonoBehaviour
 								//EnterEncounter(new RandomAttack(clickedRegion.regionalEncounter.encounterEnemyType),movedMembers,true);
 							}//*/
 						}
+						//Should deprecate this later
 						GameEventManager.mainEventManager.TryNextQueuedEvent();
 					}
 				}
@@ -473,11 +495,12 @@ public class MapManager : MonoBehaviour
 	{
 		foreach (PartyMember movedMember in movedMembers)
 		{
+			PartyManager.mainPartyManager.TryRemoveMemberTask(movedMember);
 			movedMember.currentRegion.localPartyMembers.Remove(movedMember);
 			movedMember.currentRegion=newRegion;//.worldCoords=newRegion.GetCoords();
 			newRegion.localPartyMembers.Add(movedMember);
 			memberTokens[movedMember].MoveToken(newRegion.memberTokenGroup);
-			newRegion.scouted=true;
+			//newRegion.scouted=true;
 		}
 		//DiscoverRegions(newRegion.GetCoords());
 		PartyStatusCanvasHandler.main.RefreshAssignmentButtons(PartyManager.mainPartyManager.selectedMembers);

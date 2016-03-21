@@ -197,8 +197,9 @@ public class Encounter
 		possibleLootTypes=Encounter.GetLootTypesList(encounterAreaType,out lootDescription);
 		encounterEnemyType=EncounterEnemy.EnemyTypes.Muscle; enemyDescription="muscle masses";
 		List<EncounterRoom> nonSegmentRooms=null;
+		maxAllowedMembers=4;
 		Dictionary<Vector2,Dictionary<Vector2,EncounterRoom>> newEncounterSegments
-		=PrefabAssembler.assembler.GenerateEncounterMap(this,encounterAreaType,3,out nonSegmentRooms);
+		=PrefabAssembler.assembler.GenerateEncounterMap(this,encounterAreaType,maxAllowedMembers,out nonSegmentRooms);
 		GenerateEncounterFromPrefabMap(newEncounterSegments,nonSegmentRooms,1.5f);
 	}
 	//regular constructor
