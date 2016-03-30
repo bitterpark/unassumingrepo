@@ -149,101 +149,7 @@ public class FoodSpoilage:GameEvent
 	}
 }*/
 
-public class AmbushEvent:GameEvent
-{
-	const int requiredAmmo=5;
-	int fightHealthPenaltyMin=10;
-	int fightHealthPenaltyMax=15;
-	int stayBehindPenaltyMin=20;
-	int stayBehindPenaltyMax=35;
-	PartyMember shooter=null;
-	
-	public override string GetDescription(MapRegion eventRegion, List<PartyMember> movedMembers) 
-	{
-		string desc="";
-		if (movedMembers.Count==1) desc=movedMembers[0].name+" has been ambushed by monsters!";
-		else
-		{
-			for (int i=0; i<movedMembers.Count-1; i++)
-			{
-				if (i>0) desc+=", ";
-				desc+=movedMembers[i].name;
-			}
-			desc+=" and "+movedMembers[movedMembers.Count-1].name+" have been ambushed by monsters!";
-		}
-		desc+="\n\n What should they do?";
-		return desc;
-	}
-	public override List<string> GetChoices(MapRegion eventRegion, List<PartyMember> movedMembers)
-	{
-		List<string> choicesList=new List<string>();
-		//choicesList.Add("Try to run!");
-		choicesList.Add("Fight!");
-		foreach (PartyMember member in movedMembers)
-		{
-			if (movedMembers.Count>1) choicesList.Add("Have "+member.name+" hold them off!");
-			if (member.equippedRangedWeapon!=null && PartyManager.mainPartyManager.ammo>=requiredAmmo 
-			&& !choicesList.Contains("Shoot them!("+requiredAmmo+" ammo)"))
-			{
-				choicesList.Add("Shoot them!("+requiredAmmo+" ammo)");
-				shooter=member;
-			}
-			
-		}
-		return choicesList;
-	}
-	
-	public override string DoChoice (string choiceString, MapRegion eventRegion, List<PartyMember> movedMembers)
-	{
-		string eventResult=null;
-		/*
-		switch (choiceString)
-		{
-			case"Fight!":
-			{
-				
-				break;
-			}
-			case"Shoot them!("+requiredAmmo+" ammo)": 
-			{
-				eventResult=shooter.name+" decides that saved ammo is of no use to the dead and opens fire! The abominations fall one by one, screams and gunshots ringing through the warped, empty streets. This time, everyone is spared\n\n-"+requiredAmmo+" Ammo";
-				PartyManager.mainPartyManager.ammo-=requiredAmmo;
-				break;
-			}
-		}*/
-		if (choiceString=="Fight!")
-		{
-			int fightHealthPenalty=Random.Range(fightHealthPenaltyMin,fightHealthPenaltyMax+1);
-			eventResult="With the creatures so close, it's too late to run.\nSurging with adrenaline, the party charges the monsters with weapons drawn! The violence is brief, but brutal\n\n-"+fightHealthPenalty+" health for everyone";
-			foreach (PartyMember member in movedMembers){member.TakeDamage(fightHealthPenalty,true);}
-		}
-		if (choiceString=="Shoot them!("+requiredAmmo+" ammo)")
-		{
-			eventResult=shooter.name+" decides that saved ammo is of no use to the dead and opens fire! The abominations fall one by one, screams and gunshots ringing through the warped, empty streets. This time, everyone is spared\n\n-"+requiredAmmo+" Ammo";
-			PartyManager.mainPartyManager.ammo-=requiredAmmo;
-		}
-		
-		foreach (PartyMember member in movedMembers)
-		{
-			if (choiceString=="Have "+member.name+" hold them off!")
-			{
-				int stayBehindHealthPenalty=Random.Range(stayBehindPenaltyMin,stayBehindPenaltyMax+1);
-				string partyPronounTwo="others";
-				string partyPronoun="companions";
-				if (movedMembers.Count==2) 
-				{	
-					partyPronounTwo="other";
-					partyPronoun="companion";
-				}
-				eventResult=member.name+" hesitates for a moment, before rushing past "+partyPronoun+" and into danger. The sounds of struggle left behind spur on the "+partyPronounTwo+" as they run, wondering if "+member.name+" will make it...";
-				eventResult+="\n\n-"+stayBehindHealthPenalty+" health for "+member.name;
-				member.TakeDamage(stayBehindHealthPenalty,true);
-				break;
-			}
-		}
-		return eventResult;
-	}
-}
+
 /*
 public class MonsterAttack:GameEvent
 {
@@ -372,172 +278,6 @@ public class LostInAnomaly:GameEvent
 		return eventResult;
 	}
 }*/
-
-public class ScavengeEventOne:GameEvent
-{
-	string eventDescription="";
-	
-	public ScavengeEventOne()
-	{
-		repeatable=true;
-	}
-	
-	public override string GetDescription(MapRegion eventRegion, List<PartyMember> movedMembers) 
-	{
-		string noticingPartyMemberName=movedMembers[Random.Range(0,movedMembers.Count)].name;
-		eventDescription="As your party scouts, the streets wind, clash and loop on themselves. Some buildings"; 
-		eventDescription+="\nare mashed together and conjoined. Others are bisected apart with impossible";
-		eventDescription+="\nprecision, interiors displayed in neat rows.";
-		eventDescription+="\nYour party sets to work searching for supplies.";
-		
-		return eventDescription;
-	}
-	public override List<string> GetChoices(MapRegion eventRegion, List<PartyMember> movedMembers)
-	{
-		List<string> choicesList=new List<string>();
-		choicesList.Add("Scavenge");
-		return choicesList;
-	}
-	
-	public override string DoChoice (string choiceString,MapRegion eventRegion, List<PartyMember> movedMembers)
-	{
-		string eventResult=null;
-		int gasCanisterCount=1;
-		
-		switch (choiceString)
-		{
-			case"Scavenge":
-			{
-				eventResult="Safer-looking ruins are inspected, rubble cleared and plywood pried off, as you search";
-				eventResult+="\namid distant echoes of otherworldly sounds.\nA safe search yields a modest bounty";
-				List<InventoryItem> scavengedItems=InventoryItem.GenerateLootSet(InventoryItem.LootMetatypes.Salvage);
-				eventResult+="\n\n";
-				bool firstAdded=true;
-				foreach (InventoryItem item in scavengedItems)
-				{
-					if (!firstAdded) eventResult+=", ";
-					eventResult+=item.itemName;
-					eventRegion.StashItem(item);
-					firstAdded=false;
-				}
-				break;
-			}
-		}
-		return eventResult;
-	}
-}
-
-public class GasolineEvent:GameEvent
-{
-	string eventDescription="";
-	
-	public GasolineEvent()
-	{
-		repeatable=true;
-	}
-	
-	public override string GetDescription(MapRegion eventRegion, List<PartyMember> movedMembers) 
-	{
-		string noticingPartyMemberName=movedMembers[Random.Range(0,movedMembers.Count)].name;
-		eventDescription="The buildings in this block seem almost normal, save for the cold blue lights"; 
-		eventDescription+="\nflickering on and off in some of the windows. You can't make out anything inside";
-		eventDescription+="\nYour party sets to work searching for supplies.";
-		
-		return eventDescription;
-	}
-	public override List<string> GetChoices(MapRegion eventRegion, List<PartyMember> movedMembers)
-	{
-		List<string> choicesList=new List<string>();
-		choicesList.Add("Scavenge");
-		return choicesList;
-	}
-	
-	public override string DoChoice (string choiceString,MapRegion eventRegion, List<PartyMember> movedMembers)
-	{
-		string eventResult=null;
-		int gasCanisterCount=1;
-		
-		switch (choiceString)
-		{
-			case"Scavenge":
-			{
-				eventResult="Amid the desolation, you discover a gas station, quiet and still. There's some fuel left,";
-				eventResult+="\nand as you siphon it, the pump noises ring out trough the eerie silence.";
-				eventResult+="\nThe moments are tense as they go by, but only the cold wind stirs the nearby ruins.";
-				List<InventoryItem> scavengedItems=InventoryItem.GenerateLootSet(InventoryItem.LootMetatypes.Salvage);
-				eventResult+="\n\n+"+gasCanisterCount+" gas canisters";
-				for (int i=0; i<gasCanisterCount; i++)
-				{
-					eventRegion.StashItem(new Gasoline());
-				}	
-				break;
-			}
-		}
-		return eventResult;
-	}
-}
-
-public class CarFindEvent:GameEvent
-{
-	string eventDescription="";
-	
-	public CarFindEvent()
-	{
-		repeatable=true;
-	}
-	
-	public override bool PreconditionsMet (MapRegion eventRegion, List<PartyMember> movedMembers)
-	{
-		bool allowEvent=true;
-		if (eventRegion.hasGasoline) allowEvent=false;
-		else 
-		{
-			if (eventRegion.townCenter==null)
-			{
-				if (eventRegion.hasCar) allowEvent=false;
-			}
-			else if (eventRegion.townCenter.hasCar) allowEvent=false;
-		}
-		return allowEvent;
-	}
-	
-	public override string GetDescription(MapRegion eventRegion, List<PartyMember> movedMembers) 
-	{
-		string noticingPartyMemberName=movedMembers[Random.Range(0,movedMembers.Count)].name;
-		eventDescription="The buildings in this block seem almost normal, save for the cold blue lights"; 
-		eventDescription+="\nflickering on and off in some of the windows. You can't make out anything inside";
-		eventDescription+="\nYour party sets to work searching for supplies.";
-		
-		return eventDescription;
-	}
-	public override List<string> GetChoices(MapRegion eventRegion, List<PartyMember> movedMembers)
-	{
-		List<string> choicesList=new List<string>();
-		choicesList.Add("Scavenge");
-		return choicesList;
-	}
-	
-	public override string DoChoice (string choiceString,MapRegion eventRegion, List<PartyMember> movedMembers)
-	{
-		string eventResult=null;
-		int gasCanisterCount=1;
-		
-		switch (choiceString)
-		{
-		case"Scavenge":
-			{
-				eventResult="The few cars that still remain on warped streets are in various states of disrepair,";
-				eventResult+="\nbut you get lucky and stumble on one that's still functioning, with barely enough gas.";
-				eventResult+="\nin the tank to bring it back to the town's center.";
-				
-				if (eventRegion.townCenter==null) eventRegion.SetCar(true);
-				else eventRegion.townCenter.SetCar(true);	
-				break;
-			}
-		}
-		return eventResult;
-	}
-}
 
 public class CacheInAnomaly:GameEvent
 {	
@@ -1008,9 +748,11 @@ public class LowMoraleQuit:GameEvent
 			}
 		}
 		return eventResult;
+
 	}
 }
 
+//INSTRUMENTAL EVENTS
 public class TownMove:GameEvent
 {
 	string eventDescription="";
@@ -1077,10 +819,334 @@ public class TownMove:GameEvent
 		if (choiceString=="Cancel") 
 		{
 			//success
-			eventResult="You decide to stay awhile longer, before braving the road";
+			eventResult="You decide to stay awhile longer before braving the road";
 			return eventResult;
+
 		}
 		return eventResult;
 	}
 	
+}
+
+public class AmbushEvent:GameEvent
+{
+    const int requiredAmmo=5;
+    int fightHealthPenaltyMin=10;
+    int fightHealthPenaltyMax=15;
+    int stayBehindPenaltyMin=20;
+    int stayBehindPenaltyMax=35;
+    PartyMember shooter=null;
+
+    public override string GetDescription(MapRegion eventRegion, List<PartyMember> movedMembers) 
+    {
+        string desc="";
+        if (movedMembers.Count==1) desc=movedMembers[0].name+" has been ambushed by monsters!";
+        else
+        {
+            for (int i=0; i<movedMembers.Count-1; i++)
+            {
+                if (i>0) desc+=", ";
+                desc+=movedMembers[i].name;
+            }
+            desc+=" and "+movedMembers[movedMembers.Count-1].name+" have been ambushed by monsters!";
+        }
+        desc+="\n\n What should they do?";
+        return desc;
+    }
+    public override List<string> GetChoices(MapRegion eventRegion, List<PartyMember> movedMembers)
+    {
+        List<string> choicesList=new List<string>();
+        //choicesList.Add("Try to run!");
+        choicesList.Add("Fight!");
+        foreach (PartyMember member in movedMembers)
+        {
+            if (movedMembers.Count>1) choicesList.Add("Have "+member.name+" hold them off!");
+            if (member.equippedRangedWeapon!=null && PartyManager.mainPartyManager.ammo>=requiredAmmo 
+            && !choicesList.Contains("Shoot them!("+requiredAmmo+" ammo)"))
+            {
+                choicesList.Add("Shoot them!("+requiredAmmo+" ammo)");
+                shooter=member;
+            }
+            
+        }
+        return choicesList;
+    }
+    
+    public override string DoChoice (string choiceString, MapRegion eventRegion, List<PartyMember> movedMembers)
+    {
+        string eventResult=null;
+        /*
+        switch (choiceString)
+        {
+            case"Fight!":
+            {
+                
+                break;
+            }
+            case"Shoot them!("+requiredAmmo+" ammo)": 
+            {
+                eventResult=shooter.name+" decides that saved ammo is of no use to the dead and opens fire! The abominations fall one by one, screams and gunshots ringing through the warped, empty streets. This time, everyone is spared\n\n-"+requiredAmmo+" Ammo";
+                PartyManager.mainPartyManager.ammo-=requiredAmmo;
+                break;
+            }
+        }*/
+        if (choiceString=="Fight!")
+        {
+            int fightHealthPenalty=Random.Range(fightHealthPenaltyMin,fightHealthPenaltyMax+1);
+            eventResult="With the creatures so close, it's too late to run.\nSurging with adrenaline, the party charges the monsters with weapons drawn! The violence is brief, but brutal\n\n-"+fightHealthPenalty+" health for everyone";
+            foreach (PartyMember member in movedMembers){member.TakeDamage(fightHealthPenalty,true);}
+        }
+        if (choiceString=="Shoot them!("+requiredAmmo+" ammo)")
+        {
+            eventResult=shooter.name+" decides that saved ammo is of no use to the dead and opens fire! The abominations fall one by one, screams and gunshots ringing through the warped, empty streets. This time, everyone is spared\n\n-"+requiredAmmo+" Ammo";
+            PartyManager.mainPartyManager.ammo-=requiredAmmo;
+        }
+        
+        foreach (PartyMember member in movedMembers)
+        {
+            if (choiceString=="Have "+member.name+" hold them off!")
+            {
+                int stayBehindHealthPenalty=Random.Range(stayBehindPenaltyMin,stayBehindPenaltyMax+1);
+                string partyPronounTwo="others";
+                string partyPronoun="companions";
+                if (movedMembers.Count==2) 
+                {   
+                    partyPronounTwo="other";
+                    partyPronoun="companion";
+                }
+                eventResult=member.name+" hesitates for a moment, before rushing past "+partyPronoun+" and into danger. The sounds of struggle left behind spur on the "+partyPronounTwo+" as they run, wondering if "+member.name+" will make it...";
+                eventResult+="\n\n-"+stayBehindHealthPenalty+" health for "+member.name;
+                member.TakeDamage(stayBehindHealthPenalty,true);
+                break;
+            }
+        }
+        return eventResult;
+    }
+}
+
+public class CleanupEvent:GameEvent
+{
+    const int requiredAmmo=5;
+    int fightHealthPenaltyMin=10;
+    int fightHealthPenaltyMax=15;
+    int stayBehindPenaltyMin=20;
+    int stayBehindPenaltyMax=35;
+    int requiredTrapsCount=3;
+    int trapAmbientThreatReduction=1;
+
+    Dictionary<PartyMember, InventoryItem> usedTraps=new Dictionary<PartyMember, InventoryItem>();
+	
+    public override string GetDescription(MapRegion eventRegion, List<PartyMember> movedMembers) 
+    {
+        string desc="You decide to try and make the area safer to scavenge.";
+        desc+="\n\n In order to do that, you...";
+        return desc;
+    }
+    public override List<string> GetChoices(MapRegion eventRegion, List<PartyMember> movedMembers)
+    {
+        List<string> choicesList=new List<string>();
+        //choicesList.Add("Try to run!");
+        foreach (PartyMember member in movedMembers)
+        {
+            foreach (InventoryItem item in member.carriedItems)
+            {
+				if (item.GetType()==typeof(SettableTrap)) usedTraps.Add(member,item);
+				if (usedTraps.Count==requiredTrapsCount) 
+                {
+                    choicesList.Add("...Trap the area(-"+requiredTrapsCount+" traps)");
+                    break;
+                }   
+            } 
+        }
+        choicesList.Add("Cancel");
+        return choicesList;
+    }
+    
+    public override string DoChoice (string choiceString, MapRegion eventRegion, List<PartyMember> movedMembers)
+    {
+        string eventResult=null;
+
+		if (choiceString=="...Trap the area(-"+requiredTrapsCount+" traps)")
+        {
+            int fightHealthPenalty=Random.Range(fightHealthPenaltyMin,fightHealthPenaltyMax+1);
+			eventResult="You get to work setting a series of deadly traps in tight spaces, luring dangerous creatures in one by one.\n\nAmbush threat reduced";
+            foreach (PartyMember member in usedTraps.Keys) {member.RemoveCarriedItem(usedTraps[member]);}
+            eventRegion.ambientThreatNumber-=1;
+        }
+
+		if (choiceString=="Cancel") 
+		{
+			//success
+			eventResult="You decide not to brave the area right now";
+			return eventResult;
+		}
+        return eventResult;
+    }
+}
+
+//SCAVENGE EVENTS
+public class ScavengeEventOne:GameEvent
+{
+    string eventDescription="";
+    
+    public ScavengeEventOne()
+    {
+        repeatable=true;
+    }
+    
+    public override string GetDescription(MapRegion eventRegion, List<PartyMember> movedMembers) 
+    {
+        string noticingPartyMemberName=movedMembers[Random.Range(0,movedMembers.Count)].name;
+        eventDescription="As your party scouts, the streets wind, clash and loop on themselves. Some buildings"; 
+        eventDescription+="\nare mashed together and conjoined. Others are bisected apart with impossible";
+        eventDescription+="\nprecision, interiors displayed in neat rows.";
+        eventDescription+="\nYour party sets to work searching for supplies.";
+        
+        return eventDescription;
+    }
+    public override List<string> GetChoices(MapRegion eventRegion, List<PartyMember> movedMembers)
+    {
+        List<string> choicesList=new List<string>();
+        choicesList.Add("Scavenge");
+        return choicesList;
+    }
+    
+    public override string DoChoice (string choiceString,MapRegion eventRegion, List<PartyMember> movedMembers)
+    {
+        string eventResult=null;
+        int gasCanisterCount=1;
+        
+        switch (choiceString)
+        {
+            case"Scavenge":
+            {
+                eventResult="Safer-looking ruins are inspected, rubble cleared and plywood pried off, as you search";
+                eventResult+="\namid distant echoes of otherworldly sounds.\nA safe search yields a modest bounty";
+                List<InventoryItem> scavengedItems=InventoryItem.GenerateLootSet(InventoryItem.LootMetatypes.Salvage);
+                eventResult+="\n\n";
+                bool firstAdded=true;
+                foreach (InventoryItem item in scavengedItems)
+                {
+                    if (!firstAdded) eventResult+=", ";
+                    eventResult+=item.itemName;
+                    eventRegion.StashItem(item);
+                    firstAdded=false;
+                }
+                break;
+            }
+        }
+        return eventResult;
+    }
+}
+
+public class GasolineEvent:GameEvent
+{
+    string eventDescription="";
+    
+    public GasolineEvent()
+    {
+        repeatable=true;
+    }
+    
+    public override string GetDescription(MapRegion eventRegion, List<PartyMember> movedMembers) 
+    {
+        string noticingPartyMemberName=movedMembers[Random.Range(0,movedMembers.Count)].name;
+        eventDescription="The buildings in this block seem almost normal, save for the cold blue lights"; 
+        eventDescription+="\nflickering on and off in some of the windows. You can't make out anything inside";
+        eventDescription+="\nYour party sets to work searching for supplies.";
+        
+        return eventDescription;
+    }
+    public override List<string> GetChoices(MapRegion eventRegion, List<PartyMember> movedMembers)
+    {
+        List<string> choicesList=new List<string>();
+        choicesList.Add("Scavenge");
+        return choicesList;
+    }
+    
+    public override string DoChoice (string choiceString,MapRegion eventRegion, List<PartyMember> movedMembers)
+    {
+        string eventResult=null;
+        int gasCanisterCount=1;
+        
+        switch (choiceString)
+        {
+            case"Scavenge":
+            {
+                eventResult="Amid the desolation, you discover a gas station, quiet and still. There's some fuel left,";
+                eventResult+="\nand as you siphon it, the pump noises ring out trough the eerie silence.";
+                eventResult+="\nThe moments are tense as they go by, but only the cold wind stirs the nearby ruins.";
+                List<InventoryItem> scavengedItems=InventoryItem.GenerateLootSet(InventoryItem.LootMetatypes.Salvage);
+                eventResult+="\n\n+"+gasCanisterCount+" gas canisters";
+                for (int i=0; i<gasCanisterCount; i++)
+                {
+                    eventRegion.StashItem(new Gasoline());
+                }   
+                break;
+            }
+        }
+        return eventResult;
+    }
+}
+
+public class CarFindEvent:GameEvent
+{
+    string eventDescription="";
+    
+    public CarFindEvent()
+    {
+        repeatable=true;
+    }
+    
+    public override bool PreconditionsMet (MapRegion eventRegion, List<PartyMember> movedMembers)
+    {
+        bool allowEvent=true;
+        if (eventRegion.hasGasoline) allowEvent=false;
+        else 
+        {
+            if (eventRegion.townCenter==null)
+            {
+                if (eventRegion.hasCar) allowEvent=false;
+            }
+            else if (eventRegion.townCenter.hasCar) allowEvent=false;
+        }
+        return allowEvent;
+    }
+    
+    public override string GetDescription(MapRegion eventRegion, List<PartyMember> movedMembers) 
+    {
+        string noticingPartyMemberName=movedMembers[Random.Range(0,movedMembers.Count)].name;
+        eventDescription="The buildings in this block seem almost normal, save for the cold blue lights"; 
+        eventDescription+="\nflickering on and off in some of the windows. You can't make out anything inside";
+        eventDescription+="\nYour party sets to work searching for supplies.";
+        
+        return eventDescription;
+    }
+    public override List<string> GetChoices(MapRegion eventRegion, List<PartyMember> movedMembers)
+    {
+        List<string> choicesList=new List<string>();
+        choicesList.Add("Scavenge");
+        return choicesList;
+    }
+    
+    public override string DoChoice (string choiceString,MapRegion eventRegion, List<PartyMember> movedMembers)
+    {
+        string eventResult=null;
+        int gasCanisterCount=1;
+        
+        switch (choiceString)
+        {
+        case"Scavenge":
+            {
+                eventResult="The few cars that still remain on warped streets are in various states of disrepair,";
+                eventResult+="\nbut you get lucky and stumble on one that's still functioning, with barely enough gas.";
+                eventResult+="\nin the tank to bring it back to the town's center.";
+                
+                if (eventRegion.townCenter==null) eventRegion.SetCar(true);
+                else eventRegion.townCenter.SetCar(true);   
+                break;
+            }
+        }
+        return eventResult;
+    }
 }

@@ -17,6 +17,8 @@ public class EnemyTokenHandler : MonoBehaviour, IAttackAnimation, IGotHitAnimati
 	public EncounterEnemy assignedEnemy;
 	public Image myImage;
 	
+	public float accumulatedMove=0;
+	
 	public class PointOfInterest
 	{
 		public Vector2 pointCoords;
@@ -187,6 +189,7 @@ public class EnemyTokenHandler : MonoBehaviour, IAttackAnimation, IGotHitAnimati
 			{
 				if (currentPOI.pointCoords==assignedEnemy.GetCoords()) currentPOI=null;
 			}
+			
 			yield break;
 			//UpdateVisionStatusDisplay();
 		}
@@ -302,6 +305,11 @@ public class EnemyTokenHandler : MonoBehaviour, IAttackAnimation, IGotHitAnimati
 			}
 		}
 	}
+	/*
+	void Update()
+	{
+		accumulatedMove=assignedEnemy.currentAccumulatedMoves;
+	}*/
 	
 	void OnDestroy()
 	{

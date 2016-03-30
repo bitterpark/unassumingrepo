@@ -290,12 +290,54 @@ public class InventoryScreenHandler : MonoBehaviour
 		{
 			if (GameManager.main.gameStarted && EncounterCanvasHandler.main.GetComponent<CanvasGroup>().interactable)
 			{
+				//IF INSIDE AN ENCOUNTER
 				if (EncounterCanvasHandler.main.encounterOngoing)
 				{
 					AssignSelectedMember(EncounterCanvasHandler.main.selectedMember);
 				}
-				else {AssignSelectedMember(PartyManager.mainPartyManager.partyMembers[0]);}
+				else 
+				{
+					//IF ON WORLD MAP
+					if (PartyManager.mainPartyManager.selectedMembers.Count>0) AssignSelectedMember(PartyManager.mainPartyManager.selectedMembers[0]);
+					else AssignSelectedMember(PartyManager.mainPartyManager.partyMembers[0]);
+				}
 			}
+		}
+		//DUPLICATES Q FUNCTIONALITY FROM ENCOUNTER SELECTION
+		if (Input.GetKeyDown(KeyCode.Q) && inventoryShown)
+		{
+			if (GameManager.main.gameStarted && EncounterCanvasHandler.main.GetComponent<CanvasGroup>().interactable)
+			{
+				//IF INSIDE AN ENCOUNTER
+				if (EncounterCanvasHandler.main.encounterOngoing)
+				{
+					AssignSelectedMember(EncounterCanvasHandler.main.selectedMember);
+				}
+				else 
+				{
+					//IF ON WORLD MAP
+					
+					if (PartyManager.mainPartyManager.selectedMembers.Count>0) 
+					{
+						int selectedIndex=PartyManager.mainPartyManager.selectedMembers.IndexOf(selectedMember);
+						int  nextIndex=(int)Mathf.Repeat(selectedIndex+1,PartyManager.mainPartyManager.selectedMembers.Count);
+						if (selectedIndex!=nextIndex) AssignSelectedMember(PartyManager.mainPartyManager.selectedMembers[nextIndex]);
+					}
+					else
+					{
+						int selectedIndex=PartyManager.mainPartyManager.partyMembers.IndexOf(selectedMember);
+						int  nextIndex=(int)Mathf.Repeat(selectedIndex+1,PartyManager.mainPartyManager.partyMembers.Count);
+						if (selectedIndex!=nextIndex) AssignSelectedMember(PartyManager.mainPartyManager.partyMembers[nextIndex]);
+					}
+				}
+			}
+		}
+		
+		if (Input.GetKeyDown(KeyCode.T))
+		{
+			int fucktest=0;
+			fucktest=(int)Mathf.Repeat(fucktest+1,1);
+			print ("Final fucktest="+fucktest.ToString());
 		}
 	}
 }

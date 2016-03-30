@@ -170,7 +170,7 @@ public abstract class EncounterEnemy
 	public float damageMod=1f;
 	protected int maxAttackRange=0;
 	public float movesPerTurn=1;
-	protected float currentAccumulatedMoves=0;
+	public float currentAccumulatedMoves=0;
 	//public int encounterCount=5;
 	public float moveChance=0.1f;//0.4f;
 	public List<StatusEffect> activeEffects=new List<StatusEffect>();
@@ -434,7 +434,6 @@ public abstract class EncounterEnemy
 			RoomButtonHandler startRoom=EncounterCanvasHandler.main.roomButtons[startCoords];
 			if (moveRoom.assignedRoom.barricadeInRoom==null)
 			{
-				movePerformed=true;
 				startRoom.MoveEnemyOutOfRoom(this);
 				//ORDER IS IMPORTANT!
 				SetCoords(moveCoords);
@@ -446,6 +445,7 @@ public abstract class EncounterEnemy
 				EncounterCanvasHandler.main.AddNewLogMessage(name+" smashes a barricade for "+barricadeBashStrength);
 				moveRoom.BashBarricade(barricadeBashStrength);
 			}
+			movePerformed=true;
 		}
 		return movePerformed;
 	}
@@ -548,12 +548,14 @@ public abstract class EncounterEnemy
 						
 						int totalMovesDone=0;
 						List<Vector2> movesCoords=new List<Vector2>();
-						for (totalMovesDone=0; totalMovesDone<currentAccumulatedMoves; totalMovesDone++)
+						//for (totalMovesDone=0; totalMovesDone<currentAccumulatedMoves; totalMovesDone++)
+						while (totalMovesDone<currentAccumulatedMoves)
 						{
 							Vector2 newMove=new Vector2();
 							if (TryMove(visibleMembers,currentPOI,map,memberCoords, out newMove)) 
 							{
 								movesCoords.Add(newMove);
+								totalMovesDone++;
 								//If any members are within attack range, stop mid-movement
 								visibleMembers=VisionCheck(map,memberCoords,newMove);
 								membersWithinAttackRange=new List<PartyMember>();
@@ -628,7 +630,7 @@ public class Transient:EncounterEnemy
 			legsHealth=45;
 		}
 		
-		float armsHitChanceDelta=0.5f;
+		float armsHitChanceDelta=0.4f;
 		float legsHitChanceDelta=0.5f;
 		/*
 		if (Random.value<0.5f)
@@ -642,7 +644,7 @@ public class Transient:EncounterEnemy
 			legsHitChanceDelta=0.2f;
 		}*/
 		
-		bodyParts.Add(new BodyPart("Vitals",health,null,(int newHealth)=>{this.health=newHealth;},BodyPart.PartTypes.Vitals,0.85f));
+		bodyParts.Add(new BodyPart("Vitals",health,null,(int newHealth)=>{this.health=newHealth;},BodyPart.PartTypes.Vitals,0.8f));
 		bodyParts.Add(new BodyPart("Arms",armsHealth,()=>{this.AddStatusEffect(new NoArms(this));},null,BodyPart.PartTypes.Hands,armsHitChanceDelta));
 		bodyParts.Add(new BodyPart("Legs",legsHealth,()=>{this.AddStatusEffect(new NoLegs(this));},null,BodyPart.PartTypes.Legs,legsHitChanceDelta));
 	}
@@ -746,9 +748,9 @@ public class FleshMass:EncounterEnemy
 		minDamage=7;
 		maxDamage=9;
 		barricadeBashStrength=minDamage;
-		bodyParts.Add(new BodyPart("Vitals",health,null,(int newHealth)=>{this.health=newHealth;},BodyPart.PartTypes.Vitals,0.9f));
-		bodyParts.Add(new BodyPart("Arms",45,()=>{this.AddStatusEffect(new NoArms(this));},null,BodyPart.PartTypes.Hands,0.5f));
-		bodyParts.Add(new BodyPart("Legs",90,()=>{this.AddStatusEffect(new NoLegs(this));},null,BodyPart.PartTypes.Legs,0.6f));
+		bodyParts.Add(new BodyPart("Vitals",health,null,(int newHealth)=>{this.health=newHealth;},BodyPart.PartTypes.Vitals,0.8f));
+		bodyParts.Add(new BodyPart("Arms",45,()=>{this.AddStatusEffect(new NoArms(this));},null,BodyPart.PartTypes.Hands,0.4f));
+		bodyParts.Add(new BodyPart("Legs",90,()=>{this.AddStatusEffect(new NoLegs(this));},null,BodyPart.PartTypes.Legs,0.5f));
 	}
 }
 
@@ -757,7 +759,7 @@ public class Spindler:EncounterEnemy
 	public Spindler(Vector2 coords) : base(coords)
 	{
 		name="Spindler";
-		health=180;
+		health=225;
 		minDamage=3;
 		maxDamage=6;
 		barricadeBashStrength=minDamage;
@@ -791,7 +793,7 @@ public class MuscleMass:EncounterEnemy
 		maxDamage=12;
 		barricadeBashStrength=minDamage;
 		staminaDamage=3;
-		bodyParts.Add(new BodyPart("Vitals",health,null,(int newHealth)=>{this.health=newHealth;},BodyPart.PartTypes.Vitals,0.9f));
+		bodyParts.Add(new BodyPart("Vitals",health,null,(int newHealth)=>{this.health=newHealth;},BodyPart.PartTypes.Vitals,0.8f));
 		bodyParts.Add(new BodyPart("Arms",90,()=>{this.AddStatusEffect(new NoArms(this));},null,BodyPart.PartTypes.Hands,0.5f));
 		bodyParts.Add(new BodyPart("Legs",90,()=>{this.AddStatusEffect(new NoLegs(this));},null,BodyPart.PartTypes.Legs,0.4f));
 	}
@@ -812,7 +814,7 @@ public class SlimeMass:EncounterEnemy
 		movesPerTurn=0;
 		staminaDamage=3;
 		bodyParts.Add(new BodyPart("Vitals",health,null,(int newHealth)=>{this.health=newHealth;},BodyPart.PartTypes.Vitals,0.95f));
-		bodyParts.Add(new BodyPart("Arms",135,()=>{this.AddStatusEffect(new NoArms(this));},null,BodyPart.PartTypes.Hands,0.6f));
+		bodyParts.Add(new BodyPart("Arms",135,()=>{this.AddStatusEffect(new NoArms(this));},null,BodyPart.PartTypes.Hands,0.5f));
 	}
 	
 	//int rangedResistance=3;

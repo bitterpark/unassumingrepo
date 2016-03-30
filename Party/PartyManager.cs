@@ -197,11 +197,6 @@ public class PartyManager : MonoBehaviour
 		startingRegion.StashItem(new FoodBig());
 		startingRegion.StashItem(new FoodSmall());
 		startingRegion.StashItem(new FoodSmall());
-		startingRegion.StashItem(new Scrap());
-		startingRegion.StashItem(new Scrap());
-		startingRegion.StashItem(new Scrap());
-		startingRegion.StashItem(new Scrap());
-		startingRegion.StashItem(new Gunpowder());
 		
 		MapManager.main.FocusViewOnRegion(startingRegion.GetComponent<RectTransform>());
 		
@@ -220,6 +215,7 @@ public class PartyManager : MonoBehaviour
 		//startingRegion.StashItem(new Bed());
 		//startingRegion.StashItem(new Bed());
 		//startingRegion.StashItem(new Pot());//
+		//startingRegion.StashItem(new Scrap());
 		//Do this to setup proper background color
 		//PassTime(1);
 	}
@@ -292,7 +288,16 @@ public class PartyManager : MonoBehaviour
 	{
 		if (Input.GetKeyDown(KeyCode.M)) 
 		{
-			GameManager.main.EndCurrentGame(true);
+			int fuckballs=1;
+			int i=0;
+			for (i=0; i<fuckballs; i++)
+			{
+				print ("Doing loop");
+				print ("i="+i);
+				break;
+			}
+			print("Loop finished, final i="+i);
+			//GameManager.main.EndCurrentGame(true);
 			//partyMembers[0].morale=0;//
 			//partyMembers[0].TakeDamage(70,false,PartyMember.BodyPartTypes.Vitals);
 			//partyMembers[0].TakeDamage(15,false,PartyMember.BodyPartTypes.Legs);

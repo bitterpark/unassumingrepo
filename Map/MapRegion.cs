@@ -127,24 +127,23 @@ public class MapRegion : MonoBehaviour, IPointerEnterHandler, IPointerExitHandle
 	//public ThreatLevels threatLevel=ThreatLevels.Low;
 	public ThreatLevels CalculateThreatLevel(List<PartyMember> movingMembers)
 	{
+		return CalculateThreatLevel(movingMembers.Count);
+	}
+	public ThreatLevels CalculateThreatLevel(int memberCount)
+	{
 		ThreatLevels estimatedThreat=ThreatLevels.None;
 		if (hasEncounter)
 		{
-			bool partyHasScout=false;
-			foreach(PartyMember member in movingMembers)
-			{
-				if (member.isScout) {partyHasScout=true; break;}
-			}
-			if (!partyHasScout)
-			{
-				int requiredMemberDifference=regionalEncounter.maxAllowedMembers-movingMembers.Count;
-				if (requiredMemberDifference>0) estimatedThreat=ThreatLevels.Low;
-				if (requiredMemberDifference>1) estimatedThreat=ThreatLevels.Medium;
-				if (requiredMemberDifference>2) estimatedThreat=ThreatLevels.High;
-			}
+				//int requiredMemberDifference=Mathf.Abs(regionalEncounter.maxAllowedMembers-movingMembers.Count);
+			int memberCountThreat=Mathf.Abs(regionalEncounter.maxAllowedMembers-memberCount);
+
+			if (memberCountThreat+ambientThreatNumber>0) estimatedThreat=ThreatLevels.Low;
+			if (memberCountThreat+ambientThreatNumber>1) estimatedThreat=ThreatLevels.Medium;
+			if (memberCountThreat+ambientThreatNumber>2) estimatedThreat=ThreatLevels.High;
 		}
 		return estimatedThreat;
 	}
+	public int ambientThreatNumber=0;
 	
 	public bool hasEncounter=false;
 	
@@ -296,11 +295,11 @@ public class MapRegion : MonoBehaviour, IPointerEnterHandler, IPointerExitHandle
 		else 
 		{
 			regionalEncounter=new Encounter();
-			/*
+			
 			float threatRoll=Random.value;
-			if (threatRoll<1f) threatLevel=ThreatLevels.Low;
-			if (threatRoll<0.7f) threatLevel=ThreatLevels.Medium;
-			if (threatRoll<0.3f) threatLevel=ThreatLevels.High;*/
+			if (threatRoll<0.75f) ambientThreatNumber=1;
+			if (threatRoll<0.5f) ambientThreatNumber=2;
+			if (threatRoll<0.25f) ambientThreatNumber=3;
 		}
 		//if (threatLevel==ThreatLevels.Low) campSetupTimeRemaining+=2;
 		//if (threatLevel==ThreatLevels.Medium) campSetupTimeRemaining+=4;
@@ -387,10 +386,11 @@ public class MapRegion : MonoBehaviour, IPointerEnterHandler, IPointerExitHandle
 						areaDescription+="Enemies: "+regionalEncounter.enemyDescription+"\n";
 						
 						//if (isHive) {areaDescription+="\nHive";}
+						areaDescription+="\nAmbush threat: "+CalculateThreatLevel(0);
 					}
 					areaDescription+="\nRequired team size: "+regionalEncounter.minRequiredMembers+"-"+regionalEncounter.maxAllowedMembers;
-					if (PartyManager.mainPartyManager.selectedMembers.Count>0)
-					areaDescription+="\nAmbush threat: "+CalculateThreatLevel(PartyManager.mainPartyManager.selectedMembers);
+					//if (PartyManager.mainPartyManager.selectedMembers.Count>0)
+
 				}
 				else {textExists=false;}
 			}

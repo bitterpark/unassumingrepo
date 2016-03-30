@@ -401,10 +401,10 @@ public class PartyMember
 	
 	//public int fatigueIncreasePerAction;
 	public int maxStaminaReductionFromFatigue=6;
-	public const int fatigueIncreasePerEncounter=0;
+	public const int fatigueIncreasePerEncounter=30;
 	//public const int mapMoveFatigueCost=25;
 	public const int campSetupFatigueCost=20;
-	public const int fatigueMoveCost=20;
+	public const int fatigueMoveCost=10;
 	
 	//MORALE
 	public int morale

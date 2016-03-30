@@ -213,7 +213,8 @@ public class EncounterCanvasHandler : MonoBehaviour
 			//if last party member didn't die moving away
 			if (encounterOngoing) 
 			{
-				if (!selectedMember.isQuiet) MakeNoise(startingRoom.GetCoords(),1);
+				MakeNoise(startingRoom.GetCoords(),1);
+				if (!selectedMember.isQuiet) MakeNoise(roomHandler.GetRoomCoords(),1);
 				MovePartyMemberToRoom(selectedMember,roomHandler,false);
 				DeadMemberCleanupCheck();
 				
@@ -1495,7 +1496,11 @@ public class EncounterCanvasHandler : MonoBehaviour
 		}
 		yield return StartCoroutine(RegisterDamage(hitSuccessful,actualDmg,attackedPart,ranged,enemy,memberTokens[selectedMember]));
 		bool doTurnover=true;
-		if (selectedMember.hitAndRunEnabled) memberTokens[selectedMember].TryMove(out doTurnover);
+		if (selectedMember.hitAndRunEnabled) 
+		{
+			memberTokens[selectedMember].TryMove(out doTurnover);
+			memberTokens[selectedMember].attackDone=true;
+		}
 		if (doTurnover) TurnOver(selectedMember,roomButtons[memberCoords[selectedMember]].assignedRoom,false);
 	}
 	

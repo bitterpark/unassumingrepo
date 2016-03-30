@@ -71,6 +71,8 @@ public class MemberTokenHandler : MonoBehaviour, IAttackAnimation, IGotHitAnimat
 	 
 	bool _moveTaken=false;
 	
+	public bool attackDone=false;
+	
 	public bool turnTaken
 	{
 		get {return _turnTaken;}
@@ -180,6 +182,7 @@ public class MemberTokenHandler : MonoBehaviour, IAttackAnimation, IGotHitAnimat
 		int staminaRegenAmount=myMember.staminaRegen;
 		if (staminaRegenEnabled) myMember.stamina+=staminaRegenAmount;
 		moveTaken=false;
+		attackDone=false;
 		turnTaken=false;
 		RefreshMaxAllowedMovesCount();
 		currentAllowedMovesCount=maxAllowedMovesCount;
@@ -265,7 +268,7 @@ public class MemberTokenHandler : MonoBehaviour, IAttackAnimation, IGotHitAnimat
 	{
 		bool enemyReachable=false;
 		
-		//if (!moveTaken)
+		if (!attackDone)
 		{
 			isRanged=rangedMode;
 			int attackRange;

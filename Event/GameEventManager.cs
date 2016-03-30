@@ -117,6 +117,13 @@ public class GameEventManager : MonoBehaviour
 	{
 		StartEventDraw(newEvent, eventRegion, eventMembers);
 	}
+	// Used by ambush events, to make sure encounter enter is triggered after the event is resolved (if any members survive it)
+	public IEnumerator WaitForEventEnd(GameEvent newEvent, MapRegion eventRegion, List<PartyMember> eventMembers)
+	{
+		StartEventDraw(newEvent,eventRegion,eventMembers);
+		while (drawingEvent && GameManager.main.gameStarted) yield return new WaitForFixedUpdate();
+		yield break;
+	}
 	
 	public void QueueEvent(GameEvent newEvent, MapRegion eventRegion, List<PartyMember> eventMembers)
 	{

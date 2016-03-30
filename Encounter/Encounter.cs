@@ -224,7 +224,7 @@ public class Encounter
 		if (enemiesRoll<=3) {encounterEnemyType=EncounterEnemy.EnemyTypes.Flesh;}
 		if (enemiesRoll<=2) {encounterEnemyType=EncounterEnemy.EnemyTypes.Quick;}
 		if (enemiesRoll<=1) {encounterEnemyType=EncounterEnemy.EnemyTypes.Slime;}
-		//encounterEnemyType=EncounterEnemy.EnemyTypes.Spindler;
+		//encounterEnemyType=EncounterEnemy.EnemyTypes.Gasser;
 		enemyDescription=EncounterEnemy.GetMapDescription(encounterEnemyType);
 		
 		//Determine member requirement

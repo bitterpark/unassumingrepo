@@ -449,12 +449,9 @@ public class MapManager : MonoBehaviour
 							//Threat level roll
 							
 							//Searches if a scout is included in the party, if so - no ambushes trigger
-							bool membersCanBeAmbushed=true;
+							
 							/*
-							foreach (PartyMember member in movedMembers)
-							{
-								if (member.isScout) {membersCanBeAmbushed=false; break;}
-							}*/
+							bool membersCanBeAmbushed=true;
 							
 							if (clickedRegion.hasEncounter && membersCanBeAmbushed)
 							{
@@ -468,7 +465,6 @@ public class MapManager : MonoBehaviour
 								}
 								if (Random.value<randomAttackChance)  
 									GameEventManager.mainEventManager.QueueEventToStart(new AmbushEvent(),clickedRegion,movedMembers);
-								//EnterEncounter(new RandomAttack(clickedRegion.regionalEncounter.encounterEnemyType),movedMembers,true);
 							}//*/
 						}
 						//Should deprecate this later
