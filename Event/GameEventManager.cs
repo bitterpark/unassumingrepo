@@ -8,6 +8,8 @@ public class GameEventManager : MonoBehaviour
 	//Dictionary<float,GameEvent> eventPossibilities=new Dictionary<float, GameEvent>();
 	List<EventChance> possibleEvents=new List<EventChance>();
 	List<EventChance> moraleEvents=new List<EventChance>();
+	List<EventChance> coldEvents=new List<EventChance>();
+	List<EventChance> campSafetyEvents=new List<EventChance>();
 	List<EventChance> scavengingEvents=new List<EventChance>();
 	public static GameEventManager mainEventManager;
 	
@@ -77,8 +79,15 @@ public class GameEventManager : MonoBehaviour
 	{
 		float eventsRoll=Random.value;
 		EventChance trackedEventRecord=new EventChance();
+		//Morale events
 		GameEvent resEvent=PickRandomEvent(moraleEvents, ref trackedEventRecord,eventsRoll, eventRegion, presentMembers);
-		if (resEvent!=null) StartEventDraw(resEvent, eventRegion, presentMembers);
+		if (resEvent!=null) QueueEvent(resEvent,eventRegion,presentMembers);//StartEventDraw(resEvent, eventRegion, presentMembers);
+		//Cold events
+		resEvent=PickRandomEvent(coldEvents, ref trackedEventRecord,eventsRoll, eventRegion, presentMembers);
+		if (resEvent!=null) QueueEvent(resEvent,eventRegion,presentMembers);//StartEventDraw(resEvent, eventRegion, presentMembers);
+		//Attack events
+		resEvent=PickRandomEvent(campSafetyEvents, ref trackedEventRecord,eventsRoll, eventRegion, presentMembers);
+		if (resEvent!=null) QueueEvent(resEvent,eventRegion,presentMembers);
 	}
 	public void RollScavengeEvents(MapRegion eventRegion,List<PartyMember> presentMembers)
 	{
@@ -291,7 +300,11 @@ public class GameEventManager : MonoBehaviour
 		moraleEvents.Add (new EventChance(new LowMoraleFight(),0.10f));
 		moraleEvents.Add (new EventChance(new LowMoraleEnmity(),0.10f));
 		moraleEvents.Add (new EventChance(new LowMoraleQuit(),0.05f));
-		
+
+		coldEvents.Add(new EventChance(new MemberIsCold(),1f));
+		coldEvents.Add(new EventChance(new MembersAreFreezing(),1f));
+		campSafetyEvents.Add(new EventChance(new AttackOnCamp(),1f));
+
 		GameManager.GameOver+=ClearEventQueue;
 		/*
 		//Add highest first for proper rolling

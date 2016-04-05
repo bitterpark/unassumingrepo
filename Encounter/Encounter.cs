@@ -25,104 +25,67 @@ public class Encounter
 	
 	//key is dropchance percentage
 	//public Dictionary<float,InventoryItem.LootItems> lootChances;
-	public Dictionary<float,InventoryItem.LootMetatypes> possibleLootTypes;
-	
-	//Used by Horde
-	public static Dictionary<float,InventoryItem.LootMetatypes> GetLootTypesList(AreaTypes areaType)
-	{
-		string emptyString=null;
-		return GetLootTypesList(areaType,out emptyString);
-	}
-	
-	public static InventoryItem.LootMetatypes GetChestType(AreaTypes areaType)
+	//public Dictionary<float,InventoryItem.LootMetatypes> possibleLootTypes;
+	public ProbabilityListValueTypes<InventoryItem.LootMetatypes> chestTypes;
+
+	public static InventoryItem.LootMetatypes GetChestType(ProbabilityListValueTypes<InventoryItem.LootMetatypes> chestRandomizer)
 	{
 		float roll=Random.value;
 		InventoryItem.LootMetatypes chestType=InventoryItem.LootMetatypes.FoodItems;//not null because value type
-		switch (areaType)
-		{
-		case AreaTypes.Apartment:
-		{
-			//Add largest number first	
-			chestType=InventoryItem.LootMetatypes.Melee;
-			if(roll<0.8f)chestType=InventoryItem.LootMetatypes.FoodItems;
-			break;
-		}
-		case AreaTypes.Hospital:
-		{
-			chestType=InventoryItem.LootMetatypes.Medical;
-			break;
-		}
-		case AreaTypes.Store:
-		{
-			chestType=InventoryItem.LootMetatypes.FoodItems;
-			break;
-		}
-		case AreaTypes.Warehouse:
-		{
-			chestType=InventoryItem.LootMetatypes.Equipment;
-			if(roll<0.4f)chestType=InventoryItem.LootMetatypes.Melee;
-			if(roll<0.2f)chestType=InventoryItem.LootMetatypes.FoodItems;
-			break;
-		}
-		case AreaTypes.Police:
-		{
-			chestType=InventoryItem.LootMetatypes.Guns;
-			break;
-		}
-		case AreaTypes.Endgame:
-		{
-			chestType=InventoryItem.LootMetatypes.Radio;
-			break;
-		}
-		}
+		if (!chestRandomizer.RollProbability(out chestType)) throw new System.Exception("Unable to roll a positive result on chest probability!");
 		return chestType;
 	}
-	//Not used by Horde
-	public static Dictionary<float,InventoryItem.LootMetatypes> GetLootTypesList(AreaTypes areaType, out string areaDescription)
+
+	public static ProbabilityListValueTypes<InventoryItem.LootMetatypes> GetLootTypesList(AreaTypes areaType, out string areaDescription)
 	{
 		//Dictionary<float, InventoryItem.LootItems>lootChances=new Dictionary<float, InventoryItem.LootItems>();
-		Dictionary<float, InventoryItem.LootMetatypes> lootTypes=new Dictionary<float, InventoryItem.LootMetatypes>();
+		ProbabilityListValueTypes<InventoryItem.LootMetatypes> lootTypes=new ProbabilityListValueTypes<InventoryItem.LootMetatypes>();
 		areaDescription="";
 		switch (areaType)
 		{
 		case AreaTypes.Apartment:
 		{
 			areaDescription="An apartment building";
+
 			//Add largest number first	
-			lootTypes.Add(1f,InventoryItem.LootMetatypes.Melee);
-			lootTypes.Add(0.8f, InventoryItem.LootMetatypes.FoodItems);
+			lootTypes.AddProbability(InventoryItem.LootMetatypes.ApartmentSalvage,0.5f);
+			lootTypes.AddProbability(InventoryItem.LootMetatypes.FoodItems,0.35f);
+			lootTypes.AddProbability(InventoryItem.LootMetatypes.Melee,0.15f);
 			break;
 		}
 		case AreaTypes.Hospital:
 		{
 			areaDescription="An empty clinic";
-			lootTypes.Add(1f,InventoryItem.LootMetatypes.Medical);
+			lootTypes.AddProbability(InventoryItem.LootMetatypes.Medical,1f);
 			break;
 		}
 		case AreaTypes.Store:
 		{
 			areaDescription="An abandoned store";
-			lootTypes.Add(1f,InventoryItem.LootMetatypes.FoodItems);
+			lootTypes.AddProbability(InventoryItem.LootMetatypes.FoodItems,1f);
 			break;
 		}
 		case AreaTypes.Warehouse:
 		{
 			areaDescription="A warehouse";
-			lootTypes.Add(1f,InventoryItem.LootMetatypes.Equipment);
-			lootTypes.Add(0.4f,InventoryItem.LootMetatypes.Melee);
-			lootTypes.Add(0.2f,InventoryItem.LootMetatypes.FoodItems);
+			//Add largest number first	
+
+			lootTypes.AddProbability(InventoryItem.LootMetatypes.WarehouseSalvage,0.6f);
+			lootTypes.AddProbability(InventoryItem.LootMetatypes.Equipment,0.3f);
+			lootTypes.AddProbability(InventoryItem.LootMetatypes.Melee,0.1f);
 			break;
 		}
 		case AreaTypes.Police:
 		{
 			areaDescription="A deserted police station";
-			lootTypes.Add(1f,InventoryItem.LootMetatypes.Guns);
+			lootTypes.AddProbability(InventoryItem.LootMetatypes.Guns,0.6f);
+			lootTypes.AddProbability(InventoryItem.LootMetatypes.Equipment,0.4f);
 			break;
 		}
 		case AreaTypes.Endgame:
 		{
 			areaDescription="An overrun radio station";
-			lootTypes.Add(1f,InventoryItem.LootMetatypes.Radio);
+			lootTypes.AddProbability(InventoryItem.LootMetatypes.Radio,1f);
 			break;
 		}
 				/*
@@ -194,7 +157,7 @@ public class Encounter
 	public Encounter (bool isEndgame)
 	{
 		encounterAreaType=AreaTypes.Endgame;
-		possibleLootTypes=Encounter.GetLootTypesList(encounterAreaType,out lootDescription);
+		chestTypes=Encounter.GetLootTypesList(encounterAreaType,out lootDescription);
 		encounterEnemyType=EncounterEnemy.EnemyTypes.Muscle; enemyDescription="muscle masses";
 		List<EncounterRoom> nonSegmentRooms=null;
 		maxAllowedMembers=4;
@@ -213,7 +176,7 @@ public class Encounter
 		if (lootRoll<=2) {encounterAreaType=AreaTypes.Store;}
 		if (lootRoll<=1) {encounterAreaType=AreaTypes.Warehouse;}
 		
-		possibleLootTypes=Encounter.GetLootTypesList(encounterAreaType,out lootDescription);
+		chestTypes=Encounter.GetLootTypesList(encounterAreaType,out lootDescription);
 		
 		//determine area enemy type
 		float enemiesRoll=Random.Range(0f,7f);
@@ -319,7 +282,7 @@ public class Encounter
 				
 				//if (lootFound)
 				//{
-				InventoryItem.LootMetatypes chestType=GetChestType(encounterAreaType);
+				InventoryItem.LootMetatypes chestType=GetChestType(chestTypes);
 				EncounterRoom randomlySelectedRoom=eligibleSegmentRooms[Random.Range(0,eligibleSegmentRooms.Count)];
 				foreach (InventoryItem lootItem in InventoryItem.GenerateLootSet(chestType)) randomlySelectedRoom.AddLootItem(lootItem);
 				currentChestCount++;

@@ -54,7 +54,13 @@ public class MapScoutingHandler : MonoBehaviour {
 			ambushThreatText.text="Ambush threat:"+assignedRegion.CalculateThreatLevel(0);
 		}
 		if (assignedRegion.ambientThreatNumber<=0) scoutMoreButton.SetActive(false);
-		else scoutMoreButton.SetActive(true);
+		else 
+		{
+			scoutMoreButton.SetActive(true);
+			if (selectedForMission.Count>0)
+			scoutMoreButton.GetComponent<Button>().interactable=true;
+			else scoutMoreButton.GetComponent<Button>().interactable=false;
+		}
 	}
 	
 	public void StartDialog(MapRegion dialogRegion) 
@@ -97,6 +103,9 @@ public class MapScoutingHandler : MonoBehaviour {
 			selectionText.text=selectionText.text.Remove(selectionText.text.LastIndexOf(","));
 		}
 		ambushThreatText.text="Ambush threat:"+assignedRegion.CalculateThreatLevel(selectedForMission.Count);
+		//Update scout more button
+		if (selectedForMission.Count>0) scoutMoreButton.GetComponent<Button>().interactable=true;
+		else scoutMoreButton.GetComponent<Button>().interactable=false;
 	}
 	//Enter button goes here (and scout button)
 	public void ConfirmPressed()

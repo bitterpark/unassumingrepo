@@ -22,14 +22,15 @@ public class EventCanvasHandler : MonoBehaviour
 		descriptionText.text=newEvent.GetDescription(currentTeamRegion,teamList);
 		//decisionMade=false;
 	
-		List<string> choices=newEvent.GetChoices(currentTeamRegion,teamList);
+		List<EventChoice> choices=newEvent.GetChoices(currentTeamRegion,teamList);
 		
-		foreach (string choice in choices)
+		foreach (EventChoice choice in choices)
 		{
 			Button newButton=Instantiate(decisionButtonPrefab);
 			newButton.transform.SetParent(transform.FindChild("Event Panel").FindChild("Decision Group"),false);
 			//this is required, otherwise lambda listener only captures the last choice iteration
-			newButton.GetComponentInChildren<Text>().text=choice;
+			newButton.GetComponentInChildren<Text>().text=choice.choiceTxt;
+			newButton.interactable=!choice.grayedOut;
 			newButton.onClick.AddListener(()=>ResolveChoice(newButton.GetComponentInChildren<Text>().text));
 		}
 	}

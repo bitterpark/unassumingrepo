@@ -148,7 +148,7 @@ public class RoomButtonHandler : MonoBehaviour, IPointerEnterHandler//, IDropHan
 	{
 		assignedRoom.BashBarricade(bashStrength);
 		BarricadeToken myBarricadeToken=GetComponentInChildren<BarricadeToken>();
-		EncounterCanvasHandler.main.SendFloatingMessage(bashStrength.ToString(),this.transform,Color.black);
+		if (isVisible) EncounterCanvasHandler.main.SendFloatingMessage(bashStrength.ToString(),this.transform,Color.black);
 		if (assignedRoom.barricadeInRoom==null) {DespawnBarricadeToken();}
 		else {myBarricadeToken.UpdateHealth(assignedRoom.barricadeInRoom.health);}
 	}
@@ -357,6 +357,11 @@ public class RoomButtonHandler : MonoBehaviour, IPointerEnterHandler//, IDropHan
 					itemsGroup.gameObject.SetActive(false);
 				}
 				else {GetComponent<Button>().image.color=new Color32(172,172,172,255);}
+				//Hide traps
+				foreach (TrapToken trap in GetComponentsInChildren<TrapToken>())
+				{
+					trap.GetComponent<Image>().enabled=false;
+				}
 			}
 			else
 			{
@@ -378,6 +383,12 @@ public class RoomButtonHandler : MonoBehaviour, IPointerEnterHandler//, IDropHan
 				//Switch on Enemy Group and Member Group
 				actorsGroup.gameObject.SetActive(true);
 				itemsGroup.gameObject.SetActive(true);
+				//Show traps
+				//Hide traps
+				foreach (TrapToken trap in GetComponentsInChildren<TrapToken>())
+				{
+					trap.GetComponent<Image>().enabled=true;
+				}
 			}
 				
 			if (isExit) {exitToken.SetActive(true);}//GetComponent<Button>().image.color=Color.green;}

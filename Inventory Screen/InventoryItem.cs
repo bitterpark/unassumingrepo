@@ -14,21 +14,11 @@ public abstract class InventoryItem
 	
 	public virtual int GetWeight() {return 1;}
 	
-	//Deprecated
-	public enum LootItems 
-	{Medkits,Bandages
-	,Gas
-	,Food,Junkfood/*,PerishableFood*/
-	,Ammopack,Ammo
-	,Flashlight,Radio,Bed,Backpack
-	,Scrap,Gunpowder
-	,SettableTrap
-	,AssaultRifle,Shotgun,NineM
-	,Pipe,Knife,Axe
-	,ArmorVest}
-	public enum LootMetatypes {Medical,FoodItems,Melee,Guns,Equipment,Radio,Salvage}
+
+	public enum LootMetatypes {Medical,FoodItems,Melee,Guns,Equipment,Radio,Salvage,ApartmentSalvage,WarehouseSalvage}
 	
 	//Deprecated, remove later!!!
+	/*
 	public static string GetLootingDescription(LootItems itemType)
 	{
 		string description=null;
@@ -51,43 +41,53 @@ public abstract class InventoryItem
 			case LootItems.SettableTrap:{description="You find a settable trap"; break;}
 		}
 		return description;
-	}
+	}*/
 	
 	public static string GetLootMetatypeDescription(LootMetatypes metaType)
 	{
 		string metatypeDesc="";
 		switch(metaType)
 		{
-		case LootMetatypes.FoodItems:
-		{
-			metatypeDesc="Food";
-			break;
-		}
-		case LootMetatypes.Medical:
-		{
-			metatypeDesc="Medicine";
-			break;
-		}
-		case LootMetatypes.Melee:
-		{
-			metatypeDesc="Melee weapons";
-			break;
-		}
-		case LootMetatypes.Guns:
-		{
-			metatypeDesc="Guns";
-			break;
-		}
-		case LootMetatypes.Equipment:
-		{
-			metatypeDesc="Equipment";
-			break;
-		}
-		case LootMetatypes.Radio:
-		{
-			metatypeDesc="Radio";
-			break;
-		}
+			case LootMetatypes.FoodItems:
+			{
+				metatypeDesc="Food";
+				break;
+			}
+			case LootMetatypes.Medical:
+			{
+				metatypeDesc="Medicine";
+				break;
+			}
+			case LootMetatypes.Melee:
+			{
+				metatypeDesc="Melee weapons";
+				break;
+			}
+			case LootMetatypes.Guns:
+			{
+				metatypeDesc="Guns";
+				break;
+			}
+			case LootMetatypes.Equipment:
+			{
+				metatypeDesc="Equipment";
+				break;
+			}
+			case LootMetatypes.Radio:
+			{
+				metatypeDesc="Radio";
+				break;
+			}
+			case LootMetatypes.ApartmentSalvage:
+			{
+				metatypeDesc="Fuel";
+				break;
+			}
+			case LootMetatypes.WarehouseSalvage:
+			{
+				metatypeDesc="Scrap";
+				break;
+			}
 		}
 		return metatypeDesc;
 	}
@@ -177,9 +177,9 @@ public abstract class InventoryItem
 			{
 				ProbabilityList<InventoryItem> equipmentList=new ProbabilityList<InventoryItem>();
 				equipmentList.AddProbability(new SettableTrap(),0.5f);
-				equipmentList.AddProbability(new ArmorVest(),0.15f);
-				equipmentList.AddProbability(new Backpack(),0.15f);
-				equipmentList.AddProbability(new Bed(),0.2f);
+				equipmentList.AddProbability(new ArmorVest(),0.25f);
+				equipmentList.AddProbability(new Backpack(),0.25f);
+				//equipmentList.AddProbability(new Bed(),0.2f);
 				
 				InventoryItem resultingItem=new SettableTrap();
 				if (equipmentList.RollProbability(out resultingItem)) setItems.Add(resultingItem);
@@ -197,25 +197,78 @@ public abstract class InventoryItem
 				List<InventoryItem> setOne=new List<InventoryItem>();
 				setOne.Add(new Scrap());
 				setOne.Add(new Scrap());
-				setOne.Add(new Scrap());
 				equipmentList.AddProbability(setOne,0.5f);
 				
 				List<InventoryItem> setTwo=new List<InventoryItem>();
 				setTwo.Add(new Scrap());
 				setTwo.Add(new Gunpowder());
-				equipmentList.AddProbability(setTwo,0.2f);
+				equipmentList.AddProbability(setTwo,0.1f);
 				//Scrap(),0.5f);
 				
 				List<InventoryItem> setThree=new List<InventoryItem>();
-				setThree.Add(new Scrap());
 				setThree.Add(new FoodSmall());
 				setThree.Add(new FoodSmall());
-				equipmentList.AddProbability(setThree,0.15f);
+				equipmentList.AddProbability(setThree,0.1f);
 				
 				List<InventoryItem> setFour=new List<InventoryItem>();
 				setFour.Add(new Medkit());
-				equipmentList.AddProbability(setFour,0.15f);
+				equipmentList.AddProbability(setFour,0.1f);
+
+				List<InventoryItem> setFive=new List<InventoryItem>();
+				setFive.Add(new Fuel());
+				setFive.Add(new Fuel());
+				setFive.Add(new Fuel());
+				equipmentList.AddProbability(setFive,0.2f);
+
+				List<InventoryItem> resultingSet=setOne;
+				if (equipmentList.RollProbability(out resultingSet)) setItems.AddRange(resultingSet);
+				else throw new System.Exception("Could not roll a positive result on equipment loot table!");
+				break;
+			}
+			case LootMetatypes.ApartmentSalvage:
+			{
+				ProbabilityList<List<InventoryItem>> equipmentList=new ProbabilityList<List<InventoryItem>>();
+				List<InventoryItem> setOne=new List<InventoryItem>();
+				setOne.Add(new Scrap());
+				setOne.Add(new Fuel());
+				equipmentList.AddProbability(setOne,0.2f);
 				
+				List<InventoryItem> setTwo=new List<InventoryItem>();
+				setTwo.Add(new Fuel());
+				setTwo.Add(new Fuel());
+				setTwo.Add(new Fuel());
+				equipmentList.AddProbability(setTwo,0.8f);
+
+				List<InventoryItem> setThree=new List<InventoryItem>();
+				setThree.Add(new Fuel());
+				setThree.Add(new Fuel());
+				setThree.Add(new Fuel());
+				setThree.Add(new Fuel());
+				equipmentList.AddProbability(setThree,0.2f);
+
+				List<InventoryItem> resultingSet=setOne;
+				if (equipmentList.RollProbability(out resultingSet)) setItems.AddRange(resultingSet);
+				else throw new System.Exception("Could not roll a positive result on equipment loot table!");
+				break;	
+			}
+			case LootMetatypes.WarehouseSalvage:
+			{
+				ProbabilityList<List<InventoryItem>> equipmentList=new ProbabilityList<List<InventoryItem>>();
+				List<InventoryItem> setOne=new List<InventoryItem>();
+				setOne.Add(new Scrap());
+				equipmentList.AddProbability(setOne,0.2f);
+				
+				List<InventoryItem> setTwo=new List<InventoryItem>();
+				setTwo.Add(new Scrap());
+				setTwo.Add(new Scrap());
+				equipmentList.AddProbability(setTwo,0.6f);
+
+				List<InventoryItem> setThree=new List<InventoryItem>();
+				setThree.Add(new Scrap());
+				setThree.Add(new Scrap());
+				setThree.Add(new Scrap());
+				equipmentList.AddProbability(setThree,0.2f);
+
 				List<InventoryItem> resultingSet=setOne;
 				if (equipmentList.RollProbability(out resultingSet)) setItems.AddRange(resultingSet);
 				else throw new System.Exception("Could not roll a positive result on equipment loot table!");
@@ -224,7 +277,20 @@ public abstract class InventoryItem
 		}
 		return setItems;
 	}
-	//deprecated
+
+	//Deprecated (un-deprecated as of right now)
+	public enum LootItems 
+	{Medkits,Bandages
+	,Gas
+	,Food,Junkfood/*,PerishableFood*/
+	,Ammopack,Ammo
+	,Fuel,CampBarricade
+	,Flashlight,Radio,Bed,Backpack
+	,Scrap,Gunpowder
+	,SettableTrap
+	,AssaultRifle,Shotgun,NineM
+	,Pipe,Knife,Axe
+	,ArmorVest}
 	public static InventoryItem GetLootingItem(LootItems itemType)
 	{
 		InventoryItem lootedItem=null;
@@ -256,11 +322,68 @@ public abstract class InventoryItem
 			case LootItems.Radio:{lootedItem=new Radio(); break;}
 			case LootItems.SettableTrap: {lootedItem=new SettableTrap(); break;}
 			case LootItems.Gas:{lootedItem=new Gasoline(); break;}
+			//CAMP ITEMS
+			case LootItems.CampBarricade:{lootedItem=new CampBarricade(); break;}
+			case LootItems.Fuel:{lootedItem=new Fuel(); break;}
 			//INGREDIENTS
 			case LootItems.Scrap:{lootedItem=new Scrap(); break;}
 			case LootItems.Gunpowder:{lootedItem=new Gunpowder(); break;}
 		}
 		return lootedItem;
+	}
+}
+
+public class CampBarricade: InventoryItem
+{
+	public CampBarricade()
+	{
+		itemName="Camp barricade";
+	}
+
+	public override Sprite GetItemSprite() {return SpriteBase.mainSpriteBase.campBarricadeSprite;}
+	
+	public override bool UseAction(PartyMember member)
+	{
+		if (member.currentRegion.hasCamp)
+		{
+			if (member.currentRegion.GetCampingThreat()!=MapRegion.ThreatLevels.None)
+			{
+				member.currentRegion.campInRegion.threatLevelNumber-=1;
+				return true;
+			}
+		}
+		return false;
+	}
+	public override string GetMouseoverDescription ()
+	{
+		return itemName+"\nFortifies a camp, reducing the chance of attacks during rest";
+	}
+}
+
+public class Fuel: InventoryItem
+{
+	public Fuel()
+	{
+		itemName="Fuel";
+	}
+
+	public override Sprite GetItemSprite() {return SpriteBase.mainSpriteBase.fuelSprite;}
+	
+	public override bool UseAction(PartyMember member)
+	{
+		if (member.currentRegion.hasCamp)
+		{
+			if (member.currentRegion.GetTemperature()!=Camp.TemperatureRating.Okay)
+			{
+				member.currentRegion.campInRegion.IncrementTemperature(1);
+				return true;
+			}
+		}
+		return false;
+	}
+	public override string GetMouseoverDescription ()
+	{
+		return itemName+"\nTemporarily warms a camp";
 	}
 }
 
@@ -275,7 +398,7 @@ public class SettableTrap: InventoryItem
 	
 	public override string GetMouseoverDescription ()
 	{
-		return "Settable trap\nSets a one-use trap";
+		return itemName+"\nSets a one-use trap";
 	}
 	
 	public override bool UseAction(PartyMember member)

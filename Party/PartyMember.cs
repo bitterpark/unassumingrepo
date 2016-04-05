@@ -394,16 +394,16 @@ public class PartyMember
 		SetFatigue(fatigue+fatigueDelta);
 		//else ChangeHunger(fatigueDelta);
 	}
-	public int fatigueRestoreWait=40;
+	public int fatigueRestoreWait=50;
 	//These are applied on top of fatigueRestoreWait (both are actually applied by two different methods)
-	public int fatigueRestoreSleep=40;
-	public int fatigueRestoreSleepInBed=60;
+	public int fatigueRestoreSleep=100;
+	//public int fatigueRestoreSleepInBed=60;
 	
 	//public int fatigueIncreasePerAction;
 	public int maxStaminaReductionFromFatigue=6;
-	public const int fatigueIncreasePerEncounter=30;
+	public const int fatigueIncreasePerEncounter=50;
 	//public const int mapMoveFatigueCost=25;
-	public const int campSetupFatigueCost=20;
+	public const int campSetupFatigueCost=10;
 	public const int fatigueMoveCost=10;
 	
 	//MORALE
@@ -625,7 +625,7 @@ public class PartyMember
 		//health=maxHealth;
 		currentMaxStamina=baseMaxStamina;
 		stamina=currentMaxStamina;
-		morale=baseMorale;
+		morale=baseMorale-40;
 		UpdateCurrentCarryCapacity();
 		maxHealth=vitalsMaxHealth;
 		memberBodyParts=new BodyParts(this, handsMaxHealth,legsMaxHealth,vitalsMaxHealth);
@@ -634,7 +634,7 @@ public class PartyMember
 		EquipWeapon(new Pipe());
 		//equippedMeleeWeapon=new Pipe();
 		equippedRangedWeapon=null;//new AssaultRifle();//null;
-		PartyManager.TimePassed+=TimePassEffect;
+		PartyManager.ETimePassed+=TimePassEffect;
 	}
 	
 	public bool AddStatusEffect(StatusEffect newEffect)
@@ -685,7 +685,7 @@ public class PartyMember
 		}
 		
 		occupiedNames.Remove(name);
-		PartyManager.TimePassed-=TimePassEffect;
+		PartyManager.ETimePassed-=TimePassEffect;
 		PartyManager.mainPartyManager.RemovePartyMember(this);
 		foreach (StatusEffect effect in activeStatusEffects) {effect.CleanupEffect();}
 		activeStatusEffects=null;
@@ -797,13 +797,15 @@ public class PartyMember
 			//hunger+=(int)(hungerIncreasePerHour*cookMult)*hoursPassed;
 		}
 		
-		//Make sure members can't get stuck outside of camps
-		ChangeFatigue(-fatigueRestoreWait);
+		//Resting fatigue restore
+		int fatigueRestoreAmount=fatigueRestoreWait;
+		if (currentRegion.hasCamp) fatigueRestoreAmount=fatigueRestoreSleep;
+		ChangeFatigue(-fatigueRestoreAmount);
 					
 		//DO RELATIONSHIPS
 		RollRelationships();
 	}
-	
+	/*
 	public AssignedTask GetRestTask(bool restInBed)
 	{
 		AssignedTaskTypes taskType=AssignedTaskTypes.Rest;
@@ -865,7 +867,7 @@ public class PartyMember
 			memberBodyParts.currentParts[BodyPartTypes.Legs].Heal(Mathf.RoundToInt(healthRegen));//memberBodyParts.currentParts[BodyPartTypes.Legs].health*healthRegen));
 			//health+=Mathf.RoundToInt(health*healthRegen);
 		}
-	}
+	}*/
 	
 	public void EncounterStartTrigger(List<PartyMember> team)
 	{

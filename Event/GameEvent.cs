@@ -7,9 +7,25 @@ public abstract class GameEvent
 	public abstract string GetDescription(MapRegion eventRegion, List<PartyMember> movedMembers);// {return null;}
 	public virtual bool PreconditionsMet(MapRegion eventRegion, List<PartyMember> movedMembers) {return true;}
 	public virtual bool AllowMapMove() {return true;}
-	public abstract List<string> GetChoices(MapRegion eventRegion, List<PartyMember> movedMembers);// {return null;}
+	public abstract List<EventChoice> GetChoices(MapRegion eventRegion, List<PartyMember> movedMembers);// {return null;}
 	public abstract string DoChoice(string choiceString, MapRegion eventRegion, List<PartyMember> movedMembers);// {return null;}
 	public bool repeatable=false;
+}
+
+public struct EventChoice
+{
+	public string choiceTxt;
+	public bool grayedOut;
+	public EventChoice(string txt, bool gray)
+	{
+		choiceTxt=txt;
+		grayedOut=gray;
+	}
+	public EventChoice(string txt)
+	{
+		choiceTxt=txt;
+		grayedOut=false;
+	}
 }
 
 public class NewSurvivor:GameEvent
@@ -18,11 +34,11 @@ public class NewSurvivor:GameEvent
 	
 	public override string GetDescription(MapRegion eventRegion, List<PartyMember> movedMembers) {return eventDescription;}
 	
-	public override List<string> GetChoices(MapRegion eventRegion, List<PartyMember> movedMembers)
+	public override List<EventChoice> GetChoices(MapRegion eventRegion, List<PartyMember> movedMembers)
 	{
-		List<string> choicesList=new List<string>();
-		choicesList.Add("Accept them");
-		choicesList.Add("Reject them");
+		List<EventChoice> choicesList=new List<EventChoice>();
+		choicesList.Add(new EventChoice("Accept them"));
+		choicesList.Add(new EventChoice("Reject them"));
 		return choicesList;
 	}
 	public override string DoChoice (string choiceString, MapRegion eventRegion, List<PartyMember> movedMembers)
@@ -291,11 +307,11 @@ public class CacheInAnomaly:GameEvent
 		
 		return eventDescription;
 	}
-	public override List<string> GetChoices(MapRegion eventRegion, List<PartyMember> movedMembers)
+	public override List<EventChoice> GetChoices(MapRegion eventRegion, List<PartyMember> movedMembers)
 	{
-		List<string> choicesList=new List<string>();
-		choicesList.Add("Try to navigate the car roofs to reach the supplies");
-		choicesList.Add("Leave it and move on");
+		List<EventChoice> choicesList=new List<EventChoice>();
+		choicesList.Add(new EventChoice("Try to navigate the car roofs to reach the supplies"));
+		choicesList.Add(new EventChoice("Leave it and move on"));
 		return choicesList;
 	}
 	
@@ -351,11 +367,11 @@ public class MedicalCache:GameEvent
 		//GameManager.DebugPrint("Region coords is:"+eventRegion.GetCoords());
 		return eventDescription;
 	}
-	public override List<string> GetChoices(MapRegion eventRegion, List<PartyMember> movedMembers)
+	public override List<EventChoice> GetChoices(MapRegion eventRegion, List<PartyMember> movedMembers)
 	{
-		List<string> choicesList=new List<string>();
-		choicesList.Add("Try to find the address");
-		choicesList.Add("Ignore it");
+		List<EventChoice> choicesList=new List<EventChoice>();
+		choicesList.Add(new EventChoice("Try to find the address"));
+		choicesList.Add(new EventChoice("Ignore it"));
 		return choicesList;
 	}
 	
@@ -411,11 +427,11 @@ public class SurvivorRescue:GameEvent
 		eventDescription="You stumble across a survivor fighting for his life against an otherwolrdly creature. Occupied with their struggle, neither of them notice your party.\nThe survivor doesn't look like he can hold out much longer";
 		return eventDescription;
 	}
-	public override List<string> GetChoices(MapRegion eventRegion, List<PartyMember> movedMembers)
+	public override List<EventChoice> GetChoices(MapRegion eventRegion, List<PartyMember> movedMembers)
 	{
-		List<string> choicesList=new List<string>();
-		choicesList.Add("Charge in to help");
-		choicesList.Add("Slip away while the creature is distracted");
+		List<EventChoice> choicesList=new List<EventChoice>();
+		choicesList.Add(new EventChoice("Charge in to help"));
+		choicesList.Add(new EventChoice("Slip away while the creature is distracted"));
 		return choicesList;
 	}
 	
@@ -472,11 +488,11 @@ public class SearchForSurvivor:GameEvent
 		eventDescription="Suddenly, your surroundings echo a voice calling out for survivors. It doesn't seem to react when you try to shout back, continuing to cry out in uneven intervals.\nIt sounds fairly distant, but you can just barely make out the direction to search";
 		return eventDescription;
 	}
-	public override List<string> GetChoices(MapRegion eventRegion, List<PartyMember> movedMembers)
+	public override List<EventChoice> GetChoices(MapRegion eventRegion, List<PartyMember> movedMembers)
 	{
-		List<string> choicesList=new List<string>();
-		choicesList.Add("Search for the voice");
-		choicesList.Add("Ignore it and move on");
+		List<EventChoice> choicesList=new List<EventChoice>();
+		choicesList.Add(new EventChoice("Search for the voice"));
+		choicesList.Add(new EventChoice("Ignore it and move on"));
 		return choicesList;
 	}
 	
@@ -540,10 +556,10 @@ public class LowMoraleSpiral:GameEvent
 		return conditionsAreMet;
 	}
 	
-	public override List<string> GetChoices(MapRegion eventRegion, List<PartyMember> movedMembers)
+	public override List<EventChoice> GetChoices(MapRegion eventRegion, List<PartyMember> movedMembers)
 	{
-		List<string> choicesList=new List<string>();
-		choicesList.Add("Continue");
+		List<EventChoice> choicesList=new List<EventChoice>();
+		choicesList.Add(new EventChoice("Continue"));
 		return choicesList;
 	}
 	
@@ -595,10 +611,10 @@ public class LowMoraleFight:GameEvent
 		return conditionsAreMet;
 	}
 	
-	public override List<string> GetChoices(MapRegion eventRegion, List<PartyMember> movedMembers)
+	public override List<EventChoice> GetChoices(MapRegion eventRegion, List<PartyMember> movedMembers)
 	{
-		List<string> choicesList=new List<string>();
-		choicesList.Add("Continue");
+		List<EventChoice> choicesList=new List<EventChoice>();
+		choicesList.Add(new EventChoice("Continue"));
 		return choicesList;
 	}
 	
@@ -659,10 +675,10 @@ public class LowMoraleEnmity:GameEvent
 		return conditionsAreMet;
 	}
 	
-	public override List<string> GetChoices(MapRegion eventRegion, List<PartyMember> movedMembers)
+	public override List<EventChoice> GetChoices(MapRegion eventRegion, List<PartyMember> movedMembers)
 	{
-		List<string> choicesList=new List<string>();
-		choicesList.Add("Continue");
+		List<EventChoice> choicesList=new List<EventChoice>();
+		choicesList.Add(new EventChoice("Continue"));
 		return choicesList;
 	}
 	
@@ -727,10 +743,10 @@ public class LowMoraleQuit:GameEvent
 		return conditionsAreMet;
 	}
 	
-	public override List<string> GetChoices(MapRegion eventRegion, List<PartyMember> movedMembers)
+	public override List<EventChoice> GetChoices(MapRegion eventRegion, List<PartyMember> movedMembers)
 	{
-		List<string> choicesList=new List<string>();
-		choicesList.Add("Continue");
+		List<EventChoice> choicesList=new List<EventChoice>();
+		choicesList.Add(new EventChoice("Continue"));
 		return choicesList;
 	}
 	
@@ -752,7 +768,8 @@ public class LowMoraleQuit:GameEvent
 	}
 }
 
-//INSTRUMENTAL EVENTS
+//!-INSTRUMENTAL EVENTS-!
+//EXPLORE EVENTS
 public class TownMove:GameEvent
 {
 	string eventDescription="";
@@ -769,12 +786,14 @@ public class TownMove:GameEvent
 		return eventDescription;
 	}
 	
-	public override List<string> GetChoices(MapRegion eventRegion, List<PartyMember> movedMembers)
+	public override List<EventChoice> GetChoices(MapRegion eventRegion, List<PartyMember> movedMembers)
 	{
-		List<string> choicesList=new List<string>();
-		if (PartyManager.mainPartyManager.gas>=gasCost && movedMembers[0].currentRegion.hasCar) choicesList.Add("Take the car (-"+gasCost+" gas)");
-		choicesList.Add("Go on foot ("+fatiguePenaltyCost+" fatigue for everyone)");
-		choicesList.Add("Cancel");
+		List<EventChoice> choicesList=new List<EventChoice>();
+		bool carGreyedOut=true;
+		if (PartyManager.mainPartyManager.gas>=gasCost && movedMembers[0].currentRegion.hasCar) carGreyedOut=false; 
+		choicesList.Add(new EventChoice("Take the car (-"+gasCost+" gas)",carGreyedOut));
+		choicesList.Add(new EventChoice("Go on foot ("+fatiguePenaltyCost+" fatigue for everyone)"));
+		choicesList.Add(new EventChoice("Cancel"));
 		return choicesList;
 	}
 	public override string DoChoice (string choiceString, MapRegion eventRegion, List<PartyMember> movedMembers)
@@ -853,22 +872,24 @@ public class AmbushEvent:GameEvent
         desc+="\n\n What should they do?";
         return desc;
     }
-    public override List<string> GetChoices(MapRegion eventRegion, List<PartyMember> movedMembers)
+    public override List<EventChoice> GetChoices(MapRegion eventRegion, List<PartyMember> movedMembers)
     {
-        List<string> choicesList=new List<string>();
+        List<EventChoice> choicesList=new List<EventChoice>();
         //choicesList.Add("Try to run!");
-        choicesList.Add("Fight!");
+		choicesList.Add(new EventChoice("Fight!"));
+		bool shootGrayedOut=true;
         foreach (PartyMember member in movedMembers)
         {
-            if (movedMembers.Count>1) choicesList.Add("Have "+member.name+" hold them off!");
-            if (member.equippedRangedWeapon!=null && PartyManager.mainPartyManager.ammo>=requiredAmmo 
-            && !choicesList.Contains("Shoot them!("+requiredAmmo+" ammo)"))
+			if (movedMembers.Count>1) 
+			choicesList.Add(new EventChoice("Have "+member.name+" hold them off!"));
+
+            if (member.equippedRangedWeapon!=null && PartyManager.mainPartyManager.ammo>=requiredAmmo)
             {
-                choicesList.Add("Shoot them!("+requiredAmmo+" ammo)");
+            	shootGrayedOut=false;
                 shooter=member;
             }
-            
         }
+		choicesList.Add(new EventChoice("Shoot them!("+requiredAmmo+" ammo)",shootGrayedOut)); 
         return choicesList;
     }
     
@@ -927,38 +948,61 @@ public class AmbushEvent:GameEvent
 public class CleanupEvent:GameEvent
 {
     const int requiredAmmo=5;
-    int fightHealthPenaltyMin=10;
-    int fightHealthPenaltyMax=15;
     int stayBehindPenaltyMin=20;
     int stayBehindPenaltyMax=35;
-    int requiredTrapsCount=3;
+    int requiredTrapsCount=1;
     int trapAmbientThreatReduction=1;
 
-    Dictionary<PartyMember, InventoryItem> usedTraps=new Dictionary<PartyMember, InventoryItem>();
-	
+    int fatigueRequired=20;
+
+	Dictionary<InventoryItem,PartyMember> usedMemberTraps=new Dictionary<InventoryItem,PartyMember>();
+	List<InventoryItem> usedLocationTraps=new List<InventoryItem>();
+
     public override string GetDescription(MapRegion eventRegion, List<PartyMember> movedMembers) 
     {
         string desc="You decide to try and make the area safer to scavenge.";
         desc+="\n\n In order to do that, you...";
         return desc;
     }
-    public override List<string> GetChoices(MapRegion eventRegion, List<PartyMember> movedMembers)
+    public override List<EventChoice> GetChoices(MapRegion eventRegion, List<PartyMember> movedMembers)
     {
-        List<string> choicesList=new List<string>();
+        List<EventChoice> choicesList=new List<EventChoice>();
         //choicesList.Add("Try to run!");
-        foreach (PartyMember member in movedMembers)
+        bool trapsGreyedOut=true;
+        bool fatigueOptionGreyed=true;
+        //Try to find traps in member inventory, and check fatigue
+		foreach (PartyMember member in movedMembers)
+	    {
+	    	//Find traps
+	        foreach (InventoryItem item in member.carriedItems)
+	        {
+				if (item.GetType()==typeof(SettableTrap)) usedMemberTraps.Add(item,member);
+				if (usedMemberTraps.Count+usedLocationTraps.Count==requiredTrapsCount) 
+	            {
+					trapsGreyedOut=false;
+	                break;
+	            }   
+	        }
+	        //Find fatigue options
+			choicesList.Add(new EventChoice("Have "+member.name+" find safer routes",member.GetFatigue()+fatigueRequired>100));
+	    }
+      	
+        if (trapsGreyedOut)
         {
-            foreach (InventoryItem item in member.carriedItems)
-            {
-				if (item.GetType()==typeof(SettableTrap)) usedTraps.Add(member,item);
-				if (usedTraps.Count==requiredTrapsCount) 
-                {
-                    choicesList.Add("...Trap the area(-"+requiredTrapsCount+" traps)");
-                    break;
-                }   
-            } 
+			//Try to find enough traps in region inventory
+	        foreach(InventoryItem item in eventRegion.GetStashedItems())
+	        {
+				if (item.GetType()==typeof(SettableTrap)) usedLocationTraps.Add(item);
+				if (usedLocationTraps.Count==requiredTrapsCount)
+				{
+					trapsGreyedOut=false;
+					break;
+				}
+	        }
         }
-        choicesList.Add("Cancel");
+		choicesList.Add(new EventChoice("...Trap the area(-"+requiredTrapsCount+" traps)",trapsGreyedOut));
+
+		choicesList.Add(new EventChoice("Cancel"));
         return choicesList;
     }
     
@@ -968,18 +1012,246 @@ public class CleanupEvent:GameEvent
 
 		if (choiceString=="...Trap the area(-"+requiredTrapsCount+" traps)")
         {
-            int fightHealthPenalty=Random.Range(fightHealthPenaltyMin,fightHealthPenaltyMax+1);
-			eventResult="You get to work setting a series of deadly traps in tight spaces, luring dangerous creatures in one by one.\n\nAmbush threat reduced";
-            foreach (PartyMember member in usedTraps.Keys) {member.RemoveCarriedItem(usedTraps[member]);}
+			eventResult="You get to work setting a series of deadly traps in tight spaces, luring dangerous creatures in one by one.\n\nAmbush threat reduced.";
+			foreach (InventoryItem trap in usedLocationTraps) {eventRegion.TakeStashItem(trap);}
+			foreach (InventoryItem trap in usedMemberTraps.Keys) {usedMemberTraps[trap].RemoveCarriedItem(trap);}
             eventRegion.ambientThreatNumber-=1;
+        }
+
+        foreach (PartyMember member in movedMembers)
+        {
+			if (choiceString=="Have "+member.name+" find safer routes")
+			{
+				eventResult=member.name+" scouts new paths through the ruined streets, finding ways around large groups of monsters and odd anomalies.";
+				eventResult+="\n\n-"+fatigueRequired+" for "+member.name+", exploration threat lowered.";
+				member.ChangeFatigue(fatigueRequired);
+				eventRegion.ambientThreatNumber-=1;
+				break;
+			}
         }
 
 		if (choiceString=="Cancel") 
 		{
 			//success
-			eventResult="You decide not to brave the area right now";
+			eventResult="You decide not to brave the area right now.";
 			return eventResult;
 		}
+        return eventResult;
+    }
+}
+
+//CAMP EVENTS
+//COLD EVENTS
+//This fires if a camp is simply Cold
+public class MemberIsCold:GameEvent
+{	
+	string eventDescription="";
+	int healthPenalty=15;
+	PartyMember coldMember=null;
+	
+	public override string GetDescription(MapRegion eventRegion, List<PartyMember> movedMembers) 
+	{
+		coldMember=movedMembers[Random.Range(0,movedMembers.Count)];
+		eventDescription="The air is cold and crisp. You can see your own breath. Life is slowly leaking out of your body.";
+		return eventDescription;
+	}
+	public override bool PreconditionsMet (MapRegion eventRegion, List<PartyMember> movedMembers)
+	{
+		bool conditionsAreMet=false;
+		switch (eventRegion.GetTemperature())
+		{
+			case Camp.TemperatureRating.Cold: {conditionsAreMet=true; break;}
+		}
+		return conditionsAreMet;
+	}
+	
+	public override List<EventChoice> GetChoices(MapRegion eventRegion, List<PartyMember> movedMembers)
+	{
+		List<EventChoice> choicesList=new List<EventChoice>();
+		choicesList.Add(new EventChoice("Continue"));
+		return choicesList;
+	}
+	
+	public override string DoChoice (string choiceString, MapRegion eventRegion, List<PartyMember> movedMembers)
+	{
+		string eventResult=null;
+		switch (choiceString)
+		{
+		case"Continue": 
+			{
+				//success
+				eventResult="Due to low temperatures and a lack of heating, "+coldMember.name+" freezes and becomes sick!\n\n"+healthPenalty+" health for "+coldMember.name;
+				//angryMember.health+=healthPenalty;
+				//normalMember.health+=healthPenalty;
+				coldMember.TakeDamage(healthPenalty,false);
+				break;
+			}
+		}
+		return eventResult;
+	}
+}
+//This fires if a camp is Freezing
+public class MembersAreFreezing:GameEvent
+{	
+	string eventDescription="";
+	int healthPenalty=15;
+	PartyMember coldMember=null;
+	
+	public override string GetDescription(MapRegion eventRegion, List<PartyMember> movedMembers) 
+	{
+		//coldMember=movedMembers[Random(0,movedMembers.Count)];
+		eventDescription="Your nostrils stick to the septum when you inhale. The air is so cold it's hard to breathe. It cuts deep into the bones.";
+		return eventDescription;
+	}
+	public override bool PreconditionsMet (MapRegion eventRegion, List<PartyMember> movedMembers)
+	{
+		bool conditionsAreMet=false;
+		switch (eventRegion.GetTemperature())
+		{
+			case Camp.TemperatureRating.Very_Cold: {conditionsAreMet=true; break;}
+		}
+		return conditionsAreMet;
+	}
+	
+	public override List<EventChoice> GetChoices(MapRegion eventRegion, List<PartyMember> movedMembers)
+	{
+		List<EventChoice> choicesList=new List<EventChoice>();
+		choicesList.Add(new EventChoice("Continue"));
+		return choicesList;
+	}
+	
+	public override string DoChoice (string choiceString, MapRegion eventRegion, List<PartyMember> movedMembers)
+	{
+		string eventResult=null;
+		switch (choiceString)
+		{
+		case"Continue": 
+			{
+				//success
+				eventResult="The freezing cold of the camp slowly drains life from all present.\n\n"+healthPenalty+" health for ";
+				for (int i=0; i<movedMembers.Count; i++)
+				{
+					eventResult+=movedMembers[i].name;
+					if (i<movedMembers.Count-1) eventResult+=", ";
+				}
+				//angryMember.health+=healthPenalty;
+				//normalMember.health+=healthPenalty;
+				foreach (PartyMember member in movedMembers)
+				member.TakeDamage(healthPenalty,false);
+				break;
+			}
+		}
+		return eventResult;
+	}
+}
+
+//ATTACK EVENTS
+public class AttackOnCamp:GameEvent
+{
+    const int requiredAmmo=5;
+    int fightHealthPenaltyMin=10;
+    int fightHealthPenaltyMax=15;
+    int stayBehindPenaltyMin=20;
+    int stayBehindPenaltyMax=35;
+    PartyMember shooter=null;
+
+    public override bool PreconditionsMet(MapRegion eventRegion, List<PartyMember> movedMembers)
+	{
+		//The cold events use a different way of handling probability
+		float triggerProbability=0;
+		switch (eventRegion.GetCampingThreat())
+		{
+			case MapRegion.ThreatLevels.High: {triggerProbability=0.9f; break;}
+			case MapRegion.ThreatLevels.Medium: {triggerProbability=0.6f; break;}
+			case MapRegion.ThreatLevels.Low: {triggerProbability=0.3f; break;}
+		}
+		if (Random.value<=triggerProbability) return true;
+		else return false;
+	}
+
+    public override string GetDescription(MapRegion eventRegion, List<PartyMember> movedMembers) 
+    {
+        string desc="";
+        for (int i=0; i<movedMembers.Count; i++)
+        {
+        	if (i<movedMembers.Count-1) desc+=movedMembers[i].name+",";
+        	else 
+        	{
+        		if (i>0) desc+=" and ";
+        		desc+=movedMembers[i].name+"'s";
+        	}
+        }
+        desc+=" camp is attacked by monsters!";
+        return desc;
+    }
+    public override List<EventChoice> GetChoices(MapRegion eventRegion, List<PartyMember> movedMembers)
+    {
+        List<EventChoice> choicesList=new List<EventChoice>();
+        //choicesList.Add("Try to run!");
+		choicesList.Add(new EventChoice("Fight!"));
+		bool shootGreyedOut=true;
+        foreach (PartyMember member in movedMembers)
+        {
+			if (movedMembers.Count>1) choicesList.Add(new EventChoice("Have "+member.name+" hold them off!"));
+			if (member.equippedRangedWeapon!=null && PartyManager.mainPartyManager.ammo>=requiredAmmo)
+            {
+				shootGreyedOut=false;
+                shooter=member;
+            }
+            
+        }
+		choicesList.Add(new EventChoice("Shoot them!("+requiredAmmo+" ammo)",shootGreyedOut));
+        return choicesList;
+    }
+    
+    public override string DoChoice (string choiceString, MapRegion eventRegion, List<PartyMember> movedMembers)
+    {
+        string eventResult=null;
+        /*
+        switch (choiceString)
+        {
+            case"Fight!":
+            {
+                
+                break;
+            }
+            case"Shoot them!("+requiredAmmo+" ammo)": 
+            {
+                eventResult=shooter.name+" decides that saved ammo is of no use to the dead and opens fire! The abominations fall one by one, screams and gunshots ringing through the warped, empty streets. This time, everyone is spared\n\n-"+requiredAmmo+" Ammo";
+                PartyManager.mainPartyManager.ammo-=requiredAmmo;
+                break;
+            }
+        }*/
+        if (choiceString=="Fight!")
+        {
+            int fightHealthPenalty=Random.Range(fightHealthPenaltyMin,fightHealthPenaltyMax+1);
+            eventResult="With the creatures so close, it's too late to run.\nSurging with adrenaline, the party charges the monsters with weapons drawn! The violence is brief, but brutal\n\n-"+fightHealthPenalty+" health for everyone";
+            foreach (PartyMember member in movedMembers){member.TakeDamage(fightHealthPenalty,true);}
+        }
+        if (choiceString=="Shoot them!("+requiredAmmo+" ammo)")
+        {
+            eventResult=shooter.name+" decides that saved ammo is of no use to the dead and opens fire! The abominations fall one by one, screams and gunshots ringing through the warped, empty streets. This time, everyone is spared\n\n-"+requiredAmmo+" Ammo";
+            PartyManager.mainPartyManager.ammo-=requiredAmmo;
+        }
+        
+        foreach (PartyMember member in movedMembers)
+        {
+            if (choiceString=="Have "+member.name+" hold them off!")
+            {
+                int stayBehindHealthPenalty=Random.Range(stayBehindPenaltyMin,stayBehindPenaltyMax+1);
+                string partyPronounTwo="others";
+                string partyPronoun="companions";
+                if (movedMembers.Count==2) 
+                {   
+                    partyPronounTwo="other";
+                    partyPronoun="companion";
+                }
+                eventResult=member.name+" hesitates for a moment, before rushing past "+partyPronoun+" and into danger. The sounds of struggle left behind spur on the "+partyPronounTwo+" as they run, wondering if "+member.name+" will make it...";
+                eventResult+="\n\n-"+stayBehindHealthPenalty+" health for "+member.name;
+                member.TakeDamage(stayBehindHealthPenalty,true);
+                break;
+            }
+        }
         return eventResult;
     }
 }
@@ -1004,10 +1276,10 @@ public class ScavengeEventOne:GameEvent
         
         return eventDescription;
     }
-    public override List<string> GetChoices(MapRegion eventRegion, List<PartyMember> movedMembers)
+    public override List<EventChoice> GetChoices(MapRegion eventRegion, List<PartyMember> movedMembers)
     {
-        List<string> choicesList=new List<string>();
-        choicesList.Add("Scavenge");
+        List<EventChoice> choicesList=new List<EventChoice>();
+		choicesList.Add(new EventChoice("Scavenge"));
         return choicesList;
     }
     
@@ -1057,10 +1329,10 @@ public class GasolineEvent:GameEvent
         
         return eventDescription;
     }
-    public override List<string> GetChoices(MapRegion eventRegion, List<PartyMember> movedMembers)
+    public override List<EventChoice> GetChoices(MapRegion eventRegion, List<PartyMember> movedMembers)
     {
-        List<string> choicesList=new List<string>();
-        choicesList.Add("Scavenge");
+        List<EventChoice> choicesList=new List<EventChoice>();
+		choicesList.Add(new EventChoice("Scavenge"));
         return choicesList;
     }
     
@@ -1122,10 +1394,10 @@ public class CarFindEvent:GameEvent
         
         return eventDescription;
     }
-    public override List<string> GetChoices(MapRegion eventRegion, List<PartyMember> movedMembers)
+    public override List<EventChoice> GetChoices(MapRegion eventRegion, List<PartyMember> movedMembers)
     {
-        List<string> choicesList=new List<string>();
-        choicesList.Add("Scavenge");
+        List<EventChoice> choicesList=new List<EventChoice>();
+		choicesList.Add(new EventChoice("Scavenge"));
         return choicesList;
     }
     

@@ -99,7 +99,8 @@ public class PartyMemberCanvasHandler : MonoBehaviour {
 					if (assignedMember.GetFatigue()+PartyMember.campSetupFatigueCost<=100)
 					{
 					assignmentButton.gameObject.SetActive(true);
-					assignmentButton.GetComponentInChildren<Text>().text="Build camp("+PartyMember.campSetupFatigueCost+")";
+					assignmentButton.GetComponentInChildren<Text>().text="Build camp("
+					+PartyMember.campSetupFatigueCost+"/"+(checkedRegion.campSetupTimeRemaining*PartyMember.campSetupFatigueCost)+")";
 					assignmentButton.onClick.RemoveAllListeners();
 					assignmentButton.onClick.AddListener(
 					()=>
@@ -124,6 +125,9 @@ public class PartyMemberCanvasHandler : MonoBehaviour {
 					);
 					}
 				}
+				//Rest in bed assigned task buttons
+				//Currently deprecated
+				/*
 				else
 				{
 					if (assignedMember.CanRest())
@@ -144,7 +148,7 @@ public class PartyMemberCanvasHandler : MonoBehaviour {
 							PartyStatusCanvasHandler.main.RefreshAssignmentButtons();
 						});
 					}
-				}
+				}*/
 			//}
 		}
 	}

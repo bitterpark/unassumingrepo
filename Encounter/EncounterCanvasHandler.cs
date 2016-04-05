@@ -93,8 +93,8 @@ public class EncounterCanvasHandler : MonoBehaviour
 	
 	//public delegate void EnemiesMoveDel(Dictionary<PartyMember, Dictionary<Vector2,int>> masks, Dictionary<PartyMember,Vector2> memberCoords);//(Dictionary<Vector2, int> costs);
 	//public static event EnemiesMoveDel EMoveEnemies;
-	delegate void MemberMovedDel ();
-	event MemberMovedDel EMemberMoved;
+	public delegate void MemberMovedDel ();
+	public event MemberMovedDel EMemberMoved;
 	
 	public delegate void RoundoverDel();
 	public event RoundoverDel ERoundIsOver;
@@ -938,6 +938,7 @@ public class EncounterCanvasHandler : MonoBehaviour
 		GetComponent<Canvas>().enabled=false;
 		//eventLogMask.enabled=false;
 		currentMap=null;
+		EMemberMoved=null;
 		//memberToken.transform.SetParent(this.transform,false);
 		//memberToken.SetActive(false);
 		
@@ -1268,7 +1269,6 @@ public class EncounterCanvasHandler : MonoBehaviour
 		yield return StartCoroutine(attacker.AttackAnimation(targetAnimation));
 		GetComponent<CanvasGroup>().interactable=true;
 		//If attacking enemy
-		
 	}
 	/*
 	IEnumerator LockButtonsUntilAnimationFinishes(IEnumerator animationRoutine)
@@ -1344,13 +1344,18 @@ public class EncounterCanvasHandler : MonoBehaviour
 	
 	//Damage dealt to enemies
 	//Used by callbacks from set off traps
-	public void RegisterDamage(int damage, BodyPart attackedPart, bool isRanged,EncounterEnemy attackedEnemy, IAttackAnimation attackingEntity)
+	public void RegisterDamage(int damage, BodyPart attackedPart, bool isRanged,EncounterEnemy attackedEnemy, IAttackAnimation attackingEntity, bool hideResult)
 	{
-		StartCoroutine(RegisterDamage(true,damage,attackedPart,isRanged,attackedEnemy,attackingEntity));
+		StartCoroutine(RegisterDamage(true,damage,attackedPart,isRanged,attackedEnemy,attackingEntity,hideResult));
+	}
+	public IEnumerator RegisterDamage(bool hitSuccessful, int damage
+	, BodyPart attackedPart, bool isRanged,EncounterEnemy attackedEnemy, IAttackAnimation attackingEntity)
+	{
+		return RegisterDamage(hitSuccessful,damage,attackedPart,isRanged,attackedEnemy,attackingEntity,false);
 	}
 	//Used by callbacks from member tokens (and also daisy-chained by the overload above)
 	public IEnumerator RegisterDamage(bool hitSuccessful, int damage
-	, BodyPart attackedPart, bool isRanged,EncounterEnemy attackedEnemy, IAttackAnimation attackingEntity)//Object attackingEntity)//PartyMember attackingMember)
+	, BodyPart attackedPart, bool isRanged,EncounterEnemy attackedEnemy, IAttackAnimation attackingEntity, bool hideResult)//Object attackingEntity)//PartyMember attackingMember)
 	{
 		//EncounterRoom currentRoom=currentEncounter.encounterMap[memberCoords[selectedMember]];
 		//int actualDmg=currentRoom.DamageEnemy(damage,attackedEnemy,isRanged);
@@ -1358,7 +1363,9 @@ public class EncounterCanvasHandler : MonoBehaviour
 		if (hitSuccessful) actualDmg=roomButtons[attackedEnemy.GetCoords()].AttackEnemyInRoom(damage,attackedPart,attackedEnemy,isRanged);
 		
 		//bool blockInteraction=attackingEntity.GetType()==typeof(MemberTokenHandler);
-		yield return StartCoroutine(VisualizeAttack(hitSuccessful,actualDmg,attackingEntity,enemyTokens[attackedEnemy]));//VisualizeAttackOnEnemy(actualDmg,attackedEnemy, attackingEntity));
+		//If hide is not set, do proper attack/defend animation sequencing
+		if (!hideResult) yield return StartCoroutine(VisualizeAttack(hitSuccessful,actualDmg,attackingEntity,enemyTokens[attackedEnemy]));//VisualizeAttackOnEnemy(actualDmg,attackedEnemy, attackingEntity));
+
 		MemberTokenHandler attackingMemberToken=null;
 		//Find if attacker is member or trap
 		if (attackingEntity.GetType()==typeof(MemberTokenHandler)) attackingMemberToken=attackingEntity as MemberTokenHandler;
@@ -1366,24 +1373,31 @@ public class EncounterCanvasHandler : MonoBehaviour
 		//If attacker is member
 		if (attackingMemberToken!=null) 
 		{
-			if (hitSuccessful)
+			if (!hideResult)
 			{
-				MakeNoise(memberCoords[attackingMemberToken.myMember],attackSoundIntensity);
-				string hitMessage=" hits ";
-				if (isRanged) hitMessage=" shoots ";
-				AddNewLogMessage(attackingMemberToken.myMember.name+" makes some noise!");
-				AddNewLogMessage(attackingMemberToken.myMember.name+hitMessage+attackedEnemy.name+" for "+damage+" damage");
+				if (hitSuccessful)
+				{
+					MakeNoise(memberCoords[attackingMemberToken.myMember],attackSoundIntensity);
+
+					string hitMessage=" hits ";
+					if (isRanged) hitMessage=" shoots ";
+					AddNewLogMessage(attackingMemberToken.myMember.name+" makes some noise!");
+					AddNewLogMessage(attackingMemberToken.myMember.name+hitMessage+attackedEnemy.name+" for "+damage+" damage");
+				}
+				else
+				{
+					string hitMessage=" misses ";
+					AddNewLogMessage(attackingMemberToken.myMember.name+hitMessage+attackedEnemy.name+"!");
+				}
 			}
-			else
-			{
-				string hitMessage=" misses ";
-				AddNewLogMessage(attackingMemberToken.myMember.name+hitMessage+attackedEnemy.name+"!");
-			}
-		}//if attacker is trap
-		else AddNewLogMessage("a trap does "+damage+" damage to "+attackedEnemy.name+"'s "+attackedPart.name);
+		}//if attacker is trap !!! RESULTS WILL ONLY BE HIDDEN FOR TRAP ATTACKS
+		else 
+		{
+			if (!hideResult) AddNewLogMessage("a trap does "+damage+" damage to "+attackedEnemy.name+"'s "+attackedPart.name);
+		}
 		if (attackedEnemy.health<=0) 
 		{
-			AddNewLogMessage(attackedEnemy.name+" is killed!");
+			if (!hideResult) AddNewLogMessage(attackedEnemy.name+" is killed!");
 			if (attackingMemberToken!=null) 
 			{
 				attackingMemberToken.myMember.ReactToKill();

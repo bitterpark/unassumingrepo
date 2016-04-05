@@ -14,19 +14,20 @@ public class CampCanvas : MonoBehaviour {
 	public BedSlot bedSlotPrefab;
 	public Transform bedSlotGroup;
 	public Text freeBedsCount;
-	
+
 	public Transform craftGroup;
 	public RecipeGroup recipePrefab;
 	public List<CraftRecipe> availableRecipes=new List<CraftRecipe>();
 	
-	public Camp assignedCamp;
-	
-	public void AssignCamp(Camp newCamp, bool regionHasCamp)
+	//public Camp assignedCamp;
+	public Camp assignedCamp=null;
+	/*
+	public void AssignCampRegion(MapRegion campRegion)
 	{
-		if (regionHasCamp)
+		assignedCampRegion=campRegion;
+		if (assignedCampRegion.hasCamp)
 		{
 			campShown=true;
-			assignedCamp=newCamp;
 			availableRecipes.Clear();
 			availableRecipes=CraftRecipe.GetAllRecipes();
 			
@@ -34,7 +35,7 @@ public class CampCanvas : MonoBehaviour {
 			RefreshSlots();
 		}
 		else CloseScreen();
-	}
+	}*/
 	
 	public void RefreshSlots()
 	{
@@ -58,11 +59,17 @@ public class CampCanvas : MonoBehaviour {
 		//Remove old crafting recipes
 		foreach (HorizontalLayoutGroup oldRecipeGroup in craftGroup.GetComponentsInChildren<HorizontalLayoutGroup>()) 
 		{GameObject.Destroy(oldRecipeGroup.gameObject);}
-		
-		if (assignedCamp!=null)
+
+		if (InventoryScreenHandler.mainISHandler.selectedMember.currentRegion.hasCamp)
 		{
+			campShown=true;
+			availableRecipes.Clear();
+			availableRecipes=CraftRecipe.GetAllRecipes();
+			GetComponent<Canvas>().enabled=true;
+
+			assignedCamp=InventoryScreenHandler.mainISHandler.selectedMember.currentRegion.campInRegion;
+			//Cooking slot and bed slot are currently unused
 			//Refresh cooking slot
-			//print ("New cooking slot created!");
 			CookingSlot newCookingSlot=Instantiate(cookingSlotPrefab);
 			newCookingSlot.transform.SetParent(cookingSlotPlacement,false);
 			if (assignedCamp.cookingImplement!=null)
@@ -73,7 +80,7 @@ public class CampCanvas : MonoBehaviour {
 				newCookingSlot.AssignItem(cookingImplement);
 				//!!NO ONCLICK LISTENER ASSIGNED!!
 			}
-			
+
 			//Refresh bed slots
 			int bedSlotCount=assignedCamp.beds.Count+1;
 			int occupiedBedsCount=assignedCamp.beds.Count-assignedCamp.freeBeds;
@@ -95,17 +102,17 @@ public class CampCanvas : MonoBehaviour {
 				}
 			}
 			freeBedsCount.text="Free beds:"+assignedCamp.freeBeds;
-			
+
 			//Refresh crafting recipes
 			foreach (CraftRecipe recipe in availableRecipes)
 			{
 				RecipeGroup newRecipeDisplay=Instantiate(recipePrefab);
 				newRecipeDisplay.transform.SetParent(craftGroup);
 				newRecipeDisplay.AssignRecipe(recipe);
-				
+
 			}
-			
 		}
+		else CloseScreen();
 	}
 	
 	public void CloseScreen()

@@ -211,12 +211,15 @@ public abstract class EncounterEnemy
 			//BodyPart damagedPart=attackedPart;//bodyParts[0];
 			damagedPart.DamageBodypart(dmgTaken);//.hp-=dmgTaken;
 			//Make this work within the damage routine in encountercanvashandler later
-			EncounterCanvasHandler.main.AddNewLogMessage(name+"'s "+damagedPart.name+" is damaged for "+dmgTaken);
-			if (damagedPart.hp<=0) 
+			if (EncounterCanvasHandler.main.roomButtons[GetCoords()].isVisible)
 			{
-				//if (damagedPart.destructionEffect!=null) damagedPart.destructionEffect.Invoke();
-				EncounterCanvasHandler.main.AddNewLogMessage(name+"'s "+damagedPart.name+" is broken!");
-				bodyParts.Remove(damagedPart);//.Remove(damagedPart);
+				//EncounterCanvasHandler.main.AddNewLogMessage(name+"'s "+damagedPart.name+" is damaged for "+dmgTaken);
+				if (damagedPart.hp<=0) 
+				{
+					//if (damagedPart.destructionEffect!=null) damagedPart.destructionEffect.Invoke();
+					EncounterCanvasHandler.main.AddNewLogMessage(name+"'s "+damagedPart.name+" is broken!");
+					bodyParts.Remove(damagedPart);//.Remove(damagedPart);
+				}
 			}
 		}
 		/*
@@ -442,7 +445,7 @@ public abstract class EncounterEnemy
 			}
 			else
 			{
-				EncounterCanvasHandler.main.AddNewLogMessage(name+" smashes a barricade for "+barricadeBashStrength);
+			 	if (moveRoom.isVisible) EncounterCanvasHandler.main.AddNewLogMessage(name+" smashes a barricade for "+barricadeBashStrength);
 				moveRoom.BashBarricade(barricadeBashStrength);
 			}
 			movePerformed=true;

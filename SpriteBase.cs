@@ -33,9 +33,11 @@ public class SpriteBase : MonoBehaviour {
 	//Crafting ingredients
 	public Sprite gunpowderSprite;
 	public Sprite scrapSprite;
-	//Misc
+	//Camp items
 	public Sprite bedSprite;
-	
+	public Sprite fuelSprite;
+	public Sprite campBarricadeSprite;
+
 	//Assigned task sprites
 	public Sprite buildCampSprite;
 	public Sprite restSprite;

@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using System.Collections;
+using UnityEngine.UI;
 
 public class Trap 
 {
@@ -24,7 +25,7 @@ public class Trap
 			
 			if (attackSuccessful)
 			{
-				EncounterCanvasHandler.main.RegisterDamage(trapDamage,attackedPart,false,activatingEnemy,assignedToken);
+				EncounterCanvasHandler.main.RegisterDamage(trapDamage,attackedPart,false,activatingEnemy,assignedToken,!assignedToken.GetComponent<Image>().enabled);
 				sprung=true;
 				assignedToken.BeginDispose();
 			}

@@ -116,7 +116,9 @@ public class PartyManager : MonoBehaviour
 	public static event InventoryChangedDeleg InventoryChanged;
 	
 	public delegate void TimePassedDeleg(int hours);
-	public static event TimePassedDeleg TimePassed;
+	public static event TimePassedDeleg ETimePassed;
+	public delegate void TimePassedEndDeleg(int hours);
+	public static event TimePassedEndDeleg ETimePassedEnd;
 	
 	Dictionary<PartyMember,AssignedTask> assignedTasks;
 	public bool GetAssignedTask(PartyMember member, out AssignedTaskTypes type)
@@ -204,8 +206,9 @@ public class PartyManager : MonoBehaviour
 		startingRegion.SetCar(true);
 		//startingRegion.StashItem(new SettableTrap());
 		//startingRegion.StashItem(new Bandages());
-		//startingRegion.StashItem(new AssaultRifle());
-		//startingRegion.StashItem(new AssaultRifle());
+		//startingRegion.StashItem(new CampBarricade());
+		//startingRegion.StashItem(new CampBarricade());
+		//startingRegion.StashItem(new CampBarricade());
 		//startingRegion.StashItem(new Medkit());
 		//startingRegion.StashItem(new Medkit());
 		//startingRegion.StashItem(new Backpack());
@@ -235,7 +238,7 @@ public class PartyManager : MonoBehaviour
 		PartyStatusCanvasHandler.main.NewNotification(timePassageText);
 		//dayTime=(int)Mathf.Repeat(dayTime+hoursPassed,24);
 		//foreach (PartyMember member in partyMembers) {member.hunger+=10*hoursPassed;}
-		if (TimePassed!=null) {TimePassed(hoursPassed);}
+		if (ETimePassed!=null) {ETimePassed(hoursPassed);}
 		
 		//Adjust camera bg color
 		float lightBottomThreshold=0.5f;
@@ -251,8 +254,9 @@ public class PartyManager : MonoBehaviour
 		//Make sure the rest tasks and time skip occur in proper order
 		foreach (MemberMapToken token in MapManager.main.memberTokens.Values) 
 		if (!assignedTasks.ContainsKey(token.assignedMember)) token.moved=false;
-		List<PartyMember> membersRestingAtCamp=new List<PartyMember>();
-		MapRegion campRegion=null;
+		//List<PartyMember> membersRestingAtCamp=new List<PartyMember>();
+		List<MapRegion> campingRegions=new List<MapRegion>();
+
 		//Perform assigned tasks
 		foreach (PartyMember member in new List<PartyMember>(assignedTasks.Keys)) 
 		{
@@ -260,12 +264,13 @@ public class PartyManager : MonoBehaviour
 			else
 			{
 				assignedTasks[member].actionToPerform.Invoke();
+				/*
 				if (assignedTasks[member].taskType==AssignedTaskTypes.Rest) 
 				{
 					membersRestingAtCamp.Add(member);
 					//THIS WILL CAUSE ISSUES IF MEMBERS DO NOT ALL REST IN THE SAME REGION/TOWN
 					campRegion=member.currentRegion;
-				}
+				}*/
 				if (!assignedTasks[member].preconditionCheck()) RemoveMemberTask(member);
 			}
 		}
@@ -274,12 +279,22 @@ public class PartyManager : MonoBehaviour
 		{
 			if (!assignedTasks[member].preconditionCheck()) RemoveMemberTask(member);
 		}
-		
+
+		//Find all current member regions
+		foreach (PartyMember member in partyMembers)
+		{
+			if (!campingRegions.Contains(member.currentRegion)) campingRegions.Add(member.currentRegion);
+		}
+
 		//Do morale and other camp events
-		if (membersRestingAtCamp.Count>1) GameEventManager.mainEventManager.RollCampEvents(campRegion,membersRestingAtCamp);
+		foreach (MapRegion region in campingRegions)
+		GameEventManager.mainEventManager.RollCampEvents(region,region.localPartyMembers);
+		GameEventManager.mainEventManager.TryNextQueuedEvent();
 		
 		//This may cause issues on gameover
 		PartyStatusCanvasHandler.main.RefreshAssignmentButtons(selectedMembers);
+		InventoryScreenHandler.mainISHandler.RefreshInventoryItems();
+		if (ETimePassedEnd!=null) ETimePassedEnd(1);
 		//PartyStatusCanvasHandler.main.StartTimeFlash();
 	}
 	
@@ -288,20 +303,9 @@ public class PartyManager : MonoBehaviour
 	{
 		if (Input.GetKeyDown(KeyCode.M)) 
 		{
-			int fuckballs=1;
-			int i=0;
-			for (i=0; i<fuckballs; i++)
-			{
-				print ("Doing loop");
-				print ("i="+i);
-				break;
-			}
-			print("Loop finished, final i="+i);
-			//GameManager.main.EndCurrentGame(true);
-			//partyMembers[0].morale=0;//
-			//partyMembers[0].TakeDamage(70,false,PartyMember.BodyPartTypes.Vitals);
-			//partyMembers[0].TakeDamage(15,false,PartyMember.BodyPartTypes.Legs);
-			//AddPartyMemberStatusEffect(partyMembers[0],new Bleed(partyMembers[0]));
+			partyMembers[0].TakeDamage(partyMembers[0].vitalsMaxHealth-1,false);
+			//partyMembers[0].AddStatusEffect(new Bleed(partyMembers[0]));
+			AddPartyMemberStatusEffect(partyMembers[0],new Bleed(partyMembers[0]));
 		}
 		/*
 		if (Input.GetKeyDown(KeyCode.Space))
@@ -559,7 +563,8 @@ public class PartyManager : MonoBehaviour
 	
 	public void GameOverCleanup()
 	{
-		TimePassed=null;
+		ETimePassed=null;
+		ETimePassedEnd=null;
 		List<PartyMember> buffer=new List<PartyMember>();
 		buffer.AddRange(partyMembers.ToArray());
 		foreach (PartyMember member in buffer) {RemovePartyMember(member);}

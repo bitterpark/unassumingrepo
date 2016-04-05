@@ -20,7 +20,10 @@ public class InventoryScreenHandler : MonoBehaviour
 	public CampCanvas campingCanvas;
 	public static InventoryScreenHandler mainISHandler;
 	public bool inventoryShown=false;
-	
+
+	public Text campThreatText;
+	public Text campTemperatureText;
+
 	//PREFABS
 	public InventorySlot inventorySlotPrefab;
 	public MemberInventorySlot memberSlotPrefab;
@@ -66,19 +69,15 @@ public class InventoryScreenHandler : MonoBehaviour
 				GetComponent<Canvas>().enabled=true;
 				inventoryShown=true;
 				memberNameText.text=newMember.name;		
-			
+				/*
 				if (!EncounterCanvasHandler.main.encounterOngoing)
 				{
-					campingCanvas.AssignCamp(selectedMember.currentRegion.campInRegion
-					,selectedMember.currentRegion.hasCamp);
-				}
+					campingCanvas.AssignCampRegion(selectedMember.currentRegion);
+				}*/
 				RefreshInventoryItems();
 			}
 		} 
-		else 
-		{
-			CloseScreen();
-		}
+		else CloseScreen();
 	}
 	
 	public void GameEndHandler()
@@ -96,150 +95,165 @@ public class InventoryScreenHandler : MonoBehaviour
 	
 	public void RefreshInventoryItems()
 	{
+		//This check is done to make sure inventory screen won't stay open for members who bled out during a timeskip with inventory open
+		if (selectedMember!=null) 
+		{
+			if (!PartyManager.mainPartyManager.partyMembers.Contains(selectedMember))
+			{
+				CloseScreen();
+			}
+		}
+
 		if (inventoryShown)
 		{
-		//Update armor value
-		armorValueText.text="Armor:"+selectedMember.armorValue;
+			
+			//Update armor value
+			armorValueText.text="Armor:"+selectedMember.armorValue;
+			
+			//Update weapon damage
+			string meleeText="Melee:";
+			meleeText+=selectedMember.GetMeleeDamageString();
+			meleeDamageText.text=meleeText;
+			
+			string rangedText="Ranged:";
+			rangedText+=selectedMember.GetRangedDamage();
+			rangedDamageText.text=rangedText;
+
+			//Update camp info
+			//Temperature
+			campTemperatureText.text="Temperature: "+selectedMember.currentRegion.GetTemperature();
+			//Threat
+			campThreatText.text="Camping threat: "+selectedMember.currentRegion.GetCampingThreat();
+
+			//Remove old weapons
+			Image oldMeleeSlot=meleeSlotPlacement.GetComponentInChildren<Image>();
+			Image oldRangedSlot=rangedSlotPlacement.GetComponentInChildren<Image>();
+			if (oldMeleeSlot!=null) GameObject.Destroy(oldMeleeSlot.gameObject);
+			if (oldRangedSlot!=null) GameObject.Destroy(oldRangedSlot.gameObject);
 		
-		//Update weapon damage
-		string meleeText="Melee:";
-		meleeText+=selectedMember.GetMeleeDamageString();
-		meleeDamageText.text=meleeText;
-		
-		string rangedText="Ranged:";
-		rangedText+=selectedMember.GetRangedDamage();
-		rangedDamageText.text=rangedText;
-		
-		//Remove old weapons
-		Image oldMeleeSlot=meleeSlotPlacement.GetComponentInChildren<Image>();
-		Image oldRangedSlot=rangedSlotPlacement.GetComponentInChildren<Image>();
-		if (oldMeleeSlot!=null) GameObject.Destroy(oldMeleeSlot.gameObject);
-		if (oldRangedSlot!=null) GameObject.Destroy(oldRangedSlot.gameObject);
-	
-		//Refresh melee slot
-		MeleeSlot newMeleeSlot=Instantiate(meleeSlotPrefab);
-		newMeleeSlot.transform.SetParent(meleeSlotPlacement,false);
-		if (selectedMember.equippedMeleeWeapon!=null)
-		{
-			SlotItem meleeWeapon=Instantiate(slotItemPrefab);
-			meleeWeapon.AssignItem(selectedMember.equippedMeleeWeapon);
-			newMeleeSlot.AssignItem(meleeWeapon);
-			//!!NO ONCLICK LISTENER ASSIGNED!!
-		}
-		
-		//Refresh ranged slot
-		RangedSlot newRangedSlot=Instantiate(rangedSlotPrefab);
-		newRangedSlot.transform.SetParent(rangedSlotPlacement,false);
-		if (selectedMember.equippedRangedWeapon!=null)
-		{
-			SlotItem rangedWeapon=Instantiate(slotItemPrefab);
-			rangedWeapon.AssignItem(selectedMember.equippedRangedWeapon);
-			newRangedSlot.AssignItem(rangedWeapon);
-			//!!NO ONCLICK LISTENER ASSIGNED!!
-		}
-		
-		//Refresh current equipment
-		foreach (Image oldItemSlot in equipmentGroup.GetComponentsInChildren<Image>())//.GetComponentsInChildren<Button>())
-		{
-			GameObject.Destroy(oldItemSlot.gameObject);
-		}	
-		int equipmentSlotCount=4;
-		for (int i=0; i<equipmentSlotCount; i++)
-		{
-			EquipmentSlot newSlot=Instantiate(equipmentSlotPrefab);
-			newSlot.transform.SetParent(equipmentGroup,false);
-			if (i<selectedMember.equippedItems.Count)
+			//Refresh melee slot
+			MeleeSlot newMeleeSlot=Instantiate(meleeSlotPrefab);
+			newMeleeSlot.transform.SetParent(meleeSlotPlacement,false);
+			if (selectedMember.equippedMeleeWeapon!=null)
 			{
-				SlotItem newItem=Instantiate(slotItemPrefab);
-				newItem.AssignItem(selectedMember.equippedItems[i]);
-				newSlot.AssignItem(newItem);
+				SlotItem meleeWeapon=Instantiate(slotItemPrefab);
+				meleeWeapon.AssignItem(selectedMember.equippedMeleeWeapon);
+				newMeleeSlot.AssignItem(meleeWeapon);
 				//!!NO ONCLICK LISTENER ASSIGNED!!
 			}
-		}
-		
-		//REFRESH MEMBER INVENTORY
-		foreach (Image oldItemSlot in memberInventoryGroup.GetComponentsInChildren<Image>())//Button>())
-		{
-			GameObject.Destroy(oldItemSlot.gameObject);
-		}
-		int memberSlotCount=selectedMember.currentCarryCapacity;
-		for (int i=0; i<memberSlotCount; i++)
-		{
-			InventorySlot newSlot=Instantiate(memberSlotPrefab);
-			newSlot.transform.SetParent(memberInventoryGroup,false);
-			if (i<selectedMember.carriedItems.Count)
+			
+			//Refresh ranged slot
+			RangedSlot newRangedSlot=Instantiate(rangedSlotPrefab);
+			newRangedSlot.transform.SetParent(rangedSlotPlacement,false);
+			if (selectedMember.equippedRangedWeapon!=null)
 			{
-				SlotItem newItem=Instantiate(slotItemPrefab);
-				newItem.AssignItem(selectedMember.carriedItems[i]);
-				newSlot.AssignItem(newItem);
-				newItem.GetComponent<Button>().onClick.AddListener(()=>InventoryItemClicked(newItem.assignedItem,newItem.currentSlot));
+				SlotItem rangedWeapon=Instantiate(slotItemPrefab);
+				rangedWeapon.AssignItem(selectedMember.equippedRangedWeapon);
+				newRangedSlot.AssignItem(rangedWeapon);
+				//!!NO ONCLICK LISTENER ASSIGNED!!
 			}
-		}
-		
-		//REFRESH INVENTORY
-		foreach (Image oldItemSlot in inventoryGroup.GetComponentsInChildren<Image>())//Button>())
-		{
-			GameObject.Destroy(oldItemSlot.gameObject);
-		}
-		int slotCount=48;
-		List<InventoryItem> activeList;
-		//select the right list for in-encounter and out-of-encounter
-		if (EncounterCanvasHandler.main.encounterOngoing) 
-		{
-			EncounterCanvasHandler encounterManager=EncounterCanvasHandler.main;
-			activeList=encounterManager.currentEncounter.encounterMap[encounterManager.memberCoords[selectedMember]].floorItems;
-		}
-		else {activeList=selectedMember.currentRegion.GetStashedItems();}//PartyManager.mainPartyManager.GetPartyInventory();}
-		//Use floor or inventory list
-		for (int i=0; i<slotCount; i++)
-		{
-			InventorySlot newSlot=Instantiate(inventorySlotPrefab);
-			newSlot.transform.SetParent(inventoryGroup,false);
-			if (i<activeList.Count)
+			
+			//Refresh current equipment
+			foreach (Image oldItemSlot in equipmentGroup.GetComponentsInChildren<Image>())//.GetComponentsInChildren<Button>())
 			{
-				SlotItem newItem=Instantiate(slotItemPrefab);
-				newItem.AssignItem(activeList[i]);
-				newSlot.AssignItem(newItem);
-				newItem.GetComponent<Button>().onClick.AddListener(()=>InventoryItemClicked(newItem.assignedItem,newItem.currentSlot));
+				GameObject.Destroy(oldItemSlot.gameObject);
+			}	
+			int equipmentSlotCount=4;
+			for (int i=0; i<equipmentSlotCount; i++)
+			{
+				EquipmentSlot newSlot=Instantiate(equipmentSlotPrefab);
+				newSlot.transform.SetParent(equipmentGroup,false);
+				if (i<selectedMember.equippedItems.Count)
+				{
+					SlotItem newItem=Instantiate(slotItemPrefab);
+					newItem.AssignItem(selectedMember.equippedItems[i]);
+					newSlot.AssignItem(newItem);
+					//!!NO ONCLICK LISTENER ASSIGNED!!
+				}
 			}
-		}
-		
-		//Refresh traits
-		//Refresh skillpoint counter
-		skillpointCounterText.text="Skillpoints:"+selectedMember.skillpoints;
-		//Delete old traits
-		foreach (Image oldTraitImage in traitGroup.GetComponentsInChildren<Image>())
-		{
-			GameObject.Destroy(oldTraitImage.gameObject);
-		}
-		//Delete old skills
-		foreach (Image oldSkillImage in skillGroup.GetComponentsInChildren<Image>())
-		{
-			GameObject.Destroy(oldSkillImage.gameObject);
-		}
-		//Repopulate skills and traits	
-		foreach (Trait memberTrait in selectedMember.traits)
-		{
-			TraitUIHandler newPerkImage=Instantiate(traitPrefab);
-			newPerkImage.AssignTrait(memberTrait);
-			if (memberTrait.GetType().BaseType==typeof(Trait)) newPerkImage.transform.SetParent(traitGroup,false);
-			else newPerkImage.transform.SetParent(skillGroup,false);
-		}
-		
-		//Refresh relations
-		foreach (Image oldRelImage in relationsGroup.GetComponentsInChildren<Image>())
-		{
-			GameObject.Destroy(oldRelImage.gameObject);
-		}	
-		foreach (Relationship memberRelation in selectedMember.relationships.Values)
-		{
-			RelationTextHandler newRelImage=Instantiate(relationPrefab);
-			newRelImage.AssignRelation(memberRelation);
-			newRelImage.transform.SetParent(relationsGroup,false);
-		}
-		
-		//Refresh camp
-		campingCanvas.RefreshSlots();
+			
+			//REFRESH MEMBER INVENTORY
+			foreach (Image oldItemSlot in memberInventoryGroup.GetComponentsInChildren<Image>())//Button>())
+			{
+				GameObject.Destroy(oldItemSlot.gameObject);
+			}
+			int memberSlotCount=selectedMember.currentCarryCapacity;
+			for (int i=0; i<memberSlotCount; i++)
+			{
+				InventorySlot newSlot=Instantiate(memberSlotPrefab);
+				newSlot.transform.SetParent(memberInventoryGroup,false);
+				if (i<selectedMember.carriedItems.Count)
+				{
+					SlotItem newItem=Instantiate(slotItemPrefab);
+					newItem.AssignItem(selectedMember.carriedItems[i]);
+					newSlot.AssignItem(newItem);
+					newItem.GetComponent<Button>().onClick.AddListener(()=>InventoryItemClicked(newItem.assignedItem,newItem.currentSlot));
+				}
+			}
+			
+			//REFRESH INVENTORY
+			foreach (Image oldItemSlot in inventoryGroup.GetComponentsInChildren<Image>())//Button>())
+			{
+				GameObject.Destroy(oldItemSlot.gameObject);
+			}
+			int slotCount=48;
+			List<InventoryItem> activeList;
+			//select the right list for in-encounter and out-of-encounter
+			if (EncounterCanvasHandler.main.encounterOngoing) 
+			{
+				EncounterCanvasHandler encounterManager=EncounterCanvasHandler.main;
+				activeList=encounterManager.currentEncounter.encounterMap[encounterManager.memberCoords[selectedMember]].floorItems;
+			}
+			else {activeList=selectedMember.currentRegion.GetStashedItems();}//PartyManager.mainPartyManager.GetPartyInventory();}
+			//Use floor or inventory list
+			for (int i=0; i<slotCount; i++)
+			{
+				InventorySlot newSlot=Instantiate(inventorySlotPrefab);
+				newSlot.transform.SetParent(inventoryGroup,false);
+				if (i<activeList.Count)
+				{
+					SlotItem newItem=Instantiate(slotItemPrefab);
+					newItem.AssignItem(activeList[i]);
+					newSlot.AssignItem(newItem);
+					newItem.GetComponent<Button>().onClick.AddListener(()=>InventoryItemClicked(newItem.assignedItem,newItem.currentSlot));
+				}
+			}
+			
+			//Refresh traits
+			//Refresh skillpoint counter
+			skillpointCounterText.text="Skillpoints:"+selectedMember.skillpoints;
+			//Delete old traits
+			foreach (Image oldTraitImage in traitGroup.GetComponentsInChildren<Image>())
+			{
+				GameObject.Destroy(oldTraitImage.gameObject);
+			}
+			//Delete old skills
+			foreach (Image oldSkillImage in skillGroup.GetComponentsInChildren<Image>())
+			{
+				GameObject.Destroy(oldSkillImage.gameObject);
+			}
+			//Repopulate skills and traits	
+			foreach (Trait memberTrait in selectedMember.traits)
+			{
+				TraitUIHandler newPerkImage=Instantiate(traitPrefab);
+				newPerkImage.AssignTrait(memberTrait);
+				if (memberTrait.GetType().BaseType==typeof(Trait)) newPerkImage.transform.SetParent(traitGroup,false);
+				else newPerkImage.transform.SetParent(skillGroup,false);
+			}
+			
+			//Refresh relations
+			foreach (Image oldRelImage in relationsGroup.GetComponentsInChildren<Image>())
+			{
+				GameObject.Destroy(oldRelImage.gameObject);
+			}	
+			foreach (Relationship memberRelation in selectedMember.relationships.Values)
+			{
+				RelationTextHandler newRelImage=Instantiate(relationPrefab);
+				newRelImage.AssignRelation(memberRelation);
+				newRelImage.transform.SetParent(relationsGroup,false);
+			}
+			if (!EncounterCanvasHandler.main.encounterOngoing) campingCanvas.RefreshSlots();
+			else campingCanvas.CloseScreen();
 		}
 	}
 	

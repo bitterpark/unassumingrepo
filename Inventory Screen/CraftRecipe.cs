@@ -18,6 +18,7 @@ public class CraftRecipe
 		List<CraftRecipe> recipeList=new List<CraftRecipe>();
 		recipeList.Add(new BulletRecipe());
 		recipeList.Add(new TrapRecipe());
+		recipeList.Add(new CampUpgradeRecipe());
 		return recipeList;
 	}
 	
@@ -51,9 +52,9 @@ public class BulletRecipe: CraftRecipe
 		requiredFatigue=10;
 		description="Build bullets";
 		requiredIngredients=new Dictionary<InventoryItem.LootItems, int>();
-		requiredIngredients.Add(InventoryItem.LootItems.Scrap,3);
+		requiredIngredients.Add(InventoryItem.LootItems.Scrap,1);
 		requiredIngredients.Add(InventoryItem.LootItems.Gunpowder,1);
-		SetResultItem(InventoryItem.LootItems.Ammo,2);
+		SetResultItem(InventoryItem.LootItems.Ammo,5);
 	}
 }
 
@@ -61,11 +62,24 @@ public class TrapRecipe: CraftRecipe
 {
 	public  TrapRecipe()
 	{
-		requiredFatigue=10;
+		requiredFatigue=5;
 		description="Build trap";
 		requiredIngredients=new Dictionary<InventoryItem.LootItems, int>();
 		requiredIngredients.Add(InventoryItem.LootItems.Scrap,1);
 		SetResultItem(InventoryItem.LootItems.SettableTrap);
+		
+	}
+}
+
+public class CampUpgradeRecipe: CraftRecipe
+{
+	public  CampUpgradeRecipe()
+	{
+		requiredFatigue=10;
+		description="Camp barricade";
+		requiredIngredients=new Dictionary<InventoryItem.LootItems, int>();
+		requiredIngredients.Add(InventoryItem.LootItems.Scrap,3);
+		SetResultItem(InventoryItem.LootItems.CampBarricade);
 		
 	}
 }

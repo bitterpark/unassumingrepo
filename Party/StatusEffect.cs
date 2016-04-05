@@ -58,7 +58,7 @@ public class Bleed:StatusEffect
 	
 	public override void CleanupEffect()
 	{
-		PartyManager.TimePassed-=TimePassEffect;
+		PartyManager.ETimePassed-=TimePassEffect;
 	}
 	
 	public override void StackEffect ()
@@ -75,7 +75,7 @@ public class Bleed:StatusEffect
 	{
 		//affectedPartyMemberIndex=affectedMemberIndex;
 		affectedMember=member;
-		PartyManager.TimePassed+=TimePassEffect;
+		PartyManager.ETimePassed+=TimePassEffect;
 		canStack=true;
 	}
 }

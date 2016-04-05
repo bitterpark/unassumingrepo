@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
-public class MapRegion : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, IPointerDownHandler
+public class MapRegion : MonoBehaviour
 {
 	public class RegionConnection
 	{
@@ -69,7 +69,7 @@ public class MapRegion : MonoBehaviour, IPointerEnterHandler, IPointerExitHandle
 	public Sprite hordeSprite;
 	
 	//public GameObject campTokenPrefab;
-	
+	public Image regionGraphic;
 	public Image stashToken;
 	public Image campToken;
 	public Image carToken;
@@ -116,6 +116,19 @@ public class MapRegion : MonoBehaviour, IPointerEnterHandler, IPointerExitHandle
 		get {return _hasCar;}
 	}
 	bool _hasCar=false;
+
+	public Camp.TemperatureRating GetTemperature()
+	{
+		if (hasCamp) return campInRegion.GetTemperature();
+		else return Camp.TemperatureRating.Very_Cold;
+	}
+
+	public ThreatLevels GetCampingThreat()
+	{
+		if (hasCamp) return campInRegion.GetThreatLevel();
+		else return ThreatLevels.High; 
+	}
+
 	public void SetCar(bool carIsInregion)
 	{
 		_hasCar=carIsInregion;
@@ -234,14 +247,14 @@ public class MapRegion : MonoBehaviour, IPointerEnterHandler, IPointerExitHandle
 	{
 		if (!_discovered)
 		{
-			GetComponent<Image>().sprite=undiscoveredLocSprite;
+			regionGraphic.sprite=undiscoveredLocSprite;
 		}
 		else
 		{
 			/*
 			if (hasHorde && visible)
 			{
-				GetComponent<Image>().sprite=hordeSprite;
+				regionGraphic.sprite=hordeSprite;
 			}*/
 			//else
 			{
@@ -251,35 +264,35 @@ public class MapRegion : MonoBehaviour, IPointerEnterHandler, IPointerExitHandle
 					{
 						switch (regionalEncounter.encounterAreaType)
 						{
-							case Encounter.AreaTypes.Hospital: {GetComponent<Image>().sprite=hospitalSprite; break;}
-							case Encounter.AreaTypes.Apartment: {GetComponent<Image>().sprite=apartmentSprite; break;}
-							case Encounter.AreaTypes.Store: {GetComponent<Image>().sprite=storeSprite; break;}
-							case Encounter.AreaTypes.Warehouse:{GetComponent<Image>().sprite=warehouseSprite; break;}
-							case Encounter.AreaTypes.Police: {GetComponent<Image>().sprite=policeStationSprite; break;}
-							case Encounter.AreaTypes.Endgame: {GetComponent<Image>().sprite=radioStationSprite; break;}
+							case Encounter.AreaTypes.Hospital: {regionGraphic.sprite=hospitalSprite; break;}
+							case Encounter.AreaTypes.Apartment: {regionGraphic.sprite=apartmentSprite; break;}
+							case Encounter.AreaTypes.Store: {regionGraphic.sprite=storeSprite; break;}
+							case Encounter.AreaTypes.Warehouse:{regionGraphic.sprite=warehouseSprite; break;}
+							case Encounter.AreaTypes.Police: {regionGraphic.sprite=policeStationSprite; break;}
+							case Encounter.AreaTypes.Endgame: {regionGraphic.sprite=radioStationSprite; break;}
 						}
 					}
 					else
 					{
-						GetComponent<Image>().sprite=encounterSprite;
+						regionGraphic.sprite=encounterSprite;
 					}
 				}
 				else
 				{
-					GetComponent<Image>().sprite=emptyLocSprite;
+					regionGraphic.sprite=emptyLocSprite;
 				}
 			}
 			
-			//if (isHive) GetComponent<Image>().color=Color.red;
+			//if (isHive) regionGraphic.color=Color.red;
 			if (visible)
 			{
-				//if (hasHorde) {GetComponent<Image>().color=Color.red;} 
-				//else {GetComponent<Image>().color=Color.white;}
-				GetComponent<Image>().color=Color.white;
+				//if (hasHorde) {regionGraphic.color=Color.red;} 
+				//else {regionGraphic.color=Color.white;}
+				regionGraphic.color=Color.white;
 			}
 			else
 			{
-				GetComponent<Image>().color=Color.gray;
+				regionGraphic.color=Color.gray;
 			}
 		}
 	}
@@ -326,6 +339,7 @@ public class MapRegion : MonoBehaviour, IPointerEnterHandler, IPointerExitHandle
 			//print ("camp setup");
 			campInRegion=new Camp();
 			campToken.GetComponentInChildren<Text>().enabled=false;
+			InventoryScreenHandler.mainISHandler.RefreshInventoryItems();
 			//GameObject campToken=Instantiate(campTokenPrefab);
 			//campToken.transform.SetParent(this.transform);//,true);
 			//campToken.transform.position=this.transform.position;
@@ -341,20 +355,26 @@ public class MapRegion : MonoBehaviour, IPointerEnterHandler, IPointerExitHandle
 		foreach (RegionConnection connection in connections.Values){GameObject.Destroy(connection.roadLine.gameObject);}
 	}
 
+	public void GraphicClicked()
+	{
+		MapManager.main.RegionClicked(this);
+	}
+	/*
 	#region IPointerDownHandler implementation
 
 	public void OnPointerDown (PointerEventData eventData)
 	{
-		/*if (!EventSystem.current.IsPointerOverGameObject())*/ MapManager.main.RegionClicked(this);
+		MapManager.main.RegionClicked(this);
 	}
 
 	#endregion
+	*/
 	/*
 	void OnMouseDown()
 	{
 		if (!EventSystem.current.IsPointerOverGameObject()) MapManager.mainMapManager.RegionClicked(this);
 	}*/
-
+	/*
 	#region IPointerEnterHandler implementation
 
 	public void OnPointerEnter (PointerEventData eventData)
@@ -364,12 +384,6 @@ public class MapRegion : MonoBehaviour, IPointerEnterHandler, IPointerExitHandle
 		if (!discovered) {areaDescription="Undiscovered";}
 		else 
 		{
-			/*
-			if (hasHorde)
-			{
-				areaDescription+=hordeEncounter.lootDescription;
-			}
-			else*/
 			{
 				if (hasEncounter)
 				{
@@ -386,8 +400,10 @@ public class MapRegion : MonoBehaviour, IPointerEnterHandler, IPointerExitHandle
 						areaDescription+="Enemies: "+regionalEncounter.enemyDescription+"\n";
 						
 						//if (isHive) {areaDescription+="\nHive";}
-						areaDescription+="\nAmbush threat: "+CalculateThreatLevel(0);
+						areaDescription+="\nExploration threat: "+CalculateThreatLevel(0);
+						areaDescription+="\nRest threat:"+GetCampingThreat();
 					}
+					areaDescription+="\nTemperature: "+GetTemperature();
 					areaDescription+="\nRequired team size: "+regionalEncounter.minRequiredMembers+"-"+regionalEncounter.maxAllowedMembers;
 					//if (PartyManager.mainPartyManager.selectedMembers.Count>0)
 
@@ -421,7 +437,86 @@ public class MapRegion : MonoBehaviour, IPointerEnterHandler, IPointerExitHandle
 		TooltipManager.main.StopAllTooltips();
 	}
 
-	#endregion
+	#endregion*/
+
+	public void ShowRegionTooltip()
+	{
+		bool textExists=true;
+		string areaDescription="";
+		if (!discovered) {areaDescription="Undiscovered";}
+		else 
+		{
+			/*
+			if (hasHorde)
+			{
+				areaDescription+=hordeEncounter.lootDescription;
+			}
+			else*/
+			{
+				if (hasEncounter)
+				{
+					if (!scouted) {areaDescription="Not scouted";}
+					else
+					{
+						areaDescription+=regionalEncounter.lootDescription+"\n\n";
+						//Describe all potential loot
+						areaDescription+="May contain:\n";
+						foreach (InventoryItem.LootMetatypes metatype in regionalEncounter.chestTypes.probabilities.Keys)
+						{
+							areaDescription+="-"+InventoryItem.GetLootMetatypeDescription(metatype)+"\n";
+						}
+						areaDescription+="Enemies: "+regionalEncounter.enemyDescription+"\n";
+						
+						//if (isHive) {areaDescription+="\nHive";}
+						areaDescription+="\nExploration threat: "+CalculateThreatLevel(0);
+						areaDescription+="\nRest threat:"+GetCampingThreat();
+					}
+					areaDescription+="\nTemperature: "+GetTemperature();
+					areaDescription+="\nRequired team size: "+regionalEncounter.minRequiredMembers+"-"+regionalEncounter.maxAllowedMembers;
+					//if (PartyManager.mainPartyManager.selectedMembers.Count>0)
+
+				}
+				else {textExists=false;}
+			}
+		}
+		if (PartyManager.mainPartyManager.selectedMembers.Count>0)
+		{
+			MapRegion cursorRegion=PartyManager.mainPartyManager.selectedMembers[0].currentRegion;
+			if (cursorRegion.connections.ContainsKey(this))
+			{
+				if (textExists) areaDescription+="\n";
+				textExists=true;
+				areaDescription+="Move cost:"+cursorRegion.connections[this].moveCost;
+				if (cursorRegion.connections[this].isIntercity) areaDescription+=" gas or 100 fatigue";
+				else areaDescription+=" fatigue";
+				
+			}
+		}
+		
+		if (textExists)	TooltipManager.main.CreateTooltip(areaDescription,this.transform);
+	}
+
+	public void ShowCampTooltip()
+	{
+		string tooltipText="You have secured a hideout in this area.\n";
+		tooltipText+="You can forify, burn fuel and craft items here.\n";
+		tooltipText+="Resting here restores more fatigue";
+		TooltipManager.main.CreateTooltip(tooltipText,campToken.transform);
+	}
+
+	public void ShowCarTooltip()
+	{
+		string tooltipText="Your car is parked here";
+		tooltipText+="\nThe car allows you to travel to other towns using gas";
+		tooltipText+="\nWhen you travel, all items in this area will be moved with you";
+		TooltipManager.main.CreateTooltip(tooltipText,carToken.transform);
+	}
+
+	public void StopTooltips()
+	{
+		TooltipManager.main.StopAllTooltips();
+	}
+
 	/*
 	void OnMouseEnter()
 	{
