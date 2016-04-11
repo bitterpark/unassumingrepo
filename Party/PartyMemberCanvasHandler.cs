@@ -96,7 +96,7 @@ public class PartyMemberCanvasHandler : MonoBehaviour {
 				MapRegion checkedRegion=assignedMember.currentRegion;//MapManager.main.GetRegion(assignedMember.worldCoords);
 				if (!checkedRegion.hasCamp)
 				{
-					if (assignedMember.GetFatigue()+PartyMember.campSetupFatigueCost<=100)
+					if (assignedMember.CheckEnoughFatigue(PartyMember.campSetupFatigueCost))
 					{
 					assignmentButton.gameObject.SetActive(true);
 					assignmentButton.GetComponentInChildren<Text>().text="Build camp("

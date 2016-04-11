@@ -73,6 +73,8 @@ public class MapRegion : MonoBehaviour
 	public Image stashToken;
 	public Image campToken;
 	public Image carToken;
+	public Image threatToken;
+	public Text teamSizeText;
 	
 	public Transform memberTokenGroup;
 	
@@ -93,6 +95,8 @@ public class MapRegion : MonoBehaviour
 		set 
 		{
 			_scouted=value;
+			threatToken.enabled=true;
+			SetThreatTokenState(ambientThreatNumber);
 			SetSprite();
 		}
 	}
@@ -117,16 +121,66 @@ public class MapRegion : MonoBehaviour
 	}
 	bool _hasCar=false;
 
-	public Camp.TemperatureRating GetTemperature()
+	//TEMPERATURE
+	public static string GetTemperatureDescription(TemperatureRating rating)
 	{
-		if (hasCamp) return campInRegion.GetTemperature();
-		else return Camp.TemperatureRating.Very_Cold;
+		//print("Temp description got for "+rating);
+		string desc="";
+		switch (rating)
+		{
+			case TemperatureRating.Freezing:{desc="Freezing"; break;}
+			case TemperatureRating.Cold:{desc="Cold"; break;}
+			case TemperatureRating.Okay:{desc="Okay"; break;}
+		}
+
+		return desc;
 	}
 
+	public enum TemperatureRating {Freezing,Cold,Okay};
+	/*
+	public TemperatureRating GetTemperature()
+	{
+		//if (hasCamp) return campInRegion.GetTemperature();
+		//else return Camp.TemperatureRating.Freezing;
+		return localTemperature;
+	}*/
+
+	public TemperatureRating localTemperature=TemperatureRating.Freezing;
+	public void SetLocalTemperature(int hours)
+	{
+		localTemperature=MapManager.mapTemperatureRating;
+	}
+	public bool TryRaiseTemperature(int delta)
+	{
+		if (hasCamp)
+		{
+			if ((int)localTemperature<2)
+			{
+				localTemperature+=delta;
+				return true;
+			}
+		}
+		return false;
+	}
+
+	//THREAT
 	public ThreatLevels GetCampingThreat()
 	{
 		if (hasCamp) return campInRegion.GetThreatLevel();
 		else return ThreatLevels.High; 
+	}
+
+	public string GetCampSecurityDescription()
+	{
+		string securityText="";
+		switch (GetCampingThreat())
+		{
+			case ThreatLevels.High: {securityText+="None"; break;}
+			case ThreatLevels.Medium: {securityText+="Low"; break;}
+			case ThreatLevels.Low: {securityText+="Medium"; break;}
+			case ThreatLevels.None: {securityText+="High"; break;}
+		}
+		return securityText;
 	}
 
 	public void SetCar(bool carIsInregion)
@@ -148,7 +202,7 @@ public class MapRegion : MonoBehaviour
 		if (hasEncounter)
 		{
 				//int requiredMemberDifference=Mathf.Abs(regionalEncounter.maxAllowedMembers-movingMembers.Count);
-			int memberCountThreat=Mathf.Abs(regionalEncounter.maxAllowedMembers-memberCount);
+			int memberCountThreat=Mathf.Abs(regionalEncounter.maxRequiredMembers-memberCount);
 
 			if (memberCountThreat+ambientThreatNumber>0) estimatedThreat=ThreatLevels.Low;
 			if (memberCountThreat+ambientThreatNumber>1) estimatedThreat=ThreatLevels.Medium;
@@ -156,8 +210,19 @@ public class MapRegion : MonoBehaviour
 		}
 		return estimatedThreat;
 	}
-	public int ambientThreatNumber=0;
-	
+	//SET THREAT LEVEL, REFRESH SCOUTING HANDLER AND CHANGE MAP THREAT ICON
+	public int ambientThreatNumber
+	{
+		get {return _ambientThreatNumber;}
+		set 
+		{
+			_ambientThreatNumber=value;
+			SetThreatTokenState(_ambientThreatNumber);
+			MapScoutingHandler.main.TryRefreshEncounterDialog();
+		}
+	}
+	int _ambientThreatNumber=0;
+
 	public bool hasEncounter=false;
 	
 	public bool hasCamp=false;
@@ -296,6 +361,20 @@ public class MapRegion : MonoBehaviour
 			}
 		}
 	}
+
+	void SetThreatTokenState(int threatNumber)
+	{
+		if (threatNumber<=0) threatToken.enabled=false;
+		else
+		{
+			switch (threatNumber)
+			{
+				case 3: {threatToken.color=Color.red; break;}
+				case 2: {threatToken.color=Color.yellow; break;}
+				case 1: {threatToken.color=Color.green; break;}
+			}
+		}
+	}
 	
 	public void GenerateEncounter(bool isEndgame)
 	{
@@ -314,6 +393,7 @@ public class MapRegion : MonoBehaviour
 			if (threatRoll<0.5f) ambientThreatNumber=2;
 			if (threatRoll<0.25f) ambientThreatNumber=3;
 		}
+		teamSizeText.text=regionalEncounter.minRequiredMembers+"-"+regionalEncounter.maxRequiredMembers;
 		//if (threatLevel==ThreatLevels.Low) campSetupTimeRemaining+=2;
 		//if (threatLevel==ThreatLevels.Medium) campSetupTimeRemaining+=4;
 		//if (threatLevel==ThreatLevels.High) campSetupTimeRemaining+=6;
@@ -332,7 +412,6 @@ public class MapRegion : MonoBehaviour
 	public void SetUpCamp(int manhoursInvested)
 	{
 		campSetupTimeRemaining-=manhoursInvested;
-		campToken.gameObject.SetActive(true);
 		if (campSetupTimeRemaining<=0)
 		{
 			hasCamp=true;
@@ -340,19 +419,49 @@ public class MapRegion : MonoBehaviour
 			campInRegion=new Camp();
 			campToken.GetComponentInChildren<Text>().enabled=false;
 			InventoryScreenHandler.mainISHandler.RefreshInventoryItems();
+			campToken.color=Color.red;
 			//GameObject campToken=Instantiate(campTokenPrefab);
 			//campToken.transform.SetParent(this.transform);//,true);
 			//campToken.transform.position=this.transform.position;
 		}
-		else campToken.GetComponentInChildren<Text>().text=campSetupTimeRemaining.ToString();
+		else 
+		{
+			campToken.GetComponentInChildren<Text>().enabled=true;
+			campToken.GetComponentInChildren<Text>().text=campSetupTimeRemaining.ToString();
+		}
 	}
-	
+
+	public bool TryDecreaseCampThreatLevel(int changeDelta)
+	{
+		bool result=false; 
+		if (hasCamp)
+		{
+			if (campInRegion.threatLevelNumber>0) 
+			{
+				campInRegion.threatLevelNumber--;
+				result=true;
+				switch (campInRegion.threatLevelNumber)
+				{
+					case 0:{campToken.color=Color.green; break;}
+					case 1:{campToken.color=Color.yellow; break;}
+					case 2:{campToken.color=Color.red; break;}
+				}
+			}
+		}
+		return result;
+	}
+
 	//void Start() {transform.Rotate(new Vector3(-90,0,0));}
-	void Start() {SetSprite();}
+	void Start() 
+	{
+		SetSprite();
+		PartyManager.ETimePassedEnd+=SetLocalTemperature;
+	}
 
 	void OnDestroy()
 	{
 		foreach (RegionConnection connection in connections.Values){GameObject.Destroy(connection.roadLine.gameObject);}
+		PartyManager.ETimePassedEnd-=SetLocalTemperature;
 	}
 
 	public void GraphicClicked()
@@ -468,11 +577,10 @@ public class MapRegion : MonoBehaviour
 						areaDescription+="Enemies: "+regionalEncounter.enemyDescription+"\n";
 						
 						//if (isHive) {areaDescription+="\nHive";}
-						areaDescription+="\nExploration threat: "+CalculateThreatLevel(0);
-						areaDescription+="\nRest threat:"+GetCampingThreat();
+						//areaDescription+="\nExploration threat: "+CalculateThreatLevel(0);
 					}
-					areaDescription+="\nTemperature: "+GetTemperature();
-					areaDescription+="\nRequired team size: "+regionalEncounter.minRequiredMembers+"-"+regionalEncounter.maxAllowedMembers;
+					//areaDescription+="\nTemperature: "+GetTemperature();
+					areaDescription+="\nRequired team size: "+regionalEncounter.minRequiredMembers+"-"+regionalEncounter.maxRequiredMembers;
 					//if (PartyManager.mainPartyManager.selectedMembers.Count>0)
 
 				}
@@ -486,9 +594,24 @@ public class MapRegion : MonoBehaviour
 			{
 				if (textExists) areaDescription+="\n";
 				textExists=true;
-				areaDescription+="Move cost:"+cursorRegion.connections[this].moveCost;
-				if (cursorRegion.connections[this].isIntercity) areaDescription+=" gas or 100 fatigue";
-				else areaDescription+=" fatigue";
+				areaDescription+="Move cost:";
+				if (cursorRegion.connections[this].isIntercity) areaDescription+=cursorRegion.connections[this].moveCost+" gas or 100 fatigue";
+				else
+				{
+					bool nonuniformPartyMoveCost=false;
+					int maxFatiguePenalty=PartyManager.mainPartyManager.selectedMembers[0].currentFatigueMovePenalty;
+					foreach (PartyMember member in PartyManager.mainPartyManager.selectedMembers)
+					{
+						if (member.currentFatigueMovePenalty>maxFatiguePenalty) 
+						{
+							nonuniformPartyMoveCost=true;
+							maxFatiguePenalty=member.currentFatigueMovePenalty;
+						}
+					}
+					if (nonuniformPartyMoveCost) areaDescription+="--";
+					else areaDescription+=(maxFatiguePenalty+cursorRegion.connections[this].moveCost).ToString();
+					areaDescription+=" fatigue";
+				}
 				
 			}
 		}
@@ -496,11 +619,29 @@ public class MapRegion : MonoBehaviour
 		if (textExists)	TooltipManager.main.CreateTooltip(areaDescription,this.transform);
 	}
 
+	//ICON TOOLTIPS
+	public void ShowThreatTooltip()
+	{
+		string tooltipText="Exploration threat:"+CalculateThreatLevel(regionalEncounter.maxRequiredMembers);
+		TooltipManager.main.CreateTooltip(tooltipText,threatToken.transform);
+	}
+
 	public void ShowCampTooltip()
 	{
-		string tooltipText="You have secured a hideout in this area.\n";
-		tooltipText+="You can forify, burn fuel and craft items here.\n";
-		tooltipText+="Resting here restores more fatigue";
+		string tooltipText="Camp security:";
+		tooltipText+=GetCampSecurityDescription();
+		tooltipText+="\n";
+		tooltipText+="Temperature:"+GetTemperatureDescription(localTemperature)+"\n\n";
+		if (!hasCamp) 
+		{
+			tooltipText+="This area has no secure hideouts";
+		}
+		else
+		{
+			tooltipText+="You have secured a hideout in this area.\n";
+			tooltipText+="You can forify, burn fuel and craft items here.\n";
+			tooltipText+="Resting here restores more fatigue";
+		}
 		TooltipManager.main.CreateTooltip(tooltipText,campToken.transform);
 	}
 

@@ -21,8 +21,11 @@ public class RecipeMakeButton : MonoBehaviour,IPointerEnterHandler,IPointerExitH
 		bool canMakeItem=false;
 		List<InventoryItem> usedLocalItems=new List<InventoryItem>();
 		List<InventoryItem> usedCarriedItems=new List<InventoryItem>();
-		
-		if (InventoryScreenHandler.mainISHandler.selectedMember.GetFatigue()<=100-newRecipe.requiredFatigue)
+
+		PartyMember currentSelectedMember=InventoryScreenHandler.mainISHandler.selectedMember;
+		int totalBuildFatigueCost=newRecipe.requiredFatigue+currentSelectedMember.currentFatigueCraftPenalty;
+
+		if (currentSelectedMember.CheckEnoughFatigue(totalBuildFatigueCost))
 		{
 			//Prep used item list and required item count dict
 			
@@ -71,7 +74,7 @@ public class RecipeMakeButton : MonoBehaviour,IPointerEnterHandler,IPointerExitH
 			()=>
 			{
 				PartyMember creator=InventoryScreenHandler.mainISHandler.selectedMember;
-				creator.ChangeFatigue(newRecipe.requiredFatigue);	
+				creator.ChangeFatigue(totalBuildFatigueCost);	
 				foreach(InventoryItem usedLocalItem in usedLocalItems) creator.currentRegion.TakeStashItem(usedLocalItem);
 				foreach(InventoryItem usedCarriedItem in usedCarriedItems) creator.RemoveCarriedItem(usedCarriedItem);
 				for(int i=0; i<newRecipe.resultItemCount; i++) 

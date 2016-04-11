@@ -14,6 +14,7 @@ public abstract class StatusEffect
 	public bool canStack=false;
 }
 
+//MEMBER EFFECTS
 public class Bleed:StatusEffect
 {
 	string _name="Bleeding";
@@ -80,9 +81,82 @@ public class Bleed:StatusEffect
 	}
 }
 
+public class Cold:StatusEffect
+{
+	string _name="Cold";
+	int maxFatiguePenalty=3;
+	float cureChancePerHour=0.25f;
+
+	//int damageModDelta=-40;
+	public Cold (PartyMember member) 
+	{
+		//affectedPartyMemberIndex=affectedMemberIndex;
+		affectedMember=member;
+		//affectedMember.meleeDamageMod+=damageModDelta;
+		affectedMember.fatigueRestoreSleep-=maxFatiguePenalty;
+		affectedMember.fatigueRestoreWait-=maxFatiguePenalty;
+		affectedMember.morale-=15;
+		PartyManager.ETimePassed+=TimePassEffect;
+		//PartyManager.TimePassed+=TimePassEffect;
+		//canStack=true;
+	}
+	
+	public override string effectName 
+	{
+		get {return _name;}
+	}
+	public override Sprite effectSprite 
+	{
+		get {return SpriteBase.mainSpriteBase.coldSprite;}
+	}
+	//int affectedPartyMemberIndex;
+	PartyMember affectedMember;
+	
+	public void CureCold()
+	{
+		//PartyStatusCanvasHandler.main.NewNotification(affectedMember.name+" has stopped bleeding");
+		PartyManager.mainPartyManager.RemovePartyMemberStatusEffect(affectedMember,this);
+		//affectedMember.meleeDamageMod-=damageModDelta;
+		affectedMember.fatigueRestoreSleep+=maxFatiguePenalty;
+		affectedMember.fatigueRestoreWait+=maxFatiguePenalty;
+		affectedMember.morale+=15;
+	}
+
+	public override void TimePassEffect(int timePassed)
+	{
+		for (int i=0; i<timePassed; i++)
+		{
+			if (Random.value<=cureChancePerHour) 
+			{
+				//PartyManager.TimePassed-=TimePassEffect;
+				//PartyManager.mainPartyManager.RemovePartyMemberStatusEffect(affectedMember,this);
+				CureCold();
+				break;
+			}
+		}
+	}
+
+	public override void CleanupEffect()
+	{
+		PartyManager.ETimePassed-=TimePassEffect;
+	}
+	public override void StackEffect ()
+	{
+		affectedMember.morale-=10;
+	}
+	
+	
+	public override string GetMouseoverDescription ()
+	{
+		return _name+"\nFatigue restore reduced by "+maxFatiguePenalty;//"\n Damage dealt reduced by "+damageModDelta;
+	}
+}
+
 public class BrokenArmsMember:StatusEffect
 {
 	string _name="Broken arms";
+	int craftFatiguePenalty=10;
+
 	//int damageModDelta=-40;
 	float hitChanceChange=0.4f;
 	public BrokenArmsMember (PartyMember member) 
@@ -92,6 +166,7 @@ public class BrokenArmsMember:StatusEffect
 		//affectedMember.meleeDamageMod+=damageModDelta;
 		affectedMember.baseAttackHitChance-=hitChanceChange;
 		affectedMember.morale-=15;
+		affectedMember.currentFatigueCraftPenalty=craftFatiguePenalty;
 		//PartyManager.TimePassed+=TimePassEffect;
 		//canStack=true;
 	}
@@ -114,24 +189,28 @@ public class BrokenArmsMember:StatusEffect
 		//affectedMember.meleeDamageMod-=damageModDelta;
 		affectedMember.baseAttackHitChance+=hitChanceChange;
 		affectedMember.morale+=15;
+		affectedMember.currentFatigueCraftPenalty=0;
 	}
 	
 	
 	public override string GetMouseoverDescription ()
 	{
-		return _name+"\n Hit chande reduced by "+hitChanceChange;//"\n Damage dealt reduced by "+damageModDelta;
+		return _name+"\n Hit chande reduced by "+hitChanceChange+"\nCrafting fatigue cost increased by "+craftFatiguePenalty;//"\n Damage dealt reduced by "+damageModDelta;
 	}
 }
 
 public class BrokenLegsMember:StatusEffect
 {
 	string _name="Broken legs";
+	int fatigueMovePenalty=10;
+
 	public BrokenLegsMember (PartyMember member) 
 	{
 		//affectedPartyMemberIndex=affectedMemberIndex;
 		affectedMember=member;
 		affectedMember.legsBroken=true;
 		affectedMember.morale-=15;
+		affectedMember.currentFatigueMovePenalty=fatigueMovePenalty;
 		//PartyManager.TimePassed+=TimePassEffect;
 		//canStack=true;
 	}
@@ -153,17 +232,17 @@ public class BrokenLegsMember:StatusEffect
 		PartyManager.mainPartyManager.RemovePartyMemberStatusEffect(affectedMember,this);
 		affectedMember.legsBroken=false;
 		affectedMember.morale+=15;
+		affectedMember.currentFatigueMovePenalty=0;
 	}
 
 	
 	public override string GetMouseoverDescription ()
 	{
-		return _name+"\n Reduced move speed";
+		return _name+"\n Reduced move speed\nMap movement cost increased by "+fatigueMovePenalty;
 	}
 }
 
-//Enemy effects
-
+//ENEMY EFFECTS
 public class PhasedOut:StatusEffect
 {
 	string _name="Phased out";

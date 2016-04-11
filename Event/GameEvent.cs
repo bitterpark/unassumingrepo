@@ -7,8 +7,8 @@ public abstract class GameEvent
 	public abstract string GetDescription(MapRegion eventRegion, List<PartyMember> movedMembers);// {return null;}
 	public virtual bool PreconditionsMet(MapRegion eventRegion, List<PartyMember> movedMembers) {return true;}
 	public virtual bool AllowMapMove() {return true;}
-	public abstract List<EventChoice> GetChoices(MapRegion eventRegion, List<PartyMember> movedMembers);// {return null;}
-	public abstract string DoChoice(string choiceString, MapRegion eventRegion, List<PartyMember> movedMembers);// {return null;}
+	public virtual List<EventChoice> GetChoices(MapRegion eventRegion, List<PartyMember> movedMembers) {return null;}
+	public virtual string DoChoice(string choiceString, MapRegion eventRegion, List<PartyMember> movedMembers) {return null;}
 	public bool repeatable=false;
 }
 
@@ -298,7 +298,7 @@ public class LostInAnomaly:GameEvent
 public class CacheInAnomaly:GameEvent
 {	
 	string eventDescription="";
-	int fatiguePenalty=10;
+	int fatiguePenalty=1;
 	
 	public override string GetDescription(MapRegion eventRegion, List<PartyMember> movedMembers) 
 	{
@@ -310,7 +310,10 @@ public class CacheInAnomaly:GameEvent
 	public override List<EventChoice> GetChoices(MapRegion eventRegion, List<PartyMember> movedMembers)
 	{
 		List<EventChoice> choicesList=new List<EventChoice>();
-		choicesList.Add(new EventChoice("Try to navigate the car roofs to reach the supplies"));
+		foreach (PartyMember member in movedMembers)
+		{
+			choicesList.Add(new EventChoice("Send "+member.name+" to navigate the car roofs and the supplies"));
+		}
 		choicesList.Add(new EventChoice("Leave it and move on"));
 		return choicesList;
 	}
@@ -318,41 +321,41 @@ public class CacheInAnomaly:GameEvent
 	public override string DoChoice (string choiceString,MapRegion eventRegion, List<PartyMember> movedMembers)
 	{
 		string eventResult=null;
-		
-		switch (choiceString)
+
+		if (choiceString=="Leave it and move on")
+		eventResult="You decide not to test whatever strange phenomenon caused this pileup, and leave the supplies. Better safe than sorry.";
+
+		if (eventResult==null)
 		{
-		case"Try to navigate the car roofs to reach the supplies": 
+			foreach (PartyMember member in movedMembers)
 			{
-				PartyMember volunteer=movedMembers[Random.Range(0,movedMembers.Count)];
-				//success
-				if (Random.value<0.5f)
+				if (choiceString=="Send "+member.name+" to navigate the car roofs and the supplies")
 				{
-					eventResult=volunteer.name+" volunteers to try and move across. The roofs are moist and slippery, and "+volunteer.name+" loses balance several times, but manages to recover and safely reaches the supplies. Loaded with bags,"+volunteer.name+" somehow makes it back across, covered in sweat but unharmed\n\n+2 food, +10 ammo\n\n"+fatiguePenalty+" fatigue for "+volunteer.name;
-					eventRegion.StashItem(new FoodSmall());
-					eventRegion.StashItem(new FoodBig());
-					eventRegion.StashItem(new FoodBig());
-					//PartyManager.mainPartyManager.GainItems(new FoodSmall());
-					//PartyManager.mainPartyManager.GainItems(new FoodBig());
-					//PartyManager.mainPartyManager.GainItems(new FoodBig());
-					PartyManager.mainPartyManager.ammo+=10;
-					volunteer.ChangeFatigue(fatiguePenalty);
+					if (Random.value<0.5f)
+					{
+						eventResult=member.name+" volunteers to try and move across. The roofs are moist and slippery, and "+member.name+" loses balance several times, but manages to recover and safely reaches the supplies. Loaded with bags,"+member.name+" somehow makes it back across, covered in sweat but unharmed\n\n+2 food, +10 ammo\n\n"+fatiguePenalty+" fatigue for "+member.name;
+						eventRegion.StashItem(new FoodSmall());
+						eventRegion.StashItem(new FoodBig());
+						eventRegion.StashItem(new FoodBig());
+						//PartyManager.mainPartyManager.GainItems(new FoodSmall());
+						//PartyManager.mainPartyManager.GainItems(new FoodBig());
+						//PartyManager.mainPartyManager.GainItems(new FoodBig());
+						PartyManager.mainPartyManager.ammo+=10;
+						member.ChangeFatigue(fatiguePenalty);
+					}
+					else
+					{
+						int damage=25;
+						eventResult=member.name+" navigates the first few cars with surprising nimbleness and grace, but an inclined hatchback roof knocks them off-balance.\n"+member.name+" manages to grab an upper trunk of another nearby car at the last second, but their left foot dips into the drink all the way to their ankle. A terrible scream follows, but a surge of adrenaline causes "+member.name+" to pull themselves up. With one foot badly boiled, they abandon the supplies, and somehow manage to crawl back to safety.\n\n-"+damage+" health for "+member.name;
+						if (member.health<damage) {damage=member.health-1;}
+						member.TakeDamage(damage,false);
+						//volunteer.ChangeFatigue(fatiguePenalty);
+					}
+					break;
 				}
-				else
-				{
-					int damage=25;
-					eventResult=volunteer.name+" navigates the first few cars with surprising nimbleness and grace, but an inclined hatchback roof knocks them off-balance.\n"+volunteer.name+" manages to grab an upper trunk of another nearby car at the last second, but their left foot dips into the drink all the way to their ankle. A terrible scream follows, but a surge of adrenaline causes "+volunteer.name+" to pull themselves up. With one foot badly boiled, they abandon the supplies, and somehow manage to crawl back to safety.\n\n-"+damage+" health for "+volunteer.name;
-					if (volunteer.health<damage) {damage=volunteer.health-1;}
-					volunteer.TakeDamage(damage,false);
-					//volunteer.ChangeFatigue(fatiguePenalty);
-				}
-				break;
-			}
-		case"Leave it and move on":
-			{
-				eventResult="You decide not to test whatever strange phenomenon caused this pileup, and leave the supplies. Better safe than sorry.";
-				break;
 			}
 		}
+
 		return eventResult;
 	}
 }
@@ -378,8 +381,8 @@ public class MedicalCache:GameEvent
 	public override string DoChoice (string choiceString, MapRegion eventRegion, List<PartyMember> movedMembers)
 	{
 		string eventResult=null;
-		int fatigueChangeSuccess=5;
-		int fatigueChangeFailure=20;
+		int fatigueChangeSuccess=1;
+		int fatigueChangeFailure=2;
 		
 		switch (choiceString)
 		{
@@ -392,7 +395,7 @@ public class MedicalCache:GameEvent
 					eventRegion.StashItem(new Medkit());
 					eventRegion.StashItem(new Medkit());
 					eventRegion.StashItem(new Bandages());
-					eventRegion.StashItem(new Bandages());
+					eventRegion.StashItem(new Pills());
 					foreach (PartyMember member in movedMembers)
 					{
 						member.ChangeFatigue(fatigueChangeSuccess);
@@ -451,19 +454,27 @@ public class SurvivorRescue:GameEvent
 				{
 					PartyMember newGuy=new PartyMember(eventRegion);
 					PartyManager.mainPartyManager.AddNewPartyMember(newGuy);
-					eventResult="You charge the creature before it can deliver another blow to the distressed survivor. Taken by surprise, it quickly succumbs to your attacks.\nThe survivor is shaken, but alive.\n\n"+newGuy.name+" Joins your party."+"\n\n"+newGuy.name+" takes "+newMemberHealthPenalty+" damage";
-					newGuy.TakeDamage(newMemberHealthPenalty,false);
+					PartyMember.BodyPartTypes damagedPart=newGuy.TakeRandomPartDamage(newMemberHealthPenalty,true);
+					eventResult="You charge the creature before it can deliver another blow to the distressed survivor. Taken by surprise, it quickly succumbs to your attacks.\nThe survivor is shaken, but alive.\n\n"+newGuy.name+" Joins your party."+"\n\n"+newGuy.name+" takes "+newMemberHealthPenalty+" "+damagedPart+" damage";
+
 					//newGuy.health+=newMemberHealthPenalty;
 				}
 				else
 				{
 					PartyMember newGuy=new PartyMember(eventRegion);
-					eventResult="Before you can close the distance, the creature reacts and lunges at you!\nAmid a flurry of vicious attacks, you barely manage to fight it off with the help of the survivor.\n\n"+newGuy.name+" joins your party\n\nEveryone takes "+failPartyDamage+" damage";
+					eventResult="Before you can close the distance, the creature reacts and lunges at you!\nAmid a flurry of vicious attacks, you barely manage to fight it off with the help of the survivor.\n\n"+newGuy.name+" joins your party\n\n";
 					//Order is
-					foreach (PartyMember member in movedMembers) {member.TakeDamage(failPartyDamage,false);}//member.health+=failPartyDamage;}
+					PartyMember.BodyPartTypes partType;
+					foreach (PartyMember member in movedMembers) 
+					{
+						partType=member.TakeRandomPartDamage(failPartyDamage,true);
+						eventResult+=member.name+" takes "+failPartyDamage+" "+partType+" damage\n";
+					}//member.health+=failPartyDamage;}
 					//important
 					PartyManager.mainPartyManager.AddNewPartyMember(newGuy);
-					newGuy.TakeDamage(failPartyDamage,false);
+
+					partType=newGuy.TakeRandomPartDamage(failPartyDamage,true);
+					eventResult+=newGuy.name+" takes "+failPartyDamage+" "+partType+" damage\n";
 					//newGuy.health+=newMemberHealthPenalty;
 				}
 				break;
@@ -500,7 +511,7 @@ public class SearchForSurvivor:GameEvent
 	{
 		string eventResult=null;
 		int ignoreMoralePenalty=10;
-		int fatigueChangeFailure=10;
+		int fatigueChangeFailure=1;
 		
 		switch (choiceString)
 		{
@@ -539,10 +550,18 @@ public class LowMoraleSpiral:GameEvent
 	string eventDescription="";
 	int moraleThreshold=30;
 	int moralePenalty=-15;
-	
+	PartyMember affectedMember;
+
 	public override string GetDescription(MapRegion eventRegion, List<PartyMember> movedMembers) 
 	{
-		eventDescription="As morale wavers, some people start to slide into hopelessness";
+		eventDescription="As morale wavers, some people start to slide into hopelessness\n\n";
+		PartyMember affectedMember=null;
+		foreach (PartyMember member in movedMembers)
+		{
+			if (member.morale<=moraleThreshold) {affectedMember=member; break;}
+		}
+		eventDescription+=affectedMember.name+" is trying to hold it together, but you can see the fear in his eyes, his body language.\n Sometimes, one crack in the shell is all it takes...\n\n"+moralePenalty+" morale for "+affectedMember.name;
+		affectedMember.morale+=moralePenalty;
 		return eventDescription;
 	}
 	
@@ -555,36 +574,6 @@ public class LowMoraleSpiral:GameEvent
 		}
 		return conditionsAreMet;
 	}
-	
-	public override List<EventChoice> GetChoices(MapRegion eventRegion, List<PartyMember> movedMembers)
-	{
-		List<EventChoice> choicesList=new List<EventChoice>();
-		choicesList.Add(new EventChoice("Continue"));
-		return choicesList;
-	}
-	
-	public override string DoChoice (string choiceString, MapRegion eventRegion, List<PartyMember> movedMembers)
-	{
-		string eventResult=null;
-		PartyMember affectedMember=null;
-		foreach (PartyMember member in movedMembers)
-		{
-			if (member.morale<=moraleThreshold) {affectedMember=member; break;}
-		}
-		if (affectedMember==null) {throw new System.Exception("No low morale member found for MoraleSpiral");}
-		
-		switch (choiceString)
-		{
-		case"Continue": 
-			{
-				//success
-				eventResult=affectedMember.name+" is trying to hold it together, but you can see the fear in his eyes, his body language.\n Sometimes, one crack in the shell is all it takes...\n\n"+moralePenalty+" morale for "+affectedMember.name;
-				affectedMember.morale+=moralePenalty;
-				break;
-			}
-		}
-		return eventResult;
-	}
 }
 
 public class LowMoraleFight:GameEvent
@@ -595,32 +584,8 @@ public class LowMoraleFight:GameEvent
 	
 	public override string GetDescription(MapRegion eventRegion, List<PartyMember> movedMembers) 
 	{
-		eventDescription="A few terse words send pent up tension boiling over, sparking a fistfight between two survivors!";
-		return eventDescription;
-	}
-	public override bool PreconditionsMet (MapRegion eventRegion, List<PartyMember> movedMembers)
-	{
-		bool conditionsAreMet=false;
-		if (movedMembers.Count>1)
-		{
-			foreach (PartyMember member in movedMembers)
-			{
-				if (member.morale<=moraleThreshold) {conditionsAreMet=true; break;}
-			}
-		}
-		return conditionsAreMet;
-	}
-	
-	public override List<EventChoice> GetChoices(MapRegion eventRegion, List<PartyMember> movedMembers)
-	{
-		List<EventChoice> choicesList=new List<EventChoice>();
-		choicesList.Add(new EventChoice("Continue"));
-		return choicesList;
-	}
-	
-	public override string DoChoice (string choiceString, MapRegion eventRegion, List<PartyMember> movedMembers)
-	{
-		string eventResult=null;
+		eventDescription="A few terse words send pent up tension boiling over, sparking a fistfight between two survivors!\n";
+
 		PartyMember angryMember=null;
 		PartyMember normalMember=null;
 		foreach (PartyMember member in movedMembers)
@@ -634,34 +599,13 @@ public class LowMoraleFight:GameEvent
 			if (angryMember!=null && normalMember!=null) {break;}
 		}
 		if (angryMember==null | normalMember==null) {throw new System.Exception("Null members for LowMoraleFight!");}
-		
-		switch (choiceString)
-		{
-		case"Continue": 
-			{
-				//success
-				eventResult=angryMember.name+" and "+normalMember.name+" tear into eachother with desperate, frustrated viciousness!\nEventually the fight gets broken up, but not before they could do some damage.\n\n"+healthPenalty+" health for "+angryMember.name+" and "+normalMember.name;
-				//angryMember.health+=healthPenalty;
-				//normalMember.health+=healthPenalty;
-				angryMember.TakeDamage(healthPenalty,false);
-				normalMember.TakeDamage(healthPenalty,false);
-				break;
-			}
-		}
-		return eventResult;
-	}
-}
-
-public class LowMoraleEnmity:GameEvent
-{	
-	string eventDescription="";
-	int moraleThreshold=15;
-	
-	public override string GetDescription(MapRegion eventRegion, List<PartyMember> movedMembers) 
-	{
-		eventDescription="Tension and frustration in the group escalates in a shouting match between two survivors!";
+		PartyMember.BodyPartTypes angryDamagedPart=angryMember.TakeRandomPartDamage(healthPenalty,true);
+		PartyMember.BodyPartTypes normalDamagedPart=normalMember.TakeRandomPartDamage(healthPenalty,true);
+		eventDescription+=angryMember.name+" and "+normalMember.name+" tear into eachother with desperate, frustrated viciousness!\nEventually the fight gets broken up, but not before they could do some damage.\n\n"+healthPenalty+" "+angryDamagedPart+" damage for "+angryMember.name;
+		eventDescription+=healthPenalty+" "+normalDamagedPart+" damage for "+normalMember.name;
 		return eventDescription;
 	}
+
 	public override bool PreconditionsMet (MapRegion eventRegion, List<PartyMember> movedMembers)
 	{
 		bool conditionsAreMet=false;
@@ -674,17 +618,15 @@ public class LowMoraleEnmity:GameEvent
 		}
 		return conditionsAreMet;
 	}
+}
+
+public class LowMoraleEnmity:GameEvent
+{	
+	string eventDescription="";
+	int moraleThreshold=15;
 	
-	public override List<EventChoice> GetChoices(MapRegion eventRegion, List<PartyMember> movedMembers)
+	public override string GetDescription(MapRegion eventRegion, List<PartyMember> movedMembers) 
 	{
-		List<EventChoice> choicesList=new List<EventChoice>();
-		choicesList.Add(new EventChoice("Continue"));
-		return choicesList;
-	}
-	
-	public override string DoChoice (string choiceString, MapRegion eventRegion, List<PartyMember> movedMembers)
-	{
-		string eventResult=null;
 		PartyMember angryMember=null;
 		PartyMember normalMember=null;
 		foreach (PartyMember member in movedMembers)
@@ -699,18 +641,23 @@ public class LowMoraleEnmity:GameEvent
 		}
 		if (angryMember==null | normalMember==null) {throw new System.Exception("Null members for LowMoraleEnmity!");}
 		
-		switch (choiceString)
+		eventDescription="Tension and frustration in the group escalates in a shouting match between two survivors!\n";
+		eventDescription+=angryMember.name+" and "+normalMember.name+"'s argument devolves into personal attacks, as both forget the original root of their disagreement.\n When the exchange of accusastions finally settles, "+normalMember.name+" seems livid with indignation.\n\n"+normalMember.name+" has a grudge against "+angryMember.name;
+		if (normalMember.relationships.ContainsKey(angryMember)) {normalMember.RemoveRelatonship(angryMember);}
+		normalMember.SetRelationship(angryMember,Relationship.RelationTypes.Enemy);
+		return eventDescription;
+	}
+	public override bool PreconditionsMet (MapRegion eventRegion, List<PartyMember> movedMembers)
+	{
+		bool conditionsAreMet=false;
+		if (movedMembers.Count>1)
 		{
-		case"Continue": 
+			foreach (PartyMember member in movedMembers)
 			{
-				//success
-				eventResult=angryMember.name+" and "+normalMember.name+"'s argument devolves into personal attacks, as both forget the original root of their disagreement.\n When the exchange of accusastions finally settles, "+normalMember.name+" seems livid with indignation.\n\n"+normalMember.name+" has a grudge against "+angryMember.name;
-				if (normalMember.relationships.ContainsKey(angryMember)) {normalMember.RemoveRelatonship(angryMember);}
-				normalMember.SetRelationship(angryMember,Relationship.RelationTypes.Enemy);
-				break;
+				if (member.morale<=moraleThreshold) {conditionsAreMet=true; break;}
 			}
 		}
-		return eventResult;
+		return conditionsAreMet;
 	}
 }
 
@@ -722,7 +669,10 @@ public class LowMoraleQuit:GameEvent
 	
 	public override string GetDescription(MapRegion eventRegion, List<PartyMember> movedMembers) 
 	{
-		eventDescription="Fed up with the group, "+leavingMember.name+" decides to try his luck alone";
+		PartyManager.mainPartyManager.RemovePartyMember(leavingMember);
+
+		eventDescription="Fed up with the group, "+leavingMember.name+" decides to try his luck alone\n\n";
+		eventDescription+=leavingMember.name+" leaves the party";
 		return eventDescription;
 	}
 	public override bool PreconditionsMet (MapRegion eventRegion, List<PartyMember> movedMembers)
@@ -741,30 +691,6 @@ public class LowMoraleQuit:GameEvent
 			}
 		}
 		return conditionsAreMet;
-	}
-	
-	public override List<EventChoice> GetChoices(MapRegion eventRegion, List<PartyMember> movedMembers)
-	{
-		List<EventChoice> choicesList=new List<EventChoice>();
-		choicesList.Add(new EventChoice("Continue"));
-		return choicesList;
-	}
-	
-	public override string DoChoice (string choiceString, MapRegion eventRegion, List<PartyMember> movedMembers)
-	{
-		string eventResult=null;
-		switch (choiceString)
-		{
-		case"Continue": 
-			{
-				//success
-				eventResult=leavingMember.name+" leaves the party";
-				PartyManager.mainPartyManager.RemovePartyMember(leavingMember);
-				break;
-			}
-		}
-		return eventResult;
-
 	}
 }
 
@@ -914,8 +840,12 @@ public class AmbushEvent:GameEvent
         if (choiceString=="Fight!")
         {
             int fightHealthPenalty=Random.Range(fightHealthPenaltyMin,fightHealthPenaltyMax+1);
-            eventResult="With the creatures so close, it's too late to run.\nSurging with adrenaline, the party charges the monsters with weapons drawn! The violence is brief, but brutal\n\n-"+fightHealthPenalty+" health for everyone";
-            foreach (PartyMember member in movedMembers){member.TakeDamage(fightHealthPenalty,true);}
+            eventResult="With the creatures so close, it's too late to run.\nSurging with adrenaline, the party charges the monsters with weapons drawn! The violence is brief, but brutal\n";
+            foreach (PartyMember member in movedMembers)
+            {
+            	PartyMember.BodyPartTypes damagedPart=member.TakeRandomPartDamage(fightHealthPenalty,true);
+            	eventResult+="\n"+fightHealthPenalty+" "+damagedPart+" damage to "+member.name;
+            }
         }
         if (choiceString=="Shoot them!("+requiredAmmo+" ammo)")
         {
@@ -936,8 +866,9 @@ public class AmbushEvent:GameEvent
                     partyPronoun="companion";
                 }
                 eventResult=member.name+" hesitates for a moment, before rushing past "+partyPronoun+" and into danger. The sounds of struggle left behind spur on the "+partyPronounTwo+" as they run, wondering if "+member.name+" will make it...";
-                eventResult+="\n\n-"+stayBehindHealthPenalty+" health for "+member.name;
-                member.TakeDamage(stayBehindHealthPenalty,true);
+				PartyMember.BodyPartTypes damagedPart=member.TakeRandomPartDamage(stayBehindHealthPenalty,true);
+                eventResult+="\n\n"+stayBehindHealthPenalty+" "+damagedPart+" health for "+member.name;
+
                 break;
             }
         }
@@ -948,12 +879,12 @@ public class AmbushEvent:GameEvent
 public class CleanupEvent:GameEvent
 {
     const int requiredAmmo=5;
-    int stayBehindPenaltyMin=20;
-    int stayBehindPenaltyMax=35;
+    int stayBehindPenaltyMin=18;
+    int stayBehindPenaltyMax=25;
     int requiredTrapsCount=1;
     int trapAmbientThreatReduction=1;
 
-    int fatigueRequired=20;
+    int fatigueRequired=2;
 
 	Dictionary<InventoryItem,PartyMember> usedMemberTraps=new Dictionary<InventoryItem,PartyMember>();
 	List<InventoryItem> usedLocationTraps=new List<InventoryItem>();
@@ -984,7 +915,7 @@ public class CleanupEvent:GameEvent
 	            }   
 	        }
 	        //Find fatigue options
-			choicesList.Add(new EventChoice("Have "+member.name+" find safer routes",member.GetFatigue()+fatigueRequired>100));
+			choicesList.Add(new EventChoice("Have "+member.name+" find safer routes ("+fatigueRequired+" fatigue)",member.GetFatigue()+fatigueRequired>10));
 	    }
       	
         if (trapsGreyedOut)
@@ -1000,7 +931,7 @@ public class CleanupEvent:GameEvent
 				}
 	        }
         }
-		choicesList.Add(new EventChoice("...Trap the area(-"+requiredTrapsCount+" traps)",trapsGreyedOut));
+		choicesList.Add(new EventChoice("...Trap the area (-"+requiredTrapsCount+" traps)",trapsGreyedOut));
 
 		choicesList.Add(new EventChoice("Cancel"));
         return choicesList;
@@ -1010,7 +941,7 @@ public class CleanupEvent:GameEvent
     {
         string eventResult=null;
 
-		if (choiceString=="...Trap the area(-"+requiredTrapsCount+" traps)")
+		if (choiceString=="...Trap the area (-"+requiredTrapsCount+" traps)")
         {
 			eventResult="You get to work setting a series of deadly traps in tight spaces, luring dangerous creatures in one by one.\n\nAmbush threat reduced.";
 			foreach (InventoryItem trap in usedLocationTraps) {eventRegion.TakeStashItem(trap);}
@@ -1018,23 +949,26 @@ public class CleanupEvent:GameEvent
             eventRegion.ambientThreatNumber-=1;
         }
 
-        foreach (PartyMember member in movedMembers)
-        {
-			if (choiceString=="Have "+member.name+" find safer routes")
-			{
-				eventResult=member.name+" scouts new paths through the ruined streets, finding ways around large groups of monsters and odd anomalies.";
-				eventResult+="\n\n-"+fatigueRequired+" for "+member.name+", exploration threat lowered.";
-				member.ChangeFatigue(fatigueRequired);
-				eventRegion.ambientThreatNumber-=1;
-				break;
-			}
-        }
-
 		if (choiceString=="Cancel") 
 		{
 			//success
 			eventResult="You decide not to brave the area right now.";
 			return eventResult;
+		}
+
+        if (eventResult==null)
+        {
+	        foreach (PartyMember member in movedMembers)
+	        {
+				if (choiceString=="Have "+member.name+" find safer routes ("+fatigueRequired+" fatigue)")
+				{
+					eventResult=member.name+" scouts new paths through the ruined streets, finding ways around large groups of monsters and odd anomalies.";
+					eventResult+="\n\n-"+fatigueRequired+" for "+member.name+", exploration threat lowered.";
+					member.ChangeFatigue(fatigueRequired);
+					eventRegion.ambientThreatNumber-=1;
+					break;
+				}
+	        }
 		}
         return eventResult;
     }
@@ -1052,42 +986,23 @@ public class MemberIsCold:GameEvent
 	public override string GetDescription(MapRegion eventRegion, List<PartyMember> movedMembers) 
 	{
 		coldMember=movedMembers[Random.Range(0,movedMembers.Count)];
-		eventDescription="The air is cold and crisp. You can see your own breath. Life is slowly leaking out of your body.";
+		//success
+		//PartyMember.BodyPartTypes damagedPart=coldMember.TakeRandomPartDamage(healthPenalty,true);
+		PartyManager.mainPartyManager.AddPartyMemberStatusEffect(coldMember,new Cold(coldMember));
+
+		eventDescription="The air is cold and crisp. You can see your own breath. Life is slowly leaking out of your body.\n";
+		eventDescription+="Due to low temperatures and a lack of heating, "+coldMember.name+" freezes and becomes sick!\n\n";//+healthPenalty+" "+damagedPart+" damage for "+coldMember.name;
 		return eventDescription;
 	}
+
 	public override bool PreconditionsMet (MapRegion eventRegion, List<PartyMember> movedMembers)
 	{
 		bool conditionsAreMet=false;
-		switch (eventRegion.GetTemperature())
+		switch (eventRegion.localTemperature)
 		{
-			case Camp.TemperatureRating.Cold: {conditionsAreMet=true; break;}
+			case MapRegion.TemperatureRating.Cold: {conditionsAreMet=true; break;}
 		}
 		return conditionsAreMet;
-	}
-	
-	public override List<EventChoice> GetChoices(MapRegion eventRegion, List<PartyMember> movedMembers)
-	{
-		List<EventChoice> choicesList=new List<EventChoice>();
-		choicesList.Add(new EventChoice("Continue"));
-		return choicesList;
-	}
-	
-	public override string DoChoice (string choiceString, MapRegion eventRegion, List<PartyMember> movedMembers)
-	{
-		string eventResult=null;
-		switch (choiceString)
-		{
-		case"Continue": 
-			{
-				//success
-				eventResult="Due to low temperatures and a lack of heating, "+coldMember.name+" freezes and becomes sick!\n\n"+healthPenalty+" health for "+coldMember.name;
-				//angryMember.health+=healthPenalty;
-				//normalMember.health+=healthPenalty;
-				coldMember.TakeDamage(healthPenalty,false);
-				break;
-			}
-		}
-		return eventResult;
 	}
 }
 //This fires if a camp is Freezing
@@ -1095,53 +1010,30 @@ public class MembersAreFreezing:GameEvent
 {	
 	string eventDescription="";
 	int healthPenalty=15;
-	PartyMember coldMember=null;
 	
 	public override string GetDescription(MapRegion eventRegion, List<PartyMember> movedMembers) 
 	{
 		//coldMember=movedMembers[Random(0,movedMembers.Count)];
-		eventDescription="Your nostrils stick to the septum when you inhale. The air is so cold it's hard to breathe. It cuts deep into the bones.";
+		eventDescription="Your nostrils stick to the septum when you inhale. The air is so cold it's hard to breathe. It cuts deep into the bones.\n";
+		eventDescription="The freezing cold of the camp slowly drains life from all present.\n";
+
+		foreach (PartyMember member in movedMembers)
+		{
+			//PartyMember.BodyPartTypes damagedPartType=member.TakeRandomPartDamage(healthPenalty,false);
+			eventDescription+="\n"+member.name+" becomes sick!";//+" takes "+healthPenalty+" "+damagedPartType+" damage";
+			PartyManager.mainPartyManager.AddPartyMemberStatusEffect(member,new Cold(member));
+		}
+
 		return eventDescription;
 	}
 	public override bool PreconditionsMet (MapRegion eventRegion, List<PartyMember> movedMembers)
 	{
 		bool conditionsAreMet=false;
-		switch (eventRegion.GetTemperature())
+		switch (eventRegion.localTemperature)
 		{
-			case Camp.TemperatureRating.Very_Cold: {conditionsAreMet=true; break;}
+			case MapRegion.TemperatureRating.Freezing: {conditionsAreMet=true; break;}
 		}
 		return conditionsAreMet;
-	}
-	
-	public override List<EventChoice> GetChoices(MapRegion eventRegion, List<PartyMember> movedMembers)
-	{
-		List<EventChoice> choicesList=new List<EventChoice>();
-		choicesList.Add(new EventChoice("Continue"));
-		return choicesList;
-	}
-	
-	public override string DoChoice (string choiceString, MapRegion eventRegion, List<PartyMember> movedMembers)
-	{
-		string eventResult=null;
-		switch (choiceString)
-		{
-		case"Continue": 
-			{
-				//success
-				eventResult="The freezing cold of the camp slowly drains life from all present.\n\n"+healthPenalty+" health for ";
-				for (int i=0; i<movedMembers.Count; i++)
-				{
-					eventResult+=movedMembers[i].name;
-					if (i<movedMembers.Count-1) eventResult+=", ";
-				}
-				//angryMember.health+=healthPenalty;
-				//normalMember.health+=healthPenalty;
-				foreach (PartyMember member in movedMembers)
-				member.TakeDamage(healthPenalty,false);
-				break;
-			}
-		}
-		return eventResult;
 	}
 }
 
@@ -1203,7 +1095,9 @@ public class AttackOnCamp:GameEvent
 		choicesList.Add(new EventChoice("Shoot them!("+requiredAmmo+" ammo)",shootGreyedOut));
         return choicesList;
     }
-    
+
+
+
     public override string DoChoice (string choiceString, MapRegion eventRegion, List<PartyMember> movedMembers)
     {
         string eventResult=null;
@@ -1222,11 +1116,15 @@ public class AttackOnCamp:GameEvent
                 break;
             }
         }*/
-        if (choiceString=="Fight!")
+		if (choiceString=="Fight!")
         {
             int fightHealthPenalty=Random.Range(fightHealthPenaltyMin,fightHealthPenaltyMax+1);
-            eventResult="With the creatures so close, it's too late to run.\nSurging with adrenaline, the party charges the monsters with weapons drawn! The violence is brief, but brutal\n\n-"+fightHealthPenalty+" health for everyone";
-            foreach (PartyMember member in movedMembers){member.TakeDamage(fightHealthPenalty,true);}
+            eventResult="With the creatures so close, it's too late to run.\nSurging with adrenaline, the party charges the monsters with weapons drawn! The violence is brief, but brutal\n";
+            foreach (PartyMember member in movedMembers)
+            {
+            	PartyMember.BodyPartTypes damagedPart=member.TakeRandomPartDamage(fightHealthPenalty,true);
+            	eventResult+="\n"+fightHealthPenalty+" "+damagedPart+" damage to "+member.name;
+            }
         }
         if (choiceString=="Shoot them!("+requiredAmmo+" ammo)")
         {
@@ -1247,8 +1145,9 @@ public class AttackOnCamp:GameEvent
                     partyPronoun="companion";
                 }
                 eventResult=member.name+" hesitates for a moment, before rushing past "+partyPronoun+" and into danger. The sounds of struggle left behind spur on the "+partyPronounTwo+" as they run, wondering if "+member.name+" will make it...";
-                eventResult+="\n\n-"+stayBehindHealthPenalty+" health for "+member.name;
-                member.TakeDamage(stayBehindHealthPenalty,true);
+				PartyMember.BodyPartTypes damagedPart=member.TakeRandomPartDamage(stayBehindHealthPenalty,true);
+                eventResult+="\n\n"+stayBehindHealthPenalty+" "+damagedPart+" health for "+member.name;
+
                 break;
             }
         }

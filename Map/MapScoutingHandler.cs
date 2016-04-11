@@ -6,6 +6,9 @@ using UnityEngine.UI;
 public class MapScoutingHandler : MonoBehaviour {
 
 	public static bool scoutingDialogOngoing=false;
+
+	public static MapScoutingHandler main;
+
 	public Text descriptionText;
 	public Text selectCountText;
 	public Text confirmButtonText;
@@ -29,12 +32,14 @@ public class MapScoutingHandler : MonoBehaviour {
 			descriptionText.text="You have not scouted this area";
 			confirmButtonText.text="Scout";
 			selectCountText.text="";
-			ambushThreatText.text="";	
+			ambushThreatText.text="";
+			selectionText.text="";	
 		}
 		else 
 		{
 			UpdateAfterScouting();
 		}
+		TryRefreshEncounterDialog();
 	}
 	
 	
@@ -49,20 +54,31 @@ public class MapScoutingHandler : MonoBehaviour {
 			newSelector.AssignMember(member);
 			newSelector.GetComponent<Button>().onClick.AddListener(()=>ToggleMissionMember(newSelector));
 			newSelector.transform.SetParent(memberSelectorGroup,false);
-			selectCountText.text=selectedForMission.Count+"/"+assignedRegion.regionalEncounter.maxAllowedMembers;//+EncounterCanvasHandler.encounterMaxPlayerCount;
+			selectCountText.text=selectedForMission.Count+"/"+assignedRegion.regionalEncounter.maxRequiredMembers;//+EncounterCanvasHandler.encounterMaxPlayerCount;
 			selectionText.text="";
-			ambushThreatText.text="Ambush threat:"+assignedRegion.CalculateThreatLevel(0);
-		}
-		if (assignedRegion.ambientThreatNumber<=0) scoutMoreButton.SetActive(false);
-		else 
-		{
-			scoutMoreButton.SetActive(true);
-			if (selectedForMission.Count>0)
-			scoutMoreButton.GetComponent<Button>().interactable=true;
-			else scoutMoreButton.GetComponent<Button>().interactable=false;
 		}
 	}
-	
+
+	public void TryRefreshEncounterDialog()
+	{
+		if (scoutingDialogOngoing)
+		{
+			if (assignedRegion.scouted)
+			{
+				ambushThreatText.text="Ambush threat:"+assignedRegion.CalculateThreatLevel(selectedForMission.Count);
+				if (assignedRegion.ambientThreatNumber<=0) scoutMoreButton.SetActive(false);
+				else 
+				{
+					scoutMoreButton.SetActive(true);
+					//if (selectedForMission.Count>0)
+					//scoutMoreButton.GetComponent<Button>().interactable=true;
+					//else scoutMoreButton.GetComponent<Button>().interactable=false;
+				}
+			}
+			else scoutMoreButton.SetActive(false);
+		}
+	}
+
 	public void StartDialog(MapRegion dialogRegion) 
 	{
 		GetComponent<Canvas>().enabled=true;
@@ -83,7 +99,7 @@ public class MapScoutingHandler : MonoBehaviour {
 		AssignedTaskTypes emptyOutVar;
 		if (!selectedForMission.Contains(member)
 		//&& selectedForMission.Count<assignedRegion.regionalEncounter.maxAllowedMembers
-		&& handler.assignedMember.GetFatigue()+PartyMember.fatigueIncreasePerEncounter<=100
+		&& handler.assignedMember.CheckEnoughFatigue(PartyMember.fatigueIncreasePerEncounter)
 		&& !PartyManager.mainPartyManager.GetAssignedTask(member, out emptyOutVar))//EncounterCanvasHandler.encounterMaxPlayerCount) 
 		{
 			selectedForMission.Add(member);
@@ -94,7 +110,7 @@ public class MapScoutingHandler : MonoBehaviour {
 			selectedForMission.Remove(member);	
 			handler.selected=false;
 		}
-		selectCountText.text=selectedForMission.Count+"/"+assignedRegion.regionalEncounter.maxAllowedMembers;
+		selectCountText.text=selectedForMission.Count+"/"+assignedRegion.regionalEncounter.maxRequiredMembers;
 		if (selectedForMission.Count==0) {selectionText.text="";}
 		else
 		{
@@ -102,10 +118,7 @@ public class MapScoutingHandler : MonoBehaviour {
 			foreach (PartyMember selectedMember in selectedForMission) {selectionText.text+=selectedMember.name+",";}
 			selectionText.text=selectionText.text.Remove(selectionText.text.LastIndexOf(","));
 		}
-		ambushThreatText.text="Ambush threat:"+assignedRegion.CalculateThreatLevel(selectedForMission.Count);
-		//Update scout more button
-		if (selectedForMission.Count>0) scoutMoreButton.GetComponent<Button>().interactable=true;
-		else scoutMoreButton.GetComponent<Button>().interactable=false;
+		TryRefreshEncounterDialog();
 	}
 	//Enter button goes here (and scout button)
 	public void ConfirmPressed()
@@ -153,11 +166,11 @@ public class MapScoutingHandler : MonoBehaviour {
 	}
 	IEnumerator ScoutMoreRoutine()
 	{
-		GameEventManager.mainEventManager.DoEvent(new CleanupEvent(),assignedRegion,selectedForMission);
+		GameEventManager.mainEventManager.DoEvent(new CleanupEvent(),assignedRegion,assignedRegion.localPartyMembers);
 		while (GameEventManager.mainEventManager.drawingEvent) yield return new WaitForFixedUpdate();
 		if (GameManager.main.gameStarted)
 		{
-			if (assignedRegion.ambientThreatNumber<=0) scoutMoreButton.SetActive(false);
+			TryRefreshEncounterDialog();
 		}
 		yield break;
 	}
@@ -184,5 +197,10 @@ public class MapScoutingHandler : MonoBehaviour {
 	public void CancelPressed()
 	{
 		EndDialog();
+	}
+
+	void Start()
+	{
+		main=this;
 	}
 }

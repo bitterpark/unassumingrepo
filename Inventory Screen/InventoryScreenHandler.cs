@@ -53,16 +53,21 @@ public class InventoryScreenHandler : MonoBehaviour
 	{
 		if (selectedMember!=newMember)
 		{
+			//Determine whether or not inventory screen is allowed to be opened at this time
 			bool allow=false;
 			EncounterCanvasHandler encounterManager=EncounterCanvasHandler.main;
-			if (!encounterManager.encounterOngoing) {allow=true;}
-			else 
+			if (!GameEventManager.mainEventManager.drawingEvent)
 			{
-				//make sure guys outside of encounter can't interact with guys within an encounter and members currently in combat can't open inv
-				if(encounterManager.encounterMembers.Contains(newMember) 
-				 && !encounterManager.currentEncounter.encounterMap[encounterManager.memberCoords[newMember]].hasEnemies)
-				{allow=true;}
+				if (!encounterManager.encounterOngoing) {allow=true;}
+				else 
+				{
+					//make sure guys outside of encounter can't interact with guys within an encounter and members currently in combat can't open inv
+					if(encounterManager.encounterMembers.Contains(newMember) 
+					 && !encounterManager.currentEncounter.encounterMap[encounterManager.memberCoords[newMember]].hasEnemies)
+					{allow=true;}
+				}
 			}
+			//If inventory is allowed to be opened
 			if (allow)
 			{
 				selectedMember=newMember;
@@ -121,9 +126,9 @@ public class InventoryScreenHandler : MonoBehaviour
 
 			//Update camp info
 			//Temperature
-			campTemperatureText.text="Temperature: "+selectedMember.currentRegion.GetTemperature();
+			campTemperatureText.text="Temperature: "+MapRegion.GetTemperatureDescription(selectedMember.currentRegion.localTemperature);
 			//Threat
-			campThreatText.text="Camping threat: "+selectedMember.currentRegion.GetCampingThreat();
+			campThreatText.text="Camp security:"+selectedMember.currentRegion.GetCampSecurityDescription();
 
 			//Remove old weapons
 			Image oldMeleeSlot=meleeSlotPlacement.GetComponentInChildren<Image>();

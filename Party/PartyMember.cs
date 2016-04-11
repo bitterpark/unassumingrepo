@@ -49,7 +49,40 @@ public class PartyMember
 			currentParts.Add(BodyPartTypes.Vitals,new MemberBodyPart(assignedMember,BodyPartTypes.Vitals,vitalsMaxHealth));
 			CalculateHitChances();
 		}
-		
+
+		public ProbabilityList<MemberBodyPart> GetDodgelessHitchances()
+		{
+			float totalHitProbability=1;
+
+			ProbabilityList<MemberBodyPart> dodgeLessHitChances=new ProbabilityList<MemberBodyPart>();
+			
+			float missingHitChanceFromBrokenParts=0;
+			foreach (MemberBodyPart part in currentParts.Values)
+			{
+				if (part.broken) missingHitChanceFromBrokenParts+=totalHitProbability*GetPartTypeHitChance(part.partType);
+			}
+			System.Action<MemberBodyPart> partHitChanceCalculation=(MemberBodyPart part)=>
+			{
+				if (!part.broken) 
+				{
+					float adjustedHitChance=totalHitProbability*GetPartTypeHitChance(part.partType);
+					if (missingHitChanceFromBrokenParts>0)
+					{
+						//Increase for body parts that get broken
+						float addedHitChance=missingHitChanceFromBrokenParts*(adjustedHitChance/(totalHitProbability-missingHitChanceFromBrokenParts));
+						adjustedHitChance+=addedHitChance;
+						//missingHitChanceFromBrokenParts-=addedHitChance;
+					}
+					dodgeLessHitChances.AddProbability(currentParts[part.partType],adjustedHitChance);
+				}
+			};
+			foreach (MemberBodyPart part in currentParts.Values)
+			{
+				partHitChanceCalculation.Invoke(part);
+			}
+			return dodgeLessHitChances;
+		}
+
 		public void CalculateHitChances()
 		{
 			float totalHitProbability=1-assignedMember.dodgeChance;
@@ -76,7 +109,6 @@ public class PartyMember
 					partHitChances.AddProbability(currentParts[part.partType],adjustedHitChance);
 				}
 			};
-			//HANDS//
 			foreach (MemberBodyPart part in currentParts.Values)
 			{
 				partHitChanceCalculation.Invoke(part);
@@ -104,7 +136,22 @@ public class PartyMember
 			//else EncounterCanvasHandler.main.AddNewLogMessage("Member dodged!");
 			return success;
 		}
-		
+
+		public BodyPartTypes HitRandomPart(int damage)
+		{
+			float attackRoll=Random.value;
+			MemberBodyPart damagedPart;
+			BodyPartTypes damagedPartType=BodyPartTypes.Hands;
+			if (GetDodgelessHitchances().RollProbability(out damagedPart)) 
+			{	
+				TakeHit(damage,damagedPart);
+				damagedPartType=damagedPart.partType;
+			}
+			else throw new System.Exception("Could not hit member body part at hit p=1!");
+			//else EncounterCanvasHandler.main.AddNewLogMessage("Member dodged!");
+			return damagedPartType;
+		}
+
 		public void TakeHit(int damage, BodyPartTypes damagedPartType)
 		{
 			TakeHit(damage,currentParts[damagedPartType]);
@@ -379,7 +426,7 @@ public class PartyMember
 		{
 			_fatigue=value;
 			if (_fatigue<0) {_fatigue=0;}
-			if (_fatigue>100) {_fatigue=100;}
+			if (_fatigue>maxFatigue) {_fatigue=maxFatigue;}
 		}
 	}
 	int _fatigue;
@@ -394,17 +441,26 @@ public class PartyMember
 		SetFatigue(fatigue+fatigueDelta);
 		//else ChangeHunger(fatigueDelta);
 	}
-	public int fatigueRestoreWait=50;
+	public bool CheckEnoughFatigue(int taskRequirement)
+	{
+		if (fatigue+taskRequirement>maxFatigue) return false;
+		else return true;
+	}
+	public int fatigueRestoreWait=5;
 	//These are applied on top of fatigueRestoreWait (both are actually applied by two different methods)
-	public int fatigueRestoreSleep=100;
+	public int fatigueRestoreSleep=10;
 	//public int fatigueRestoreSleepInBed=60;
 	
 	//public int fatigueIncreasePerAction;
 	public int maxStaminaReductionFromFatigue=6;
-	public const int fatigueIncreasePerEncounter=50;
+	public const int fatigueIncreasePerEncounter=5;
 	//public const int mapMoveFatigueCost=25;
-	public const int campSetupFatigueCost=10;
-	public const int fatigueMoveCost=10;
+	public const int campSetupFatigueCost=1;
+	public const int fatigueMoveCost=1;
+	public int currentFatigueMovePenalty=0;
+	public int currentFatigueCraftPenalty=0;
+	public const int maxFatigue=10;
+
 	
 	//MORALE
 	public int morale
@@ -625,16 +681,17 @@ public class PartyMember
 		//health=maxHealth;
 		currentMaxStamina=baseMaxStamina;
 		stamina=currentMaxStamina;
-		morale=baseMorale-40;
+		morale=baseMorale;
 		UpdateCurrentCarryCapacity();
 		maxHealth=vitalsMaxHealth;
 		memberBodyParts=new BodyParts(this, handsMaxHealth,legsMaxHealth,vitalsMaxHealth);
 		//currentCarryCapacity=maxCarryCapacity;
 		
-		EquipWeapon(new Pipe());
+		//EquipWeapon(new Pipe());
 		//equippedMeleeWeapon=new Pipe();
 		equippedRangedWeapon=null;//new AssaultRifle();//null;
 		PartyManager.ETimePassed+=TimePassEffect;
+		PartyManager.ETimePassedEnd+=LateTimePassEffect;
 	}
 	
 	public bool AddStatusEffect(StatusEffect newEffect)
@@ -686,6 +743,7 @@ public class PartyMember
 		
 		occupiedNames.Remove(name);
 		PartyManager.ETimePassed-=TimePassEffect;
+		PartyManager.ETimePassedEnd-=LateTimePassEffect;
 		PartyManager.mainPartyManager.RemovePartyMember(this);
 		foreach (StatusEffect effect in activeStatusEffects) {effect.CleanupEffect();}
 		activeStatusEffects=null;
@@ -738,7 +796,14 @@ public class PartyMember
 		{hunger+=((newStaminaValue-stamina)*hungerIncreasePerStamPoint)*hoursPassed;}*/
 		
 		//REGEN/LOSE HEALTH
-		//if (hunger<100){health+=2*hoursPassed;}
+		if (hunger<100)
+		{
+			float healthRegen=5f;//healthRegenPercentage;//-maxHealthRegenReductionFromHunger*hunger*0.01f;
+			memberBodyParts.currentParts[BodyPartTypes.Vitals].Heal(Mathf.RoundToInt(healthRegen));//memberBodyParts.currentParts[BodyPartTypes.Vitals].health*healthRegen));
+			memberBodyParts.currentParts[BodyPartTypes.Hands].Heal(Mathf.RoundToInt(healthRegen));//memberBodyParts.currentParts[BodyPartTypes.Hands].health*healthRegen));
+			memberBodyParts.currentParts[BodyPartTypes.Legs].Heal(Mathf.RoundToInt(healthRegen));//memberBodyParts.currentParts[BodyPartTypes.Legs].health*healthRegen));
+			//health+=Mathf.RoundToInt(health*healthRegen);
+		}
 		
 		//DO HUNGER INCREASE
 		float cookMult=1;
@@ -796,14 +861,17 @@ public class PartyMember
 			}
 			//hunger+=(int)(hungerIncreasePerHour*cookMult)*hoursPassed;
 		}
-		
+					
+		//DO RELATIONSHIPS
+		RollRelationships();
+	}
+
+	public void LateTimePassEffect(int hoursPassed)
+	{
 		//Resting fatigue restore
 		int fatigueRestoreAmount=fatigueRestoreWait;
 		if (currentRegion.hasCamp) fatigueRestoreAmount=fatigueRestoreSleep;
 		ChangeFatigue(-fatigueRestoreAmount);
-					
-		//DO RELATIONSHIPS
-		RollRelationships();
 	}
 	/*
 	public AssignedTask GetRestTask(bool restInBed)
@@ -1052,6 +1120,13 @@ public class PartyMember
 		return tookDamage;
 	}
 	//For unavoidable damage, such as hunger damage or special events
+	public BodyPartTypes TakeRandomPartDamage(int dmgTaken, bool armorHelps)
+	{
+		if (armorHelps) dmgTaken-=armorValue;
+		if (dmgTaken<0) dmgTaken=0; 
+		return memberBodyParts.HitRandomPart(dmgTaken);
+	}
+
 	public void TakeDamage(int dmgTaken, bool armorHelps)
 	{
 		TakeDamage(dmgTaken,armorHelps,BodyPartTypes.Vitals);

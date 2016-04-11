@@ -29,6 +29,28 @@ public class MapManager : MonoBehaviour
 	
 	//public const int townNodeFatigueCost=25;
 	public const int townToTownGasCost=1;
+
+	public static MapRegion.TemperatureRating mapTemperatureRating;
+	/*
+	public static string GetMapTemperatureDescription()
+	{
+		string description="";
+		switch(mapTemperatureNumber)
+		{
+			case 0:{description="Freezing"; break;}
+			case 1:{description="Cold"; break;}
+			case 2:{description="Okay"; break;}
+		}
+		return description;
+	}*/
+
+	void SetDailyTemperatureRating(int emptyInt)
+	{
+		float rand=Random.value;
+		if (rand<=1f) mapTemperatureRating=MapRegion.TemperatureRating.Freezing;
+		if (rand<=0.66f) mapTemperatureRating=MapRegion.TemperatureRating.Cold;
+		if (rand<=0.33f) mapTemperatureRating=MapRegion.TemperatureRating.Okay; 
+	}
 	
 	//THIS METHOD CAUSES THE DISPLACEMENT BUG
 	public void FocusViewOnRegion(RectTransform regionTransform)
@@ -323,7 +345,7 @@ public class MapManager : MonoBehaviour
 		//regionsGridGroup.parent.GetComponent<ScrollRect>().normalizedPosition=Vector2.zero;
 		//regionsGridGroup.GetComponent<RectTransform>().localPosition=Vector2.zero;
 		//Canvas.ForceUpdateCanvases();//
-		
+		PartyManager.ETimePassed+=SetDailyTemperatureRating;
 	}
 	
 	void Update()
@@ -371,6 +393,7 @@ public class MapManager : MonoBehaviour
 			GameObject.Destroy(region.gameObject);
 		}
 		mapRegions.Clear();
+		PartyManager.ETimePassed-=SetDailyTemperatureRating;
 		//GameObject.Destroy(playerToken);
 	}
 	

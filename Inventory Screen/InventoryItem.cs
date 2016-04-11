@@ -116,27 +116,34 @@ public abstract class InventoryItem
 			}
 			case LootMetatypes.Medical:
 			{
-				//Default <1 option
-				setItems.Add (new Medkit());
-				//Other options
-				if (randomRoll<0.4f)
-				{
-					setItems.Clear();
-					setItems.Add (new Medkit());
-					setItems.Add (new Bandages());
-				}
-				if (randomRoll<0.2f)
-				{
-					setItems.Clear();
-					setItems.Add (new Bandages());
-					setItems.Add (new Bandages());
-				}
-				if (randomRoll<0.1f)
-				{
-					setItems.Clear();
-					setItems.Add (new Medkit());
-					setItems.Add (new Medkit());
-				}
+				ProbabilityList<List<InventoryItem>> equipmentList=new ProbabilityList<List<InventoryItem>>();
+				List<InventoryItem> itemSet=new List<InventoryItem>();
+				itemSet.Add(new Medkit());
+				equipmentList.AddProbability(new List<InventoryItem>(itemSet),0.2f);
+
+				itemSet.Clear();
+				itemSet.Add(new Medkit());
+				itemSet.Add(new Bandages());
+				equipmentList.AddProbability(new List<InventoryItem>(itemSet),0.2f);
+
+				itemSet.Clear();
+				itemSet.Add(new Bandages());
+				itemSet.Add(new Pills());
+				equipmentList.AddProbability(new List<InventoryItem>(itemSet),0.2f);
+
+				itemSet.Clear();
+				itemSet.Add(new Medkit());
+				itemSet.Add(new Pills());
+				equipmentList.AddProbability(new List<InventoryItem>(itemSet),0.2f);
+
+				itemSet.Clear();
+				itemSet.Add(new Medkit());
+				itemSet.Add(new Medkit());
+				equipmentList.AddProbability(new List<InventoryItem>(itemSet),0.2f);
+
+				List<InventoryItem> resultingSet=itemSet;
+				if (equipmentList.RollProbability(out resultingSet)) setItems.AddRange(resultingSet);
+				else throw new System.Exception("Could not roll a positive result on equipment loot table!");
 				break;
 			}
 			case LootMetatypes.Melee:
@@ -175,14 +182,23 @@ public abstract class InventoryItem
 			}
 			case LootMetatypes.Equipment:
 			{
-				ProbabilityList<InventoryItem> equipmentList=new ProbabilityList<InventoryItem>();
-				equipmentList.AddProbability(new SettableTrap(),0.5f);
-				equipmentList.AddProbability(new ArmorVest(),0.25f);
-				equipmentList.AddProbability(new Backpack(),0.25f);
-				//equipmentList.AddProbability(new Bed(),0.2f);
-				
-				InventoryItem resultingItem=new SettableTrap();
-				if (equipmentList.RollProbability(out resultingItem)) setItems.Add(resultingItem);
+				ProbabilityList<List<InventoryItem>> equipmentList=new ProbabilityList<List<InventoryItem>>();
+				List<InventoryItem> itemSet=new List<InventoryItem>();
+				itemSet.Add(new SettableTrap());
+				itemSet.Add(new SettableTrap());
+				equipmentList.AddProbability(new List<InventoryItem>(itemSet),0.4f);
+
+				itemSet.Clear();
+				itemSet.Add(new ArmorVest());
+				equipmentList.AddProbability(new List<InventoryItem>(itemSet),0.3f);
+
+				itemSet.Clear();
+				itemSet.Add(new Backpack());
+				equipmentList.AddProbability(new List<InventoryItem>(itemSet),0.3f);
+
+
+				List<InventoryItem> resultingSet=itemSet;
+				if (equipmentList.RollProbability(out resultingSet)) setItems.AddRange(resultingSet);
 				else throw new System.Exception("Could not roll a positive result on equipment loot table!");
 				break;
 			}
@@ -212,6 +228,7 @@ public abstract class InventoryItem
 				
 				List<InventoryItem> setFour=new List<InventoryItem>();
 				setFour.Add(new Medkit());
+				setFour.Add(new Pills());
 				equipmentList.AddProbability(setFour,0.1f);
 
 				List<InventoryItem> setFive=new List<InventoryItem>();
@@ -237,7 +254,7 @@ public abstract class InventoryItem
 				setTwo.Add(new Fuel());
 				setTwo.Add(new Fuel());
 				setTwo.Add(new Fuel());
-				equipmentList.AddProbability(setTwo,0.8f);
+				equipmentList.AddProbability(setTwo,0.6f);
 
 				List<InventoryItem> setThree=new List<InventoryItem>();
 				setThree.Add(new Fuel());
@@ -280,15 +297,15 @@ public abstract class InventoryItem
 
 	//Deprecated (un-deprecated as of right now)
 	public enum LootItems 
-	{Medkits,Bandages
+	{Medkits,Bandages,Pills
 	,Gas
-	,Food,Junkfood/*,PerishableFood*/
+	,Food,Junkfood,Cookedfood/*,PerishableFood*/
 	,Ammopack,Ammo
 	,Fuel,CampBarricade
 	,Flashlight,Radio,Bed,Backpack
 	,Scrap,Gunpowder
 	,SettableTrap
-	,AssaultRifle,Shotgun,NineM
+	,AssaultRifle,Shotgun,NineM,Pipegun
 	,Pipe,Knife,Axe
 	,ArmorVest}
 	public static InventoryItem GetLootingItem(LootItems itemType)
@@ -303,9 +320,11 @@ public abstract class InventoryItem
 			//FOOD
 			case LootItems.Food:{lootedItem=new FoodBig(); break;}
 			case LootItems.Junkfood: {lootedItem=new FoodSmall(); break;}
+			case LootItems.Cookedfood: {lootedItem=new FoodCooked(); break;}
 			//case LootItems.PerishableFood: {lootedItem=new PerishableFood(PartyManager.mainPartyManager.timePassed); break;}
 			//MEDS
 			case LootItems.Medkits:{lootedItem=new Medkit(); break;}
+			case LootItems.Pills:{lootedItem=new Pills(); break;}
 			case LootItems.Bandages:{lootedItem=new Bandages(); break;}
 			//EQUIPMENT
 			case LootItems.Flashlight:{lootedItem=new Flashlight(); break;}
@@ -318,6 +337,7 @@ public abstract class InventoryItem
 			case LootItems.NineM:{lootedItem=new NineM(); break;}
 			case LootItems.Shotgun: {lootedItem=new Shotgun(); break;}
 			case LootItems.AssaultRifle:{lootedItem=new AssaultRifle(); break;}
+			case LootItems.Pipegun:{lootedItem=new Pipegun(); break;}
 			//MISC
 			case LootItems.Radio:{lootedItem=new Radio(); break;}
 			case LootItems.SettableTrap: {lootedItem=new SettableTrap(); break;}
@@ -346,11 +366,7 @@ public class CampBarricade: InventoryItem
 	{
 		if (member.currentRegion.hasCamp)
 		{
-			if (member.currentRegion.GetCampingThreat()!=MapRegion.ThreatLevels.None)
-			{
-				member.currentRegion.campInRegion.threatLevelNumber-=1;
-				return true;
-			}
+			return member.currentRegion.TryDecreaseCampThreatLevel(-1);
 		}
 		return false;
 	}
@@ -371,15 +387,17 @@ public class Fuel: InventoryItem
 	
 	public override bool UseAction(PartyMember member)
 	{
+	/*
 		if (member.currentRegion.hasCamp)
 		{
-			if (member.currentRegion.GetTemperature()!=Camp.TemperatureRating.Okay)
+			if (member.currentRegion.GetTemperature()!=MapRegion.TemperatureRating.Okay)
 			{
-				member.currentRegion.campInRegion.IncrementTemperature(1);
+				member.currentRegion.TryRaiseTemperature(1);
 				return true;
 			}
-		}
-		return false;
+		}*/
+
+		return member.currentRegion.TryRaiseTemperature(1);
 	}
 	public override string GetMouseoverDescription ()
 	{
@@ -458,6 +476,41 @@ public class Bullet:InventoryItem
 	public override string GetMouseoverDescription ()
 	{
 		return itemName+"\nAdds "+ammoAmount+" ammo";
+	}
+}
+
+public class Pills:InventoryItem
+{
+	public Pills()
+	{
+		itemName="Pills";
+	}
+
+	//float healPercentage=0.35f;
+	public override Sprite GetItemSprite() {return SpriteBase.mainSpriteBase.pillsSprite;}
+	
+	public override bool UseAction(PartyMember member)
+	{
+		bool healingPerformed=false;
+		
+		//do cold
+		List<Cold> colds=new List<Cold>();
+		foreach (StatusEffect effect in member.activeStatusEffects)
+		{
+			if (effect.GetType()==typeof(Cold)) {colds.Add(effect as Cold);}
+		}
+		if (colds.Count>0) {healingPerformed=true;}
+		//treat all found colds
+		foreach (Cold cold in colds) {cold.CureCold();}//PartyManager.mainPartyManager.RemovePartyMemberStatusEffect(member,laceration);}
+		//Spend medkit if it did anything
+		//if (healingPerformed) PartyManager.mainPartyManager.RemoveItems(this);
+		return healingPerformed;
+	}
+	//Currently only works if tooltip is viewed from inventory screen
+	public override string GetMouseoverDescription ()
+	{
+		//int healAmount=Mathf.FloorToInt(InventoryScreenHandler.mainISHandler.selectedMember.maxHealth*healPercentage);
+		return itemName+"\nCures cold";
 	}
 }
 
@@ -570,8 +623,36 @@ public class FoodSmall:InventoryItem
 		itemName="Junk food";
 	}
 	
-	int nutritionAmount=20;
+	int nutritionAmount=25;
 	public override Sprite GetItemSprite() {return SpriteBase.mainSpriteBase.foodSpriteSmall;}
+	
+	public override bool UseAction(PartyMember member)
+	{
+		bool use=false;
+		if (member.Eat(nutritionAmount))//PartyManager.mainPartyManager.FeedPartyMember(member,100))
+		{
+			//PartyManager.mainPartyManager.partyInventory.Remove(this);
+			//PartyManager.mainPartyManager.RemoveItems(this);
+			use=true;
+		}
+		return use;
+	}
+	
+	public override string GetMouseoverDescription ()
+	{
+		return itemName+"\nRestores "+nutritionAmount+" hunger";
+	}
+}
+
+public class FoodCooked:InventoryItem
+{
+	public FoodCooked()
+	{
+		itemName="Cooked meal";
+	}
+	
+	int nutritionAmount=50;
+	public override Sprite GetItemSprite() {return SpriteBase.mainSpriteBase.foodSpriteCooked;}
 	
 	public override bool UseAction(PartyMember member)
 	{
@@ -878,6 +959,30 @@ public class AssaultRifle:RangedWeapon
 	}*/
 }
 
+public class Pipegun:RangedWeapon
+{
+	public Pipegun()
+	{
+		itemName="Pipegun";
+		baseDamage=30;
+		accuracyMod=0f;
+	}
+	
+
+	int ammoPerShot=1;
+	public override int GetAmmoUsePerShot (){return ammoPerShot;}
+	public override Sprite GetItemSprite ()
+	{
+		return SpriteBase.mainSpriteBase.pipegunSprite;
+	}
+	/*
+	public override string GetMouseoverDescription ()
+	{
+		return name+"\nDamage:"+weaponMaxDamage+"\nAmmo per shot:"+ammoPerShot;
+	}*/
+}
+
+//MELEE
 public abstract class MeleeWeapon:Weapon
 {
 	public abstract int GetStaminaUse();

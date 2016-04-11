@@ -193,17 +193,25 @@ public class PartyManager : MonoBehaviour
 		//AddPartyMemberStatusEffect(partyMembers[0],new Bleed(partyMembers[0]));
 		//AddNewPartyMember(new PartyMember(startingPartyWorldCoords));
 		
-		
+		startingRegion.SetCar(true);
+
 		//MapManager.main.TeleportToRegion(startingRegion);
 		startingRegion.StashItem(new FoodBig());
 		startingRegion.StashItem(new FoodBig());
 		startingRegion.StashItem(new FoodSmall());
 		startingRegion.StashItem(new FoodSmall());
-		
+
+		//startingRegion.StashItem(new Pills());
+		//startingRegion.StashItem(new Scrap());
+		//startingRegion.StashItem(new Scrap());
+		//startingRegion.StashItem(new Scrap());
+		//startingRegion.StashItem(new Fuel());
+		//startingRegion.StashItem(new Fuel());
+		//startingRegion.StashItem(new Fuel());
+		//startingRegion.StashItem(new Fuel());
+
 		MapManager.main.FocusViewOnRegion(startingRegion.GetComponent<RectTransform>());
-		
-		//startingRegion.StashItem(new SettableTrap());
-		startingRegion.SetCar(true);
+
 		//startingRegion.StashItem(new SettableTrap());
 		//startingRegion.StashItem(new Bandages());
 		//startingRegion.StashItem(new CampBarricade());
@@ -222,7 +230,7 @@ public class PartyManager : MonoBehaviour
 		//Do this to setup proper background color
 		//PassTime(1);
 	}
-	
+	/*
 	void PassTime(int hoursPassed)
 	{
 		
@@ -246,11 +254,30 @@ public class PartyManager : MonoBehaviour
 		InventoryScreenHandler.mainISHandler.RefreshInventoryItems();
 		//float newb=lightBottomThreshold+noonLightLevelBonus-(noonLightLevelBonus/12)*(Mathf.Abs(dayTime-12));//Mathf.Repeat(Camera.main.backgroundColor.b-0.083//+0.0416f*hoursPassed,1);
 		//Camera.main.backgroundColor=new Color(0,0,newb);//
-	}
+	}*/
 	
 	public void AdvanceMapTurn()
 	{
-		PassTime(1);
+		int hoursPassed=1;
+		dayTime=(int)Mathf.Repeat(dayTime+12,24);//hoursPassed;
+		string timePassageText="";
+		if (dayTime>0) timePassageText="Daytime";
+		else 
+		{
+			timePassageText="Night";
+			daysPassed+=1;
+			foreach (PartyMember member in partyMembers) member.skillpoints+=1;
+		}
+		PartyStatusCanvasHandler.main.NewNotification(timePassageText);
+		//dayTime=(int)Mathf.Repeat(dayTime+hoursPassed,24);
+		//foreach (PartyMember member in partyMembers) {member.hunger+=10*hoursPassed;}
+		if (ETimePassed!=null) {ETimePassed(hoursPassed);}
+		
+		//Adjust camera bg color
+		float lightBottomThreshold=0.5f;
+		float noonLightLevelBonus=0.5f;
+		InventoryScreenHandler.mainISHandler.RefreshInventoryItems();
+
 		//Make sure the rest tasks and time skip occur in proper order
 		foreach (MemberMapToken token in MapManager.main.memberTokens.Values) 
 		if (!assignedTasks.ContainsKey(token.assignedMember)) token.moved=false;
@@ -298,25 +325,7 @@ public class PartyManager : MonoBehaviour
 		//PartyStatusCanvasHandler.main.StartTimeFlash();
 	}
 	
-	//Debug
-	void Update() 
-	{
-		if (Input.GetKeyDown(KeyCode.M)) 
-		{
-			partyMembers[0].TakeDamage(partyMembers[0].vitalsMaxHealth-1,false);
-			//partyMembers[0].AddStatusEffect(new Bleed(partyMembers[0]));
-			AddPartyMemberStatusEffect(partyMembers[0],new Bleed(partyMembers[0]));
-		}
-		/*
-		if (Input.GetKeyDown(KeyCode.Space))
-		{
-			if (GameManager.main.gameStarted && !EncounterCanvasHandler.main.encounterOngoing && !GameEventManager.mainEventManager.drawingEvent)
-			{
-				AdvanceMapTurn();
-				//foreach (MemberMapToken token in MapManager.main.memberTokens) token.moved=false;
-			}
-		}*/
-	}
+
 	
 	public int PartyMemberCount() {return partyMembers.Count;}
 	public PartyMember GetPartyMember(int index) {return partyMembers[index];}
@@ -411,7 +420,6 @@ public class PartyManager : MonoBehaviour
 			//If moving between towns, confirm to prime for the event, else - reduce fatigue
 			if (selectedMembers[0].currentRegion.connections[moveRegion].isIntercity)
 			{
-				//if (PartyManager.mainPartyManager.gas-selectedMembers[0].currentRegion.connections[moveRegion].moveCost>-1)
 				{
 					moveSuccesful=true;
 					//PartyManager.mainPartyManager.gas-=selectedMembers[0].currentRegion.connections[moveRegion].moveCost;
@@ -426,7 +434,7 @@ public class PartyManager : MonoBehaviour
 				//IF MOVING BETWEEN TOWN NODES
 				foreach (PartyMember member in selectedMembers)
 				{
-					if	(member.GetFatigue()+member.currentRegion.connections[moveRegion].moveCost<=100) movedList.Add(member);//!MapManager.main.memberTokens[member].moved) movedList.Add(member);
+					if	(member.CheckEnoughFatigue(member.currentRegion.connections[moveRegion].moveCost)) movedList.Add(member);//!MapManager.main.memberTokens[member].moved) movedList.Add(member);
 				}
 				
 				if (movedList.Count>0)
@@ -441,7 +449,7 @@ public class PartyManager : MonoBehaviour
 					//Apply fatigue to all moved members
 					foreach (PartyMember member in movedList) 
 					{
-						member.ChangeFatigue(member.currentRegion.connections[moveRegion].moveCost);
+						member.ChangeFatigue(member.currentRegion.connections[moveRegion].moveCost+member.currentFatigueMovePenalty);
 						MapManager.main.memberTokens[member].moved=true;
 					}
 				} 
@@ -578,7 +586,31 @@ public class PartyManager : MonoBehaviour
 		//GameManager.GameStart+=SetDefaultState;
 		GameManager.GameOver+=GameOverCleanup;
 	}
-	
+
+	//Debug
+	void Update() 
+	{
+		if (Input.GetKeyDown(KeyCode.M)) 
+		{
+			//partyMembers[0].TakeDamage(partyMembers[0].vitalsMaxHealth-1,false);
+			//partyMembers[0].AddStatusEffect(new Bleed(partyMembers[0]));
+			//AddPartyMemberStatusEffect(partyMembers[0],new Bleed(partyMembers[0]));
+			//AddNewPartyMember(new PartyMember(selectedMembers[0].currentRegion));
+			//partyMembers[0].TakeDamage(50,false,PartyMember.BodyPartTypes.Hands);
+			//partyMembers[1].TakeDamage(50,false,PartyMember.BodyPartTypes.Legs);
+			//AddPartyMemberStatusEffect(partyMembers[0],new Cold());
+		}
+		/*
+		if (Input.GetKeyDown(KeyCode.Space))
+		{
+			if (GameManager.main.gameStarted && !EncounterCanvasHandler.main.encounterOngoing && !GameEventManager.mainEventManager.drawingEvent)
+			{
+				AdvanceMapTurn();
+				//foreach (MemberMapToken token in MapManager.main.memberTokens) token.moved=false;
+			}
+		}*/
+	}
+
 	void OnGUI()
 	{
 		if (GameManager.main.gameStarted)

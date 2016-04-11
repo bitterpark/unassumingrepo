@@ -13,6 +13,7 @@ public class PartyStatusCanvasHandler : MonoBehaviour {
 	public Text ammoText;
 	public Text fuelText;
 	public Text timeOfDayText;
+	public Text temperatureText;
 	public Button assignmentButton;
 	public Button turnButton;
 	public Transform memberCanvasGroup;
@@ -184,6 +185,7 @@ public class PartyStatusCanvasHandler : MonoBehaviour {
 			timeText.text="Day:"+PartyManager.mainPartyManager.daysPassed;//PartyManager.mainPartyManager.dayTime.ToString()+":00";
 			ammoText.text="Ammo:"+PartyManager.mainPartyManager.ammo.ToString();
 			fuelText.text="Gas:"+PartyManager.mainPartyManager.gas.ToString();
+			temperatureText.text="Temperature:"+MapRegion.GetTemperatureDescription(MapManager.mapTemperatureRating);
 		}
 	}
 }

@@ -9,6 +9,7 @@ public class SpriteBase : MonoBehaviour {
 	public Sprite nineMSprite;
 	public Sprite shotgunSprite;
 	public Sprite assaultRifleSprite;
+	public Sprite pipegunSprite;
 	//Melee
 	public Sprite pipeSprite;
 	public Sprite knifeSprite;
@@ -20,9 +21,13 @@ public class SpriteBase : MonoBehaviour {
 	public Sprite medkitSprite;
 	public Sprite bandageSprite;
 	public Sprite perishableFoodSprite;
+	public Sprite pillsSprite;
+	//Food
 	public Sprite foodSprite;
 	public Sprite foodSpriteSmall;
 	public Sprite foodSpriteBig;
+	public Sprite foodSpriteCooked;
+	//
 	public Sprite radioSprite;
 	public Sprite settableTrapSprite;
 	public Sprite gasolineSprite;
@@ -48,6 +53,7 @@ public class SpriteBase : MonoBehaviour {
 	//Status effect sprites
 	public Sprite bleedSprite;
 	public Sprite phasedOutSprite;
+	public Sprite coldSprite;
 	public Sprite brokenArmsSprite;
 	public Sprite brokenLegsSprite;
 	

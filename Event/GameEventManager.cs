@@ -91,9 +91,14 @@ public class GameEventManager : MonoBehaviour
 	}
 	public void RollScavengeEvents(MapRegion eventRegion,List<PartyMember> presentMembers)
 	{
-		float eventsRoll=Random.value;
-		EventChance trackedEventRecord=new EventChance();
-		GameEvent resEvent=PickRandomEvent(scavengingEvents, ref trackedEventRecord,eventsRoll, eventRegion, presentMembers);
+		GameEvent resEvent=null;
+		if (eventRegion.hasGasoline) resEvent=new GasolineEvent();
+		else 
+		{
+			float eventsRoll=Random.value;
+			EventChance trackedEventRecord=new EventChance();
+			resEvent=PickRandomEvent(scavengingEvents, ref trackedEventRecord,eventsRoll, eventRegion, presentMembers);
+		}
 		if (resEvent!=null) StartEventDraw(resEvent, eventRegion, presentMembers);
 	}
 	//Currently unused
