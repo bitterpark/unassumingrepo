@@ -42,6 +42,7 @@ public class SpriteBase : MonoBehaviour {
 	public Sprite bedSprite;
 	public Sprite fuelSprite;
 	public Sprite campBarricadeSprite;
+	public Sprite toolsSprite;
 
 	//Assigned task sprites
 	public Sprite buildCampSprite;

@@ -13,31 +13,29 @@ public abstract class Trait
 	public static List<Trait> GetTraitList()
 	{
 		List<Trait> allTraits=new List<Trait>();
-		//allPerks.Add(new Tough());
+
 		allTraits.Add (new Scrawny());
-		//allPerks.Add(new Fit());
 		allTraits.Add (new Slob());
 		allTraits.Add (new LeanEater());
 		allTraits.Add (new BigEater());
-		//allPerks.Add (new Sneaky());
-		//allPerks.Add (new Loud());
-		allTraits.Add (new ColdBlooded());
-		allTraits.Add (new Moody());
 		allTraits.Add (new Bloodthirsty());
 		allTraits.Add (new Pacifist());
 		allTraits.Add (new ReassuringPresence());
 		allTraits.Add (new Downer());
 		allTraits.Add (new PeoplePerson());
 		allTraits.Add (new Antisocial());
-		//allPerks.Add (new Powerhouse());
 		allTraits.Add (new WeakArm());
-		//allPerks.Add (new Deadeye());
 		allTraits.Add (new PoorShot());
 		allTraits.Add (new Medic());
-		allTraits.Add (new Cook());
-		//allPerks.Add (new StrongBack());
 		allTraits.Add (new WeakBack());
-		
+		allTraits.Add(new Loner());
+		allTraits.Add(new SocialAnimal());
+		allTraits.Add(new Violent());
+		allTraits.Add(new Kleptomaniac());
+		/*
+		allTraits.Add(new Loner());
+		allTraits.Add(new SocialAnimal());
+		*/
 		return allTraits;
 	}
 	//Skills
@@ -78,6 +76,26 @@ public abstract class Trait
 		possibleSkillTrees.Add(Skilltree.Carrier);
 		possibleSkillTrees.Add(Skilltree.Scout);
 		return GetSkillTree(possibleSkillTrees[Random.Range(0,possibleSkillTrees.Count)]);
+	}
+
+	public static List<Trait> GenerateRandomSkillTree(int treeSize)
+	{
+		List<Trait> allSkills=new List<Trait>();
+		allSkills.AddRange(GetSkillTree(Skilltree.Carrier));
+		allSkills.AddRange(GetSkillTree(Skilltree.Fighter));
+		allSkills.AddRange(GetSkillTree(Skilltree.Scout));
+
+		List<Trait> randomTree=new List<Trait>();
+		int skillsRequired=treeSize;
+		int skillsGained=0;
+		while (skillsGained<skillsRequired && allSkills.Count>0)
+		{
+			Trait randomlyPickedSkill=allSkills[Random.Range(0,allSkills.Count)];
+			allSkills.Remove(randomlyPickedSkill);
+			randomTree.Add(randomlyPickedSkill);
+			skillsGained++;
+		}
+		return randomTree;
 	}
 	///
 	//Deprecate this
@@ -122,7 +140,7 @@ public class Agile:Skill
 	}
 	public override void ActivatePerk(PartyMember member)
 	{
-		member.barricadeAvoidanceEnabled=true;
+		member.barricadeVaultCost=0;//.barricadeAvoidanceEnabled=true;
 		//member.dodgeChance+=0.25f;
 		
 	}//+=healthUpgrade;}
@@ -277,7 +295,7 @@ public class Slob:Trait
 
 public class LeanEater:Trait
 {
-	int hungerReduction=20;
+	int hungerReduction=25;
 	//string name="Lean Eater";
 	public LeanEater ()
 	{
@@ -330,6 +348,7 @@ public class Loud: Trait
 	public override string GetMouseoverDescription () {return "Like a bull in a china shop\n\nMakes the party easier to spot";}
 }
 */
+/*
 public class ColdBlooded: Trait
 {
 	float moraleModifierMult=2f;
@@ -352,11 +371,11 @@ public class Moody: Trait
 	}
 	public override void ActivatePerk(PartyMember member) {member.moraleDamageMod*=moraleModifierMult;}
 	public override string GetMouseoverDescription () {return "Led by emotions\n\nMorale has much more influence on damage";}
-}
+}*/
 
 public class Bloodthirsty: Trait
 {
-	int moraleFromKill=3;
+	int moraleFromKill=5;
 	public Bloodthirsty ()
 	{
 		name="Bloodthirsty";
@@ -380,26 +399,36 @@ public class Pacifist: Trait
 
 public class ReassuringPresence: Trait
 {
-	float moraleRestoreMult=2f;
+	public static float moraleRestoreMult=2f;
 	public ReassuringPresence ()
 	{
 		name="Reassuring presence";
 		oppositePerk=typeof(Downer);
 	}
-	public override void ActivatePerk(PartyMember member) {member.moraleRestorePerHour=(int)(member.moraleRestorePerHour*moraleRestoreMult);}
-	public override string GetMouseoverDescription () {return "Takes the edge off everyone\n\nImproves morale recovery";}
+	public override void ActivatePerk(PartyMember mainMember) 
+	{
+		//foreach (PartyMember member in PartyManager.mainPartyManager.partyMembers)
+		//member.moraleRestorePerHour=(int)(member.moraleRestorePerHour*moraleRestoreMult);
+		mainMember.isReassuring=true;
+	}
+	public override string GetMouseoverDescription () {return "Takes the edge off everyone\n\nImproves party morale recovery";}
 }
 
 public class Downer: Trait
 {
-	float moraleDecayMult=2f;
+	public static float moraleDecayMult=2f;
 	public Downer ()
 	{
 		name="Downer";
 		oppositePerk=typeof(ReassuringPresence);
 	}
-	public override void ActivatePerk(PartyMember member) {member.moraleDecayPerHour=(int)(member.moraleDecayPerHour*moraleDecayMult);}
-	public override string GetMouseoverDescription () {return "Keeps everyone down\n\nIncreases morale decay";}
+	public override void ActivatePerk(PartyMember mainMember) 
+	{
+		//foreach (PartyMember member in PartyManager.mainPartyManager.partyMembers)
+		//member.moraleRestorePerHour=(int)(member.moraleDecayPerHour*moraleDecayMult);
+		mainMember.isDowner=true;
+	}
+	public override string GetMouseoverDescription () {return "Keeps everyone down\n\nIncreases party morale decay";}
 }
 
 public class PeoplePerson: Trait
@@ -410,9 +439,10 @@ public class PeoplePerson: Trait
 		name="People person";
 		oppositePerk=typeof(Antisocial);
 	}
-	public override void ActivatePerk(PartyMember member) {member.friendshipChance+=friendChanceChange;}
+	public override void ActivatePerk(PartyMember member) {member.baseRelationshipChanceModifier+=friendChanceChange;}
 	public override string GetMouseoverDescription () {return "Easily makes friends\n\nMore likely to make friends";}
 }
+
 public class Antisocial: Trait
 {
 	float friendChanceChange=-0.2f;
@@ -421,8 +451,72 @@ public class Antisocial: Trait
 		name="Antisocial";
 		oppositePerk=typeof(PeoplePerson);
 	}
-	public override void ActivatePerk(PartyMember member) {member.friendshipChance+=friendChanceChange;}
+	public override void ActivatePerk(PartyMember member) {member.baseRelationshipChanceModifier+=friendChanceChange;}
 	public override string GetMouseoverDescription () {return "Doesn't like people\n\nMore likely to make enemies";}
+}
+
+public class SocialAnimal: Trait
+{
+	int soloMoraleChange=-10;
+	int teamMoraleChange=10;
+
+	public SocialAnimal ()
+	{
+		name="Social Animal";
+		oppositePerk=typeof(Loner);
+	}
+	public override void ActivatePerk(PartyMember member) 
+	{
+		member.aloneMoraleMod=soloMoraleChange;
+		member.inTeamMoraleMod=teamMoraleChange;
+	}
+	public override string GetMouseoverDescription () {return "Afraid of being alone\n\nLoses morale on solo missions, gains morale on team missions";}
+}
+
+public class Loner: Trait
+{
+	int soloMoraleChange=10;
+	int teamMoraleChange=-10;
+
+	public Loner ()
+	{
+		name="Loner";
+		oppositePerk=typeof(SocialAnimal);
+	}
+	public override void ActivatePerk(PartyMember member) 
+	{
+		member.aloneMoraleMod=soloMoraleChange;
+		member.inTeamMoraleMod=teamMoraleChange;
+	}
+	public override string GetMouseoverDescription () {return "Values alone time more than safety\n\nGains morale on solo missions, loses morale on team missions";}
+}
+
+public class Violent: Trait
+{
+
+	public Violent ()
+	{
+		name="Violent";
+		//oppositePerk=typeof(Pacifist);
+	}
+	public override void ActivatePerk(PartyMember member) 
+	{
+		member.isViolent=true;
+	}
+	public override string GetMouseoverDescription () {return "Loses his temper\n\nSometimes lashes out at his fellows";}
+}
+
+public class Kleptomaniac: Trait
+{
+	public Kleptomaniac ()
+	{
+		name="Kleptomaniac";
+	}
+	public override void ActivatePerk(PartyMember member) 
+	{
+		member.isKleptomaniac=true;
+	}
+	public override string GetMouseoverDescription () {return "Does not respect ownership\n\nItems occasionally go missing";}
 }
 /*
 public class Powerhouse: Perk

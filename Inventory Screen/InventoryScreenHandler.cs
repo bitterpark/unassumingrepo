@@ -9,7 +9,8 @@ public class InventoryScreenHandler : MonoBehaviour
 	//public ItemImageHandler itemPrefab;
 	public TraitUIHandler traitPrefab;
 	public RelationTextHandler relationPrefab;
-	
+
+	public Image memberPortrait;
 	public Text memberNameText;
 	public Text meleeDamageText;
 	public Text rangedDamageText;
@@ -71,6 +72,7 @@ public class InventoryScreenHandler : MonoBehaviour
 			if (allow)
 			{
 				selectedMember=newMember;
+				memberPortrait.color=newMember.color;
 				GetComponent<Canvas>().enabled=true;
 				inventoryShown=true;
 				memberNameText.text=newMember.name;		
@@ -90,7 +92,7 @@ public class InventoryScreenHandler : MonoBehaviour
 		CloseScreen();
 	}
 	
-	void CloseScreen()
+	public void CloseScreen()
 	{
 		selectedMember=null;
 		campingCanvas.CloseScreen();
@@ -335,14 +337,15 @@ public class InventoryScreenHandler : MonoBehaviour
 				else 
 				{
 					//IF ON WORLD MAP
-					
+					/*
 					if (PartyManager.mainPartyManager.selectedMembers.Count>0) 
 					{
 						int selectedIndex=PartyManager.mainPartyManager.selectedMembers.IndexOf(selectedMember);
-						int  nextIndex=(int)Mathf.Repeat(selectedIndex+1,PartyManager.mainPartyManager.selectedMembers.Count);
+						int nextIndex=(int)Mathf.Repeat(selectedIndex+1,PartyManager.mainPartyManager.selectedMembers.Count);
 						if (selectedIndex!=nextIndex) AssignSelectedMember(PartyManager.mainPartyManager.selectedMembers[nextIndex]);
 					}
-					else
+
+					else*/
 					{
 						int selectedIndex=PartyManager.mainPartyManager.partyMembers.IndexOf(selectedMember);
 						int  nextIndex=(int)Mathf.Repeat(selectedIndex+1,PartyManager.mainPartyManager.partyMembers.Count);
@@ -351,12 +354,12 @@ public class InventoryScreenHandler : MonoBehaviour
 				}
 			}
 		}
-		
+		/*
 		if (Input.GetKeyDown(KeyCode.T))
 		{
 			int fucktest=0;
 			fucktest=(int)Mathf.Repeat(fucktest+1,1);
 			print ("Final fucktest="+fucktest.ToString());
-		}
+		}*/
 	}
 }

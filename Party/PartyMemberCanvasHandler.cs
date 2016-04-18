@@ -37,17 +37,17 @@ public class PartyMemberCanvasHandler : MonoBehaviour {
 	
 	public void ShowHungerTooltip()
 	{
-		TooltipManager.main.CreateTooltip("Decreases health regen, affects morale",hungerText.transform.parent);
+		TooltipManager.main.CreateTooltip("Starvation prevents natural healing and reduces morale",hungerText.transform.parent);
 	}
 	
 	public void ShowFatigueTooltip()
 	{
-		TooltipManager.main.CreateTooltip("Reduces max stamina",fatigueText.transform.parent);
+		//TooltipManager.main.CreateTooltip("Reduces max stamina",fatigueText.transform.parent);
 	}
 	
 	public void ShowMoraleTooltip()
 	{
-		TooltipManager.main.CreateTooltip("Affects damage rolls",moraleText.transform.parent);
+		TooltipManager.main.CreateTooltip("Can be spent when fatigue is high",moraleText.transform.parent);
 	}
 	
 	public void DisableTooltip()

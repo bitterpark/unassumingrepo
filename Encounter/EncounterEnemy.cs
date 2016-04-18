@@ -81,13 +81,13 @@ public abstract class EncounterEnemy
 		string description=null;
 		switch(enemyType)
 		{
-		case EnemyTypes.Gasser: {description="gas spitters"; break;}
-		case EnemyTypes.Spindler: {description="spindlers"; break;}
-		case EnemyTypes.Flesh: {description="flesh masses"; break;}
-		case EnemyTypes.Muscle: {description="muscle masses"; break;}
-		case EnemyTypes.Transient: {description="transients"; break;}
-		case EnemyTypes.Quick: {description="quick masses"; break;}
-		case EnemyTypes.Slime: {description="slime masses"; break;}
+			case EnemyTypes.Gasser: {description="gas spitters"; break;}
+			case EnemyTypes.Spindler: {description="spindlers"; break;}
+			case EnemyTypes.Flesh: {description="flesh masses"; break;}
+			case EnemyTypes.Muscle: {description="muscle masses"; break;}
+			case EnemyTypes.Transient: {description="transients"; break;}
+			case EnemyTypes.Quick: {description="quick masses"; break;}
+			case EnemyTypes.Slime: {description="slime masses"; break;}
 		}
 		return description;
 	}
@@ -97,13 +97,13 @@ public abstract class EncounterEnemy
 		int count=0;
 		switch(enemyType)
 		{
-		case EnemyTypes.Gasser: {count=8; break;}
-		case EnemyTypes.Spindler: {count=5; break;}
-		case EnemyTypes.Flesh: {count=10; break;}
-		case EnemyTypes.Muscle: {count=10; break;}
-		case EnemyTypes.Transient: {count=10; break;}
-		case EnemyTypes.Quick: {count=10; break;}
-		case EnemyTypes.Slime: {count=12; break;}
+			case EnemyTypes.Gasser: {count=8; break;}
+			case EnemyTypes.Spindler: {count=5; break;}
+			case EnemyTypes.Flesh: {count=10; break;}
+			case EnemyTypes.Muscle: {count=10; break;}
+			case EnemyTypes.Transient: {count=10; break;}
+			case EnemyTypes.Quick: {count=10; break;}
+			case EnemyTypes.Slime: {count=12; break;}
 		}
 		return count;
 	}
@@ -115,13 +115,13 @@ public abstract class EncounterEnemy
 		float mod=0;
 		switch(enemyType)
 		{
-		case EnemyTypes.Gasser: {mod=1.5f; break;}
-		case EnemyTypes.Spindler: {mod=1f; break;}
-		case EnemyTypes.Flesh: {mod=1f; break;}
-		case EnemyTypes.Muscle: {mod=0.6f; break;}
-		case EnemyTypes.Slime: {mod=1.5f; break;}
-		case EnemyTypes.Transient: {mod=2f; break;}
-		case EnemyTypes.Quick: {mod=2f; break;}
+			case EnemyTypes.Gasser: {mod=1.5f; break;}
+			case EnemyTypes.Spindler: {mod=1.1f; break;}
+			case EnemyTypes.Flesh: {mod=1.1f; break;}
+			case EnemyTypes.Muscle: {mod=0.8f; break;}
+			case EnemyTypes.Slime: {mod=1.5f; break;}
+			case EnemyTypes.Transient: {mod=1.5f; break;}
+			case EnemyTypes.Quick: {mod=1.5f; break;}
 		}
 		return mod;
 	}
@@ -131,13 +131,13 @@ public abstract class EncounterEnemy
 		EncounterEnemy enemy=null;
 		switch(enemyType)
 		{
-		case EnemyTypes.Gasser: {enemy=new Gasser(coords); break;}
-		case EnemyTypes.Spindler: {enemy=new Spindler(coords); break;}
-		case EnemyTypes.Flesh: {enemy=new FleshMass(coords); break;}
-		case EnemyTypes.Muscle: {enemy=new MuscleMass(coords); break;}
-		case EnemyTypes.Transient: {enemy=new Transient(coords); break;}
-		case EnemyTypes.Quick: {enemy=new QuickMass(coords); break;}
-		case EnemyTypes.Slime: {enemy=new SlimeMass(coords); break;}
+			case EnemyTypes.Gasser: {enemy=new Gasser(coords); break;}
+			case EnemyTypes.Spindler: {enemy=new Spindler(coords); break;}
+			case EnemyTypes.Flesh: {enemy=new FleshMass(coords); break;}
+			case EnemyTypes.Muscle: {enemy=new MuscleMass(coords); break;}
+			case EnemyTypes.Transient: {enemy=new Transient(coords); break;}
+			case EnemyTypes.Quick: {enemy=new QuickMass(coords); break;}
+			case EnemyTypes.Slime: {enemy=new SlimeMass(coords); break;}
 		}
 		return enemy;
 	}
@@ -778,7 +778,7 @@ public class Spindler:EncounterEnemy
 		//Stamina damage part makes sure it can't inflict bleed while under NoArms
 		if (targetMember!=null)
 		{
-			if (staminaDamage>=2 && performedAttack.hitSuccesful) PartyManager.mainPartyManager.AddPartyMemberStatusEffect(targetMember,new Bleed(targetMember));
+			if (staminaDamage>=2 && performedAttack.hitSuccesful) PartyManager.mainPartyManager.AddPartyMemberStatusEffect(targetMember,new Bleed());
 		} 
 		else {throw new System.Exception("Spindler tried to assign bleed to null PartyMember");}
 		return performedAttack;

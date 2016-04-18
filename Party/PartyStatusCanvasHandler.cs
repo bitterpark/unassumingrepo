@@ -182,7 +182,7 @@ public class PartyStatusCanvasHandler : MonoBehaviour {
 			}	
 			//mapXText.text="X:"+PartyManager.mainPartyManager.mapCoordX.ToString();
 			//mapYText.text="Y:"+PartyManager.mainPartyManager.mapCoordY.ToString();
-			timeText.text="Day:"+PartyManager.mainPartyManager.daysPassed;//PartyManager.mainPartyManager.dayTime.ToString()+":00";
+			timeText.text="Days left:"+PartyManager.mainPartyManager.daysLeft;//PartyManager.mainPartyManager.dayTime.ToString()+":00";
 			ammoText.text="Ammo:"+PartyManager.mainPartyManager.ammo.ToString();
 			fuelText.text="Gas:"+PartyManager.mainPartyManager.gas.ToString();
 			temperatureText.text="Temperature:"+MapRegion.GetTemperatureDescription(MapManager.mapTemperatureRating);

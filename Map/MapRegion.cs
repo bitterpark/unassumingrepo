@@ -38,7 +38,14 @@ public class MapRegion : MonoBehaviour
 		List<Vector2> roadPoints=new List<Vector2>();
 		roadPoints.Add(transform.position);
 		roadPoints.Add(region.transform.position);
-		newVectorUI.AssignVectorLine("Road Line",transform.parent,false,roadPoints,8f,Color.black);
+		//Visually differentiate inter-town connections and inner town connections
+		float connectionThickness=0;
+		Color connectionColor=Color.cyan;
+		//Intertown - black, thinner
+		if (intercity) {connectionThickness=8f; connectionColor=Color.black;}
+		else {connectionThickness=16f; connectionColor=Color.gray;} //Innner town - gray, thicker
+
+		newVectorUI.AssignVectorLine("Road Line",transform.parent,false,roadPoints,connectionThickness,connectionColor);
 		//Create connection
 		RegionConnection newConnection=new RegionConnection(newVectorUI,moveCost,intercity,this,region);
 		region.AddConnectedRegion(this,newConnection);
@@ -75,6 +82,7 @@ public class MapRegion : MonoBehaviour
 	public Image carToken;
 	public Image threatToken;
 	public Text teamSizeText;
+	public Image teamSizeBg;
 	
 	public Transform memberTokenGroup;
 	
@@ -313,6 +321,7 @@ public class MapRegion : MonoBehaviour
 		if (!_discovered)
 		{
 			regionGraphic.sprite=undiscoveredLocSprite;
+			teamSizeBg.gameObject.SetActive(false);
 		}
 		else
 		{
@@ -327,6 +336,7 @@ public class MapRegion : MonoBehaviour
 				{
 					if (scouted)
 					{
+						teamSizeBg.gameObject.SetActive(true);
 						switch (regionalEncounter.encounterAreaType)
 						{
 							case Encounter.AreaTypes.Hospital: {regionGraphic.sprite=hospitalSprite; break;}
@@ -575,12 +585,12 @@ public class MapRegion : MonoBehaviour
 							areaDescription+="-"+InventoryItem.GetLootMetatypeDescription(metatype)+"\n";
 						}
 						areaDescription+="Enemies: "+regionalEncounter.enemyDescription+"\n";
-						
+						areaDescription+="\nRequired team size: "+regionalEncounter.minRequiredMembers+"-"+regionalEncounter.maxRequiredMembers;
 						//if (isHive) {areaDescription+="\nHive";}
 						//areaDescription+="\nExploration threat: "+CalculateThreatLevel(0);
 					}
 					//areaDescription+="\nTemperature: "+GetTemperature();
-					areaDescription+="\nRequired team size: "+regionalEncounter.minRequiredMembers+"-"+regionalEncounter.maxRequiredMembers;
+
 					//if (PartyManager.mainPartyManager.selectedMembers.Count>0)
 
 				}
@@ -635,6 +645,7 @@ public class MapRegion : MonoBehaviour
 		if (!hasCamp) 
 		{
 			tooltipText+="This area has no secure hideouts";
+			tooltipText+="\nResting here is dangerous and restores less fatigue";
 		}
 		else
 		{

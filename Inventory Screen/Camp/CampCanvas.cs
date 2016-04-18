@@ -64,7 +64,24 @@ public class CampCanvas : MonoBehaviour {
 		{
 			campShown=true;
 			availableRecipes.Clear();
-			availableRecipes=CraftRecipe.GetAllRecipes();
+			//Search local inventory and all present member inventories for tools
+			bool partyHasTools=false;
+			List<InventoryItem> sumLocalInventory=new List<InventoryItem>();
+			sumLocalInventory.AddRange(InventoryScreenHandler.mainISHandler.selectedMember.currentRegion.GetStashedItems());
+			foreach (PartyMember member in InventoryScreenHandler.mainISHandler.selectedMember.currentRegion.localPartyMembers)
+			{
+				sumLocalInventory.AddRange(member.carriedItems);
+			}
+			foreach (InventoryItem item in sumLocalInventory)
+			{
+				if (item.GetType()==typeof(Toolbox)) 
+				{
+					partyHasTools=true;
+					break;
+				}
+			}
+
+			availableRecipes=CraftRecipe.GetGenericRecipes(partyHasTools);
 			GetComponent<Canvas>().enabled=true;
 
 			assignedCamp=InventoryScreenHandler.mainISHandler.selectedMember.currentRegion.campInRegion;

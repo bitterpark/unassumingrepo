@@ -331,24 +331,28 @@ public class CacheInAnomaly:GameEvent
 			{
 				if (choiceString=="Send "+member.name+" to navigate the car roofs and the supplies")
 				{
-					if (Random.value<0.5f)
+					if (Random.value<0.6f)
 					{
-						eventResult=member.name+" volunteers to try and move across. The roofs are moist and slippery, and "+member.name+" loses balance several times, but manages to recover and safely reaches the supplies. Loaded with bags,"+member.name+" somehow makes it back across, covered in sweat but unharmed\n\n+2 food, +10 ammo\n\n"+fatiguePenalty+" fatigue for "+member.name;
+						eventResult=member.name+" volunteers to try and move across. The roofs are moist and slippery, and "+member.name+" loses balance several times, but manages to recover and safely reaches the supplies. Throwing the bags over,"+member.name+" carefully makes it back across, covered in sweat but unharmed\n\nFood, Ammo\n\n"+fatiguePenalty+" fatigue for "+member.name;
+						eventRegion.StashItem(new FoodSmall());
 						eventRegion.StashItem(new FoodSmall());
 						eventRegion.StashItem(new FoodBig());
 						eventRegion.StashItem(new FoodBig());
+						eventRegion.StashItem(new AmmoBox());
 						//PartyManager.mainPartyManager.GainItems(new FoodSmall());
 						//PartyManager.mainPartyManager.GainItems(new FoodBig());
 						//PartyManager.mainPartyManager.GainItems(new FoodBig());
-						PartyManager.mainPartyManager.ammo+=10;
+						//PartyManager.mainPartyManager.ammo+=10;
 						member.ChangeFatigue(fatiguePenalty);
 					}
 					else
 					{
 						int damage=25;
-						eventResult=member.name+" navigates the first few cars with surprising nimbleness and grace, but an inclined hatchback roof knocks them off-balance.\n"+member.name+" manages to grab an upper trunk of another nearby car at the last second, but their left foot dips into the drink all the way to their ankle. A terrible scream follows, but a surge of adrenaline causes "+member.name+" to pull themselves up. With one foot badly boiled, they abandon the supplies, and somehow manage to crawl back to safety.\n\n-"+damage+" health for "+member.name;
-						if (member.health<damage) {damage=member.health-1;}
-						member.TakeDamage(damage,false);
+						eventResult=member.name+" navigates the first few cars with surprising nimbleness and grace, but an inclined hatchback roof knocks him off-balance.\n"+member.name+" manages to grab an upper trunk of another nearby car at the last second, but his left foot dips into the drink all the way to the ankle. A terrible scream follows, but a surge of adrenaline causes "+member.name+" to pull himself up. With one foot badly boiled, he abandons the supplies, and somehow manages to crawl back to safety.\n\n";
+						eventResult+=damage+" leg damage for "+member.name;
+						//if (member.health<damage) {damage=member.health-1;}
+						member.TakeDamage(damage,false,PartyMember.BodyPartTypes.Legs);
+						member.ChangeFatigue(fatiguePenalty);
 						//volunteer.ChangeFatigue(fatiguePenalty);
 					}
 					break;
@@ -395,6 +399,7 @@ public class MedicalCache:GameEvent
 					eventRegion.StashItem(new Medkit());
 					eventRegion.StashItem(new Medkit());
 					eventRegion.StashItem(new Bandages());
+					eventRegion.StashItem(new Pills());
 					eventRegion.StashItem(new Pills());
 					foreach (PartyMember member in movedMembers)
 					{
@@ -544,7 +549,7 @@ public class SearchForSurvivor:GameEvent
 		return eventResult;
 	}
 }
-
+/*
 public class LowMoraleSpiral:GameEvent
 {	
 	string eventDescription="";
@@ -574,6 +579,59 @@ public class LowMoraleSpiral:GameEvent
 		}
 		return conditionsAreMet;
 	}
+}*/
+
+public class LowMoraleSteal:GameEvent
+{	
+	string eventDescription="";
+	int moraleThreshold=35;
+	InventoryItem stolenItem=null;
+	PartyMember inventoryMember=null;
+
+	public override string GetDescription(MapRegion eventRegion, List<PartyMember> movedMembers) 
+	{
+		eventDescription="Something seems wrong during asset review";
+		eventDescription+="\nSome items are missing. Stolen?";
+		eventDescription+="\n\n-"+stolenItem.itemName+" is gone";
+
+		//If an inventory member was found - take the item from that member's inventory, otherwise - take it from local region
+		if (inventoryMember!=null) inventoryMember.carriedItems.Remove(stolenItem);
+		else eventRegion.TakeStashItem(stolenItem);
+
+		return eventDescription;
+	}
+	
+	public override bool PreconditionsMet (MapRegion eventRegion, List<PartyMember> movedMembers)
+	{
+		bool thiefMemberFound=false;
+		foreach (PartyMember member in movedMembers)
+		{
+			if (stolenItem==null)
+			{
+				foreach (InventoryItem item in member.carriedItems)
+				{
+					if (item.GetType()==typeof(FoodBig) | item.GetType()==typeof(FoodSmall) | item.GetType()==typeof(FoodCooked))
+					{
+						stolenItem=item;
+						inventoryMember=member;
+						break;
+					}
+				}
+			}
+			if (member.morale<=moraleThreshold && member.isKleptomaniac) thiefMemberFound=true;
+		}
+		if (thiefMemberFound && stolenItem==null)
+		{
+			foreach (InventoryItem item in eventRegion.GetStashedItems())
+			{
+				if (item.GetType()==typeof(FoodBig) | item.GetType()==typeof(FoodSmall) | item.GetType()==typeof(FoodCooked))
+				{
+					stolenItem=item;
+				}
+			}
+		}
+		return (thiefMemberFound && stolenItem!=null);
+	}
 }
 
 public class LowMoraleFight:GameEvent
@@ -591,7 +649,7 @@ public class LowMoraleFight:GameEvent
 		foreach (PartyMember member in movedMembers)
 		{
 			
-			if (member.morale<=moraleThreshold && angryMember==null) 
+			if ((member.morale<=moraleThreshold | member.isViolent) && angryMember==null) 
 			{
 				angryMember=member;
 			}
@@ -601,8 +659,8 @@ public class LowMoraleFight:GameEvent
 		if (angryMember==null | normalMember==null) {throw new System.Exception("Null members for LowMoraleFight!");}
 		PartyMember.BodyPartTypes angryDamagedPart=angryMember.TakeRandomPartDamage(healthPenalty,true);
 		PartyMember.BodyPartTypes normalDamagedPart=normalMember.TakeRandomPartDamage(healthPenalty,true);
-		eventDescription+=angryMember.name+" and "+normalMember.name+" tear into eachother with desperate, frustrated viciousness!\nEventually the fight gets broken up, but not before they could do some damage.\n\n"+healthPenalty+" "+angryDamagedPart+" damage for "+angryMember.name;
-		eventDescription+=healthPenalty+" "+normalDamagedPart+" damage for "+normalMember.name;
+		eventDescription+=angryMember.name+" and "+normalMember.name+" tear into eachother with frustrated viciousness!\nEventually the fight breaks up, but not before they could do some damage.\n\n"+healthPenalty+" "+angryDamagedPart+" damage for "+angryMember.name;
+		eventDescription+="\n"+healthPenalty+" "+normalDamagedPart+" damage for "+normalMember.name;
 		return eventDescription;
 	}
 
@@ -613,48 +671,7 @@ public class LowMoraleFight:GameEvent
 		{
 			foreach (PartyMember member in movedMembers)
 			{
-				if (member.morale<=moraleThreshold) {conditionsAreMet=true; break;}
-			}
-		}
-		return conditionsAreMet;
-	}
-}
-
-public class LowMoraleEnmity:GameEvent
-{	
-	string eventDescription="";
-	int moraleThreshold=15;
-	
-	public override string GetDescription(MapRegion eventRegion, List<PartyMember> movedMembers) 
-	{
-		PartyMember angryMember=null;
-		PartyMember normalMember=null;
-		foreach (PartyMember member in movedMembers)
-		{
-			
-			if (member.morale<=moraleThreshold && angryMember==null) 
-			{
-				angryMember=member;
-			} 
-			else normalMember=member;
-			if (angryMember!=null && normalMember!=null) {break;}
-		}
-		if (angryMember==null | normalMember==null) {throw new System.Exception("Null members for LowMoraleEnmity!");}
-		
-		eventDescription="Tension and frustration in the group escalates in a shouting match between two survivors!\n";
-		eventDescription+=angryMember.name+" and "+normalMember.name+"'s argument devolves into personal attacks, as both forget the original root of their disagreement.\n When the exchange of accusastions finally settles, "+normalMember.name+" seems livid with indignation.\n\n"+normalMember.name+" has a grudge against "+angryMember.name;
-		if (normalMember.relationships.ContainsKey(angryMember)) {normalMember.RemoveRelatonship(angryMember);}
-		normalMember.SetRelationship(angryMember,Relationship.RelationTypes.Enemy);
-		return eventDescription;
-	}
-	public override bool PreconditionsMet (MapRegion eventRegion, List<PartyMember> movedMembers)
-	{
-		bool conditionsAreMet=false;
-		if (movedMembers.Count>1)
-		{
-			foreach (PartyMember member in movedMembers)
-			{
-				if (member.morale<=moraleThreshold) {conditionsAreMet=true; break;}
+				if (member.morale<=moraleThreshold | member.isViolent) {conditionsAreMet=true; break;}
 			}
 		}
 		return conditionsAreMet;
@@ -691,6 +708,122 @@ public class LowMoraleQuit:GameEvent
 			}
 		}
 		return conditionsAreMet;
+	}
+}
+
+//RELATIONSHIP EVENTS
+public class LowMoraleEnmity:GameEvent
+{	
+	string eventDescription="";
+	PartyMember lowestModMember=null;
+	PartyMember secondLowestModMember=null;
+
+	public override bool PreconditionsMet (MapRegion eventRegion, List<PartyMember> movedMembers)
+	{
+		bool conditionsAreMet=false;
+
+		int i=0;
+		float lowestTotalRelationshipMod=0f;
+		while (i<movedMembers.Count)
+		{
+			if (movedMembers[i].GetCurrentRelationshipMod()<0)
+			{
+				PartyMember firstPickedMember=movedMembers[i];
+				//float lowestMod=movedMembers[i].GetCurrentRelationshipMod();
+
+				foreach (PartyMember member in movedMembers)
+				{
+					if (member!=firstPickedMember && !firstPickedMember.relationships.ContainsKey(member) && member.GetCurrentRelationshipMod()<0)
+					{
+						if (firstPickedMember.GetCurrentRelationshipMod()+member.GetCurrentRelationshipMod()<lowestTotalRelationshipMod) 
+						{
+							lowestModMember=firstPickedMember;
+							secondLowestModMember=member;
+							lowestTotalRelationshipMod=firstPickedMember.GetCurrentRelationshipMod()+member.GetCurrentRelationshipMod();
+						}
+					}
+				}
+			}
+			i+=1; 
+		}
+		if (lowestModMember!=null && secondLowestModMember!=null && Random.value<=Mathf.Abs(lowestTotalRelationshipMod)) conditionsAreMet=true;
+
+		return conditionsAreMet;
+	}
+
+	public override string GetDescription(MapRegion eventRegion, List<PartyMember> movedMembers) 
+	{
+		PartyMember angryMember=lowestModMember;
+		PartyMember normalMember=secondLowestModMember;
+		/*
+		foreach (PartyMember member in movedMembers)
+		{
+			
+			if (member.morale<=moraleThreshold && angryMember==null) 
+			{
+				angryMember=member;
+			} 
+			else normalMember=member;
+			if (angryMember!=null && normalMember!=null) {break;}
+		}
+		if (angryMember==null | normalMember==null) {throw new System.Exception("Null members for LowMoraleEnmity!");}
+		*/
+		eventDescription="Tension and frustration in the group escalates in a shouting match between two survivors!\n";
+		eventDescription+=angryMember.name+" and "+normalMember.name+"'s argument devolves into personal attacks, as both forget the original root of their disagreement.\n When the exchange of accusastions finally settles, "+normalMember.name+" seems livid with indignation.";
+		eventDescription+="\n\n"+normalMember.name+" has a grudge against "+angryMember.name;
+		//if (normalMember.relationships.ContainsKey(angryMember)) {normalMember.RemoveRelatonship(angryMember);}
+		normalMember.SetRelationship(angryMember,Relationship.RelationTypes.Enemy);
+		return eventDescription;
+	}
+}
+
+public class HighMoraleFriendship:GameEvent
+{	
+	string eventDescription="";
+	PartyMember highestModMember=null;
+	PartyMember secondHighestModMember=null;
+
+	public override bool PreconditionsMet (MapRegion eventRegion, List<PartyMember> movedMembers)
+	{
+		bool conditionsAreMet=false;
+
+		int i=0;
+		float highestTotalRelationshipMod=0f;
+		while (i<movedMembers.Count)
+		{
+			if (movedMembers[i].GetCurrentRelationshipMod()>0)
+			{
+				PartyMember firstPickedMember=movedMembers[i];
+				//float lowestMod=movedMembers[i].GetCurrentRelationshipMod();
+
+				foreach (PartyMember member in movedMembers)
+				{
+					if (member!=firstPickedMember && !firstPickedMember.relationships.ContainsKey(member) && member.GetCurrentRelationshipMod()>0)
+					{
+						if (firstPickedMember.GetCurrentRelationshipMod()+member.GetCurrentRelationshipMod()<highestTotalRelationshipMod) 
+						{
+							highestModMember=firstPickedMember;
+							secondHighestModMember=member;
+							highestTotalRelationshipMod=firstPickedMember.GetCurrentRelationshipMod()+member.GetCurrentRelationshipMod();
+						}
+					}
+				}
+			}
+			i+=1; 
+		}
+		if (highestModMember!=null && secondHighestModMember!=null && Random.value<=Mathf.Abs(highestTotalRelationshipMod)) conditionsAreMet=true;
+
+		return conditionsAreMet;
+	}
+
+	public override string GetDescription(MapRegion eventRegion, List<PartyMember> movedMembers) 
+	{
+		eventDescription="Survivors engage in friendly conversation to pass the time\n";
+		eventDescription+=highestModMember.name+" and "+secondHighestModMember.name+" seem to hit it off especially well, bonding over similar points of view and sharing old hobbies.";
+		eventDescription+="\n\n"+secondHighestModMember.name+" became friends with "+highestModMember.name;
+		//if (normalMember.relationships.ContainsKey(angryMember)) {normalMember.RemoveRelatonship(angryMember);}
+		secondHighestModMember.SetRelationship(highestModMember,Relationship.RelationTypes.Friend);
+		return eventDescription;
 	}
 }
 
@@ -772,6 +905,8 @@ public class TownMove:GameEvent
 	}
 	
 }
+
+
 
 public class AmbushEvent:GameEvent
 {
@@ -988,7 +1123,7 @@ public class MemberIsCold:GameEvent
 		coldMember=movedMembers[Random.Range(0,movedMembers.Count)];
 		//success
 		//PartyMember.BodyPartTypes damagedPart=coldMember.TakeRandomPartDamage(healthPenalty,true);
-		PartyManager.mainPartyManager.AddPartyMemberStatusEffect(coldMember,new Cold(coldMember));
+		PartyManager.mainPartyManager.AddPartyMemberStatusEffect(coldMember,new Cold());
 
 		eventDescription="The air is cold and crisp. You can see your own breath. Life is slowly leaking out of your body.\n";
 		eventDescription+="Due to low temperatures and a lack of heating, "+coldMember.name+" freezes and becomes sick!\n\n";//+healthPenalty+" "+damagedPart+" damage for "+coldMember.name;
@@ -1021,7 +1156,7 @@ public class MembersAreFreezing:GameEvent
 		{
 			//PartyMember.BodyPartTypes damagedPartType=member.TakeRandomPartDamage(healthPenalty,false);
 			eventDescription+="\n"+member.name+" becomes sick!";//+" takes "+healthPenalty+" "+damagedPartType+" damage";
-			PartyManager.mainPartyManager.AddPartyMemberStatusEffect(member,new Cold(member));
+			PartyManager.mainPartyManager.AddPartyMemberStatusEffect(member,new Cold());
 		}
 
 		return eventDescription;
@@ -1081,18 +1216,43 @@ public class AttackOnCamp:GameEvent
         List<EventChoice> choicesList=new List<EventChoice>();
         //choicesList.Add("Try to run!");
 		choicesList.Add(new EventChoice("Fight!"));
-		bool shootGreyedOut=true;
+		//bool shootGreyedOut=true;
+
+		bool partyHasRangedWeapons=false;
         foreach (PartyMember member in movedMembers)
         {
 			if (movedMembers.Count>1) choicesList.Add(new EventChoice("Have "+member.name+" hold them off!"));
 			if (member.equippedRangedWeapon!=null && PartyManager.mainPartyManager.ammo>=requiredAmmo)
             {
-				shootGreyedOut=false;
+				partyHasRangedWeapons=true;
                 shooter=member;
             }
-            
+            //If party member does not have a ranged weapon equipped, search his inventory
+            if (!partyHasRangedWeapons)
+            {
+            	foreach (InventoryItem item in member.carriedItems) 
+            	{
+            		if (item.GetType().BaseType==typeof(RangedWeapon)) 
+            		{
+            			partyHasRangedWeapons=true;
+            			shooter=member;
+            		}
+            	}
+            }
         }
-		choicesList.Add(new EventChoice("Shoot them!("+requiredAmmo+" ammo)",shootGreyedOut));
+        //If none of the members have ranged weapons equipped or carrying them, check local inventory
+        if (!partyHasRangedWeapons)
+        {
+        	foreach (InventoryItem item in eventRegion.GetStashedItems())
+        	{
+				if (item.GetType().BaseType==typeof(RangedWeapon)) 
+            	{
+            		partyHasRangedWeapons=true;
+            		shooter=movedMembers[0];
+            	}
+            }
+        }
+		choicesList.Add(new EventChoice("Shoot them!("+requiredAmmo+" ammo)",!(partyHasRangedWeapons && PartyManager.mainPartyManager.ammo>=requiredAmmo)));
         return choicesList;
     }
 
@@ -1315,6 +1475,55 @@ public class CarFindEvent:GameEvent
                 
                 if (eventRegion.townCenter==null) eventRegion.SetCar(true);
                 else eventRegion.townCenter.SetCar(true);   
+                break;
+            }
+        }
+        return eventResult;
+    }
+}
+
+public class GameWinEvent:GameEvent
+{
+    string eventDescription="";
+
+    public override string GetDescription(MapRegion eventRegion, List<PartyMember> movedMembers) 
+    {
+        string noticingPartyMemberName=movedMembers[Random.Range(0,movedMembers.Count)].name;
+        eventDescription="As the night of the seventh day gives way to the first crack of dawn, the week ends."; 
+        eventDescription+="\nYou look at the skyline tensely, wondering if something might have happened to the";
+        eventDescription+="\nscheduled rescue effort. You've fought hard to survive that long, and you're not sure";
+        eventDescription+="\nyou have any more fight left in you.";
+
+		eventDescription="Finally, a small dot appears on the horizon, slowly morphing into a transport chopper as it goes.";
+		eventDescription+="\nSeveral more soon follow, one breaking off in your direction while the others fly on past.\n";
+		eventDescription+="\nYou awaken from your reverie to run towards it, as it goes in for landing a few streets away from your camp.";
+		eventDescription+="\nGunfire rings out in the morning air as you run, machineguns securing the area from enemies roused by the noise.";
+		eventDescription+="\nThey almost take your head off before they notice you're not a hostile. Soldiers in armor and protective gear";
+		eventDescription+="\ndisembark into the action, a few covering while two rush towards you, roughly grabbing you and heading back";
+		eventDescription+="\nto their helicopter. You are put on a bench and left alone, listening to the gunfire outside while a few other";
+		eventDescription+="\nsurvivors are dragged in, and the chopper finally takes off. You dully watch the island flash past the";
+		eventDescription+="\nwindows, wondering where you are being taken.";
+
+        return eventDescription;
+    }
+    public override List<EventChoice> GetChoices(MapRegion eventRegion, List<PartyMember> movedMembers)
+    {
+        List<EventChoice> choicesList=new List<EventChoice>();
+		choicesList.Add(new EventChoice("Continue"));
+        return choicesList;
+    }
+    
+    public override string DoChoice (string choiceString,MapRegion eventRegion, List<PartyMember> movedMembers)
+    {
+        string eventResult=null;
+        
+        switch (choiceString)
+        {
+        	case"Continue":
+            {
+                eventResult="";
+                GameManager.main.EndCurrentGame(true);
+				EventCanvasHandler.main.CloseChoiceScreen();
                 break;
             }
         }

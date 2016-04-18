@@ -8,12 +8,15 @@ public class VectorUI : MonoBehaviour
 {
 	VectorLine myLine;
 	public Texture defaultLineTexture;
+	public Texture thickDefaultLineTexture;
 	
 	public void AssignVectorLine(VectorLine newLine, Transform parentObject, bool setToTop)
 	{
 		myLine=newLine;
 		//!!WARNING!! - default texture is thinLine, it gives free AA but the line width MUST BE >=4!!
-		myLine.texture=defaultLineTexture;
+		//If width>8 - use thick texture
+		if (newLine.lineWidth<=8f) myLine.texture=defaultLineTexture;
+		else myLine.texture=thickDefaultLineTexture;
 
 		transform.SetParent(parentObject);
 		if (setToTop) transform.SetAsLastSibling();

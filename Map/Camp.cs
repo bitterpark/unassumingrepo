@@ -4,26 +4,44 @@ using System.Collections.Generic;
 
 public class Camp
 {
+/*
 	public Camp()
 	{
 		PartyManager.ETimePassedEnd+=TimePassCold;
 	}
 	public void TimePassCold(int emptyInt)
 	{
-		IncrementTemperature(-1);
-	}	
+		//int temperatureChange=Mathf.Clamp(MapManager.GetDailyTemperatureRating(),0,1);
+		//IncrementTemperature(-1);
+		temperatureNumber=MapManager.mapTemperatureNumber;
+		GameManager.DebugPrint("Temperature set to:"+MapManager.mapTemperatureNumber);
+	}	*/
 
 	public Pot cookingImplement=new Pot();
 	public List<InventoryItem> beds=new List<InventoryItem>();
 	public int freeBeds=0;
-	public enum TemperatureRating {Very_Cold,Cold,Okay};
+
+	//TEMPERATURE
+	/*
+	public static string GetTemperatureDescription(int temperatureNumber)
+	{
+		string description="";
+		switch(temperatureNumber)
+		{
+			case 0:{description="Freezing"; break;}
+			case 1:{description="Cold"; break;}
+			case 2:{description="Okay"; break;}
+		}
+		return description;
+	}
+	public enum TemperatureRating {Freezing,Cold,Okay};
 	public TemperatureRating GetTemperature()
 	{
 		//Cannot be <0 or >2
 		TemperatureRating rating=TemperatureRating.Okay;
 		switch(temperatureNumber)
 		{
-			case 0:{rating=TemperatureRating.Very_Cold; break;}
+			case 0:{rating=TemperatureRating.Freezing; break;}
 			case 1:{rating=TemperatureRating.Cold; break;}
 			case 2:{rating=TemperatureRating.Okay; break;}
 		}
@@ -35,21 +53,21 @@ public class Camp
 		temperatureNumber=Mathf.Clamp(temperatureNumber,0,2);//
 	}
 	int temperatureNumber;
-
+	*/
+	//THREAT
 	public MapRegion.ThreatLevels GetThreatLevel()
 	{
-		//Cannot be >3, okay for all results <0
+		//Cannot be >2, okay for all results <0
 		MapRegion.ThreatLevels level=MapRegion.ThreatLevels.None;
 		switch(threatLevelNumber)
 		{
 			default:{level=MapRegion.ThreatLevels.None; break;}
 			case 1:{level=MapRegion.ThreatLevels.Low; break;}
 			case 2:{level=MapRegion.ThreatLevels.Medium; break;}
-			case 3:{level=MapRegion.ThreatLevels.High; break;}
 		}
 		return level;
 	}
-	public int threatLevelNumber=3;
+	public int threatLevelNumber=2;
 
 	public void EquipCookingImplement(Pot newImplement)
 	{

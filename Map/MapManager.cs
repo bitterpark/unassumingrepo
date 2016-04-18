@@ -140,7 +140,7 @@ public class MapManager : MonoBehaviour
 		}
 		
 		
-		int largeTownCount=3;
+		int largeTownCount=4;
 		
 		System.Func<float,Vector2,Vector2> slotOffsetter=(float sidePaddingMaxOffset,Vector2 slotCoords)=>
 		{
@@ -158,7 +158,7 @@ public class MapManager : MonoBehaviour
 		
 		List<Vector2> townCenters=new List<Vector2>();
 		Vector2 endgameCenter=Vector2.zero;
-		for (int i=0; i<=largeTownCount; i++)
+		for (int i=0; i<largeTownCount; i++)
 		{
 			//Vector2 randomPointInSlot=Random.insideUnitCircle*(Random.Range(1f,townSlotSideSize*0.5f-largeTownSideSize*0.5f));
 			//int randomSlotIndex=Random.Range(0,townSlotCenters.Count);
@@ -177,7 +177,7 @@ public class MapManager : MonoBehaviour
 			mapMaxY=Mathf.Max(adjustedSlotMaxEdgeCoords.y,mapMaxY);
 			//Add final slot to townCenters to be used for town placement
 			if (i<largeTownCount) townCenters.Add(newTownCenterCoords);
-			else endgameCenter=newTownCenterCoords; // - prepares endgame coordinates
+			//else endgameCenter=newTownCenterCoords; // - prepares endgame coordinates
 			//print ("new town center coords:"+newTownRect.center);
 		}
 		
@@ -203,15 +203,18 @@ public class MapManager : MonoBehaviour
 			mapMaxX=Mathf.Max(adjustedSlotMaxEdgeCoords.x,mapMaxX);
 			mapMaxY=Mathf.Max(adjustedSlotMaxEdgeCoords.y,mapMaxY);
 		}
+		//Currently unused
 		endgameCenter+=new Vector2(townslotsXOffset,townslotsYOffset);
 		//Include endgame region into estimation
+		/*
 		Vector2 adjustedEndgameSlotMinEdgeCoords=endgameCenter-new Vector2(townSlotSideSize*0.5f,townSlotSideSize*0.5f);
 		Vector2 adjustedEndgameSlotMaxEdgeCoords=endgameCenter+new Vector2(townSlotSideSize*0.5f,townSlotSideSize*0.5f);
 		mapMinX=Mathf.Min(adjustedEndgameSlotMinEdgeCoords.x,mapMinX);
 		mapMinY=Mathf.Min(adjustedEndgameSlotMinEdgeCoords.y,mapMinY);
 		mapMaxX=Mathf.Max(adjustedEndgameSlotMaxEdgeCoords.x,mapMaxX);
 		mapMaxY=Mathf.Max(adjustedEndgameSlotMaxEdgeCoords.y,mapMaxY);
-		
+		*/
+
 		//Determine final size of scrollgroup
 		float mapFinalWidth=borderOffset*2+Mathf.Abs(mapMaxX-mapMinX);
 		float mapFinalHeight=borderOffset*2+Mathf.Abs(mapMaxY-mapMinY);
@@ -333,12 +336,8 @@ public class MapManager : MonoBehaviour
 		
 		
 		//Add endgame encounter
-		//randomPointInSlot=Random.insideUnitCircle*(Random.Range(1f,townSlotSideSize*0.5f-largeTownSideSize*0.5f));
-		//randomSlotIndex=Random.Range(0,townSlotCenters.Count);
-		//Vector2 endgameCenterCoords=townSlotCenters[randomSlotIndex]+randomPointInSlot;
-		//townSlotCenters.RemoveAt(randomSlotIndex);
-		MapRegion endgameEncounter=CreateRegion(endgameCenter,true);
-		foreach(MapRegion region in newTowns) {endgameEncounter.AddConnectedRegion(region,true,townToTownGasCost);}
+		//MapRegion endgameEncounter=CreateRegion(endgameCenter,true);
+		//foreach(MapRegion region in newTowns) {endgameEncounter.AddConnectedRegion(region,true,townToTownGasCost);}
 		
 		//Final step - party placement
 		//StartCoroutine(MapGenViewFocus(mapRegions[0].GetComponent<RectTransform>()));

@@ -74,8 +74,16 @@ public class MapScoutingHandler : MonoBehaviour {
 					//scoutMoreButton.GetComponent<Button>().interactable=true;
 					//else scoutMoreButton.GetComponent<Button>().interactable=false;
 				}
+				//Prevent from entering encounter when no party members are selected
+				if (selectedForMission.Count>0) confirmButtonText.GetComponentInParent<Button>().interactable=true;
+				else confirmButtonText.GetComponentInParent<Button>().interactable=false;
 			}
-			else scoutMoreButton.SetActive(false);
+			else 
+			{
+				scoutMoreButton.SetActive(false);
+				confirmButtonText.GetComponentInParent<Button>().interactable=true;
+			}
+
 		}
 	}
 

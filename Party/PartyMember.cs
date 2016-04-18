@@ -50,6 +50,14 @@ public class PartyMember
 			CalculateHitChances();
 		}
 
+		public void ChangePartMaxHealth(int newHealth, BodyPartTypes part)
+		{
+			int healthChangeDelta=newHealth-currentParts[part].maxHealth;
+			currentParts[part].maxHealth=newHealth;
+			if (healthChangeDelta>0) currentParts[part].Heal(healthChangeDelta);
+			else currentParts[part].DamagePart(healthChangeDelta);
+		}
+
 		public ProbabilityList<MemberBodyPart> GetDodgelessHitchances()
 		{
 			float totalHitProbability=1;
@@ -202,13 +210,13 @@ public class PartyMember
 				{
 				case BodyPartTypes.Hands:
 				{
-					ongoingEffect=new BrokenArmsMember(member);
+					ongoingEffect=new BrokenArmsMember();
 					PartyManager.mainPartyManager.AddPartyMemberStatusEffect(member,ongoingEffect);
 					break;
 				}
 				case BodyPartTypes.Legs:
 				{
-					ongoingEffect=new BrokenLegsMember(member);
+					ongoingEffect=new BrokenLegsMember();
 					PartyManager.mainPartyManager.AddPartyMemberStatusEffect(member,ongoingEffect);
 					break;
 				}
@@ -330,12 +338,47 @@ public class PartyMember
 		}*/
 	}
 	//public int _health;
-	public int maxHealth;
+	//public int maxHealth;
 	//float healthRegenPercentage=0.2f;
 	//Body part health
-	public int handsMaxHealth=25;
-	public int legsMaxHealth=25;
-	public int vitalsMaxHealth=50;
+	//Starting presets
+	const int defaultHandsHealth=25;
+	const int defaultLegsHealth=25;
+	const int defaultVitalsHealth=50;
+	//Current values
+	public int handsMaxHealth
+	{
+		get {return memberBodyParts.currentParts[BodyPartTypes.Hands].maxHealth;}//_handsMaxHealth;}
+		set 
+		{
+			//int changeDelta=_handsMaxHealth-value;
+			memberBodyParts.ChangePartMaxHealth(value,BodyPartTypes.Hands);
+			//_handsMaxHealth=value;
+		}
+	}
+	//int _handsMaxHealth=25;
+	public int legsMaxHealth
+	{
+		get {return memberBodyParts.currentParts[BodyPartTypes.Legs].maxHealth;}
+		set 
+		{
+			//int changeDelta=_handsMaxHealth-value;
+			memberBodyParts.ChangePartMaxHealth(value,BodyPartTypes.Legs);
+			//_legsMaxHealth=value;
+		}
+	}
+	//int _legsMaxHealth=25;
+	public int vitalsMaxHealth
+	{
+		get {return memberBodyParts.currentParts[BodyPartTypes.Vitals].maxHealth;}
+		set 
+		{
+			//int changeDelta=_handsMaxHealth-value;
+			memberBodyParts.ChangePartMaxHealth(value,BodyPartTypes.Vitals);
+			//_vitalsMaxHealth=value;
+		}
+	}
+	//int _vitalsMaxHealth=25;
 	
 	//ATTACK HIT CHANCE
 	public float baseAttackHitChance=0f;
@@ -348,7 +391,7 @@ public class PartyMember
 		if (rangedMode) currentAttackHitChance+=rangedHitchanceMod;
 		else currentAttackHitChance+=meleeHitchanceMod;
 		int missingStamina=currentMaxStamina-stamina;
-		currentAttackHitChance=Mathf.Max(0,currentAttackHitChance-missingStamina*hitChanceReductionPerStaminaPoint);
+		currentAttackHitChance=currentAttackHitChance-missingStamina*hitChanceReductionPerStaminaPoint;
 		return currentAttackHitChance;
 	}
 	
@@ -389,6 +432,7 @@ public class PartyMember
 	
 	public int staminaRegen=3;
 	public int staminaMoveCost=0;
+	public int barricadeVaultCost=2;
 	
 	//HUNGER
 	int hunger
@@ -433,6 +477,12 @@ public class PartyMember
 	public int GetFatigue() {return fatigue;}
 	public void SetFatigue(int newFatigue)
 	{
+		if (newFatigue>maxFatigue)
+		{
+			int moraleExchangedForFatigue=(newFatigue-maxFatigue)*10;
+			newFatigue=maxFatigue;
+			morale-=moraleExchangedForFatigue;
+		}
 		fatigue=newFatigue;
 		RefreshMaxStamina();
 	}
@@ -443,7 +493,12 @@ public class PartyMember
 	}
 	public bool CheckEnoughFatigue(int taskRequirement)
 	{
-		if (fatigue+taskRequirement>maxFatigue) return false;
+		if (fatigue+taskRequirement>maxFatigue)
+		{
+			int fatigueOverflow=fatigue+taskRequirement-maxFatigue;
+			if (morale-fatigueOverflow*10>=moraleFatigueMinThreshold) return true;
+			else return false;
+		}
 		else return true;
 	}
 	public int fatigueRestoreWait=5;
@@ -475,12 +530,24 @@ public class PartyMember
 	}
 	int _morale;
 	int baseMorale;
-	public int moraleRestorePerHour;
-	public int moraleDecayPerHour;
+	public int moraleRestorePerHour=5;
+	public int moraleDecayPerHour=5;
+	public int moraleFatigueMinThreshold=30;
 	//per point above/below 50
 	public float moraleDamageMod;
 	public int moraleChangeFromKills;
-	
+
+	public int aloneMoraleMod=0;
+	public int inTeamMoraleMod=0;
+
+	public float relationshipChancePerMoralePoint=0.035f;
+	public float baseRelationshipChanceModifier=0;
+	public float GetCurrentRelationshipMod()
+	{
+		float currentMod=relationshipChancePerMoralePoint*(morale-50)+baseRelationshipChanceModifier;
+		return currentMod;
+	}
+	//DODGE
 	public float dodgeChance
 	{
 		get {return _dodgeChance;}
@@ -494,20 +561,24 @@ public class PartyMember
 	float _dodgeChance=0.5f;
 	public BodyParts memberBodyParts;
 	
-	public float friendshipChance;
+	//public float friendshipChance;
 	
 	public int skillpoints=0;
 	
 	public bool legsBroken=false;
 	public bool hasLight=false;
 	public bool isCook=false;
+	public bool isDowner=false;
+	public bool isReassuring=false;
 	public bool isLockExpert=false;
 	public bool isMedic=false;
+	public bool isViolent=false;
+	public bool isKleptomaniac=false;
 	
 	//Scout
 	public bool isScout=false;
 	public bool extraMoveEnabled=false; 
-	public bool barricadeAvoidanceEnabled=false;
+	//public bool barricadeAvoidanceEnabled=false;
 	public bool isQuiet=false;
 	//Fighter
 	public bool hitAndRunEnabled=false;
@@ -581,10 +652,10 @@ public class PartyMember
 		
 		
 		//Randomly pick out a specialty
-		List<Trait> possibleSpecialtyPerks=Trait.GetRandomSkillTree();
-		traits.AddRange(possibleSpecialtyPerks);
+		List<Trait> possibleSpecialtyPerks=Trait.GenerateRandomSkillTree(5);
+
 		//Pick out a starting specialty perk
-		Skill startingLearnedSkill=traits[Random.Range(0,traits.Count)] as Skill;
+		Skill startingLearnedSkill=possibleSpecialtyPerks[Random.Range(0,possibleSpecialtyPerks.Count)] as Skill;
 		startingLearnedSkill.learned=true;
 		
 		//Fill out trait list
@@ -592,7 +663,11 @@ public class PartyMember
 		//Deactivate the opposite traits of the starting perk
 		foreach(Trait genericPerk in possibleGenericPerks)
 		{
-			if (genericPerk.GetType()==startingLearnedSkill.oppositePerk) {possibleGenericPerks.Remove(genericPerk); break;}
+			if (genericPerk.GetType()==startingLearnedSkill.oppositePerk) 
+			{
+				if (possibleGenericPerks.Contains(genericPerk)) possibleGenericPerks.Remove(genericPerk); 
+				break;
+			}
 		}
 		
 		/*
@@ -619,7 +694,7 @@ public class PartyMember
 		//Randomly pick out generic perks
 		int necessaryPerkCount=2;
 		int addedPerksCount=0;
-		while (addedPerksCount<necessaryPerkCount)
+		while (addedPerksCount<necessaryPerkCount && possibleGenericPerks.Count>0)
 		{
 			Trait newPerk=possibleGenericPerks[Random.Range(0,possibleGenericPerks.Count)];
 			traits.Add(newPerk);
@@ -629,25 +704,34 @@ public class PartyMember
 			{
 				foreach (Trait possibleGenericPerk in possibleGenericPerks) 
 				{
-					if (possibleGenericPerk.GetType()==newPerk.oppositePerk) {possibleGenericPerks.Remove(possibleGenericPerk); break;}
+					if (possibleGenericPerk.GetType()==newPerk.oppositePerk) 
+					{
+						if (possibleGenericPerks.Contains(possibleGenericPerk)) possibleGenericPerks.Remove(possibleGenericPerk); 
+						break;
+					}
 				}
 				foreach (Trait possibleSpecialtyPerk in possibleSpecialtyPerks) 
 				{
-					if (possibleSpecialtyPerk.GetType()==newPerk.oppositePerk) {possibleGenericPerks.Remove(possibleSpecialtyPerk); break;}
+					if (possibleSpecialtyPerk.GetType()==newPerk.oppositePerk) 
+					{
+						if (possibleSpecialtyPerks.Contains(possibleSpecialtyPerk)) possibleSpecialtyPerks.Remove(possibleSpecialtyPerk); 
+						break;
+					}
 				}
 			}
 		}
-		
+		//Add the rest of the skills that can be learned
+		traits.AddRange(possibleSpecialtyPerks);
 		//debug
 		//if (memberName=="Jimbo") {perks.Clear(); perks.Add(new WeakArm());}
 		
 		///////
 		name=memberName;
+		memberBodyParts=new BodyParts(this, defaultHandsHealth,defaultLegsHealth,defaultVitalsHealth);
+
 		baseMaxStamina=10;
 		baseMorale=50;
 		//moraleChangePerHour=10;
-		moraleRestorePerHour=1;
-		moraleDecayPerHour=1;
 		
 		hunger=0;
 		hungerIncreasePerHour=50;
@@ -660,7 +744,7 @@ public class PartyMember
 		visibilityMod=0;
 		moraleDamageMod=0;//0.02f;
 		moraleChangeFromKills=0;
-		friendshipChance=0.6f;
+		//friendshipChance=0.6f;
 		rangedDamageMod=0;
 		meleeDamageMod=0;
 		hasLight=false;
@@ -683,8 +767,8 @@ public class PartyMember
 		stamina=currentMaxStamina;
 		morale=baseMorale;
 		UpdateCurrentCarryCapacity();
-		maxHealth=vitalsMaxHealth;
-		memberBodyParts=new BodyParts(this, handsMaxHealth,legsMaxHealth,vitalsMaxHealth);
+		//maxHealth=vitalsMaxHealth;
+
 		//currentCarryCapacity=maxCarryCapacity;
 		
 		//EquipWeapon(new Pipe());
@@ -710,6 +794,7 @@ public class PartyMember
 				return false;
 			}
 		}
+		newEffect.ActivateEffect(this);
 		activeStatusEffects.Add(newEffect);
 		return true;
 	}
@@ -749,9 +834,10 @@ public class PartyMember
 		activeStatusEffects=null;
 		PartyStatusCanvasHandler.main.NewNotification(name+" has died!");
 	}
-	
+	//Currently deprecated
 	void RollRelationships()
 	{
+	/*
 		if (Random.value<0f)
 		{
 			PartyMember newRelationGuy=PartyManager.mainPartyManager.partyMembers[Random.Range(0,PartyManager.mainPartyManager.partyMembers.Count)];
@@ -769,15 +855,20 @@ public class PartyMember
 				}
 			}
 		}
+		*/
 	}
-	
+
 	public void SetRelationship(PartyMember member, Relationship.RelationTypes type)
 	{
 		relationships.Add(member,new Relationship(member,type));
+		if (member.relationships.ContainsKey(this)) member.relationships.Remove(this);
+		member.relationships.Add(this,new Relationship(this,type));
+		/*
 		string typeDesc="";
 		if (type==Relationship.RelationTypes.Friend){ typeDesc="friends";}
 		else {typeDesc="enemies";}
 		PartyStatusCanvasHandler.main.NewNotification(name+" became "+typeDesc+" with "+member.name);
+		*/
 	}
 	public void RemoveRelatonship(PartyMember removedMember) {relationships.Remove(removedMember);}
 	
@@ -816,6 +907,33 @@ public class PartyMember
 		int hungerOverload=Mathf.FloorToInt((hunger-100)*0.1f);
 		//Reset hunger from over 100
 		if (hunger>100) SetHunger(100);
+
+		//Calculate morale decay and restore values
+		int adjustedDecayValue=moraleDecayPerHour;
+		int adjustedRestoreValue=moraleRestorePerHour;
+		bool reassuringMemberFound=false;
+		bool downerMemberFound=false;
+		//Adjust values based on whether or not a Downer and a Reassuring Presence members are found
+		foreach (PartyMember member in PartyManager.mainPartyManager.partyMembers)
+		{
+			if (!reassuringMemberFound) 
+			{
+				if (member.isReassuring)
+				{
+					reassuringMemberFound=true;
+					adjustedRestoreValue=Mathf.RoundToInt(adjustedRestoreValue*ReassuringPresence.moraleRestoreMult);
+				}
+			}
+			if (!downerMemberFound) 
+			{
+				if (member.isDowner)
+				{
+					downerMemberFound=true;
+					adjustedDecayValue=Mathf.RoundToInt(adjustedDecayValue*Downer.moraleDecayMult);
+				}
+			} 
+		}
+
 		//If hunger reached >100
 		if (hungerOverload>0)
 		{
@@ -835,7 +953,7 @@ public class PartyMember
 		stamina=currentMaxStamina;*/
 		//DO MORALE
 		//if party is starving, morale drops
-			morale-=moraleDecayPerHour*hoursPassed;
+			morale-=adjustedDecayValue*hoursPassed;
 		}
 		else
 		{
@@ -847,14 +965,14 @@ public class PartyMember
 				//if morale is increasing (from <base)
 				if (decaySign>0)
 				{
-					moraleChange=moraleRestorePerHour*hoursPassed*decaySign;
+					moraleChange=adjustedRestoreValue*hoursPassed*decaySign;
 					if (morale+moraleChange>baseMorale) {morale=baseMorale;}
 					else {morale+=moraleChange;}
 				}
 				//if morale is lowering (from >base)
 				if (decaySign<0)
 				{
-					moraleChange=moraleDecayPerHour*hoursPassed*decaySign;
+					moraleChange=adjustedDecayValue*hoursPassed*decaySign;
 					if (morale+moraleChange<baseMorale) {morale=baseMorale;}
 					else {morale+=moraleChange;}
 				}
@@ -939,9 +1057,14 @@ public class PartyMember
 	
 	public void EncounterStartTrigger(List<PartyMember> team)
 	{
-		foreach (PartyMember member in team) 
+		if (team.Count==1) {morale+=aloneMoraleMod;}
+		else 
 		{
-			if (relationships.ContainsKey(member)) morale+=relationships[member].OnMissionTogether();
+			morale+=inTeamMoraleMod;
+			foreach (PartyMember member in team) 
+			{
+				if (relationships.ContainsKey(member)) morale+=relationships[member].OnMissionTogether();
+			}
 		}
 		ChangeFatigue(fatigueIncreasePerEncounter);
 	}

@@ -422,7 +422,8 @@ public class RoomButtonHandler : MonoBehaviour, IPointerEnterHandler//, IDropHan
 		if (EncounterCanvasHandler.main.selectedMember!=null)
 		{
 			Vector2 selectedMemberCoords=EncounterCanvasHandler.main.memberCoords[EncounterCanvasHandler.main.selectedMember];
-			if ((selectedMemberCoords-GetRoomCoords()).magnitude==0) tooltipText+="\nClick: bash the lock(1)";
+			if ((selectedMemberCoords-GetRoomCoords()).magnitude==0) 
+			tooltipText+="\nClick: bash the lock ("+EncounterCanvasHandler.main.selectedMember.GetMeleeDamageString()+")";
 		}
 		TooltipManager.main.CreateTooltip(tooltipText,lockToken.transform);
 	}

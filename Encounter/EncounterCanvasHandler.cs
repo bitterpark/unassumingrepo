@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine.UI;
 using System.Linq;
+using UnityEngine.EventSystems;
 using Vectrosity;
 
 public class EncounterCanvasHandler : MonoBehaviour 
@@ -10,6 +11,8 @@ public class EncounterCanvasHandler : MonoBehaviour
 	//int iterationCount=0;
 	
 	public bool encounterOngoing=false;
+	//factor closer to 0 makes the zoom more abrupt, factor closer to 1 makes it more gentle
+	public float zoomFactor=0.95f;
 
 	public Encounter currentEncounter=null;
 	EncounterMap currentMap=null;
@@ -169,11 +172,22 @@ public class EncounterCanvasHandler : MonoBehaviour
 		
 		if (GetComponent<CanvasGroup>().interactable
 		&& moveDistance==1 
-		&& !roomHandler.assignedRoom.isWall 
-		&& (roomHandler.assignedRoom.barricadeInRoom==null || selectedMember.barricadeAvoidanceEnabled)) //&& !currentEncounter.encounterMap[memberCoords[selectedMember]].hasEnemies)//new Vector2(encounterPlayerX,encounterPlayerY)].hasEnemies)
+		&& !roomHandler.assignedRoom.isWall
+		)
 		{
-			StartCoroutine(MoveMemberToRoom(roomHandler));
-		}//
+			bool allowMovement=false;
+			if (roomHandler.assignedRoom.barricadeInRoom==null) allowMovement=true;
+			else
+			{
+				if (selectedMember.stamina-selectedMember.barricadeVaultCost>=0) 
+				{
+					allowMovement=true;
+					selectedMember.stamina-=selectedMember.barricadeVaultCost;
+					AddNewLogMessage(selectedMember.name+" vaults over the barricade!");
+				}
+			}
+			if (allowMovement) StartCoroutine(MoveMemberToRoom(roomHandler));
+		} 
 	}
 	
 	IEnumerator MoveMemberToRoom(RoomButtonHandler roomHandler)
@@ -186,6 +200,17 @@ public class EncounterCanvasHandler : MonoBehaviour
 		bool doTurnover;
 		if (memberTokens[selectedMember].TryMove(out doTurnover))//!memberCoords.ContainsValue(roomHandler.GetRoomCoords()))
 		{
+			//Find members still left in room (-1 for member currently leaving room)
+			int membersLeftInRoom=-1;
+			foreach (Vector2 memberCoord in memberCoords.Values)
+			{
+				if (memberCoord==startingRoom.GetCoords()) membersLeftInRoom++;
+			}
+
+			if (startingRoom.lootIsLocked && membersLeftInRoom==0) 
+			{
+				startingRoom.ResetLockStrength();
+			}
 			//Enemies get a free swipe if you are the last to move out of their spot
 			//(moving member's coords don't get updated until after the check, so this is necessary)
 			/*
@@ -195,11 +220,7 @@ public class EncounterCanvasHandler : MonoBehaviour
 				*/
 			if (startingRoom.hasEnemies)// && !selectedMember.isScout)
 			{
-				int enemiesBlockedByMembers=-1;
-				foreach (Vector2 memberCoord in memberCoords.Values)
-				{
-					if (memberCoord==startingRoom.GetCoords()) enemiesBlockedByMembers++;
-				}
+				int enemiesBlockedByMembers=membersLeftInRoom;
 				GetComponent<CanvasGroup>().interactable=false;
 				List<PartyMember> argumentListOfOne=new List<PartyMember>();
 				argumentListOfOne.Add(selectedMember);
@@ -436,6 +457,8 @@ public class EncounterCanvasHandler : MonoBehaviour
 				break;
 			}
 		}
+		//If currently selected member left the encounter - select another member
+		if (!encounterMembers.Contains(selectedMember)) SelectMember(memberTokens.Values.First<MemberTokenHandler>());
 		//if all members acted (none available to move current selection to)
 		if (allActionsTaken) 
 		{
@@ -1000,7 +1023,7 @@ public class EncounterCanvasHandler : MonoBehaviour
 
 	public void ExitClicked(RoomButtonHandler roomHandler)
 	{
-		if (!roomHandler.assignedRoom.hasEnemies && memberCoords[selectedMember]==new Vector2(roomHandler.assignedRoom.xCoord,roomHandler.assignedRoom.yCoord))
+		if (memberCoords[selectedMember]==new Vector2(roomHandler.assignedRoom.xCoord,roomHandler.assignedRoom.yCoord))
 		{
 			AddNewLogMessage(selectedMember.name+" escapes!");
 			EncounterRoom exitRoom=roomHandler.assignedRoom;//currentEncounter.encounterMap[memberCoords[selectedMember]];
@@ -1033,9 +1056,7 @@ public class EncounterCanvasHandler : MonoBehaviour
 	
 	public void LootClicked(RoomButtonHandler roomHandler)
 	{
-		if (!roomHandler.assignedRoom.hasEnemies 
-		&& memberCoords[selectedMember]==new Vector2(roomHandler.assignedRoom.xCoord,roomHandler.assignedRoom.yCoord)
-		)//&& !memberTokens[selectedMember].moveTaken)
+		if (memberCoords[selectedMember]==new Vector2(roomHandler.assignedRoom.xCoord,roomHandler.assignedRoom.yCoord))//&& !memberTokens[selectedMember].moveTaken)
 		{
 			AddNewLogMessage(selectedMember.name+" loots the stash");
 			roomHandler.LootRoom();
@@ -1047,11 +1068,10 @@ public class EncounterCanvasHandler : MonoBehaviour
 	
 	public void BashClicked(RoomButtonHandler roomHandler)
 	{
-		if (!roomHandler.assignedRoom.hasEnemies 
-		&& memberCoords[selectedMember]==new Vector2(roomHandler.assignedRoom.xCoord,roomHandler.assignedRoom.yCoord)
+		if (memberCoords[selectedMember]==new Vector2(roomHandler.assignedRoom.xCoord,roomHandler.assignedRoom.yCoord)
 		)//&& !memberTokens[selectedMember].moveTaken)
 		{
-			int bashStrength=1;
+			int bashStrength=selectedMember.MeleeAttack();
 			int bashNoiseDistance=4;
 			/*
 			bool lockExpertInTeam=false;
@@ -1071,8 +1091,7 @@ public class EncounterCanvasHandler : MonoBehaviour
 	
 	public void BarricadeBuildClicked(RoomButtonHandler roomHandler)
 	{
-		if (!roomHandler.assignedRoom.hasEnemies 
-		    && memberCoords[selectedMember]==new Vector2(roomHandler.assignedRoom.xCoord,roomHandler.assignedRoom.yCoord)
+		if (memberCoords[selectedMember]==new Vector2(roomHandler.assignedRoom.xCoord,roomHandler.assignedRoom.yCoord)
 		    )//&& !memberTokens[selectedMember].moveTaken)
 		{
 			AddNewLogMessage(selectedMember.name+" throws together a barricade");
@@ -1647,25 +1666,69 @@ public class EncounterCanvasHandler : MonoBehaviour
 				MakeNoise(memberCoords[selectedMember],2);
 				AddNewLogMessage(selectedMember.name+" makes some noise");
 			}
+			//ZOOM OUT
 			if (Input.GetAxis("Mouse ScrollWheel")<0)
 			{
-				encounterMapGroup.transform.localScale=encounterMapGroup.transform.localScale*0.9f;
+				//Find room under cursor before zoom occurs
+				PointerEventData pointerData=new PointerEventData(EventSystem.current);
+				pointerData.position=Input.mousePosition;
+				List<RaycastResult> raycastResults=new List<RaycastResult>();
+				EventSystem.current.RaycastAll(pointerData,raycastResults);
+
+				RectTransform zoomRoomTransform=null;
+				//print("Raycast done, parsing raycast result");
+				foreach (RaycastResult result in raycastResults)
+				{
+					//print("Checking hit object type:"+result.gameObject.GetType());
+					if (result.gameObject.GetComponent<RoomButtonHandler>()!=null)
+					{
+						zoomRoomTransform=result.gameObject.GetComponent<RectTransform>();
+						//print("View focused on cursor room!");
+						break;
+					}
+				}
+				//Do zoom
+				encounterMapGroup.transform.localScale=encounterMapGroup.transform.localScale*zoomFactor;
 				//Canvas.ForceUpdateCanvases();
 				Vector2 newMapgroupPos=encounterMapGroup.GetComponent<RectTransform>().anchoredPosition;
 				Vector2 adjustedPosition=newMapgroupPos;
 				if (newMapgroupPos.x<0) adjustedPosition=new Vector2(0,adjustedPosition.y);
 				if (newMapgroupPos.y>0) adjustedPosition=new Vector2(adjustedPosition.x,0);
-				//encounterMapGroup.GetComponent<RectTransform>().anchoredPosition=adjustedPosition;
+
+				//Focus view on cursor room after zoom
+				if (zoomRoomTransform!=null) FocusViewOnRoom(zoomRoomTransform);
 			}
+			//ZOOM IN
 			if (Input.GetAxis("Mouse ScrollWheel")>0)
 			{
-				encounterMapGroup.transform.localScale=encounterMapGroup.transform.localScale/0.9f;
+				//Find room under cursor before zoom occurs
+				PointerEventData pointerData=new PointerEventData(EventSystem.current);
+				pointerData.position=Input.mousePosition;
+				List<RaycastResult> raycastResults=new List<RaycastResult>();
+				EventSystem.current.RaycastAll(pointerData,raycastResults);
+
+				RectTransform zoomRoomTransform=null;
+				//print("Raycast done, parsing raycast result");
+				foreach (RaycastResult result in raycastResults)
+				{
+					//print("Checking hit object type:"+result.gameObject.GetType());
+					if (result.gameObject.GetComponent<RoomButtonHandler>()!=null)
+					{
+						zoomRoomTransform=result.gameObject.GetComponent<RectTransform>();
+						//print("View focused on cursor room!");
+						break;
+					}
+				}
+				//Do zoom
+				encounterMapGroup.transform.localScale=encounterMapGroup.transform.localScale/zoomFactor;
 				//Canvas.ForceUpdateCanvases();
 				Vector2 newMapgroupPos=encounterMapGroup.GetComponent<RectTransform>().anchoredPosition;
 				Vector2 adjustedPosition=newMapgroupPos;
 				if (newMapgroupPos.x<0) adjustedPosition=new Vector2(0,adjustedPosition.y);
 				if (newMapgroupPos.y>0) adjustedPosition=new Vector2(adjustedPosition.x,0);
-				//encounterMapGroup.GetComponent<RectTransform>().anchoredPosition=adjustedPosition;
+
+				//Focus view on cursor room after zoom
+				if (zoomRoomTransform!=null) FocusViewOnRoom(zoomRoomTransform);
 			}
 			
 		}

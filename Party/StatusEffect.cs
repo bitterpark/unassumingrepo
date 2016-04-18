@@ -9,6 +9,7 @@ public abstract class StatusEffect
 	public abstract string GetMouseoverDescription();
 	public virtual void TurnOverEffect() {}
 	public virtual void TimePassEffect(int hoursPassed) {}
+	public virtual void ActivateEffect(PartyMember member) {}
 	public virtual void CleanupEffect() {}
 	public virtual void StackEffect() {}
 	public bool canStack=false;
@@ -49,12 +50,17 @@ public class Bleed:StatusEffect
 			}
 		}
 	}
-	
+
+	public override void ActivateEffect(PartyMember member)
+	{
+		affectedMember=member;
+		PartyManager.ETimePassed+=TimePassEffect;
+	}
+
 	public void CureBleed()
 	{
 		PartyStatusCanvasHandler.main.NewNotification(affectedMember.name+" has stopped bleeding");
 		PartyManager.mainPartyManager.RemovePartyMemberStatusEffect(affectedMember,this);
-		CleanupEffect();
 	}
 	
 	public override void CleanupEffect()
@@ -69,14 +75,12 @@ public class Bleed:StatusEffect
 	
 	public override string GetMouseoverDescription ()
 	{
-		return _name+"\n-"+bleedDmg+" health every hour\nDuration:"+(hoursDuration-hoursPassed)+" hours";
+		return _name+"\n-"+bleedDmg+" vitals every rest\nDuration:"+(hoursDuration-hoursPassed);
 	}
 	
-	public Bleed (PartyMember member) 
+	public Bleed () 
 	{
 		//affectedPartyMemberIndex=affectedMemberIndex;
-		affectedMember=member;
-		PartyManager.ETimePassed+=TimePassEffect;
 		canStack=true;
 	}
 }
@@ -88,19 +92,19 @@ public class Cold:StatusEffect
 	float cureChancePerHour=0.25f;
 
 	//int damageModDelta=-40;
-	public Cold (PartyMember member) 
+
+
+	public override void ActivateEffect(PartyMember member)
 	{
-		//affectedPartyMemberIndex=affectedMemberIndex;
 		affectedMember=member;
 		//affectedMember.meleeDamageMod+=damageModDelta;
 		affectedMember.fatigueRestoreSleep-=maxFatiguePenalty;
 		affectedMember.fatigueRestoreWait-=maxFatiguePenalty;
+		//GameManager.DebugPrint("Cold activated!");
 		affectedMember.morale-=15;
 		PartyManager.ETimePassed+=TimePassEffect;
-		//PartyManager.TimePassed+=TimePassEffect;
-		//canStack=true;
 	}
-	
+
 	public override string effectName 
 	{
 		get {return _name;}
@@ -111,7 +115,8 @@ public class Cold:StatusEffect
 	}
 	//int affectedPartyMemberIndex;
 	PartyMember affectedMember;
-	
+
+
 	public void CureCold()
 	{
 		//PartyStatusCanvasHandler.main.NewNotification(affectedMember.name+" has stopped bleeding");
@@ -150,27 +155,21 @@ public class Cold:StatusEffect
 	{
 		return _name+"\nFatigue restore reduced by "+maxFatiguePenalty;//"\n Damage dealt reduced by "+damageModDelta;
 	}
+
+	public Cold () 
+	{
+		canStack=true;
+	}
 }
 
 public class BrokenArmsMember:StatusEffect
 {
 	string _name="Broken arms";
-	int craftFatiguePenalty=10;
+	int craftFatiguePenalty=1;
 
 	//int damageModDelta=-40;
 	float hitChanceChange=0.4f;
-	public BrokenArmsMember (PartyMember member) 
-	{
-		//affectedPartyMemberIndex=affectedMemberIndex;
-		affectedMember=member;
-		//affectedMember.meleeDamageMod+=damageModDelta;
-		affectedMember.baseAttackHitChance-=hitChanceChange;
-		affectedMember.morale-=15;
-		affectedMember.currentFatigueCraftPenalty=craftFatiguePenalty;
-		//PartyManager.TimePassed+=TimePassEffect;
-		//canStack=true;
-	}
-	
+
 	public override string effectName 
 	{
 		get {return _name;}
@@ -181,13 +180,22 @@ public class BrokenArmsMember:StatusEffect
 	}
 	//int affectedPartyMemberIndex;
 	PartyMember affectedMember;
-	
+
+	public override void ActivateEffect(PartyMember member)
+	{
+		affectedMember=member;
+		//affectedMember.meleeDamageMod+=damageModDelta;
+		affectedMember.meleeHitchanceMod-=hitChanceChange;
+		affectedMember.morale-=15;
+		affectedMember.currentFatigueCraftPenalty=craftFatiguePenalty;
+	}
+
 	public void CureArms()
 	{
 		//PartyStatusCanvasHandler.main.NewNotification(affectedMember.name+" has stopped bleeding");
 		PartyManager.mainPartyManager.RemovePartyMemberStatusEffect(affectedMember,this);
 		//affectedMember.meleeDamageMod-=damageModDelta;
-		affectedMember.baseAttackHitChance+=hitChanceChange;
+		affectedMember.meleeHitchanceMod+=hitChanceChange;
 		affectedMember.morale+=15;
 		affectedMember.currentFatigueCraftPenalty=0;
 	}
@@ -202,18 +210,8 @@ public class BrokenArmsMember:StatusEffect
 public class BrokenLegsMember:StatusEffect
 {
 	string _name="Broken legs";
-	int fatigueMovePenalty=10;
+	int fatigueMovePenalty=1;
 
-	public BrokenLegsMember (PartyMember member) 
-	{
-		//affectedPartyMemberIndex=affectedMemberIndex;
-		affectedMember=member;
-		affectedMember.legsBroken=true;
-		affectedMember.morale-=15;
-		affectedMember.currentFatigueMovePenalty=fatigueMovePenalty;
-		//PartyManager.TimePassed+=TimePassEffect;
-		//canStack=true;
-	}
 	
 	public override string effectName 
 	{
@@ -225,7 +223,15 @@ public class BrokenLegsMember:StatusEffect
 	}
 	//int affectedPartyMemberIndex;
 	PartyMember affectedMember;
-	
+
+	public override void ActivateEffect(PartyMember member)
+	{
+		affectedMember=member;
+		affectedMember.legsBroken=true;
+		affectedMember.morale-=15;
+		affectedMember.currentFatigueMovePenalty=fatigueMovePenalty;
+	}
+
 	public void CureLegs()
 	{
 		//PartyStatusCanvasHandler.main.NewNotification(affectedMember.name+" has stopped bleeding");

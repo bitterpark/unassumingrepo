@@ -15,7 +15,7 @@ public abstract class InventoryItem
 	public virtual int GetWeight() {return 1;}
 	
 
-	public enum LootMetatypes {Medical,FoodItems,Melee,Guns,Equipment,Radio,Salvage,ApartmentSalvage,WarehouseSalvage}
+	public enum LootMetatypes {Medical,FoodItems,Melee,Guns,Equipment,Radio,Salvage,ApartmentSalvage,WarehouseSalvage,Gear}
 	
 	//Deprecated, remove later!!!
 	/*
@@ -86,6 +86,11 @@ public abstract class InventoryItem
 			case LootMetatypes.WarehouseSalvage:
 			{
 				metatypeDesc="Scrap";
+				break;
+			}
+			case LootMetatypes.Gear:
+			{
+				metatypeDesc="Gear";
 				break;
 			}
 		}
@@ -189,6 +194,27 @@ public abstract class InventoryItem
 				equipmentList.AddProbability(new List<InventoryItem>(itemSet),0.4f);
 
 				itemSet.Clear();
+				itemSet.Add(new Toolbox());
+				equipmentList.AddProbability(new List<InventoryItem>(itemSet),0.3f);
+
+				itemSet.Clear();
+				itemSet.Add(new Backpack());
+				equipmentList.AddProbability(new List<InventoryItem>(itemSet),0.3f);
+
+
+				List<InventoryItem> resultingSet=itemSet;
+				if (equipmentList.RollProbability(out resultingSet)) setItems.AddRange(resultingSet);
+				else throw new System.Exception("Could not roll a positive result on equipment loot table!");
+				break;
+			}
+			case LootMetatypes.Gear:
+			{
+				ProbabilityList<List<InventoryItem>> equipmentList=new ProbabilityList<List<InventoryItem>>();
+				List<InventoryItem> itemSet=new List<InventoryItem>();
+				itemSet.Add(new AmmoBox());
+				equipmentList.AddProbability(new List<InventoryItem>(itemSet),0.4f);
+
+				itemSet.Clear();
 				itemSet.Add(new ArmorVest());
 				equipmentList.AddProbability(new List<InventoryItem>(itemSet),0.3f);
 
@@ -212,8 +238,12 @@ public abstract class InventoryItem
 				ProbabilityList<List<InventoryItem>> equipmentList=new ProbabilityList<List<InventoryItem>>();
 				List<InventoryItem> setOne=new List<InventoryItem>();
 				setOne.Add(new Scrap());
+				equipmentList.AddProbability(new List<InventoryItem>(setOne),0.25f);
+				setOne.Clear();
+				setOne=new List<InventoryItem>();
 				setOne.Add(new Scrap());
-				equipmentList.AddProbability(setOne,0.5f);
+				setOne.Add(new Scrap());
+				equipmentList.AddProbability(new List<InventoryItem>(setOne),0.20f);
 				
 				List<InventoryItem> setTwo=new List<InventoryItem>();
 				setTwo.Add(new Scrap());
@@ -235,7 +265,7 @@ public abstract class InventoryItem
 				setFive.Add(new Fuel());
 				setFive.Add(new Fuel());
 				setFive.Add(new Fuel());
-				equipmentList.AddProbability(setFive,0.2f);
+				equipmentList.AddProbability(setFive,0.25f);
 
 				List<InventoryItem> resultingSet=setOne;
 				if (equipmentList.RollProbability(out resultingSet)) setItems.AddRange(resultingSet);
@@ -246,7 +276,7 @@ public abstract class InventoryItem
 			{
 				ProbabilityList<List<InventoryItem>> equipmentList=new ProbabilityList<List<InventoryItem>>();
 				List<InventoryItem> setOne=new List<InventoryItem>();
-				setOne.Add(new Scrap());
+				setOne.Add(new Fuel());
 				setOne.Add(new Fuel());
 				equipmentList.AddProbability(setOne,0.2f);
 				
@@ -372,7 +402,7 @@ public class CampBarricade: InventoryItem
 	}
 	public override string GetMouseoverDescription ()
 	{
-		return itemName+"\nFortifies a camp, reducing the chance of attacks during rest";
+		return itemName+"\nUse at a camp to fortify, reducing the chance of attacks during rest";
 	}
 }
 
@@ -401,14 +431,14 @@ public class Fuel: InventoryItem
 	}
 	public override string GetMouseoverDescription ()
 	{
-		return itemName+"\nTemporarily warms a camp";
+		return itemName+"\nBurn at a camp to improve temperature";
 	}
 }
 
 public class SettableTrap: InventoryItem
 {
 	//System.Type myTrapType=typeof(Trap);
-	int legDamage=90;
+	int legDamage=180;
 	
 	public SettableTrap (){itemName="Trap";}
 	
@@ -416,7 +446,7 @@ public class SettableTrap: InventoryItem
 	
 	public override string GetMouseoverDescription ()
 	{
-		return itemName+"\nSets a one-use trap";
+		return itemName+"\nSets a floor trap that targets enemy legs";
 	}
 	
 	public override bool UseAction(PartyMember member)
@@ -510,7 +540,7 @@ public class Pills:InventoryItem
 	public override string GetMouseoverDescription ()
 	{
 		//int healAmount=Mathf.FloorToInt(InventoryScreenHandler.mainISHandler.selectedMember.maxHealth*healPercentage);
-		return itemName+"\nCures cold";
+		return itemName+"\nUse to cure cold";
 	}
 }
 
@@ -550,7 +580,7 @@ public class Medkit:InventoryItem
 	public override string GetMouseoverDescription ()
 	{
 		//int healAmount=Mathf.FloorToInt(InventoryScreenHandler.mainISHandler.selectedMember.maxHealth*healPercentage);
-		return itemName+"\nHeals "+healAmount+" of hp for each body part\nCures bleed";
+		return itemName+"\nUse to heal "+healAmount+" of hp for each body part\nCures bleed";
 	}
 }
 
@@ -583,7 +613,7 @@ public class Bandages: InventoryItem
 	}
 	public override string GetMouseoverDescription ()
 	{
-		return itemName+"\nCure bleed";
+		return itemName+"\nUse to cure bleed";
 	}
 	
 }
@@ -810,10 +840,50 @@ public class ArmorVest:EquippableItem
 	
 	public override string GetMouseoverDescription ()
 	{
-		return itemName+"\nReduces physical damage by "+damageReduction;
+		return itemName+"\nReduces incoming physical damage by "+damageReduction;
 	}
 }
 
+public abstract class Tool:InventoryItem
+{
+	//public virtual List<CraftRecipe> GetEnabledRecipes() {return null;}
+	/*
+	public Tool()
+	{
+		itemName="Tools";
+	}
+	
+	int damageReduction=3;
+	public override Sprite GetItemSprite() {return SpriteBase.mainSpriteBase.armorvestSprite;}
+	public override void EquipEffect (PartyMember member)
+	{
+		member.armorValue+=damageReduction;
+	}
+	public override void UnequipEffect (PartyMember member)
+	{
+		member.armorValue-=damageReduction;
+	}
+	
+	public override string GetMouseoverDescription ()
+	{
+		return itemName+"\nEnables turning fuel into scrap";
+	}*/
+}
+
+public class Toolbox:Tool
+{
+	public Toolbox()
+	{
+		itemName="Toolbox";
+	}
+
+	public override Sprite GetItemSprite() {return SpriteBase.mainSpriteBase.toolsSprite;}
+	
+	public override string GetMouseoverDescription ()
+	{
+		return itemName+"\nAllows refining items into scrap";
+	}
+}
 
 public abstract class Weapon:InventoryItem
 {	
@@ -1161,7 +1231,7 @@ public class Gasoline:InventoryItem
 	
 	public override string GetMouseoverDescription ()
 	{
-		return itemName+"\nFuels trips between towns";
+		return itemName+"\nUse to add "+volume+" Gas";
 	}
 }
 
@@ -1180,7 +1250,7 @@ public class Scrap:InventoryItem
 	
 	public override string GetMouseoverDescription ()
 	{
-		return itemName+"\nUsed for crafting traps";
+		return itemName+"\nUsed for crafting";
 	}
 }
 
@@ -1199,6 +1269,6 @@ public class Gunpowder:InventoryItem
 	
 	public override string GetMouseoverDescription ()
 	{
-		return itemName+"\nUsed for crafting traps and bullets";
+		return itemName+"\nUsed for crafting bullets";
 	}
 }

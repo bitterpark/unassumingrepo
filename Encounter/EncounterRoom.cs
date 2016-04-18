@@ -78,14 +78,16 @@ public class EncounterRoom
 	}
 	public bool _hasLoot=false;
 	public List<InventoryItem> lootInRoom=new List<InventoryItem>();
-	
+	//LOCK
+	public const int maxLockStrength=270;
+	public void ResetLockStrength() {lockStrength=maxLockStrength;}
 	public bool lootIsLocked
 	{
 		get {return _lootIsLocked;}
 		set 
 		{
 			_lootIsLocked=value;
-			if (_lootIsLocked) {lockStrength=3;}
+			if (_lootIsLocked) {lockStrength=maxLockStrength;}
 		}
 	}
 	bool _lootIsLocked=false;
@@ -103,9 +105,9 @@ public class EncounterRoom
 		}
 	}
 	int _lockStrength=0;
-	
+	//TRAP
 	public Trap trapInRoom=null;
-	
+	//BARRICADE
 	public bool canBarricade
 	{
 		get {return _canBarricade;}

@@ -15,7 +15,7 @@ public class Encounter
 	const int normalChestCountMax=3;
 	const float baselineEnemyPerRoomRatio=0.1f;
 	readonly public int minRequiredMembers=1;
-	readonly public int maxAllowedMembers=20;
+	readonly public int maxRequiredMembers=20;
 	
 	public string lootDescription="";
 	public string enemyDescription="";
@@ -48,8 +48,8 @@ public class Encounter
 			areaDescription="An apartment building";
 
 			//Add largest number first	
-			lootTypes.AddProbability(InventoryItem.LootMetatypes.ApartmentSalvage,0.5f);
-			lootTypes.AddProbability(InventoryItem.LootMetatypes.FoodItems,0.35f);
+			lootTypes.AddProbability(InventoryItem.LootMetatypes.ApartmentSalvage,0.6f);
+			lootTypes.AddProbability(InventoryItem.LootMetatypes.FoodItems,0.25f);
 			lootTypes.AddProbability(InventoryItem.LootMetatypes.Melee,0.15f);
 			break;
 		}
@@ -78,8 +78,9 @@ public class Encounter
 		case AreaTypes.Police:
 		{
 			areaDescription="A deserted police station";
-			lootTypes.AddProbability(InventoryItem.LootMetatypes.Guns,0.6f);
-			lootTypes.AddProbability(InventoryItem.LootMetatypes.Equipment,0.4f);
+			lootTypes.AddProbability(InventoryItem.LootMetatypes.Guns,0.5f);
+			lootTypes.AddProbability(InventoryItem.LootMetatypes.Gear,0.3f);
+			lootTypes.AddProbability(InventoryItem.LootMetatypes.ApartmentSalvage,0.2f);
 			break;
 		}
 		case AreaTypes.Endgame:
@@ -160,9 +161,9 @@ public class Encounter
 		chestTypes=Encounter.GetLootTypesList(encounterAreaType,out lootDescription);
 		encounterEnemyType=EncounterEnemy.EnemyTypes.Muscle; enemyDescription="muscle masses";
 		List<EncounterRoom> nonSegmentRooms=null;
-		maxAllowedMembers=4;
+		maxRequiredMembers=4;
 		Dictionary<Vector2,Dictionary<Vector2,EncounterRoom>> newEncounterSegments
-		=PrefabAssembler.assembler.GenerateEncounterMap(this,encounterAreaType,maxAllowedMembers,out nonSegmentRooms);
+		=PrefabAssembler.assembler.GenerateEncounterMap(this,encounterAreaType,maxRequiredMembers,out nonSegmentRooms);
 		GenerateEncounterFromPrefabMap(newEncounterSegments,nonSegmentRooms,1.5f);
 	}
 	//regular constructor
@@ -179,29 +180,31 @@ public class Encounter
 		chestTypes=Encounter.GetLootTypesList(encounterAreaType,out lootDescription);
 		
 		//determine area enemy type
-		float enemiesRoll=Random.Range(0f,7f);
-		if (enemiesRoll<=7) {encounterEnemyType=EncounterEnemy.EnemyTypes.Spindler;}
-		if (enemiesRoll<=6) {encounterEnemyType=EncounterEnemy.EnemyTypes.Gasser;}
-		if (enemiesRoll<=5) {encounterEnemyType=EncounterEnemy.EnemyTypes.Transient;}
-		if (enemiesRoll<=4) {encounterEnemyType=EncounterEnemy.EnemyTypes.Muscle;}
-		if (enemiesRoll<=3) {encounterEnemyType=EncounterEnemy.EnemyTypes.Flesh;}
-		if (enemiesRoll<=2) {encounterEnemyType=EncounterEnemy.EnemyTypes.Quick;}
-		if (enemiesRoll<=1) {encounterEnemyType=EncounterEnemy.EnemyTypes.Slime;}
+		List<EncounterEnemy.EnemyTypes> potentialEnemyTypes=new List<EncounterEnemy.EnemyTypes>();
+		potentialEnemyTypes.Add(EncounterEnemy.EnemyTypes.Spindler);
+		potentialEnemyTypes.Add(EncounterEnemy.EnemyTypes.Gasser);
+		potentialEnemyTypes.Add(EncounterEnemy.EnemyTypes.Muscle);
+		potentialEnemyTypes.Add(EncounterEnemy.EnemyTypes.Slime);
+		potentialEnemyTypes.Add(EncounterEnemy.EnemyTypes.Flesh);
+		//potentialEnemyTypes.Add(EncounterEnemy.EnemyTypes.Flesh);
+
+		encounterEnemyType=potentialEnemyTypes[Random.Range(0,potentialEnemyTypes.Count)];
+
 		//encounterEnemyType=EncounterEnemy.EnemyTypes.Gasser;
 		enemyDescription=EncounterEnemy.GetMapDescription(encounterEnemyType);
 		
 		//Determine member requirement
 		minRequiredMembers=1;
-		maxAllowedMembers=0;
+		maxRequiredMembers=0;
 		float sizeRoll=Random.value;
-		if (sizeRoll<1f) maxAllowedMembers=1;
-		if (sizeRoll<0.5f) maxAllowedMembers=2;
-		if (sizeRoll<0.25f) maxAllowedMembers=3;
+		if (sizeRoll<1f) maxRequiredMembers=1;
+		if (sizeRoll<0.5f) maxRequiredMembers=2;
+		if (sizeRoll<0.25f) maxRequiredMembers=3;
 		
 		//GenerateEncounter();
 		List<EncounterRoom> nonSegmentRooms=null;
 		Dictionary<Vector2,Dictionary<Vector2,EncounterRoom>> newEncounterSegments
-		=PrefabAssembler.assembler.GenerateEncounterMap(this,encounterAreaType,maxAllowedMembers,out nonSegmentRooms);
+		=PrefabAssembler.assembler.GenerateEncounterMap(this,encounterAreaType,maxRequiredMembers,out nonSegmentRooms);
 		GenerateEncounterFromPrefabMap(newEncounterSegments,nonSegmentRooms,1f);//.SetupEncounterMap(this,encounterAreaType),1f);//0.15f);//0.3f);
 		//GameManager.DebugPrint("New encounter added, maxX:"+maxX);
 	}

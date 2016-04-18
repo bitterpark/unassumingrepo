@@ -62,7 +62,24 @@ public class PartyManager : MonoBehaviour
 	
 	//public int dayTime;//=0;
 	//public int timePassed=0;
+	//TIME
 	public int daysPassed=0;
+	public static int campaignDays=5;
+	public int daysLeft
+	{
+		get {return _daysLeft;}
+		set 
+		{
+			_daysLeft=value;
+			if (_daysLeft<=0) 
+			{
+				//GameEventManager.mainEventManager.QueueEventToStart(new GameWinEvent(),partyMembers[0].currentRegion,partyMembers);
+				//GameEventManager.mainEventManager.TryNextQueuedEvent();//GameManager.main.EndCurrentGame(true);
+
+			}
+		}
+	}
+	int _daysLeft=0;
 	public int dayTime=12;
 	
 	//public int mapCoordX;//=0;
@@ -177,8 +194,9 @@ public class PartyManager : MonoBehaviour
 		//mapCoordY=0;
 		//partyVisibilityMod=0;
 		//foodSupply=0;//2;
+		daysLeft=campaignDays;
 		ammo=0;//500;//5;
-		gas=1;
+		gas=0;
 		
 		partyMembers=new List<PartyMember>();
 		selectedMembers=new List<PartyMember>();
@@ -258,6 +276,7 @@ public class PartyManager : MonoBehaviour
 	
 	public void AdvanceMapTurn()
 	{
+		if (InventoryScreenHandler.mainISHandler.inventoryShown) InventoryScreenHandler.mainISHandler.CloseScreen();
 		int hoursPassed=1;
 		dayTime=(int)Mathf.Repeat(dayTime+12,24);//hoursPassed;
 		string timePassageText="";
@@ -266,62 +285,70 @@ public class PartyManager : MonoBehaviour
 		{
 			timePassageText="Night";
 			daysPassed+=1;
+			daysLeft-=1;
 			foreach (PartyMember member in partyMembers) member.skillpoints+=1;
 		}
-		PartyStatusCanvasHandler.main.NewNotification(timePassageText);
-		//dayTime=(int)Mathf.Repeat(dayTime+hoursPassed,24);
-		//foreach (PartyMember member in partyMembers) {member.hunger+=10*hoursPassed;}
-		if (ETimePassed!=null) {ETimePassed(hoursPassed);}
-		
-		//Adjust camera bg color
-		float lightBottomThreshold=0.5f;
-		float noonLightLevelBonus=0.5f;
-		InventoryScreenHandler.mainISHandler.RefreshInventoryItems();
-
-		//Make sure the rest tasks and time skip occur in proper order
-		foreach (MemberMapToken token in MapManager.main.memberTokens.Values) 
-		if (!assignedTasks.ContainsKey(token.assignedMember)) token.moved=false;
-		//List<PartyMember> membersRestingAtCamp=new List<PartyMember>();
-		List<MapRegion> campingRegions=new List<MapRegion>();
-
-		//Perform assigned tasks
-		foreach (PartyMember member in new List<PartyMember>(assignedTasks.Keys)) 
+		if (daysLeft>0)
 		{
-			if (!assignedTasks[member].preconditionCheck()) RemoveMemberTask(member);
-			else
+			PartyStatusCanvasHandler.main.NewNotification(timePassageText);
+			//dayTime=(int)Mathf.Repeat(dayTime+hoursPassed,24);
+			//foreach (PartyMember member in partyMembers) {member.hunger+=10*hoursPassed;}
+			if (ETimePassed!=null) {ETimePassed(hoursPassed);}
+			
+			//Adjust camera bg color
+			float lightBottomThreshold=0.5f;
+			float noonLightLevelBonus=0.5f;
+			InventoryScreenHandler.mainISHandler.RefreshInventoryItems();
+
+			//Make sure the rest tasks and time skip occur in proper order
+			foreach (MemberMapToken token in MapManager.main.memberTokens.Values) 
+			if (!assignedTasks.ContainsKey(token.assignedMember)) token.moved=false;
+			//List<PartyMember> membersRestingAtCamp=new List<PartyMember>();
+			List<MapRegion> campingRegions=new List<MapRegion>();
+
+			//Perform assigned tasks
+			foreach (PartyMember member in new List<PartyMember>(assignedTasks.Keys)) 
 			{
-				assignedTasks[member].actionToPerform.Invoke();
-				/*
-				if (assignedTasks[member].taskType==AssignedTaskTypes.Rest) 
+				if (!assignedTasks[member].preconditionCheck()) RemoveMemberTask(member);
+				else
 				{
-					membersRestingAtCamp.Add(member);
-					//THIS WILL CAUSE ISSUES IF MEMBERS DO NOT ALL REST IN THE SAME REGION/TOWN
-					campRegion=member.currentRegion;
-				}*/
+					assignedTasks[member].actionToPerform.Invoke();
+					/*
+					if (assignedTasks[member].taskType==AssignedTaskTypes.Rest) 
+					{
+						membersRestingAtCamp.Add(member);
+						//THIS WILL CAUSE ISSUES IF MEMBERS DO NOT ALL REST IN THE SAME REGION/TOWN
+						campRegion=member.currentRegion;
+					}*/
+					if (!assignedTasks[member].preconditionCheck()) RemoveMemberTask(member);
+				}
+			}
+			//See if tasks are still not finished (must be in that order)
+			foreach (PartyMember member in new List<PartyMember>(assignedTasks.Keys)) 
+			{
 				if (!assignedTasks[member].preconditionCheck()) RemoveMemberTask(member);
 			}
-		}
-		//See if tasks are still not finished (must be in that order)
-		foreach (PartyMember member in new List<PartyMember>(assignedTasks.Keys)) 
-		{
-			if (!assignedTasks[member].preconditionCheck()) RemoveMemberTask(member);
-		}
 
-		//Find all current member regions
-		foreach (PartyMember member in partyMembers)
-		{
-			if (!campingRegions.Contains(member.currentRegion)) campingRegions.Add(member.currentRegion);
-		}
+			//Find all current member regions
+			foreach (PartyMember member in partyMembers)
+			{
+				if (!campingRegions.Contains(member.currentRegion)) campingRegions.Add(member.currentRegion);
+			}
 
-		//Do morale and other camp events
-		foreach (MapRegion region in campingRegions)
-		GameEventManager.mainEventManager.RollCampEvents(region,region.localPartyMembers);
-		GameEventManager.mainEventManager.TryNextQueuedEvent();
-		
-		//This may cause issues on gameover
-		PartyStatusCanvasHandler.main.RefreshAssignmentButtons(selectedMembers);
-		InventoryScreenHandler.mainISHandler.RefreshInventoryItems();
-		if (ETimePassedEnd!=null) ETimePassedEnd(1);
+			//Do morale and other camp events
+			foreach (MapRegion region in campingRegions)
+			GameEventManager.mainEventManager.RollCampEvents(region,region.localPartyMembers);
+			GameEventManager.mainEventManager.TryNextQueuedEvent();
+			
+			//This may cause issues on gameover
+			PartyStatusCanvasHandler.main.RefreshAssignmentButtons(selectedMembers);
+			InventoryScreenHandler.mainISHandler.RefreshInventoryItems();
+			if (ETimePassedEnd!=null) ETimePassedEnd(1);
+		}
+		else
+		{
+			GameEventManager.mainEventManager.DoEvent(new GameWinEvent(),partyMembers[0].currentRegion,partyMembers);
+		}
 		//PartyStatusCanvasHandler.main.StartTimeFlash();
 	}
 	
@@ -474,7 +501,9 @@ public class PartyManager : MonoBehaviour
 		{
 			member.activeStatusEffects.Remove(effect);
 			partyMemberCanvases[member].RemoveStatusEffectToken(effect);
+
 		}
+		effect.CleanupEffect();
 	}
 	/*
 	public void DamagePartyMember(PartyMember member, int dmg)
@@ -596,7 +625,7 @@ public class PartyManager : MonoBehaviour
 			//partyMembers[0].AddStatusEffect(new Bleed(partyMembers[0]));
 			//AddPartyMemberStatusEffect(partyMembers[0],new Bleed(partyMembers[0]));
 			//AddNewPartyMember(new PartyMember(selectedMembers[0].currentRegion));
-			//partyMembers[0].TakeDamage(50,false,PartyMember.BodyPartTypes.Hands);
+			partyMembers[0].TakeDamage(50,false,PartyMember.BodyPartTypes.Hands);
 			//partyMembers[1].TakeDamage(50,false,PartyMember.BodyPartTypes.Legs);
 			//AddPartyMemberStatusEffect(partyMembers[0],new Cold());
 		}

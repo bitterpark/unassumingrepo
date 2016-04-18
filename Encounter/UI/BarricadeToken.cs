@@ -60,7 +60,12 @@ public class BarricadeToken : MonoBehaviour, IPointerEnterHandler,IPointerExitHa
 	{
 		string tooltipText="Blocks entrance into the room";
 		Vector2 selectedMemberCoords=EncounterCanvasHandler.main.memberCoords[EncounterCanvasHandler.main.selectedMember];
-		if ((selectedMemberCoords-assignedRoomButton.GetRoomCoords()).magnitude<=1) tooltipText+="\nClick: break barricade";
+		if ((selectedMemberCoords-assignedRoomButton.GetRoomCoords()).magnitude<=1) 
+		{
+			if (EncounterCanvasHandler.main.selectedMember.stamina>=EncounterCanvasHandler.main.selectedMember.barricadeVaultCost) 
+			tooltipText+="\nMove to vault for 2 stamina";
+			tooltipText+="\nClick: break barricade";
+		}
 		TooltipManager.main.CreateTooltip(tooltipText,this.transform);
 	}
 	

@@ -248,7 +248,10 @@ public class EnemyTokenHandler : MonoBehaviour, IAttackAnimation, IGotHitAnimati
 					//tooltipText+="\nB";
 					foreach (BodyPart part in assignedEnemy.bodyParts)
 					{
-						tooltipText+="\n"+part.name+":"+part.hp;
+						float adjustedHitChance=Mathf.Clamp
+						(referencedMember.GetCurrentAttackHitChance(EncounterCanvasHandler.main.memberTokens[referencedMember].rangedMode)
+						+part.hitPercentageModifier,0,1f);
+						tooltipText+="\n"+part.name+":"+part.hp+" ("+Mathf.RoundToInt((adjustedHitChance*100f)).ToString()+"%)";
 					}
 				}
 				//Info on attacking this enemy
