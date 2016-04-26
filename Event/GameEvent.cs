@@ -800,7 +800,7 @@ public class HighMoraleFriendship:GameEvent
 				{
 					if (member!=firstPickedMember && !firstPickedMember.relationships.ContainsKey(member) && member.GetCurrentRelationshipMod()>0)
 					{
-						if (firstPickedMember.GetCurrentRelationshipMod()+member.GetCurrentRelationshipMod()<highestTotalRelationshipMod) 
+						if (firstPickedMember.GetCurrentRelationshipMod()+member.GetCurrentRelationshipMod()>highestTotalRelationshipMod) 
 						{
 							highestModMember=firstPickedMember;
 							secondHighestModMember=member;
@@ -825,6 +825,423 @@ public class HighMoraleFriendship:GameEvent
 		secondHighestModMember.SetRelationship(highestModMember,Relationship.RelationTypes.Friend);
 		return eventDescription;
 	}
+}
+
+//PERSISTENT EVENTS
+public abstract class PersistentEvent:GameEvent
+{
+	public abstract string GetTooltipDescription();
+	public abstract string GetScoutingDescription();
+	public abstract Sprite GetRegionSprite();
+	public override bool PreconditionsMet(MapRegion eventRegion, List<PartyMember> movedMembers)
+	{
+		return true;
+	}
+	public bool eventCompleted=false;
+}
+
+public class GasolineEvent:PersistentEvent
+{
+    string eventDescription="";
+
+    int fatigueRequirement=5;
+
+    public GasolineEvent()
+    {
+        repeatable=true;
+    }
+
+    public override Sprite GetRegionSprite(){return SpriteBase.mainSpriteBase.gasStationSprite;}
+
+    public override string GetTooltipDescription()
+	{
+		string ttDescription="Gas station";
+		if (!eventCompleted)
+		{
+			ttDescription+="\n\nYou can spend "+fatigueRequirement+" fatigue here to scavenge some gas";
+		}
+		else ttDescription+="\n\nYou have salvaged the gas from the station";
+		return ttDescription;
+	}
+
+    public override string GetScoutingDescription()
+	{
+		string scoutingDescription="";
+		if (!eventCompleted)
+		{
+			scoutingDescription="There is an abandoned gas station here, quiet and still. No working cars left, but you bet you could find a way to siphon some gas.";
+		}
+		else scoutingDescription="A gas station with nothing left but some stray garbage";
+		return scoutingDescription;
+	}
+
+    public override string GetDescription(MapRegion eventRegion, List<PartyMember> movedMembers) 
+    {
+        string noticingPartyMemberName=movedMembers[Random.Range(0,movedMembers.Count)].name;
+        eventDescription="The station seems (thankfully) empty of all life. A quick search of the booth";
+        eventDescription+="\nturns up nothing of value, but the tanks don't sound empty when tapped.";
+        eventDescription+="\nYou have seen some special tools in a nearby shed, but they will take";
+        eventDescription+="\ntime and effort to set up";
+        //eventDescription="The buildings in this block seem almost normal, save for the cold blue lights"; 
+        //eventDescription+="\nflickering on and off in some of the windows. You can't make out anything inside";
+        //eventDescription+="\nYour party sets to work searching for supplies.";
+
+        
+        return eventDescription;
+    }
+    public override List<EventChoice> GetChoices(MapRegion eventRegion, List<PartyMember> movedMembers)
+    {
+        List<EventChoice> choicesList=new List<EventChoice>();
+        foreach (PartyMember presentMember in movedMembers)
+        {
+        	if (presentMember.CheckEnoughFatigue(fatigueRequirement))
+			choicesList.Add(new EventChoice("Have "+presentMember.name+" siphon (-"+fatigueRequirement+" fatigue)"));
+        }
+		choicesList.Add(new EventChoice("Leave"));
+        return choicesList;
+    }
+    
+    public override string DoChoice (string choiceString,MapRegion eventRegion, List<PartyMember> movedMembers)
+    {
+        string eventResult=null;
+        int gasCanisterCount=1;
+        foreach (PartyMember presentMember in movedMembers)
+        {
+			if (choiceString=="Have "+presentMember.name+" siphon (-"+fatigueRequirement+" fatigue)")
+			{
+				eventResult=presentMember.name+" sets to work, dragging out tools and twisting off locks.";
+	            eventResult+="\nThe sounds of metal on metal ring out trough the eerie silence. The work is dirty";
+	            eventResult+="\nand moments tense, but only the cold wind stirs the nearby ruins.";
+	            List<InventoryItem> scavengedItems=InventoryItem.GenerateLootSet(InventoryItem.LootMetatypes.Salvage);
+	            eventResult+="\n\n"+fatigueRequirement+" fatigue for "+presentMember.name+"\n"+gasCanisterCount+" gas canisters";
+
+	            presentMember.ChangeFatigue(fatigueRequirement);
+	            for (int i=0; i<gasCanisterCount; i++)
+	            {
+	                eventRegion.StashItem(new Gasoline());
+	            }
+	            eventCompleted=true;
+				eventRegion.visible=true;
+	            break;
+	        }
+        }
+		if (choiceString=="Leave") 
+		{
+			eventResult="You decide you have bigger priorities right now.";
+			return eventResult;
+
+		}
+        return eventResult;
+    }
+}
+
+
+
+//TRADE EVENTS
+public abstract class TradeEvent:PersistentEvent
+{
+    public Dictionary<PartyMember,List<InventoryItem>> foundMemberItems;
+    public List<InventoryItem> foundAreaItems;
+    public Dictionary<InventoryItem,int> rewardItems;
+
+    public System.Type requiredItemType;
+    public int requiredItemCount;
+
+	public static bool TryFindRequiredItems(System.Type requiredItemType, int requiredCount,
+	MapRegion eventRegion, List<PartyMember> memberList,
+	out Dictionary<PartyMember,List<InventoryItem>> memberItems,out List<InventoryItem> areaItems)
+    {
+		memberItems=new Dictionary<PartyMember,List<InventoryItem>>();
+    	areaItems=new List<InventoryItem>();
+    	foreach (InventoryItem item in eventRegion.GetStashedItems())
+    	{
+    		if (item.GetType()==requiredItemType)
+    		{
+    			areaItems.Add(item);
+    			requiredCount--;
+    		}
+    		if (requiredCount==0) break;
+    	}
+    	if (requiredCount>0)
+    	{
+    		foreach (PartyMember member in memberList)
+    		{
+    			List<InventoryItem> foundItems=new List<InventoryItem>();
+				memberItems.Add(member,foundItems);
+    			foreach (InventoryItem item in member.carriedItems)
+    			{
+    				if (item.GetType()==requiredItemType)
+    				{
+						foundItems.Add(item);
+    					requiredCount--;
+    				}
+    				if (requiredCount==0) break;
+    			}
+    			if (requiredCount==0) break;
+    		}
+    	}
+    	return (requiredCount==0);
+    }
+}
+public class ScrapTrade:TradeEvent
+{
+	string eventDescription="";
+	int fuelRewardCount=4;
+	int foodRewardCount=4;
+
+	public ScrapTrade()
+    {
+		rewardItems=new Dictionary<InventoryItem, int>();
+    	float randomRoll=Random.value;
+    	if (randomRoll>0.5f)
+    	{
+	        requiredItemType=typeof(Scrap);
+	        requiredItemCount=3;
+			rewardItems.Add(new Fuel(),fuelRewardCount);
+		}
+		else
+		{
+			requiredItemType=typeof(Pills);
+	        requiredItemCount=3;
+			rewardItems.Add(new FoodSmall(),foodRewardCount);
+		}
+		repeatable=true;
+    }
+
+	string GetResultDescription(System.Type requiredItem)
+	{
+		string eventResult="";
+
+		if (requiredItem==typeof(Scrap))
+		{
+			eventResult="A tense-looking survivor hurriedly brings several handfuls of firewood out of the hideout.";
+	        eventResult+="\nThe whole time, you can't shake the feeling of being watched from within.";
+	        eventResult+="\nHe shakes your hand and briefly thanks you before running back, locking the door behind him.";
+			
+			eventResult+="\n\n"+fuelRewardCount+" firewood";
+		}
+		if (requiredItem==typeof(Pills))
+		{
+			eventResult="A tense-looking survivor hurriedly brings several handfuls of firewood out of the hideout.";
+	        eventResult+="\nThe whole time, you can't shake the feeling of being watched from within.";
+	        eventResult+="\nHe shakes your hand and briefly thanks you before running back, locking the door behind him.";
+
+			eventResult+="\n\n"+foodRewardCount+" Junk Food";
+		}
+		return eventResult;
+	}
+
+    
+
+    public override Sprite GetRegionSprite(){return SpriteBase.mainSpriteBase.gasStationSprite;}
+
+    public override string GetTooltipDescription()
+	{
+		string ttDescription="Trade";
+		if (!eventCompleted)
+		{
+			ttDescription+="\n\nSurvivors here will trade you";
+			foreach (InventoryItem item in rewardItems.Keys)
+			{
+				ttDescription+=" "+rewardItems[item]+" "+item.itemName;
+			}
+			ttDescription+="\n for "+requiredItemCount+" "+requiredItemType;
+		}
+		else ttDescription+="\n\nThe survivors are gone from this hideout";
+		return ttDescription;
+	}
+
+    public override string GetScoutingDescription()
+	{
+		string scoutingDescription="";
+		if (!eventCompleted)
+		{
+			scoutingDescription="Survivors holed up here offer to trade";
+			scoutingDescription+=" "+requiredItemCount+" "+requiredItemType+" for";
+			scoutingDescription+="\n";
+			foreach (InventoryItem item in rewardItems.Keys)
+			{
+				scoutingDescription+=" "+rewardItems[item]+" "+item.itemName;
+			}
+		}
+		else scoutingDescription="The hideout is trashed and empty. It looks like the survivors left, or got chased off.\nYou wonder what became of them.";
+		return scoutingDescription;
+	}
+
+    public override string GetDescription(MapRegion eventRegion, List<PartyMember> movedMembers) 
+    {
+        string noticingPartyMemberName=movedMembers[Random.Range(0,movedMembers.Count)].name;
+        eventDescription="You find a barred-up apartment building that seems to have been converted into a safehouse.";
+        eventDescription+="\nThe door is securely locked, but muffled voices are heard inside when you knock.";
+        eventDescription+="\nFinally, just when you get ready to leave, a hoarse voice calls out to you and offers a trade.";
+
+		eventDescription+="\n\n"+requiredItemCount+" "+requiredItemType+" for";
+		eventDescription+="\n";
+		foreach (InventoryItem item in rewardItems.Keys)
+		{
+			eventDescription+=" "+rewardItems[item]+" "+item.itemName;
+		}
+        //eventDescription="The buildings in this block seem almost normal, save for the cold blue lights"; 
+        //eventDescription+="\nflickering on and off in some of the windows. You can't make out anything inside";
+        //eventDescription+="\nYour party sets to work searching for supplies.";
+
+        
+        return eventDescription;
+    }
+    public override List<EventChoice> GetChoices(MapRegion eventRegion, List<PartyMember> movedMembers)
+    {
+        List<EventChoice> choicesList=new List<EventChoice>();
+
+        choicesList.Add(new EventChoice("Trade "+requiredItemCount+" "+requiredItemType
+        ,!TryFindRequiredItems(requiredItemType,requiredItemCount,eventRegion,movedMembers,out foundMemberItems,out foundAreaItems)));
+		choicesList.Add(new EventChoice("Leave"));
+        return choicesList;
+    }
+    
+    public override string DoChoice (string choiceString,MapRegion eventRegion, List<PartyMember> movedMembers)
+    {
+        string eventResult=null;
+
+			if (choiceString=="Trade "+requiredItemCount+" "+requiredItemType)
+			{
+				eventResult=GetResultDescription(requiredItemType);
+
+	            foreach (PartyMember member in foundMemberItems.Keys)
+	            {
+	            	foreach (InventoryItem item in foundMemberItems[member])
+	            	{
+	            		member.RemoveCarriedItem(item);
+	            	}
+	            }
+	            foreach (InventoryItem item in foundAreaItems)
+	            {
+	            	eventRegion.TakeStashItem(item);
+	            }
+	            foreach (InventoryItem item in rewardItems.Keys)
+	            {
+				for (int i=0; i<rewardItems[item]; i++) 
+					{
+						InventoryItem newRewardItem=System.Activator.CreateInstance(item.GetType()) as InventoryItem;
+						eventRegion.StashItem(newRewardItem);
+					}
+	            }
+	            eventCompleted=true;
+	            eventRegion.visible=true;
+	        }
+
+		if (choiceString=="Leave") 
+		{
+			eventResult="You politely decline the trade and quickly leave.";
+			return eventResult;
+		}
+        return eventResult;
+    }
+}
+
+public class WoundedSurvivor:TradeEvent
+{
+    string eventDescription="";
+
+    int fatigueRequirement=5;
+
+	public WoundedSurvivor()
+    {
+		requiredItemType=typeof(Medkit);
+        requiredItemCount=2;
+        rewardItems=new Dictionary<InventoryItem, int>();
+        repeatable=false;
+    }
+
+    public override Sprite GetRegionSprite(){return SpriteBase.mainSpriteBase.gasStationSprite;}
+
+    public override string GetTooltipDescription()
+	{
+		string ttDescription="A badly wounded survivor is stuck here.";
+		if (!eventCompleted)
+		{
+			ttDescription+="\n\nBring this person "+requiredItemCount+" "+requiredItemType+" to rescue them.";
+		}
+		else ttDescription+="\n\nThe former hideout of a wounded survivor.";
+		return ttDescription;
+	}
+
+    public override string GetScoutingDescription()
+	{
+		string scoutingDescription="";
+		if (!eventCompleted)
+		{
+			//scoutingDescription="A survivor is stuck in a dusty, twisted up nook of an empty building. He's trying to stay quiet, but his eyes light up with hope";
+			//scoutingDescription+=" as you approach.";
+			scoutingDescription="You hear a nearby noise as you explore one of the empty buildings. You prepare for a fight, but then the noise is followed by";
+			scoutingDescription+=" muffled swearing. You follow the sounds, cautiously, to a dark corner with a survivor is sitting up against a wall.";
+			scoutingDescription+=" He seems unable to move, his legs badly wounded.";
+		}
+		else scoutingDescription="The corner where the survivor was stranded is only filled with dust and rubble now.";
+		return scoutingDescription;
+	}
+
+    public override string GetDescription(MapRegion eventRegion, List<PartyMember> movedMembers) 
+    {
+        string noticingPartyMemberName=movedMembers[Random.Range(0,movedMembers.Count)].name;
+        eventDescription="The survivor's eyes light up as you approach him.";
+        eventDescription+="\nHe whispers, begging you to help him.";
+        //eventDescription="The buildings in this block seem almost normal, save for the cold blue lights"; 
+        //eventDescription+="\nflickering on and off in some of the windows. You can't make out anything inside";
+        //eventDescription+="\nYour party sets to work searching for supplies.";
+
+        
+        return eventDescription;
+    }
+    public override List<EventChoice> GetChoices(MapRegion eventRegion, List<PartyMember> movedMembers)
+    {
+        List<EventChoice> choicesList=new List<EventChoice>();
+        foreach (PartyMember presentMember in movedMembers)
+        {
+        	if (presentMember.CheckEnoughFatigue(fatigueRequirement))
+			choicesList.Add(new EventChoice("Use "+requiredItemCount+" "+requiredItemType+" to help the survivor"
+			,!TryFindRequiredItems(requiredItemType,requiredItemCount,eventRegion,movedMembers,out foundMemberItems, out foundAreaItems)));
+        }
+		choicesList.Add(new EventChoice("Leave"));
+        return choicesList;
+    }
+    
+    public override string DoChoice (string choiceString,MapRegion eventRegion, List<PartyMember> movedMembers)
+    {
+        string eventResult=null;
+        int gasCanisterCount=1;
+		if (choiceString=="Use "+requiredItemCount+" "+requiredItemType+" to help the survivor")
+		{
+			PartyMember newMember=new PartyMember(eventRegion);
+			PartyManager.mainPartyManager.AddNewPartyMember(newMember);
+			newMember.TakeDamage(14,false,PartyMember.BodyPartTypes.Legs);
+
+
+
+			foreach (InventoryItem item in foundAreaItems)
+			{
+				eventRegion.TakeStashItem(item);
+			}
+			foreach (PartyMember member in foundMemberItems.Keys)
+			{
+				foreach (InventoryItem item in foundMemberItems[member]) member.RemoveCarriedItem(item);
+			}
+
+			eventResult="You patch up the survivor as best you can. His legs are still badly hurt, but he manages to stagger back to his feet.";
+			eventResult+="\nHe thanks you and introduces himself: "+newMember.name;
+	        eventResult+="\n\n"+newMember.name+" joins the group.";
+	        eventResult+="\n -"+requiredItemCount+" "+requiredItemType;
+
+	        eventCompleted=true;
+			eventRegion.visible=true;
+	    }
+		if (choiceString=="Leave") 
+		{
+			eventResult="You don't have medical supplies to spare, and have to leave the survivor to his fate. You can feel his desperate stare on your back";
+			eventResult+=" as you walk away.";
+			return eventResult;
+		}
+        return eventResult;
+    }
 }
 
 //!-INSTRUMENTAL EVENTS-!
@@ -1050,7 +1467,7 @@ public class CleanupEvent:GameEvent
 	            }   
 	        }
 	        //Find fatigue options
-			choicesList.Add(new EventChoice("Have "+member.name+" find safer routes ("+fatigueRequired+" fatigue)",member.GetFatigue()+fatigueRequired>10));
+			choicesList.Add(new EventChoice("Have "+member.name+" find safer routes ("+fatigueRequired+" fatigue)",!member.CheckEnoughFatigue(fatigueRequired)));
 	    }
       	
         if (trapsGreyedOut)
@@ -1370,55 +1787,6 @@ public class ScavengeEventOne:GameEvent
     }
 }
 
-public class GasolineEvent:GameEvent
-{
-    string eventDescription="";
-    
-    public GasolineEvent()
-    {
-        repeatable=true;
-    }
-    
-    public override string GetDescription(MapRegion eventRegion, List<PartyMember> movedMembers) 
-    {
-        string noticingPartyMemberName=movedMembers[Random.Range(0,movedMembers.Count)].name;
-        eventDescription="The buildings in this block seem almost normal, save for the cold blue lights"; 
-        eventDescription+="\nflickering on and off in some of the windows. You can't make out anything inside";
-        eventDescription+="\nYour party sets to work searching for supplies.";
-        
-        return eventDescription;
-    }
-    public override List<EventChoice> GetChoices(MapRegion eventRegion, List<PartyMember> movedMembers)
-    {
-        List<EventChoice> choicesList=new List<EventChoice>();
-		choicesList.Add(new EventChoice("Scavenge"));
-        return choicesList;
-    }
-    
-    public override string DoChoice (string choiceString,MapRegion eventRegion, List<PartyMember> movedMembers)
-    {
-        string eventResult=null;
-        int gasCanisterCount=1;
-        
-        switch (choiceString)
-        {
-            case"Scavenge":
-            {
-                eventResult="Amid the desolation, you discover a gas station, quiet and still. There's some fuel left,";
-                eventResult+="\nand as you siphon it, the pump noises ring out trough the eerie silence.";
-                eventResult+="\nThe moments are tense as they go by, but only the cold wind stirs the nearby ruins.";
-                List<InventoryItem> scavengedItems=InventoryItem.GenerateLootSet(InventoryItem.LootMetatypes.Salvage);
-                eventResult+="\n\n+"+gasCanisterCount+" gas canisters";
-                for (int i=0; i<gasCanisterCount; i++)
-                {
-                    eventRegion.StashItem(new Gasoline());
-                }   
-                break;
-            }
-        }
-        return eventResult;
-    }
-}
 
 public class CarFindEvent:GameEvent
 {
@@ -1432,8 +1800,8 @@ public class CarFindEvent:GameEvent
     public override bool PreconditionsMet (MapRegion eventRegion, List<PartyMember> movedMembers)
     {
         bool allowEvent=true;
-        if (eventRegion.hasGasoline) allowEvent=false;
-        else 
+        //if (eventRegion.hasGasoline) allowEvent=false;
+        //else 
         {
             if (eventRegion.townCenter==null)
             {

@@ -172,8 +172,8 @@ public class PartyMemberCanvasHandler : MonoBehaviour {
 		+"|"+assignedMember.memberBodyParts.currentParts[PartyMember.BodyPartTypes.Legs].health
 		+"|"+assignedMember.memberBodyParts.currentParts[PartyMember.BodyPartTypes.Vitals].health;*///+assignedMember.health+"|"+assignedMember.maxHealth;
 		//staminaText.text="Stamina:"+assignedMember.stamina+"|"+assignedMember.currentMaxStamina;
-		hungerText.text="Hunger:"+assignedMember.GetHunger();
-		moraleText.text="Morale:"+assignedMember.morale;
-		fatigueText.text="Fatigue:"+assignedMember.GetFatigue();//
+		hungerText.text="Hunger:"+assignedMember.GetHunger()+"|100";
+		moraleText.text="Morale:"+assignedMember.morale+"|100";
+		fatigueText.text="Fatigue:"+assignedMember.GetFatigue()+"|"+PartyMember.maxFatigue;//
 	}
 }

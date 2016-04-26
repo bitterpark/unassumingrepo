@@ -15,6 +15,8 @@ public class InventoryScreenHandler : MonoBehaviour
 	public Text meleeDamageText;
 	public Text rangedDamageText;
 	public Text armorValueText;
+
+	public Button kickMemberButton;
 	
 	public Text skillpointCounterText;
 	
@@ -59,9 +61,15 @@ public class InventoryScreenHandler : MonoBehaviour
 			EncounterCanvasHandler encounterManager=EncounterCanvasHandler.main;
 			if (!GameEventManager.mainEventManager.drawingEvent)
 			{
-				if (!encounterManager.encounterOngoing) {allow=true;}
+				if (!encounterManager.encounterOngoing) 
+				{
+					allow=true;
+					if (PartyManager.mainPartyManager.partyMembers.Count>1) kickMemberButton.gameObject.SetActive(true);
+					else kickMemberButton.gameObject.SetActive(false);
+				}
 				else 
 				{
+					kickMemberButton.gameObject.SetActive(false);
 					//make sure guys outside of encounter can't interact with guys within an encounter and members currently in combat can't open inv
 					if(encounterManager.encounterMembers.Contains(newMember) 
 					 && !encounterManager.currentEncounter.encounterMap[encounterManager.memberCoords[newMember]].hasEnemies)
@@ -290,7 +298,14 @@ public class InventoryScreenHandler : MonoBehaviour
 			RefreshInventoryItems();
 		} 
 	}
-	
+
+	public void KickMemberPressed()
+	{
+		PartyMember removedMember=selectedMember;
+		CloseScreen();
+		PartyManager.mainPartyManager.RemovePartyMember(removedMember);
+	}
+
 	void Start() 
 	{
 		mainISHandler=this;

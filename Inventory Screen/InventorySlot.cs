@@ -37,6 +37,7 @@ public class InventorySlot : MonoBehaviour, IDropHandler
 	public virtual bool CheckItem(SlotItem newSlotItem)
 	{
 		bool assignItem=false;
+		//Check if item has no slot from which it came, or the slot is of a different type from Inventory
 		if (newSlotItem.currentSlot==null) {assignItem=true;}
 		else {if (newSlotItem.currentSlot.GetType()!=this.GetType()) {assignItem=true;}}
 		/*
@@ -93,7 +94,38 @@ public class InventorySlot : MonoBehaviour, IDropHandler
 		}
 		//InventoryScreenHandler.mainISHandler.RefreshInventoryItems();
 	}
-	
+
+	//Only works for inheriting classes, does nothing for this class
+	public virtual void RclickAction()
+	{
+		//Drop item from current slot to local inventory
+		if (GetType()!=typeof(InventorySlot))
+		{
+			foreach (InventorySlot slot in InventoryScreenHandler.mainISHandler.inventoryGroup.GetComponentsInChildren<InventorySlot>())
+			{
+				if (slot.filledItem==null && slot!=this) 
+				{
+					slot.ItemDroppedIn(filledItem);
+					break;
+				}
+			} 
+		}
+		else
+		{
+			if (InventoryScreenHandler.mainISHandler.selectedMember.CanPickUpItem())
+			{
+				foreach (MemberInventorySlot slot in InventoryScreenHandler.mainISHandler.memberInventoryGroup.GetComponentsInChildren<MemberInventorySlot>())
+				{
+					if (slot.filledItem==null) 
+					{
+						slot.ItemDroppedIn(filledItem);
+						break;
+					}
+				}
+			}
+		}
+	}
+
 	//unconditional emptying out
 	public virtual void EmptySlot()
 	{
@@ -120,7 +152,7 @@ public class InventorySlot : MonoBehaviour, IDropHandler
 	{
 		//SlotItem.itemBeingDragged.currentSlot.EmptySlot;
 		//print ("Drop fired");
-		ItemDroppedIn(SlotItem.itemBeingDragged);
+		if (SlotItem.itemBeingDragged!=null) ItemDroppedIn(SlotItem.itemBeingDragged);
 	}
 	#endregion
 }

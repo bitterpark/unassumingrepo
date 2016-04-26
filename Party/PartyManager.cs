@@ -57,7 +57,6 @@ public struct AssignedTask
 
 public class PartyManager : MonoBehaviour
 {
-
 	public static PartyManager mainPartyManager;//mainPlayerState;
 	
 	//public int dayTime;//=0;
@@ -183,8 +182,7 @@ public class PartyManager : MonoBehaviour
 	//Setup start of game
 	public void SetDefaultState()
 	{
-		Vector2 startingPartyWorldCoords=new Vector2(0,0);
-		MapRegion startingRegion=MapManager.main.mapRegions[0];
+		MapRegion startingRegion=MapManager.main.townCenterRegions[Random.Range(0,MapManager.main.townCenterRegions.Count)];
 		//partyStatusCanvas.gameObject.SetActive(true);
 		statusCanvas.EnableStatusDisplay();
 		partyMemberCanvases=new Dictionary<PartyMember, PartyMemberCanvasHandler>();
@@ -209,7 +207,6 @@ public class PartyManager : MonoBehaviour
 		
 		//AddPartyMemberStatusEffect(partyMembers[0],new Bleed(partyMembers[0]));
 		//AddPartyMemberStatusEffect(partyMembers[0],new Bleed(partyMembers[0]));
-		//AddNewPartyMember(new PartyMember(startingPartyWorldCoords));
 		
 		startingRegion.SetCar(true);
 
@@ -223,8 +220,8 @@ public class PartyManager : MonoBehaviour
 		//startingRegion.StashItem(new Scrap());
 		//startingRegion.StashItem(new Scrap());
 		//startingRegion.StashItem(new Scrap());
-		//startingRegion.StashItem(new Fuel());
-		//startingRegion.StashItem(new Fuel());
+		startingRegion.StashItem(new Fuel());
+		startingRegion.StashItem(new Fuel());
 		//startingRegion.StashItem(new Fuel());
 		//startingRegion.StashItem(new Fuel());
 
@@ -240,9 +237,10 @@ public class PartyManager : MonoBehaviour
 		//startingRegion.StashItem(new Backpack());
 		//startingRegion.StashItem(new Backpack());
 		//startingRegion.StashItem(new ArmorVest());
+		//startingRegion.StashItem(new NineM());
 		//startingRegion.StashItem(new ArmorVest());
-		//startingRegion.StashItem(new Bed());
-		//startingRegion.StashItem(new Bed());
+		startingRegion.StashItem(new Bed());
+		startingRegion.StashItem(new Bed());
 		//startingRegion.StashItem(new Pot());//
 		//startingRegion.StashItem(new Scrap());
 		//Do this to setup proper background color
@@ -625,9 +623,10 @@ public class PartyManager : MonoBehaviour
 			//partyMembers[0].AddStatusEffect(new Bleed(partyMembers[0]));
 			//AddPartyMemberStatusEffect(partyMembers[0],new Bleed(partyMembers[0]));
 			//AddNewPartyMember(new PartyMember(selectedMembers[0].currentRegion));
-			partyMembers[0].TakeDamage(50,false,PartyMember.BodyPartTypes.Hands);
+			//partyMembers[0].TakeDamage(50,false,PartyMember.BodyPartTypes.Hands);
 			//partyMembers[1].TakeDamage(50,false,PartyMember.BodyPartTypes.Legs);
 			//AddPartyMemberStatusEffect(partyMembers[0],new Cold());
+			partyMembers[0].skillpoints+=2;
 		}
 		/*
 		if (Input.GetKeyDown(KeyCode.Space))
@@ -637,36 +636,6 @@ public class PartyManager : MonoBehaviour
 				AdvanceMapTurn();
 				//foreach (MemberMapToken token in MapManager.main.memberTokens) token.moved=false;
 			}
-		}*/
-	}
-
-	void OnGUI()
-	{
-		if (GameManager.main.gameStarted)
-		{
-			//GUI.Box(timeOfDayRect,dayTime.ToString()+":00");
-			//GUI.Box(playerXCoordRect,"Map x:"+mapCoordX.ToString());
-			//GUI.Box(playerYCoordRect,"Map y:"+mapCoordY.ToString());
-			//GUI.Box (healthRect,"Health:"+health.ToString());
-			//GUI.Box (foodSupplyRect,"Food:"+foodSupply.ToString());
-			//GUI.Box (ammoSupplyRect,"Ammo:"+ammo);
-			//GUI.Box (staminaRect,"Stamina:"+stamina);
-			//DrawPartyMemberStats();
-			
-			Rect partyScreenButtonRect=new Rect(5,300,50,20);
-			/*
-			if (GUI.Button(partyScreenButtonRect,"Party")) {drawPartyScreen=!drawPartyScreen;}
-			if (drawPartyScreen)
-			{
-				PartyScreenManager.mainPSManager.DrawPartyScreen();	
-			}*/
-		}
-		/*
-		if (gameOver)
-		{
-			string endMessage="Your party died";
-			if (gameWin) {endMessage="You were rescued!";}
-			GUI.Box(new Rect(Screen.width*0.5f-25f,Screen.height*0.5f-50f,100,50),endMessage);
 		}*/
 	}
 }

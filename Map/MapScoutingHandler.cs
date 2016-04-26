@@ -11,6 +11,7 @@ public class MapScoutingHandler : MonoBehaviour {
 
 	public Text descriptionText;
 	public Text selectCountText;
+	public Button confirmButton;
 	public Text confirmButtonText;
 	public Text selectionText;
 	public Text ambushThreatText;
@@ -30,7 +31,8 @@ public class MapScoutingHandler : MonoBehaviour {
 		if (!assignedRegion.scouted) 
 		{
 			descriptionText.text="You have not scouted this area";
-			confirmButtonText.text="Scout";
+			confirmButton.gameObject.SetActive(true);
+			confirmButton.GetComponentInChildren<Text>().text="Scout";
 			selectCountText.text="";
 			ambushThreatText.text="";
 			selectionText.text="";	
@@ -41,21 +43,34 @@ public class MapScoutingHandler : MonoBehaviour {
 		}
 		TryRefreshEncounterDialog();
 	}
-	
-	
-	
+
 	void UpdateAfterScouting()
 	{
-		descriptionText.text=assignedRegion.regionalEncounter.lootDescription+" infested with "+assignedRegion.regionalEncounter.enemyDescription;
-		confirmButtonText.text="Enter ("+PartyMember.fatigueIncreasePerEncounter+" fatigue)";
-		foreach (PartyMember member in assignedRegion.localPartyMembers)//PartyManager.mainPartyManager.selectedMembers) 
+		if (assignedRegion.regionalEncounter!=null)
 		{
-			MissionSelectorHandler newSelector=Instantiate (memberSelectorPrefab) as MissionSelectorHandler;
-			newSelector.AssignMember(member);
-			newSelector.GetComponent<Button>().onClick.AddListener(()=>ToggleMissionMember(newSelector));
-			newSelector.transform.SetParent(memberSelectorGroup,false);
-			selectCountText.text=selectedForMission.Count+"/"+assignedRegion.regionalEncounter.maxRequiredMembers;//+EncounterCanvasHandler.encounterMaxPlayerCount;
-			selectionText.text="";
+			descriptionText.text=assignedRegion.regionalEncounter.lootDescription+" infested with "+assignedRegion.regionalEncounter.enemyDescription;
+			confirmButton.gameObject.SetActive(true);
+			confirmButton.GetComponentInChildren<Text>().text="Enter ("+PartyMember.fatigueIncreasePerEncounter+" fatigue)";
+			foreach (PartyMember member in assignedRegion.localPartyMembers)//PartyManager.mainPartyManager.selectedMembers) 
+			{
+				MissionSelectorHandler newSelector=Instantiate (memberSelectorPrefab) as MissionSelectorHandler;
+				newSelector.AssignMember(member);
+				newSelector.GetComponent<Button>().onClick.AddListener(()=>ToggleMissionMember(newSelector));
+				newSelector.transform.SetParent(memberSelectorGroup,false);
+				selectCountText.text=selectedForMission.Count+"/"+assignedRegion.regionalEncounter.maxRequiredMembers;//+EncounterCanvasHandler.encounterMaxPlayerCount;
+				selectionText.text="";
+			}
+		}
+		else
+		{
+			//If a region has no encounter, assume that it has an event
+			descriptionText.text=assignedRegion.regionalEvent.GetScoutingDescription();
+			if (!assignedRegion.regionalEvent.eventCompleted)
+			{
+				confirmButton.GetComponentInChildren<Text>().text="Investigate";
+				//confirmButtonText.GetComponentInParent<Button>().interactable=true;
+			}
+			//else confirmButtonText.GetComponentInParent<Button>().gameObject.SetActive(false);
 		}
 	}
 
@@ -65,23 +80,40 @@ public class MapScoutingHandler : MonoBehaviour {
 		{
 			if (assignedRegion.scouted)
 			{
-				ambushThreatText.text="Ambush threat:"+assignedRegion.CalculateThreatLevel(selectedForMission.Count);
-				if (assignedRegion.ambientThreatNumber<=0) scoutMoreButton.SetActive(false);
-				else 
+				if (assignedRegion.regionalEncounter!=null)
 				{
-					scoutMoreButton.SetActive(true);
-					//if (selectedForMission.Count>0)
-					//scoutMoreButton.GetComponent<Button>().interactable=true;
-					//else scoutMoreButton.GetComponent<Button>().interactable=false;
+					ambushThreatText.text="Ambush threat:"+assignedRegion.CalculateThreatLevel(selectedForMission.Count);
+					if (assignedRegion.ambientThreatNumber<=0) scoutMoreButton.SetActive(false);
+					else 
+					{
+						scoutMoreButton.SetActive(true);
+						//if (selectedForMission.Count>0)
+						//scoutMoreButton.GetComponent<Button>().interactable=true;
+						//else scoutMoreButton.GetComponent<Button>().interactable=false;
+					}
+					//Prevent from entering encounter when no party members are selected
+					if (selectedForMission.Count>0) confirmButton.interactable=true;
+					else confirmButton.interactable=false;
 				}
-				//Prevent from entering encounter when no party members are selected
-				if (selectedForMission.Count>0) confirmButtonText.GetComponentInParent<Button>().interactable=true;
-				else confirmButtonText.GetComponentInParent<Button>().interactable=false;
+				else
+				{
+					//If a region has no encounter, assume that it has an event
+					selectCountText.text="";
+					ambushThreatText.text="";
+					selectionText.text="";	
+					if (!assignedRegion.regionalEvent.eventCompleted)
+					{
+						confirmButton.gameObject.SetActive(true);
+						confirmButton.interactable=true;
+					}
+					else confirmButton.gameObject.SetActive(false);
+					scoutMoreButton.SetActive(false);
+				}
 			}
 			else 
 			{
 				scoutMoreButton.SetActive(false);
-				confirmButtonText.GetComponentInParent<Button>().interactable=true;
+				confirmButton.interactable=true;
 			}
 
 		}
@@ -140,10 +172,8 @@ public class MapScoutingHandler : MonoBehaviour {
 		}
 		else 
 		{
-			/*
-			if (selectedForMission.Count>=assignedRegion.regionalEncounter.minRequiredMembers 
-			&& selectedForMission.Count<=assignedRegion.regionalEncounter.maxAllowedMembers)//>0)*/
-
+			if (assignedRegion.regionalEncounter!=null)
+			{
 				float targetValue=0;
 				switch (assignedRegion.CalculateThreatLevel(selectedForMission))
 				{
@@ -163,7 +193,13 @@ public class MapScoutingHandler : MonoBehaviour {
 				//EndDialog();
 				//PartyManager.mainPartyManager.EnterPartyIntoEncounter(selectedForMission);
 				//Use this to indicate encounter having been visited
-
+			}
+			else
+			{
+				//If a region has no encounter, assume that it has an event
+				EndDialog();
+				GameEventManager.mainEventManager.DoEvent(assignedRegion.regionalEvent,assignedRegion,assignedRegion.localPartyMembers);
+			}
 			
 		}
 	}

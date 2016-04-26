@@ -42,6 +42,8 @@ public class GameManager : MonoBehaviour {
 	IEnumerator PrepareGamestartDelegate()
 	{
 		//Determine the proper order of starting delegates here
+		while (GameEventManager.mainEventManager==null) yield return new WaitForFixedUpdate();
+		GameStart+=GameEventManager.mainEventManager.GamestartGenerateEventLists;
 		while (MapManager.main==null) yield return new WaitForFixedUpdate();
 		GameStart+=MapManager.main.GenerateNewMap;
 		while (PartyManager.mainPartyManager==null) yield return new WaitForFixedUpdate();

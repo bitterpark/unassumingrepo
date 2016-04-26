@@ -511,7 +511,7 @@ public class PartyMember
 	public const int fatigueIncreasePerEncounter=5;
 	//public const int mapMoveFatigueCost=25;
 	public const int campSetupFatigueCost=1;
-	public const int fatigueMoveCost=1;
+	public const int fatigueMoveCost=2;
 	public int currentFatigueMovePenalty=0;
 	public int currentFatigueCraftPenalty=0;
 	public const int maxFatigue=10;
@@ -532,7 +532,7 @@ public class PartyMember
 	int baseMorale;
 	public int moraleRestorePerHour=5;
 	public int moraleDecayPerHour=5;
-	public int moraleFatigueMinThreshold=30;
+	public int moraleFatigueMinThreshold=0;
 	//per point above/below 50
 	public float moraleDamageMod;
 	public int moraleChangeFromKills;
@@ -563,10 +563,20 @@ public class PartyMember
 	
 	//public float friendshipChance;
 	
-	public int skillpoints=0;
+	public int skillpoints
+	{
+		get {return _skillpoints;}
+		set 
+		{
+			if ((_skillpoints==0 && value!=0) || (value<_skillpoints && value>0)) traits.AddRange(Trait.GenerateLevelupSkills(traits,3));
+			_skillpoints=value;
+		}
+	}
+	int _skillpoints;
 	
 	public bool legsBroken=false;
 	public bool hasLight=false;
+	public bool hasBedroll=false;
 	public bool isCook=false;
 	public bool isDowner=false;
 	public bool isReassuring=false;
@@ -621,6 +631,24 @@ public class PartyMember
 	
 	public List<StatusEffect> activeStatusEffects=new List<StatusEffect>();
 	public List<Trait> traits=new List<Trait>();
+	public void ActivateSkill(Skill activatedSkill)
+	{
+		if (!traits.Contains(activatedSkill)) throw new System.Exception("Learned trait not found in member!");
+		else
+		{
+			activatedSkill.learned=true;
+			activatedSkill.ActivatePerk(this);
+			foreach (Trait memberTrait in new List<Trait>(traits))
+			{
+				if (memberTrait.GetType().BaseType==typeof(Skill))
+				{
+					Skill memberSkill=memberTrait as Skill;
+					if (!memberSkill.learned) traits.Remove(memberTrait);
+				}
+			} 
+		}
+	}
+
 	public Dictionary<PartyMember,Relationship> relationships=new Dictionary<PartyMember, Relationship>();
 	
 	public PartyMember (MapRegion startingRegion)//Vector2 startingWorldCoords)
@@ -721,7 +749,7 @@ public class PartyMember
 			}
 		}
 		//Add the rest of the skills that can be learned
-		traits.AddRange(possibleSpecialtyPerks);
+		//traits.AddRange(possibleSpecialtyPerks);
 		//debug
 		//if (memberName=="Jimbo") {perks.Clear(); perks.Add(new WeakArm());}
 		
@@ -835,9 +863,10 @@ public class PartyMember
 		PartyStatusCanvasHandler.main.NewNotification(name+" has died!");
 	}
 	//Currently deprecated
+	/*
 	void RollRelationships()
 	{
-	/*
+
 		if (Random.value<0f)
 		{
 			PartyMember newRelationGuy=PartyManager.mainPartyManager.partyMembers[Random.Range(0,PartyManager.mainPartyManager.partyMembers.Count)];
@@ -855,8 +884,8 @@ public class PartyMember
 				}
 			}
 		}
-		*/
-	}
+
+	}*/
 
 	public void SetRelationship(PartyMember member, Relationship.RelationTypes type)
 	{
@@ -981,14 +1010,14 @@ public class PartyMember
 		}
 					
 		//DO RELATIONSHIPS
-		RollRelationships();
+		//RollRelationships();
 	}
 
 	public void LateTimePassEffect(int hoursPassed)
 	{
 		//Resting fatigue restore
 		int fatigueRestoreAmount=fatigueRestoreWait;
-		if (currentRegion.hasCamp) fatigueRestoreAmount=fatigueRestoreSleep;
+		if (currentRegion.hasCamp || hasBedroll) fatigueRestoreAmount=fatigueRestoreSleep;
 		ChangeFatigue(-fatigueRestoreAmount);
 	}
 	/*

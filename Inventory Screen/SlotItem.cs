@@ -3,7 +3,7 @@ using System.Collections;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
-public class SlotItem : MonoBehaviour, IBeginDragHandler,IDragHandler,IEndDragHandler, IDropHandler 
+public class SlotItem : MonoBehaviour, IBeginDragHandler,IDragHandler,IEndDragHandler, IDropHandler, IPointerClickHandler
 {
 	public static SlotItem itemBeingDragged;
 	
@@ -92,5 +92,14 @@ public class SlotItem : MonoBehaviour, IBeginDragHandler,IDragHandler,IEndDragHa
 		//print ("Drop fired");
 		currentSlot.ItemDroppedIn(SlotItem.itemBeingDragged);
 	}
+	#endregion
+
+	#region IPointerClickHandler implementation
+
+	public void OnPointerClick(PointerEventData eventData)
+	{
+		if (eventData.button==PointerEventData.InputButton.Right) currentSlot.RclickAction();
+	}
+
 	#endregion
 }

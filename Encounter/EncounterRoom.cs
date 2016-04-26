@@ -79,7 +79,7 @@ public class EncounterRoom
 	public bool _hasLoot=false;
 	public List<InventoryItem> lootInRoom=new List<InventoryItem>();
 	//LOCK
-	public const int maxLockStrength=270;
+	public const int maxLockStrength=180;
 	public void ResetLockStrength() {lockStrength=maxLockStrength;}
 	public bool lootIsLocked
 	{

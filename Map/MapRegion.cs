@@ -92,7 +92,7 @@ public class MapRegion : MonoBehaviour
 		set
 		{
 			_discovered=value;
-			SetSprite();
+			UpdateVisuals();
 		}
 	}
 	public bool _discovered=false;
@@ -103,9 +103,7 @@ public class MapRegion : MonoBehaviour
 		set 
 		{
 			_scouted=value;
-			threatToken.enabled=true;
-			SetThreatTokenState(ambientThreatNumber);
-			SetSprite();
+			UpdateVisuals();
 		}
 	}
 	
@@ -117,12 +115,26 @@ public class MapRegion : MonoBehaviour
 		set 
 		{
 			_visible=value;
-			SetSprite();
+			UpdateVisuals();
 		}
 	}
 	public bool _visible=false;
-	
-	public bool hasGasoline=false;
+	/*
+	public bool hasGasoline
+	{
+		get {return _hasGasoline;}
+		set
+		{
+			_hasGasoline=value;
+			if (_hasGasoline)
+			{
+				hasEncounter=false;
+				regionalEncounter=null;
+				regionalEvent=new GasolineEvent();
+			}
+		}
+	}
+	bool _hasGasoline=false;*/
 	public bool hasCar
 	{
 		get {return _hasCar;}
@@ -160,7 +172,7 @@ public class MapRegion : MonoBehaviour
 	}
 	public bool TryRaiseTemperature(int delta)
 	{
-		if (hasCamp)
+		//if (hasCamp)
 		{
 			if ((int)localTemperature<2)
 			{
@@ -277,7 +289,20 @@ public class MapRegion : MonoBehaviour
 	}
 	public bool _hasEncounter=false;*/
 	public Encounter regionalEncounter;
-	
+	public PersistentEvent regionalEvent=null;
+
+	public bool hasEvent=false;
+	public void SetRegionalEvent(PersistentEvent newEvent)
+	{
+		regionalEvent=newEvent;
+		if (regionalEncounter!=null)
+		{
+			regionalEncounter=null;
+			hasEncounter=false;
+			hasEvent=true;
+		}
+	}
+
 	/*
 	bool hasHorde=false;
 	public Horde hordeEncounter
@@ -316,7 +341,7 @@ public class MapRegion : MonoBehaviour
 	*/
 	bool drawMouseoverText=false;
 	
-	void SetSprite()
+	void UpdateVisuals()
 	{
 		if (!_discovered)
 		{
@@ -332,11 +357,13 @@ public class MapRegion : MonoBehaviour
 			}*/
 			//else
 			{
-				if (hasEncounter)
+				if (scouted)
 				{
-					if (scouted)
+					if (hasEncounter)
 					{
 						teamSizeBg.gameObject.SetActive(true);
+						threatToken.enabled=true;
+						SetThreatTokenState(ambientThreatNumber);
 						switch (regionalEncounter.encounterAreaType)
 						{
 							case Encounter.AreaTypes.Hospital: {regionGraphic.sprite=hospitalSprite; break;}
@@ -349,12 +376,13 @@ public class MapRegion : MonoBehaviour
 					}
 					else
 					{
-						regionGraphic.sprite=encounterSprite;
+						//If region has no encounter, assume it has an event
+						regionGraphic.sprite=regionalEvent.GetRegionSprite();
 					}
 				}
 				else
 				{
-					regionGraphic.sprite=emptyLocSprite;
+					regionGraphic.sprite=encounterSprite;
 				}
 			}
 			
@@ -363,11 +391,11 @@ public class MapRegion : MonoBehaviour
 			{
 				//if (hasHorde) {regionGraphic.color=Color.red;} 
 				//else {regionGraphic.color=Color.white;}
-				regionGraphic.color=Color.white;
+				regionGraphic.color=Color.gray;
 			}
 			else
 			{
-				regionGraphic.color=Color.gray;
+				regionGraphic.color=Color.white;
 			}
 		}
 	}
@@ -464,7 +492,7 @@ public class MapRegion : MonoBehaviour
 	//void Start() {transform.Rotate(new Vector3(-90,0,0));}
 	void Start() 
 	{
-		SetSprite();
+		UpdateVisuals();
 		PartyManager.ETimePassedEnd+=SetLocalTemperature;
 	}
 
@@ -562,7 +590,7 @@ public class MapRegion : MonoBehaviour
 	{
 		bool textExists=true;
 		string areaDescription="";
-		if (!discovered) {areaDescription="Undiscovered";}
+		if (!scouted) {areaDescription="Not scouted";}
 		else 
 		{
 			/*
@@ -574,27 +602,24 @@ public class MapRegion : MonoBehaviour
 			{
 				if (hasEncounter)
 				{
-					if (!scouted) {areaDescription="Not scouted";}
-					else
+					
+					areaDescription+=regionalEncounter.lootDescription+"\n\n";
+					//Describe all potential loot
+					areaDescription+="May contain:\n";
+					foreach (InventoryItem.LootMetatypes metatype in regionalEncounter.chestTypes.probabilities.Keys)
 					{
-						areaDescription+=regionalEncounter.lootDescription+"\n\n";
-						//Describe all potential loot
-						areaDescription+="May contain:\n";
-						foreach (InventoryItem.LootMetatypes metatype in regionalEncounter.chestTypes.probabilities.Keys)
-						{
-							areaDescription+="-"+InventoryItem.GetLootMetatypeDescription(metatype)+"\n";
-						}
-						areaDescription+="Enemies: "+regionalEncounter.enemyDescription+"\n";
-						areaDescription+="\nRequired team size: "+regionalEncounter.minRequiredMembers+"-"+regionalEncounter.maxRequiredMembers;
-						//if (isHive) {areaDescription+="\nHive";}
-						//areaDescription+="\nExploration threat: "+CalculateThreatLevel(0);
+						areaDescription+="-"+InventoryItem.GetLootMetatypeDescription(metatype)+"\n";
 					}
-					//areaDescription+="\nTemperature: "+GetTemperature();
-
-					//if (PartyManager.mainPartyManager.selectedMembers.Count>0)
-
+					areaDescription+="Enemies: "+regionalEncounter.enemyDescription+"\n";
+					areaDescription+="\nRequired team size: "+regionalEncounter.minRequiredMembers+"-"+regionalEncounter.maxRequiredMembers;
+					//if (isHive) {areaDescription+="\nHive";}
+					//areaDescription+="\nExploration threat: "+CalculateThreatLevel(0);
 				}
-				else {textExists=false;}
+				else 
+				{
+					textExists=true;
+					areaDescription=regionalEvent.GetTooltipDescription();
+				}
 			}
 		}
 		if (PartyManager.mainPartyManager.selectedMembers.Count>0)

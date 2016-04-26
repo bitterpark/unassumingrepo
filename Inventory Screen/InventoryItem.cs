@@ -191,15 +191,19 @@ public abstract class InventoryItem
 				List<InventoryItem> itemSet=new List<InventoryItem>();
 				itemSet.Add(new SettableTrap());
 				itemSet.Add(new SettableTrap());
-				equipmentList.AddProbability(new List<InventoryItem>(itemSet),0.4f);
+				equipmentList.AddProbability(new List<InventoryItem>(itemSet),0.2f);
+
+				itemSet.Clear();
+				itemSet.Add(new Bed());
+				equipmentList.AddProbability(new List<InventoryItem>(itemSet),0.3f);
 
 				itemSet.Clear();
 				itemSet.Add(new Toolbox());
-				equipmentList.AddProbability(new List<InventoryItem>(itemSet),0.3f);
+				equipmentList.AddProbability(new List<InventoryItem>(itemSet),0.25f);
 
 				itemSet.Clear();
 				itemSet.Add(new Backpack());
-				equipmentList.AddProbability(new List<InventoryItem>(itemSet),0.3f);
+				equipmentList.AddProbability(new List<InventoryItem>(itemSet),0.25f);
 
 
 				List<InventoryItem> resultingSet=itemSet;
@@ -264,7 +268,6 @@ public abstract class InventoryItem
 				List<InventoryItem> setFive=new List<InventoryItem>();
 				setFive.Add(new Fuel());
 				setFive.Add(new Fuel());
-				setFive.Add(new Fuel());
 				equipmentList.AddProbability(setFive,0.25f);
 
 				List<InventoryItem> resultingSet=setOne;
@@ -277,17 +280,14 @@ public abstract class InventoryItem
 				ProbabilityList<List<InventoryItem>> equipmentList=new ProbabilityList<List<InventoryItem>>();
 				List<InventoryItem> setOne=new List<InventoryItem>();
 				setOne.Add(new Fuel());
-				setOne.Add(new Fuel());
 				equipmentList.AddProbability(setOne,0.2f);
 				
 				List<InventoryItem> setTwo=new List<InventoryItem>();
 				setTwo.Add(new Fuel());
 				setTwo.Add(new Fuel());
-				setTwo.Add(new Fuel());
 				equipmentList.AddProbability(setTwo,0.6f);
 
 				List<InventoryItem> setThree=new List<InventoryItem>();
-				setThree.Add(new Fuel());
 				setThree.Add(new Fuel());
 				setThree.Add(new Fuel());
 				setThree.Add(new Fuel());
@@ -773,6 +773,30 @@ public abstract class EquippableItem:InventoryItem
 	//public override bool UseAction(PartyMember member) {return false;}
 }
 
+public class Bed:EquippableItem
+{
+	public Bed()
+	{
+		itemName="Bedroll";
+	}
+	
+	public override Sprite GetItemSprite() {return SpriteBase.mainSpriteBase.bedSprite;}
+	
+	public override void EquipEffect (PartyMember member)
+	{
+		member.hasBedroll=true;
+	}
+	public override void UnequipEffect (PartyMember member)
+	{
+		member.hasBedroll=false;
+	}
+	
+	public override string GetMouseoverDescription ()
+	{
+		return itemName+"\nFully restores fatigue when resting outside of camps";
+	}
+}
+
 public class Flashlight: EquippableItem
 {
 	public Flashlight()
@@ -891,7 +915,14 @@ public abstract class Weapon:InventoryItem
 	//public abstract int GetMaxDamage();
 	//public abstract int GetMinDamage();
 	public int baseDamage;
+	public int weight=1;
 	public float accuracyMod;
+
+	public override int GetWeight()
+	{
+		return weight;
+	}
+
 	//damage for fight calculation
 	public virtual int GetDamage(float modifier) 
 	{
@@ -923,7 +954,7 @@ public class NineM:RangedWeapon
 		baseDamage=45;
 		accuracyMod=0.2f;
 	}
-	
+
 	//string name="9mm Pistol";
 	//int weaponMaxDamage=100;
 	//int weaponMinDamage=80;
@@ -1036,6 +1067,7 @@ public class Pipegun:RangedWeapon
 		itemName="Pipegun";
 		baseDamage=30;
 		accuracyMod=0f;
+		weight=0;
 	}
 	
 
@@ -1117,6 +1149,7 @@ public class Knife:MeleeWeapon
 		itemName="Knife";
 		baseDamage=45;
 		accuracyMod=0.2f;
+		weight=0;
 	}
 	
 	//public int weaponMaxDamage=50;
@@ -1173,25 +1206,7 @@ public class Axe:MeleeWeapon
 	}
 }
 
-public class Bed:InventoryItem
-{
-	public Bed()
-	{
-		itemName="Bedroll";
-	}
-	
-	public override Sprite GetItemSprite() {return SpriteBase.mainSpriteBase.bedSprite;}
-	
-	public override bool UseAction(PartyMember member)
-	{
-		return false;
-	}
-	
-	public override string GetMouseoverDescription ()
-	{
-		return itemName+"\nProvides one sleeping space";
-	}
-}
+
 
 public class Pot:InventoryItem
 {

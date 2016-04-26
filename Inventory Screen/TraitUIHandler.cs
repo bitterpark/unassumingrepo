@@ -30,8 +30,8 @@ public class TraitUIHandler : MonoBehaviour, IPointerEnterHandler, IPointerExitH
 						{
 						//if (InventoryScreenHandler.mainISHandler.selectedMember.skillpoints>=1)
 						{
-							assignedSkill.learned=true;
-							assignedSkill.ActivatePerk(InventoryScreenHandler.mainISHandler.selectedMember);
+							//Order is important
+							InventoryScreenHandler.mainISHandler.selectedMember.ActivateSkill(assignedSkill);
 							InventoryScreenHandler.mainISHandler.selectedMember.skillpoints--;
 							InventoryScreenHandler.mainISHandler.RefreshInventoryItems();
 						}

@@ -57,7 +57,10 @@ public class SpriteBase : MonoBehaviour {
 	public Sprite coldSprite;
 	public Sprite brokenArmsSprite;
 	public Sprite brokenLegsSprite;
-	
+
+	//Event sprites
+	public Sprite gasStationSprite;
+
 	public Color[] possibleMemberColors;
 	
 	// Use this for initialization

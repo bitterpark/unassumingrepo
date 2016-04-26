@@ -12,7 +12,7 @@ public class EncounterCanvasHandler : MonoBehaviour
 	
 	public bool encounterOngoing=false;
 	//factor closer to 0 makes the zoom more abrupt, factor closer to 1 makes it more gentle
-	public float zoomFactor=0.95f;
+	public float zoomFactor=0.98f;
 
 	public Encounter currentEncounter=null;
 	EncounterMap currentMap=null;
@@ -104,16 +104,18 @@ public class EncounterCanvasHandler : MonoBehaviour
 	
 	void FocusViewOnRoom(RectTransform roomTransform)
 	{
+		/*
 		Vector2 newPosition=roomTransform.localPosition;
+
 		Vector2 newFocus=Vector2.zero;
 		newFocus.x=newPosition.x/encounterMapGroup.GetComponent<RectTransform>().rect.width;
 		//This is necessary due to usual coords fuckery (scrollrect y pos 0 is bottom, but room coords 0 is top)
 		newFocus.y=(encounterMapGroup.GetComponent<RectTransform>().rect.height-Mathf.Abs(newPosition.y))
 		/encounterMapGroup.GetComponent<RectTransform>().rect.height;
-		
-		/*(encounterMapGroup.GetComponent<RectTransform>().rect.height-Mathf.Abs(newPosition.y))
-		/encounterMapGroup.GetComponent<RectTransform>().rect.height;//*/
+
 		encounterMapGroup.parent.GetComponent<ScrollRect>().normalizedPosition=newFocus;
+		*/
+		encounterMapGroup.localPosition=-roomTransform.localPosition;
 	}
 	
 	IEnumerator EncounterStartViewFocus(RectTransform roomTransform)
@@ -1666,9 +1668,11 @@ public class EncounterCanvasHandler : MonoBehaviour
 				MakeNoise(memberCoords[selectedMember],2);
 				AddNewLogMessage(selectedMember.name+" makes some noise");
 			}
+
 			//ZOOM OUT
 			if (Input.GetAxis("Mouse ScrollWheel")<0)
 			{
+				/*
 				//Find room under cursor before zoom occurs
 				PointerEventData pointerData=new PointerEventData(EventSystem.current);
 				pointerData.position=Input.mousePosition;
@@ -1686,21 +1690,26 @@ public class EncounterCanvasHandler : MonoBehaviour
 						//print("View focused on cursor room!");
 						break;
 					}
-				}
+				}*/
+
 				//Do zoom
-				encounterMapGroup.transform.localScale=encounterMapGroup.transform.localScale*zoomFactor;
+				float scaleFactor=Mathf.Max(encounterMapGroup.transform.localScale.x*zoomFactor,Mathf.Pow(zoomFactor,3));
+				encounterMapGroup.transform.localScale=new Vector3(scaleFactor,scaleFactor,1);
+				//encounterMapGroup.transform.localScale=encounterMapGroup.transform.localScale*zoomFactor;
 				//Canvas.ForceUpdateCanvases();
-				Vector2 newMapgroupPos=encounterMapGroup.GetComponent<RectTransform>().anchoredPosition;
+				//Vector2 newMapgroupPos=encounterMapGroup.GetComponent<RectTransform>().anchoredPosition;
+				/*
 				Vector2 adjustedPosition=newMapgroupPos;
 				if (newMapgroupPos.x<0) adjustedPosition=new Vector2(0,adjustedPosition.y);
 				if (newMapgroupPos.y>0) adjustedPosition=new Vector2(adjustedPosition.x,0);
-
+				*/
 				//Focus view on cursor room after zoom
-				if (zoomRoomTransform!=null) FocusViewOnRoom(zoomRoomTransform);
+				//if (zoomRoomTransform!=null) FocusViewOnRoom(zoomRoomTransform);
 			}
 			//ZOOM IN
 			if (Input.GetAxis("Mouse ScrollWheel")>0)
 			{
+				/*
 				//Find room under cursor before zoom occurs
 				PointerEventData pointerData=new PointerEventData(EventSystem.current);
 				pointerData.position=Input.mousePosition;
@@ -1723,12 +1732,17 @@ public class EncounterCanvasHandler : MonoBehaviour
 				encounterMapGroup.transform.localScale=encounterMapGroup.transform.localScale/zoomFactor;
 				//Canvas.ForceUpdateCanvases();
 				Vector2 newMapgroupPos=encounterMapGroup.GetComponent<RectTransform>().anchoredPosition;
+				*/
+				//Do zoom
+				float scaleFactor=Mathf.Min(encounterMapGroup.transform.localScale.x/zoomFactor,1/Mathf.Pow(zoomFactor,3));
+				encounterMapGroup.transform.localScale=new Vector3(scaleFactor,scaleFactor,1);
+				/*
 				Vector2 adjustedPosition=newMapgroupPos;
 				if (newMapgroupPos.x<0) adjustedPosition=new Vector2(0,adjustedPosition.y);
 				if (newMapgroupPos.y>0) adjustedPosition=new Vector2(adjustedPosition.x,0);
-
+				*/
 				//Focus view on cursor room after zoom
-				if (zoomRoomTransform!=null) FocusViewOnRoom(zoomRoomTransform);
+				//if (zoomRoomTransform!=null) FocusViewOnRoom(zoomRoomTransform);
 			}
 			
 		}

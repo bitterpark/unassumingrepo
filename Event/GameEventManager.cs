@@ -13,6 +13,7 @@ public class GameEventManager : MonoBehaviour
 	List<EventChance> coldEvents=new List<EventChance>();
 	List<EventChance> campSafetyEvents=new List<EventChance>();
 	List<EventChance> scavengingEvents=new List<EventChance>();
+	PriorityList<PersistentEvent> possiblePersistentEvents=new PriorityList<PersistentEvent>();
 	public static GameEventManager mainEventManager;
 	
 	GameEvent drawnEvent=null;
@@ -76,7 +77,18 @@ public class GameEventManager : MonoBehaviour
 			myEvent=newEvent;
 		}
 	}
-	
+
+	public PersistentEvent GetPersistentEvent()
+	{
+		PersistentEvent result=null;
+		if (possiblePersistentEvents.GetCount()>0)
+		{
+			result=possiblePersistentEvents.Get();
+			if (!result.repeatable) possiblePersistentEvents.TryRemove(result);
+		}
+		return result;
+	}
+
 	public void RollCampEvents(MapRegion eventRegion,List<PartyMember> presentMembers)
 	{
 		float eventsRoll=Random.value;
@@ -99,8 +111,8 @@ public class GameEventManager : MonoBehaviour
 	public void RollScavengeEvents(MapRegion eventRegion,List<PartyMember> presentMembers)
 	{
 		GameEvent resEvent=null;
-		if (eventRegion.hasGasoline) resEvent=new GasolineEvent();
-		else 
+		//if (eventRegion.hasGasoline) resEvent=new GasolineEvent();
+		//else 
 		{
 			float eventsRoll=Random.value;
 			EventChance trackedEventRecord=new EventChance();
@@ -113,8 +125,8 @@ public class GameEventManager : MonoBehaviour
 	{
 		//bool eventFired=false;
 		GameEvent resEvent=null;
-		if (eventRegion.hasGasoline)resEvent=new GasolineEvent();
-		else
+		//if (eventRegion.hasGasoline)resEvent=new GasolineEvent();
+		//else
 		{
 			float eventsRoll=Random.value;
 			EventChance trackedEventRecord=new EventChance();
@@ -285,7 +297,42 @@ public class GameEventManager : MonoBehaviour
 	}
 	
 	public void ClearEventQueue() {queuedEvents.Clear();}
-	
+
+	public void GamestartGenerateEventLists()
+	{
+		scavengingEvents.Clear();
+		scavengingEvents.Add(new EventChance(new ScavengeEventOne(),1f));
+		scavengingEvents.Add(new EventChance(new CarFindEvent(),0.1f));
+		scavengingEvents.Add (new EventChance(new CacheInAnomaly(),0.04f));
+		//scavengingEvents.Add( new EventChance(new NewSurvivor(),0.04f));
+		scavengingEvents.Add( new EventChance(new MedicalCache(),0.04f));
+		//scavengingEvents.Add (new EventChance(new SurvivorRescue(),0.04f));
+		//scavengingEvents.Add(new EventChance(new SearchForSurvivor(),0.04f));
+
+		moraleEvents.Clear();
+		//moraleEvents.Add (new EventChance(new LowMoraleSpiral(),0.2f));
+		moraleEvents.Add(new EventChance(new LowMoraleSteal(),0.4f));
+		moraleEvents.Add (new EventChance(new LowMoraleFight(),0.25f));
+		//moraleEvents.Add (new EventChance(new LowMoraleEnmity(),0.10f));
+		moraleEvents.Add (new EventChance(new LowMoraleQuit(),0.15f));
+
+		coldEvents.Clear();
+		coldEvents.Add(new EventChance(new MemberIsCold(),1f));
+		coldEvents.Add(new EventChance(new MembersAreFreezing(),1f));
+
+		campSafetyEvents.Clear();
+		campSafetyEvents.Add(new EventChance(new AttackOnCamp(),1f));
+
+		friendshipEvents.Clear();
+		friendshipEvents.Add(new EventChance(new HighMoraleFriendship(),1f));
+		grudgeEvents.Clear();
+		grudgeEvents.Add(new EventChance(new LowMoraleEnmity(),1f));
+
+		possiblePersistentEvents.ClearList();
+		possiblePersistentEvents.Add(new WoundedSurvivor(),2);
+		possiblePersistentEvents.Add(new ScrapTrade(),1);
+	}
+
 	void Start()
 	{
 		mainEventManager=this;
@@ -300,27 +347,7 @@ public class GameEventManager : MonoBehaviour
 		possibleEvents.Add (new EventChance(new SurvivorRescue(),0.04f));
 		possibleEvents.Add(new EventChance(new SearchForSurvivor(),0.04f));
 		*/
-		scavengingEvents.Add(new EventChance(new ScavengeEventOne(),1f));
-		scavengingEvents.Add(new EventChance(new CarFindEvent(),0.1f));
-		scavengingEvents.Add (new EventChance(new CacheInAnomaly(),0.04f));
-		scavengingEvents.Add( new EventChance(new NewSurvivor(),0.04f));
-		scavengingEvents.Add( new EventChance(new MedicalCache(),0.04f));
-		scavengingEvents.Add (new EventChance(new SurvivorRescue(),0.04f));
-		//scavengingEvents.Add(new EventChance(new SearchForSurvivor(),0.04f));
-		
-		//moraleEvents.Add (new EventChance(new LowMoraleSpiral(),0.2f));
-		moraleEvents.Add(new EventChance(new LowMoraleSteal(),0.4f));
-		moraleEvents.Add (new EventChance(new LowMoraleFight(),0.25f));
-		//moraleEvents.Add (new EventChance(new LowMoraleEnmity(),0.10f));
-		moraleEvents.Add (new EventChance(new LowMoraleQuit(),0.15f));
 
-		coldEvents.Add(new EventChance(new MemberIsCold(),1f));
-		coldEvents.Add(new EventChance(new MembersAreFreezing(),1f));
-
-		campSafetyEvents.Add(new EventChance(new AttackOnCamp(),1f));
-
-		friendshipEvents.Add(new EventChance(new HighMoraleFriendship(),1f));
-		grudgeEvents.Add(new EventChance(new LowMoraleEnmity(),1f));
 
 		GameManager.GameOver+=ClearEventQueue;
 		/*

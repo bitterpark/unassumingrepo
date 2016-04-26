@@ -97,6 +97,41 @@ public abstract class Trait
 		}
 		return randomTree;
 	}
+
+	public static List<Trait> GenerateLevelupSkills(List<Trait>existingTraits, int requiredSkillCount)
+	{
+		List<Trait> allPossibleSkills=new List<Trait>();
+		allPossibleSkills.AddRange(GetSkillTree(Skilltree.Carrier));
+		allPossibleSkills.AddRange(GetSkillTree(Skilltree.Fighter));
+		allPossibleSkills.AddRange(GetSkillTree(Skilltree.Scout));
+
+		foreach(Trait existingTrait in existingTraits)
+		{
+			bool learned=true;
+			if (existingTrait.GetType().BaseType==typeof(Skill))
+			{
+				Skill checkedSkill=existingTrait as Skill;
+				if (!checkedSkill.learned) learned=false;
+			}
+			//Check to see if the trait from a member trait list is learned or not
+			if (learned)
+			{
+				foreach (Trait possibleSkill in new List<Trait>(allPossibleSkills))
+				{
+					if (possibleSkill.GetType()==existingTrait.GetType() || possibleSkill.GetType()==existingTrait.oppositePerk) allPossibleSkills.Remove(possibleSkill);
+				}
+			}
+		}
+		List<Trait> generatedSet=new List<Trait>();
+		while (generatedSet.Count<requiredSkillCount && allPossibleSkills.Count>0)
+		{
+			int addIndex=Random.Range(0,allPossibleSkills.Count);
+			generatedSet.Add(allPossibleSkills[addIndex]);
+			allPossibleSkills.RemoveAt(addIndex);
+		}
+		return generatedSet;
+	}
+
 	///
 	//Deprecate this
 	/*

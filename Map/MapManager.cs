@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine.UI;
+using UnityEngine.EventSystems;
 
 public class MapManager : MonoBehaviour 
 {
@@ -14,10 +15,13 @@ public class MapManager : MonoBehaviour
 	public MemberMapToken memberTokenPrefab;
 	
 	//GameObject playerToken;
-	
+
+	//Deprecate this
 	public int mapHeight=0;
 	public int mapWidth=0;
-	
+
+	const float zoomFactor=0.9f;
+
 	public Dictionary<PartyMember,MemberMapToken> memberTokens;
 	public HordeTokenDrawer hordeTokenPrefab;
 	
@@ -26,6 +30,7 @@ public class MapManager : MonoBehaviour
 	//List<MapRegion> mapRegions=new List<MapRegion>();
 	//Dictionary<Vector2,MapRegion> mapRegions=new Dictionary<Vector2, MapRegion>();
 	public List<MapRegion> mapRegions=new List<MapRegion>();
+	public List<MapRegion> townCenterRegions=new List<MapRegion>();
 	
 	//public const int townNodeFatigueCost=25;
 	public const int townToTownGasCost=1;
@@ -55,6 +60,7 @@ public class MapManager : MonoBehaviour
 	//THIS METHOD CAUSES THE DISPLACEMENT BUG
 	public void FocusViewOnRegion(RectTransform regionTransform)
 	{
+		/*
 		Vector2 newPosition=regionTransform.rect.center+(Vector2)regionTransform.localPosition;
 		//print ("Moving to local position:"+regionTransform.localPosition);
 		Vector2 scrollrectFocus=Vector2.zero;
@@ -65,19 +71,49 @@ public class MapManager : MonoBehaviour
 		//scrollrectFocus=new Vector2(-5.0f,-5.0f);
 		//newPosition.x/=regionsGridGroup.GetComponent<RectTransform>().rect.width;
 		//newPosition.y/=regionsGridGroup.GetComponent<RectTransform>().rect.height;//
-		//print ("Scrollrect focus x is:"+scrollrectFocus.x+ToString());
-		/*
-		float testMod=0.5f;
-		print ("Zooming to x:"+(testMod*regionsGridGroup.GetComponent<RectTransform>().rect.width)
-		+", y:"+(testMod*regionsGridGroup.GetComponent<RectTransform>().rect.height));//*/
-		regionsGridGroup.parent.GetComponent<ScrollRect>().normalizedPosition=scrollrectFocus;
+		*/
+		//regionsGridGroup.parent.GetComponent<ScrollRect>().normalizedPosition=scrollrectFocus;
+		regionsGridGroup.localPosition=-regionTransform.localPosition;
 		/*
 		CreateRegion(new Vector2
 		(testMod*regionsGridGroup.GetComponent<RectTransform>().rect.width
 		,-(regionsGridGroup.GetComponent<RectTransform>().rect.height-(testMod*regionsGridGroup.GetComponent<RectTransform>().rect.height))));
 		Canvas.ForceUpdateCanvases();//*/
 	}
-	
+
+	public void FocusViewOnScreenPoint(Vector2 screenPointCoords)
+	{
+		Vector2 localPoint=Vector2.zero;
+		if (RectTransformUtility.ScreenPointToLocalPointInRectangle(regionsGridGroup.GetComponent<RectTransform>(),screenPointCoords,null
+		,out localPoint))
+		{
+			//
+		 	
+			Vector2 newPosition=localPoint;
+			//print ("Moving to local position:"+regionTransform.localPosition);
+			Vector2 scrollrectFocus=Vector2.zero;
+			scrollrectFocus.x=(newPosition.x/regionsGridGroup.GetComponent<RectTransform>().rect.width);
+			//!!!Y NEEDS TO BE CORRECTLY INVERTED!!! - in scrollrects, y=0 represents bottom, which is inverse to the way the rest of this setup works
+			scrollrectFocus.y=(regionsGridGroup.GetComponent<RectTransform>().rect.height-Mathf.Abs(newPosition.y))
+			/regionsGridGroup.GetComponent<RectTransform>().rect.height;
+			//scrollrectFocus=new Vector2(-5.0f,-5.0f);
+			//newPosition.x/=regionsGridGroup.GetComponent<RectTransform>().rect.width;
+			//newPosition.y/=regionsGridGroup.GetComponent<RectTransform>().rect.height;//
+			//print ("Scrollrect focus x is:"+scrollrectFocus.x+ToString());
+			/*
+			float testMod=0.5f;
+			print ("Zooming to x:"+(testMod*regionsGridGroup.GetComponent<RectTransform>().rect.width)
+			+", y:"+(testMod*regionsGridGroup.GetComponent<RectTransform>().rect.height));//*/
+			regionsGridGroup.localPosition=-localPoint;//.parent.GetComponent<ScrollRect>().normalizedPosition=scrollrectFocus;
+			//print(localPoint);
+		}// else, do nothing
+		/*
+		CreateRegion(new Vector2
+		(testMod*regionsGridGroup.GetComponent<RectTransform>().rect.width
+		,-(regionsGridGroup.GetComponent<RectTransform>().rect.height-(testMod*regionsGridGroup.GetComponent<RectTransform>().rect.height))));
+		Canvas.ForceUpdateCanvases();//*/
+	}
+
 	IEnumerator MapGenViewFocus(RectTransform regionTransform)
 	{
 		yield return new WaitForEndOfFrame();
@@ -221,14 +257,14 @@ public class MapManager : MonoBehaviour
 		regionsGridGroup.GetComponent<RectTransform>().sizeDelta=new Vector2(mapFinalWidth,mapFinalHeight);
 		
 		//Create towns from rects	
-		List<MapRegion> newTowns=new List<MapRegion>();
+		//List<MapRegion> newTowns=new List<MapRegion>();
 		foreach (Vector2 townCenter in townCenters)
 		{
 			//Create new town
 			MapRegion newTown=CreateRegion(townCenter);
-			foreach(MapRegion region in newTowns) {newTown.AddConnectedRegion(region,true,townToTownGasCost);}
+			foreach(MapRegion region in townCenterRegions) {newTown.AddConnectedRegion(region,true,townToTownGasCost);}
 			//newRegion.SetConnectedRegions(new List<MapRegion>(mapRegions));
-			newTowns.Add(newTown);	
+			townCenterRegions.Add(newTown);	
 		}
 		
 		//POPULATE TOWNS
@@ -242,9 +278,12 @@ public class MapManager : MonoBehaviour
 				if (!(j==1 && i==1)) populatingOffsets.Add(new Vector2(startOffset+townNodeSideSize*j,startOffset+townNodeSideSize*i));
 			}
 		}
-		
+
+		//Prepare node lists by town
+		Dictionary<MapRegion,List<MapRegion>> regionsByTown=new Dictionary<MapRegion, List<MapRegion>>();
+
 		//Fill in nodes
-		foreach(MapRegion town in newTowns)
+		foreach(MapRegion town in townCenterRegions)
 		{
 			int nodeCount=Random.Range(6,9);
 			int loopCount=0;
@@ -263,13 +302,14 @@ public class MapManager : MonoBehaviour
 			List<Vector2> unusedOffsets=new List<Vector2>(populatingOffsets);
 			//Create gauntlets and loops
 			int specialNodesPerLoop=Random.Range(2,4);
-			int specialNodesPerGauntlet=2;
+			int specialNodesPerGauntlet=Random.Range(2,4);
 			int nodesRemaining=nodeCount;
 			
 			//print ("Town gauntlets:"+gauntletCount+", town loops:"+loopCount);
 			//print ("Nodes per:"+specialNodesPer);
 			//print ("Total slots:"+unusedOffsets.Count);
 			List<MapRegion> createdTownRegions=new List<MapRegion>();
+			regionsByTown.Add(town,createdTownRegions);
 			//Do gauntlets
 			for (int i=0; i<gauntletCount;i++)
 			{
@@ -315,7 +355,6 @@ public class MapManager : MonoBehaviour
 				//This is necessary to properly track indices and dispose
 				unusedOffsets.RemoveRange(startingSlotIndex,specialNodesPerLoop);
 			}
-			
 			//Do regular nodes
 			for (int i=0; i<nodesRemaining; i++)
 			{
@@ -329,11 +368,60 @@ public class MapManager : MonoBehaviour
 				newNode.townCenter=town;
 				newNode.AddConnectedRegion(town,false,PartyMember.fatigueMoveCost);
 			}
-			
-			//Add node with gasoline
-			createdTownRegions[Random.Range(0,createdTownRegions.Count)].hasGasoline=true;
+			/*
+			//Add persistent events and gas event to all node types
+			int requiredPersistentEventNodes=1;
+			List<MapRegion> encounterRegionsRemaining=new List<MapRegion>(createdTownRegions);
+			for (int i=0; i<=requiredPersistentEventNodes; i++)
+			{
+				//If there aren't enough non-persistent nodes left, terminate
+				if (encounterRegionsRemaining.Count==0) break;
+				else
+				{
+					//Randomly pick a region index out of the remaining regions
+					int randomIndex=Random.Range(0,encounterRegionsRemaining.Count);
+					//Do gas event first
+					if (i==0) encounterRegionsRemaining[randomIndex].SetRegionalEvent(new GasolineEvent());
+					else 
+					{
+						//Try to add a random persistent event.
+						PersistentEvent assignedEvent=GameEventManager.mainEventManager.GetPersistentEvent();
+						if (assignedEvent!=null) encounterRegionsRemaining[randomIndex].SetRegionalEvent(assignedEvent);
+					}
+					//WARNING - even if no random persistent event could be found above (because they'd all been used up), this will still
+					//remove regions from available pool
+					encounterRegionsRemaining.RemoveAt(randomIndex);
+				}
+			}*/
 		}
-		
+
+		//Add persistent events and gas event to each town
+		foreach (MapRegion town in regionsByTown.Keys)
+		{
+			int requiredPersistentEventNodes=1;
+			List<MapRegion> encounterRegionsRemaining=new List<MapRegion>(regionsByTown[town]);
+			for (int i=0; i<=requiredPersistentEventNodes; i++)
+			{
+				//If there aren't enough non-persistent nodes left, terminate
+				if (encounterRegionsRemaining.Count==0) break;
+				else
+				{
+					//Randomly pick a region index out of the remaining regions
+					int randomIndex=Random.Range(0,encounterRegionsRemaining.Count);
+					//Do gas event first
+					if (i==0) encounterRegionsRemaining[randomIndex].SetRegionalEvent(new GasolineEvent());
+					else 
+					{
+						//Try to add a random persistent event.
+						PersistentEvent assignedEvent=GameEventManager.mainEventManager.GetPersistentEvent();
+						if (assignedEvent!=null) encounterRegionsRemaining[randomIndex].SetRegionalEvent(assignedEvent);
+					}
+					//WARNING - even if no random persistent event could be found above (because they'd all been used up), this will still
+					//remove regions from available pool
+					encounterRegionsRemaining.RemoveAt(randomIndex);
+				}
+			}
+		}
 		
 		//Add endgame encounter
 		//MapRegion endgameEncounter=CreateRegion(endgameCenter,true);
@@ -349,7 +437,35 @@ public class MapManager : MonoBehaviour
 	
 	void Update()
 	{
-		if (Input.GetKeyDown(KeyCode.H)) {FocusViewOnRegion(mapRegions[0].GetComponent<RectTransform>());}
+		if (Input.GetKeyDown(KeyCode.H)) {FocusViewOnScreenPoint(Input.mousePosition);}//FocusViewOnRegion(mapRegions[0].GetComponent<RectTransform>());}
+			
+
+			//ZOOM OUT
+			if (Input.GetAxis("Mouse ScrollWheel")<0)
+			{
+				//Do zoom
+				float scaleFactor=Mathf.Max(regionsGridGroup.transform.localScale.x*zoomFactor,Mathf.Pow(zoomFactor,3));
+				regionsGridGroup.transform.localScale=new Vector3(scaleFactor,scaleFactor,1);
+				//Canvas.ForceUpdateCanvases();
+
+				//Focus view on cursor room after zoom
+				//FocusViewOnScreenPoint(Input.mousePosition);
+				//if (zoomRoomTransform!=null) FocusViewOnRoom(zoomRoomTransform);
+			}
+			//ZOOM IN
+			if (Input.GetAxis("Mouse ScrollWheel")>0)
+			{
+				//Do zoom
+				float scaleFactor=Mathf.Min(regionsGridGroup.transform.localScale.x/zoomFactor,1/Mathf.Pow(zoomFactor,3));
+				regionsGridGroup.transform.localScale=new Vector3(scaleFactor,scaleFactor,1);
+				//regionsGridGroup.transform.localScale=Mathf.Min(regionsGridGroup.transform.localScale/zoomFactor,1/Mathf.Pow(zoomFactor,3));
+				//Canvas.ForceUpdateCanvases();
+
+				//Focus view on cursor room after zoom
+				//FocusViewOnScreenPoint(Input.mousePosition);
+				//if (zoomRoomTransform!=null) FocusViewOnRoom(zoomRoomTransform);
+			}
+
 	}
 	
 	/*
@@ -392,6 +508,7 @@ public class MapManager : MonoBehaviour
 			GameObject.Destroy(region.gameObject);
 		}
 		mapRegions.Clear();
+		townCenterRegions.Clear();
 		PartyManager.ETimePassed-=SetDailyTemperatureRating;
 		//GameObject.Destroy(playerToken);
 	}
@@ -498,7 +615,7 @@ public class MapManager : MonoBehaviour
 		//IF ENTERING ENCOUNTER INSTEAD
 		if (!tryingPartyMove)
 		{
-			if (clickedRegion.hasEncounter && clickedRegion.localPartyMembers.Count>0) 
+			if (clickedRegion.localPartyMembers.Count>0) 
 			MapManager.main.scoutingHandler.StartDialog(clickedRegion);
 		}
 		
