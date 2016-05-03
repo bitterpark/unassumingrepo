@@ -193,7 +193,7 @@ public class PartyManager : MonoBehaviour
 		//partyVisibilityMod=0;
 		//foodSupply=0;//2;
 		daysLeft=campaignDays;
-		ammo=0;//500;//5;
+		ammo=500;//500;//5;
 		gas=0;
 		
 		partyMembers=new List<PartyMember>();
@@ -220,13 +220,17 @@ public class PartyManager : MonoBehaviour
 		//startingRegion.StashItem(new Scrap());
 		//startingRegion.StashItem(new Scrap());
 		//startingRegion.StashItem(new Scrap());
-		startingRegion.StashItem(new Fuel());
-		startingRegion.StashItem(new Fuel());
+		//startingRegion.StashItem(new Fuel());
+		//startingRegion.StashItem(new Fuel());
 		//startingRegion.StashItem(new Fuel());
 		//startingRegion.StashItem(new Fuel());
 
 		MapManager.main.FocusViewOnRegion(startingRegion.GetComponent<RectTransform>());
 
+		startingRegion.StashItem(new AssaultRifle());
+		startingRegion.StashItem(new AssaultRifle());
+		startingRegion.StashItem(new SettableTrap());
+		startingRegion.StashItem(new SettableTrap());
 		//startingRegion.StashItem(new SettableTrap());
 		//startingRegion.StashItem(new Bandages());
 		//startingRegion.StashItem(new CampBarricade());
@@ -239,8 +243,8 @@ public class PartyManager : MonoBehaviour
 		//startingRegion.StashItem(new ArmorVest());
 		//startingRegion.StashItem(new NineM());
 		//startingRegion.StashItem(new ArmorVest());
-		startingRegion.StashItem(new Bed());
-		startingRegion.StashItem(new Bed());
+		//startingRegion.StashItem(new Bed());
+		//startingRegion.StashItem(new Bed());
 		//startingRegion.StashItem(new Pot());//
 		//startingRegion.StashItem(new Scrap());
 		//Do this to setup proper background color
@@ -474,7 +478,7 @@ public class PartyManager : MonoBehaviour
 					//Apply fatigue to all moved members
 					foreach (PartyMember member in movedList) 
 					{
-						member.ChangeFatigue(member.currentRegion.connections[moveRegion].moveCost+member.currentFatigueMovePenalty);
+						member.ChangeFatigue(member.currentRegion.connections[moveRegion].moveCost+member.currentFatigueMoveModifier);
 						MapManager.main.memberTokens[member].moved=true;
 					}
 				} 

@@ -72,7 +72,7 @@ public class InventoryScreenHandler : MonoBehaviour
 					kickMemberButton.gameObject.SetActive(false);
 					//make sure guys outside of encounter can't interact with guys within an encounter and members currently in combat can't open inv
 					if(encounterManager.encounterMembers.Contains(newMember) 
-					 && !encounterManager.currentEncounter.encounterMap[encounterManager.memberCoords[newMember]].hasEnemies)
+					 && !encounterManager.roomButtons[encounterManager.memberCoords[newMember]].RoomHasEnemies())
 					{allow=true;}
 				}
 			}

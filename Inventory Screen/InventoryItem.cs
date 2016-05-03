@@ -431,7 +431,7 @@ public class Fuel: InventoryItem
 	}
 	public override string GetMouseoverDescription ()
 	{
-		return itemName+"\nBurn at a camp to improve temperature";
+		return itemName+"\nBurn to improve local temperature";
 	}
 }
 

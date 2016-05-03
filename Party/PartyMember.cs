@@ -512,7 +512,7 @@ public class PartyMember
 	//public const int mapMoveFatigueCost=25;
 	public const int campSetupFatigueCost=1;
 	public const int fatigueMoveCost=2;
-	public int currentFatigueMovePenalty=0;
+	public int currentFatigueMoveModifier=0;
 	public int currentFatigueCraftPenalty=0;
 	public const int maxFatigue=10;
 
@@ -685,6 +685,7 @@ public class PartyMember
 		//Pick out a starting specialty perk
 		Skill startingLearnedSkill=possibleSpecialtyPerks[Random.Range(0,possibleSpecialtyPerks.Count)] as Skill;
 		startingLearnedSkill.learned=true;
+		traits.Add(startingLearnedSkill);
 		
 		//Fill out trait list
 		List<Trait> possibleGenericPerks=Trait.GetTraitList();

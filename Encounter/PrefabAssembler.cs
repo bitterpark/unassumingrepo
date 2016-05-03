@@ -19,6 +19,7 @@ public class PrefabAssembler : MonoBehaviour
 	public List<GameObject> hospitalPresets=new List<GameObject>();
 	public List<GameObject> storePresets=new List<GameObject>();
 	public List<GameObject> radioPresets=new List<GameObject>();
+	public List<GameObject> smallPresets=new List<GameObject>();
 	
 	List<GameObject> GetRandomPresetsList(Encounter.AreaTypes areaType, int segmentCount)
 	{
@@ -75,6 +76,10 @@ public class PrefabAssembler : MonoBehaviour
 				break;
 			}
 		}
+		//Deprecate above later
+		//resultList.Clear();
+		//resultList.AddRange(smallPresets);
+		resultList=new List<GameObject>(smallPresets);
 		return resultList;
 	}
 	List<GameObject> GetAllPresetsList(Encounter.AreaTypes areaType)
@@ -113,6 +118,7 @@ public class PrefabAssembler : MonoBehaviour
 				break;
 			}
 		}
+		resultList=new List<GameObject>(smallPresets);
 		return resultList;
 	}
 	

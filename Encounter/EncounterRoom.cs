@@ -27,7 +27,7 @@ public class EncounterRoom
 			_isExit=value;
 			if (_isExit) 
 			{
-				hasEnemies=false;
+				//hasEnemies=false;
 				hasLoot=false;
 				description="This room leads outside";
 			}
@@ -37,7 +37,7 @@ public class EncounterRoom
 	
 	public bool isEntrance=false;
 	public bool isDiscovered=false;
-	
+	/*
 	public bool hasEnemies
 	{
 		get {return _hasEnemies;}
@@ -56,10 +56,11 @@ public class EncounterRoom
 		}
 	}
 	public bool _hasEnemies;
-	
+	*/
+
 	//List<EncounterEnemy> enemiesInRoom
 	//public EncounterEnemy enemyInRoom
-	public List<EncounterEnemy> enemiesInRoom=new List<EncounterEnemy>();
+	//public List<EncounterEnemy> enemiesInRoom=new List<EncounterEnemy>();
 	
 	/////LOOT
 	public bool hasLoot
@@ -162,13 +163,22 @@ public class EncounterRoom
 	public EncounterRoom(Encounter parent) {parentEncounter=parent;}
 	
 	//ENEMY METHODS
-	
+	/*
+	public EncounterEnemy GenerateEnemy()
+	{
+		EncounterEnemy newEnemy=EncounterEnemy.GetEnemy(parentEncounter.encounterEnemyType, new Vector2(xCoord,yCoord));
+		enemiesInRoom.Add(newEnemy);
+		hasEnemies=true;
+		return newEnemy;
+	}
+
 	public void GenerateEnemy(EncounterEnemy.EnemyTypes enemyType)
 	{
-		enemiesInRoom.Add(EncounterEnemy.GetEnemy(enemyType, new Vector2(xCoord,yCoord)));
+		EncounterEnemy newEnemy=EncounterEnemy.GetEnemy(enemyType, new Vector2(xCoord,yCoord));
+		enemiesInRoom.Add(newEnemy);
 		hasEnemies=true;
 	}
-	
+	*/
 	public void AddLootItem(InventoryItem newLootItem)
 	{
 		lootInRoom.Add(newLootItem);
@@ -176,19 +186,21 @@ public class EncounterRoom
 	}	
 	
 	//These two methods are called from the corresponding RoomButton, the button is called first, and then it updates the assignedRoom
+	/*
 	public void MoveEnemyIn(EncounterEnemy newEnemy)
 	{
 		enemiesInRoom.Add(newEnemy);
 		hasEnemies=true;
-	}
+	}*/
+	/*
 	public void MoveEnemyOut(EncounterEnemy movingEnemy)
 	{
 		//GameManager.DebugPrint("enemy moved out of:"+new Vector2(xCoord,yCoord));
 		enemiesInRoom.Remove(movingEnemy);
 		if (enemiesInRoom.Count==0) {hasEnemies=false;}
 		//GameManager.DebugPrint("enemies remaining in"+new Vector2(xCoord,yCoord)+":"+enemiesInRoom.Count);
-	}
-	
+	}*/
+	/*
 	public int DamageEnemy(int damage, BodyPart attackedPart, EncounterEnemy damagedEnemy, bool isRanged)
 	{
 		if (enemiesInRoom.Contains(damagedEnemy))
@@ -198,19 +210,6 @@ public class EncounterRoom
 			int actualDmgTaken=damagedEnemy.TakeDamage(damage,attackedPart,isRanged);
 			if (damagedEnemy.health<=0) 
 			{
-				//hasEnemies=false;
-				//EncounterCanvasHandler.main.DisplayNewMessage(damagedEnemy.name+" killed!");
-				/*
-				if (parentEncounter.GetType()==typeof(Horde)) 
-				{
-					Horde parentHorde=parentEncounter as Horde;
-					parentHorde.DeadEnemyReport();
-				}
-				if (parentEncounter.GetType()==typeof(Hive))
-				{
-					Hive parentHive=parentEncounter as Hive;
-					parentHive.DeadEnemyReport();
-				}*/
 				//check if any more enemies remain in room
 				enemiesInRoom.Remove(damagedEnemy);
 				if (enemiesInRoom.Count==0) {hasEnemies=false;}
@@ -219,7 +218,7 @@ public class EncounterRoom
 			return actualDmgTaken;
 		}
 		else {throw new System.Exception("Trying to damage an enemy that does not exist in the room!");}
-	}
+	}*/
 	
 	//LOOT/ITEM METHODS
 	public void AddFloorItem(InventoryItem item)

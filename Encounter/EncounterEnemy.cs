@@ -46,16 +46,16 @@ public struct EnemyAttack
 	public int damageDealt;
 	public bool hitSuccesful;
 	public bool blocked;
-	public PartyMember attackedMember;
+	public IGotHitAnimation attackedTarget;
 	public EncounterEnemy attackingEnemy;
 	public PartyMember.BodyPartTypes hitBodyPart;
 	
-	public EnemyAttack(bool attackHit,int dmg, bool blockStatus, PartyMember defender, EncounterEnemy attacker
+	public EnemyAttack(bool attackHit,int dmg, bool blockStatus, IGotHitAnimation defender, EncounterEnemy attacker
 	, PartyMember.BodyPartTypes hitPart)
 	{
 		damageDealt=dmg;
 		blocked=blockStatus;
-		attackedMember=defender;
+		attackedTarget=defender;
 		attackingEnemy=attacker;
 		hitSuccesful=attackHit;
 		hitBodyPart=hitPart;
@@ -174,8 +174,11 @@ public abstract class EncounterEnemy
 	//public int encounterCount=5;
 	public float moveChance=0.1f;//0.4f;
 	public List<StatusEffect> activeEffects=new List<StatusEffect>();
-	int xCoord;
-	int yCoord;
+	public int xCoord;
+	public int yCoord;
+
+	public bool inFront=true;
+
 	protected int visionRange=0;
 	protected int barricadeBashStrength=0;
 	
@@ -211,14 +214,18 @@ public abstract class EncounterEnemy
 			//BodyPart damagedPart=attackedPart;//bodyParts[0];
 			damagedPart.DamageBodypart(dmgTaken);//.hp-=dmgTaken;
 			//Make this work within the damage routine in encountercanvashandler later
-			if (EncounterCanvasHandler.main.roomButtons[GetCoords()].isVisible)
+			//if (health<=0) EncounterCanvasHandler.main.DespawnEnemy(this);
+			//else
 			{
-				//EncounterCanvasHandler.main.AddNewLogMessage(name+"'s "+damagedPart.name+" is damaged for "+dmgTaken);
-				if (damagedPart.hp<=0) 
+				if (EncounterCanvasHandler.main.roomButtons[GetCoords()].isVisible)
 				{
-					//if (damagedPart.destructionEffect!=null) damagedPart.destructionEffect.Invoke();
-					EncounterCanvasHandler.main.AddNewLogMessage(name+"'s "+damagedPart.name+" is broken!");
-					bodyParts.Remove(damagedPart);//.Remove(damagedPart);
+					//EncounterCanvasHandler.main.AddNewLogMessage(name+"'s "+damagedPart.name+" is damaged for "+dmgTaken);
+					if (damagedPart.hp<=0) 
+					{
+						//if (damagedPart.destructionEffect!=null) damagedPart.destructionEffect.Invoke();
+						EncounterCanvasHandler.main.AddNewLogMessage(name+"'s "+damagedPart.name+" is broken!");
+						bodyParts.Remove(damagedPart);//.Remove(damagedPart);
+					}
 				}
 			}
 		}
@@ -237,23 +244,25 @@ public abstract class EncounterEnemy
 		AttackAction(membersWithinReach);
 	}*/
 	
-	public virtual EnemyAttack AttackAction(List<PartyMember> membersWithinReach)//Dictionary<PartyMember,Vector2> memberCoords)
+	public virtual EnemyAttack AttackAction(List<IGotHitAnimation> targetsWithinReach)//Dictionary<PartyMember,Vector2> memberCoords)
 	{
 		/*List<PartyMember> membersInRoom=new List<PartyMember>();
 		foreach (PartyMember key in memberCoords.Keys) 
 		{
 			if (memberCoords[key]==new Vector2(xCoord,yCoord)) membersInRoom.Add(key);
 		}*/
-		PartyMember attackedMember=null;
+		IGotHitAnimation attackedTarget=null;
 		EnemyAttack performedAttack=new EnemyAttack();
-		if (membersWithinReach.Count>0)
+		if (targetsWithinReach.Count>0)
 		{
 			//Determine member to attack
-			attackedMember=membersWithinReach[Random.Range(0,membersWithinReach.Count)];
+			attackedTarget=null;//targetsWithinReach[Random.Range(0,targetsWithinReach.Count)];
 			//actionMsg=null;
 			//return damage;
+			/*
 			EncounterCanvasHandler manager=EncounterCanvasHandler.main;//EncounterCanvasHandler.main;
 			//See if a member without defence mode on can be found within reach, if so pick the target out of those members
+
 			List<PartyMember> membersWithoutDefence=new List<PartyMember>();
 			foreach (PartyMember member in membersWithinReach)
 			{
@@ -263,26 +272,61 @@ public abstract class EncounterEnemy
 				}
 			}
 			if (membersWithoutDefence.Count>0) attackedMember=membersWithoutDefence[Random.Range(0,membersWithoutDefence.Count)];
-			
+			*/
+			//If a barricade is in the room, pick that as target, else - pick a random available members
+			if (maxAttackRange==0)
+			{
+				foreach (IGotHitAnimation target in targetsWithinReach)
+				{
+					if (target.GetType()==typeof(BarricadeToken)) {attackedTarget=target; break;}
+				}
+			}
+			//If no barricade target is found, attack a random available member
+			if (attackedTarget==null) attackedTarget=targetsWithinReach[Random.Range(0,targetsWithinReach.Count)];
+
+
 			//PartyMember attackedMember=manager.selectedMember;
 			//int targetedPCIndex=manager.selectedMember;
 			//manager.DamagePlayerCharacter(manager.selectedMember,damage);
-			//See if damage gets blocked
+
+			bool hitConnected=false;
+			bool blocked=false;
+
+			EncounterCanvasHandler manager=EncounterCanvasHandler.main;
 			int myDamageRoll=Random.Range(minDamage,maxDamage+1);
 			myDamageRoll=Mathf.RoundToInt(myDamageRoll*damageMod);
-			int realStaminaDamage=staminaDamage;
-			int realDmg=0;//manager.memberTokens[attackedMember].DamageAssignedMember(myDamageRoll,ref realStaminaDamage);//attackedMember.TakeDamage(myDamageRoll);
-			//Have to assign this because value types can't be assigned null
+			int realDmg=0;
 			PartyMember.BodyPartTypes hitMemberPart=PartyMember.BodyPartTypes.Hands;
-			bool hitConnected=manager.memberTokens[attackedMember].TryHitAssignedMember(myDamageRoll,out realDmg, out realStaminaDamage, out hitMemberPart);
-			bool blocked=realStaminaDamage!=0;
-			
-			//If damage is blocked, send stamina damage instead
-			//if (blocked) {realDmg=realStaminaDamage;}
+
+			//See what type of target you are attacking
+			if (attackedTarget.GetType()==typeof(MemberTokenHandler))
+			{
+				//If attacking member
+				//EncounterCanvasHandler.main;
+				MemberTokenHandler attackedMemberToken=attackedTarget as MemberTokenHandler;
+				//See if damage gets blocked
+				int realStaminaDamage=staminaDamage;
+				//manager.memberTokens[attackedMember].DamageAssignedMember(myDamageRoll,ref realStaminaDamage);//attackedMember.TakeDamage(myDamageRoll);
+				//Have to assign this because value types can't be assigned null
+
+				hitConnected=attackedMemberToken.TryHitAssignedMember(myDamageRoll,out realDmg, out realStaminaDamage, out hitMemberPart);
+				blocked=realStaminaDamage!=0;
+				//If damage is blocked, send stamina damage instead
+				//if (blocked) {realDmg=realStaminaDamage;}
+			}
+			else
+			{
+				//If attacking barricade
+				manager.roomButtons[GetCoords()].BashBarricade(myDamageRoll);
+				realDmg=myDamageRoll;
+				blocked=false;
+				hitConnected=true;
+			}
+
 			//manager.VisualizeDamageToMember(realDmg,blocked,attackedMember,this);
-			performedAttack=new EnemyAttack(hitConnected,realDmg,blocked,attackedMember,this, hitMemberPart);
+			performedAttack=new EnemyAttack(hitConnected,realDmg,blocked,attackedTarget,this, hitMemberPart);
 			int attackNoiseIntensity=1;
-			manager.MakeNoise(GetCoords(),attackNoiseIntensity);
+			//manager.MakeNoise(GetCoords(),attackNoiseIntensity);
 			//StartCoroutine(manager.VisualizeAttack(realDmg,manager.enemyTokens[this],manager.memberTokens[attackedMember]));
 		} 
 		else {throw new System.Exception("EncounterEnemy attack called while no members are within reach!");}
@@ -410,7 +454,7 @@ public abstract class EncounterEnemy
 				if (map.ContainsKey(cursorPos)) 
 				{
 					EncounterRoom checkedRoom=map[cursorPos];
-					if (!checkedRoom.isWall && /*!checkedRoom.hasEnemies &&*/ checkedRoom.barricadeInRoom==null) 
+					if (!checkedRoom.isWall) //&& /*!checkedRoom.hasEnemies &&*/ checkedRoom.barricadeInRoom==null) 
 					{availableCoords.Add(cursorPos);}
 				}
 				
@@ -435,19 +479,20 @@ public abstract class EncounterEnemy
 		{
 			RoomButtonHandler moveRoom=EncounterCanvasHandler.main.roomButtons[moveCoords];
 			RoomButtonHandler startRoom=EncounterCanvasHandler.main.roomButtons[startCoords];
-			if (moveRoom.assignedRoom.barricadeInRoom==null)
+			//if (moveRoom.assignedRoom.barricadeInRoom==null)
 			{
-				startRoom.MoveEnemyOutOfRoom(this);
+				//startRoom.MoveEnemyOutOfRoom(this);
 				//ORDER IS IMPORTANT!
 				SetCoords(moveCoords);
 				moveRoom.MoveEnemyInRoom(this);
 				move=moveCoords;
 			}
+			/*
 			else
 			{
 			 	if (moveRoom.isVisible) EncounterCanvasHandler.main.AddNewLogMessage(name+" smashes a barricade for "+barricadeBashStrength);
 				moveRoom.BashBarricade(barricadeBashStrength);
-			}
+			}*/
 			movePerformed=true;
 		}
 		return movePerformed;
@@ -525,19 +570,24 @@ public abstract class EncounterEnemy
 				
 				//Find if any members are visible !!!CONSIDER CHANGING List<PartyMember> TO List<Vector2>!!!!!
 				List<PartyMember> visibleMembers=VisionCheck(map,memberCoords);
-				List<PartyMember> membersWithinAttackRange=new List<PartyMember>();
+				List<IGotHitAnimation> targetsWithinReach=new List<IGotHitAnimation>();
 				//see if any of the visible members are within maximum attack range
 				foreach (PartyMember member in visibleMembers) 
 				{
-					if (Mathf.Abs(memberCoords[member].x-xCoord)+Mathf.Abs(memberCoords[member].y-yCoord)<=maxAttackRange)
+					//Enemies can only attack members in front row, members in back row if none are in front row, or attack any row if they are ranged
+					if (Mathf.Abs(memberCoords[member].x-xCoord)+Mathf.Abs(memberCoords[member].y-yCoord)<=maxAttackRange
+					&& (maxAttackRange>=1 
+					|| (EncounterCanvasHandler.main.memberTokens[member].inFront || EncounterCanvasHandler.main.roomButtons[GetCoords()].membersInFront.Count==0)))
 					{
-						membersWithinAttackRange.Add(member);
+						targetsWithinReach.Add(EncounterCanvasHandler.main.memberTokens[member]);
 					}
 				}
+				if (EncounterCanvasHandler.main.roomButtons[GetCoords()].assignedRoom.barricadeInRoom!=null)
+				targetsWithinReach.Add(EncounterCanvasHandler.main.roomButtons[GetCoords()].currentBarricadeToken);
 				//If any members are within attack range, attack, otherwise move on to the next fork
-				if (membersWithinAttackRange.Count>0)
+				if (targetsWithinReach.Count>0)
 				{	
-					performedAttack=AttackAction(membersWithinAttackRange);
+					performedAttack=AttackAction(targetsWithinReach);
 					roundIsAttack=true;		
 				}
 				else
@@ -561,15 +611,16 @@ public abstract class EncounterEnemy
 								totalMovesDone++;
 								//If any members are within attack range, stop mid-movement
 								visibleMembers=VisionCheck(map,memberCoords,newMove);
-								membersWithinAttackRange=new List<PartyMember>();
+								targetsWithinReach.Clear();
 								foreach (PartyMember member in visibleMembers) 
 								{
-									if (Mathf.Abs(memberCoords[member].x-xCoord)+Mathf.Abs(memberCoords[member].y-yCoord)<=maxAttackRange)
+									if (Mathf.Abs(memberCoords[member].x-xCoord)+Mathf.Abs(memberCoords[member].y-yCoord)<=maxAttackRange
+									&& (maxAttackRange>=0 || EncounterCanvasHandler.main.memberTokens[member].inFront))
 									{
-										membersWithinAttackRange.Add(member);
+										targetsWithinReach.Add(EncounterCanvasHandler.main.memberTokens[member]);
 									}
 								}
-								if (membersWithinAttackRange.Count>0) break;
+								if (targetsWithinReach.Count>0) break;
 							}
 						}
 						move=new EnemyMove(movesCoords,startingCoords);
@@ -673,7 +724,7 @@ public class Transient:EncounterEnemy
 		return base.TakeDamage(realDmg, isRanged);
 	}*/
 	
-	public override EnemyAttack AttackAction(List<PartyMember> presentMembers)//Dictionary<PartyMember,Vector2> memberCoords)
+	public override EnemyAttack AttackAction(List<IGotHitAnimation> presentTargets)//Dictionary<PartyMember,Vector2> memberCoords)
 	{
 		phasedIn=true;
 		//EncounterCanvasHandler.main.RemoveEnemyStatusEffect(myEffect);
@@ -682,7 +733,7 @@ public class Transient:EncounterEnemy
 		{
 			//EncounterCanvasHandler.main.DisplayNewMessage(name+" phases in!");			
 		}
-		return base.AttackAction(presentMembers);
+		return base.AttackAction(presentTargets);
 	}
 	/*
 	public override void TurnAction()
@@ -710,6 +761,8 @@ public class Gasser:EncounterEnemy
 		barricadeBashStrength=minDamage;
 		visionRange=1;
 		maxAttackRange=1;
+		inFront=false;
+		if (Random.value<0.5f) inFront=true;
 		bodyParts.Add(new BodyPart("Vitals",health,null,(int newHealth)=>{this.health=newHealth;},BodyPart.PartTypes.Vitals,0.8f));
 		bodyParts.Add(new BodyPart("Legs",45,()=>{this.AddStatusEffect(new NoLegs(this));},null,BodyPart.PartTypes.Legs,0.6f));
 	}
@@ -734,10 +787,10 @@ public class Gasser:EncounterEnemy
 		return recievedDamage;
 	}
 	
-	public override EnemyAttack AttackAction (List<PartyMember> presentMembers)//Dictionary<PartyMember,Vector2> memberCoords)
+	public override EnemyAttack AttackAction (List<IGotHitAnimation> presenttargets)//Dictionary<PartyMember,Vector2> memberCoords)
 	{
 		damageGainedThisRound=0;
-		return base.AttackAction (presentMembers);
+		return base.AttackAction (presenttargets);
 	}
 }
 
@@ -771,16 +824,20 @@ public class Spindler:EncounterEnemy
 		bodyParts.Add(new BodyPart("Legs",90,()=>{this.AddStatusEffect(new NoLegs(this));},null,BodyPart.PartTypes.Legs,0.5f));
 	}
 	
-	public override EnemyAttack AttackAction (List<PartyMember> presentMembers)//Dictionary<PartyMember,Vector2> memberCoords)
+		public override EnemyAttack AttackAction (List<IGotHitAnimation> presenttargets)//Dictionary<PartyMember,Vector2> memberCoords)
 	{
-		EnemyAttack performedAttack=base.AttackAction(presentMembers);
-		PartyMember targetMember=performedAttack.attackedMember;//memberCoords);
-		//Stamina damage part makes sure it can't inflict bleed while under NoArms
-		if (targetMember!=null)
+		EnemyAttack performedAttack=base.AttackAction(presenttargets);
+		if (performedAttack.attackedTarget.GetType()==typeof(MemberTokenHandler))
 		{
-			if (staminaDamage>=2 && performedAttack.hitSuccesful) PartyManager.mainPartyManager.AddPartyMemberStatusEffect(targetMember,new Bleed());
-		} 
-		else {throw new System.Exception("Spindler tried to assign bleed to null PartyMember");}
+			MemberTokenHandler attackedMemberToken=performedAttack.attackedTarget as MemberTokenHandler;
+			PartyMember targetMember=attackedMemberToken.myMember;//memberCoords);
+			//Stamina damage part makes sure it can't inflict bleed while under NoArms
+			if (targetMember!=null)
+			{
+				if (staminaDamage>=2 && performedAttack.hitSuccesful) PartyManager.mainPartyManager.AddPartyMemberStatusEffect(targetMember,new Bleed());
+			} 
+			else {throw new System.Exception("Spindler tried to assign bleed to null PartyMember");}
+		}
 		return performedAttack;
 	}
 }

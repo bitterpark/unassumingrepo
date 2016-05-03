@@ -14,7 +14,7 @@ public class Trap
 	{
 		if (!EncounterCanvasHandler.main.encounterOngoing) {throw new System.Exception("Trap set off outside of an encounter!");}
 		
-		if (assignedRoom.hasEnemies && !sprung) 
+		if (EncounterCanvasHandler.main.roomButtons[assignedRoom.GetCoords()] && !sprung) 
 		{
 			if (assignedToken==null) {throw new System.Exception("Trying to set off a trap with no token assigned!");}
 			//GameManager.DebugPrint("begginning trap setoff");

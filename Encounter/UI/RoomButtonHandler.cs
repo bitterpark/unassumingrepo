@@ -5,11 +5,25 @@ using UnityEngine.UI;
 using UnityEngine.EventSystems;
 using Vectrosity;
 
-public class RoomButtonHandler : MonoBehaviour, IPointerEnterHandler//, IDropHandler
+public class RoomButtonHandler : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler//, IDropHandler
 {
 
 	public int roomX;
 	public int roomY;
+
+	public float enemySpawnProbability
+	{
+		get {return _enemySpawnProbability;}
+		set 
+		{
+			_enemySpawnProbability=Mathf.Clamp(value,0,1);
+			UpdateVisuals();
+		}
+	}
+	float _enemySpawnProbability=0;
+
+	const float nonredColorDampingMult=0.5f;
+
 	public Vector2 GetRoomCoords() {return new Vector2(roomX,roomY);}
 	
 	public GameObject lootToken;
@@ -24,6 +38,8 @@ public class RoomButtonHandler : MonoBehaviour, IPointerEnterHandler//, IDropHan
 	public GameObject heardEnemyPrefab;
 	public TrapToken trapPrefab;
 	public BarricadeToken barricadePrefab;
+
+	public BarricadeToken currentBarricadeToken=null;
 	
 	Dictionary<InventoryItem, GameObject> floorItemTokens=new Dictionary<InventoryItem, GameObject>();
 	
@@ -33,7 +49,7 @@ public class RoomButtonHandler : MonoBehaviour, IPointerEnterHandler//, IDropHan
 	public bool isVisible;
 	bool isWithinHearingRange;
 	bool isDiscovered;
-	public bool hasEnemies;
+	//public bool hasEnemies;
 	bool hasLoot;
 	bool lootIsLocked;
 	bool canBarricade;
@@ -41,34 +57,77 @@ public class RoomButtonHandler : MonoBehaviour, IPointerEnterHandler//, IDropHan
 	public EncounterRoom assignedRoom=null;
 	
 	public Transform enemiesGroup;
+	public Transform enemiesGroupBack;
+	public Transform enemiesGroupFront;
+
+	public List<EnemyTokenHandler> enemiesInFront=new List<EnemyTokenHandler>();
+	public List<EnemyTokenHandler> enemiesInBack=new List<EnemyTokenHandler>();
+	public int GetTotalEnemyCount() {return enemiesInFront.Count+enemiesInBack.Count;}
+	public List<EnemyTokenHandler> GetAllEnemiesInRoom() 
+	{
+		List<EnemyTokenHandler> allEnemyTokens=new List<EnemyTokenHandler>();
+		allEnemyTokens.AddRange(new List<EnemyTokenHandler>(enemiesInFront));
+		allEnemyTokens.AddRange(new List<EnemyTokenHandler>(enemiesInBack));
+		return allEnemyTokens;
+	}
+	public bool RoomHasEnemies() {return (enemiesInFront.Count>0 || enemiesInBack.Count>0);}
+
 	public Transform membersGroup;
+	public Transform membersGroupBack;
+	public Button moveToBackButton;
+	public Transform membersGroupFront;
+	public Button moveToFrontButton;
+
+	public List<MemberTokenHandler> membersInFront=new List<MemberTokenHandler>();
+	public List<MemberTokenHandler> membersInBack=new List<MemberTokenHandler>();
+	public int GetTotalMembersInRoom() {return membersInFront.Count+membersInBack.Count;}
 
 	public Color wallColor;
 	
 	public VectorUI aimLinePrefab;
 	protected static VectorUI aimLine;
-	
+
+	public EnemyTokenHandler SpawnNewEnemyInRoom()
+	{
+		EnemyTokenHandler newEnemyToken=Instantiate(EncounterCanvasHandler.main.enemyTokenPrefab);
+		newEnemyToken.AssignEnemy(EncounterEnemy.GetEnemy(assignedRoom.parentEncounter.encounterEnemyType,GetRoomCoords()));
+		return newEnemyToken;
+	}
+
 	public void AttachEnemyToken(Transform tokenTransform)
 	{
 		enemiesGroup.gameObject.SetActive(true);
 		//If an enemy moves into a room with no members present - center the token, else - set up token anchoring for battle mode
-		if (membersGroup.childCount==0) 
+		UpdateMemberGroup();
+
+		EnemyTokenHandler enemyToken=tokenTransform.GetComponent<EnemyTokenHandler>();
+
+		if (tokenTransform.GetComponent<EnemyTokenHandler>().assignedEnemy.inFront)
 		{
-			membersGroup.gameObject.SetActive(false);
-			//enemiesGroup.GetComponent<VerticalLayoutGroup>().childAlignment=TextAnchor.MiddleCenter;
+			//If enemy is a frontliner, set to front
+			tokenTransform.SetParent(enemiesGroupFront,false);
+			if (enemiesInBack.Contains(enemyToken)) enemiesInBack.Remove(enemyToken);
+			enemiesInFront.Add(enemyToken);
 		}
 		else
 		{
-			//enemiesGroup.GetComponent<VerticalLayoutGroup>().childAlignment=TextAnchor.LowerCenter;
-			//membersGroup.GetComponent<VerticalLayoutGroup>().childAlignment=TextAnchor.UpperCenter;
+			tokenTransform.SetParent(enemiesGroupBack,false);
+			if (enemiesInFront.Contains(enemyToken)) enemiesInFront.Remove(enemyToken);
+			enemiesInBack.Add(enemyToken);
 		}
-		tokenTransform.SetParent(enemiesGroup,false);
 	}
+
+	public void EnemyTokenDestroyed(EnemyTokenHandler token)
+	{
+		if (enemiesInFront.Contains(token)) enemiesInFront.Remove(token);
+		if (enemiesInBack.Contains(token)) enemiesInBack.Remove(token);
+	}
+
 	public void AttachMemberToken(Transform tokenTransform)
 	{
 		membersGroup.gameObject.SetActive(true);
 		//If a member moves into a room with no enemies present - center the token, else - set up token anchoring for battle mode
-		if (enemiesGroup.childCount==0) 
+		if (enemiesGroupBack.childCount==0 && enemiesGroupFront.childCount==0) 
 		{
 			enemiesGroup.gameObject.SetActive(false);
 			//membersGroup.GetComponent<VerticalLayoutGroup>().childAlignment=TextAnchor.MiddleCenter;
@@ -78,9 +137,67 @@ public class RoomButtonHandler : MonoBehaviour, IPointerEnterHandler//, IDropHan
 			//enemiesGroup.GetComponent<VerticalLayoutGroup>().childAlignment=TextAnchor.LowerCenter;
 			//membersGroup.GetComponent<VerticalLayoutGroup>().childAlignment=TextAnchor.UpperCenter;
 		}
-		tokenTransform.SetParent(membersGroup,false);
+		MoveMemberToFront(tokenTransform.GetComponent<MemberTokenHandler>());
 	}
-	
+
+	public void MoveMemberToFront(MemberTokenHandler memberToken)
+	{
+		memberToken.transform.SetParent(membersGroupFront,false);
+		memberToken.transform.GetComponent<MemberTokenHandler>().inFront=true;
+		if (membersInBack.Contains(memberToken)) membersInBack.Remove(memberToken);
+		membersInFront.Add(memberToken);
+		SelectedMemberMovesUpdate(memberToken);
+	}
+	public void MoveMemberToBack(MemberTokenHandler memberToken)
+	{
+		memberToken.transform.SetParent(membersGroupBack,false);
+		memberToken.transform.GetComponent<MemberTokenHandler>().inFront=false;
+		if (membersInFront.Contains(memberToken)) membersInFront.Remove(memberToken);
+		membersInBack.Add(memberToken);
+		SelectedMemberMovesUpdate(memberToken);
+	}
+
+	public void SelectedMemberMovesUpdate(MemberTokenHandler selectedMemberHandler)
+	{
+			if (selectedMemberHandler.currentAllowedMovesCount>0)
+			{
+				if (selectedMemberHandler.inFront) 
+				{	
+					moveToFrontButton.gameObject.SetActive(false);
+					moveToBackButton.gameObject.SetActive(true);
+				}
+				else
+				{
+					moveToFrontButton.gameObject.SetActive(true);
+					moveToBackButton.gameObject.SetActive(false);
+				}
+			}
+			else
+			{
+				moveToFrontButton.gameObject.SetActive(false);
+				moveToBackButton.gameObject.SetActive(false);
+			}
+	}
+
+	public void MemberGone(MemberTokenHandler memberToken)
+	{
+		if (membersInFront.Contains(memberToken)) membersInFront.Remove(memberToken);
+		else if (membersInBack.Contains(memberToken)) membersInBack.Remove(memberToken);
+		//if ()
+		UpdateMemberGroup();
+	}
+
+	public void UpdateMemberGroup()
+	{
+		if (membersInFront.Count==0 && membersInBack.Count==0 && assignedRoom.barricadeInRoom==null) membersGroup.gameObject.SetActive(false);
+		MemberTokenHandler selectedMember=EncounterCanvasHandler.main.memberTokens[EncounterCanvasHandler.main.selectedMember];
+		if (!membersInFront.Contains(selectedMember) && !membersInBack.Contains(selectedMember))
+		{ 
+			moveToBackButton.gameObject.SetActive(false);
+			moveToFrontButton.gameObject.SetActive(false);
+		}
+	}
+
 	public void AssignRoom(EncounterRoom newRoom)
 	{
 		roomX=newRoom.xCoord;
@@ -92,7 +209,7 @@ public class RoomButtonHandler : MonoBehaviour, IPointerEnterHandler//, IDropHan
 			isWall=assignedRoom.isWall;
 			isExit=assignedRoom.isExit;
 			isDiscovered=assignedRoom.isDiscovered;
-			hasEnemies=assignedRoom.hasEnemies;
+			//hasEnemies=assignedRoom.hasEnemies;
 			hasLoot=assignedRoom.hasLoot;
 			lootIsLocked=assignedRoom.lootIsLocked;
 			canBarricade=assignedRoom.canBarricade;
@@ -106,12 +223,15 @@ public class RoomButtonHandler : MonoBehaviour, IPointerEnterHandler//, IDropHan
 			isWithinHearingRange=false;
 			//isVisible=assignedRoom.isVisible;
 			GetComponent<Button>().onClick.AddListener(()=>EncounterCanvasHandler.main.RoomClicked(this));
-			
+
+			moveToBackButton.onClick.AddListener(()=>EncounterCanvasHandler.main.MoveMemberWithinRoomClicked(this,true));
+			moveToFrontButton.onClick.AddListener(()=>EncounterCanvasHandler.main.MoveMemberWithinRoomClicked(this,false));
+
 			foreach (InventoryItem item in newRoom.floorItems) {AddFloorItem(item);}
 		}
 		else GetComponent<Image>().enabled=false;
 	}
-	
+
 	public void SetVisibility(bool visible)
 	{
 		isVisible=visible;
@@ -131,9 +251,10 @@ public class RoomButtonHandler : MonoBehaviour, IPointerEnterHandler//, IDropHan
 	void SpawnNewBarricadeToken()
 	{
 		BarricadeToken newToken=Instantiate(barricadePrefab);
-		newToken.transform.SetParent(barricadeGroup,false);
+		newToken.transform.SetParent(membersGroupFront,false);
 		newToken.transform.position=barricadeGroup.position;
 		newToken.AssignBarricade(this);
+		currentBarricadeToken=newToken;
 	}
 	
 	void DespawnBarricadeToken()
@@ -141,33 +262,34 @@ public class RoomButtonHandler : MonoBehaviour, IPointerEnterHandler//, IDropHan
 		if (GetComponentInChildren<BarricadeToken>()!=null)
 		{
 			GameObject.Destroy(GetComponentInChildren<BarricadeToken>().gameObject);
+			currentBarricadeToken=null;
 		}
 	}
 	
 	public void BashBarricade(int bashStrength)
 	{
 		assignedRoom.BashBarricade(bashStrength);
-		BarricadeToken myBarricadeToken=GetComponentInChildren<BarricadeToken>();
-		if (isVisible) EncounterCanvasHandler.main.SendFloatingMessage(bashStrength.ToString(),this.transform,Color.black);
+		//BarricadeToken myBarricadeToken=GetComponentInChildren<BarricadeToken>();
+		//if (isVisible) EncounterCanvasHandler.main.SendFloatingMessage(bashStrength.ToString(),this.transform,Color.black);
 		if (assignedRoom.barricadeInRoom==null) {DespawnBarricadeToken();}
-		else {myBarricadeToken.UpdateHealth(assignedRoom.barricadeInRoom.health);}
+		else {currentBarricadeToken.UpdateHealth(assignedRoom.barricadeInRoom.health);}
 	}
-	
+	/*
 	public int AttackEnemyInRoom(int damage, BodyPart attackedPart, EncounterEnemy attackedEnemy, bool isRanged)
 	{
 		return assignedRoom.DamageEnemy(damage,attackedPart,attackedEnemy,isRanged);
-	}
-	
+	}*/
+	//Currently unused
 	//These methods are the go-between to external scripts and assigned EncounterRoom
 	public void MoveEnemyInRoom(EncounterEnemy enemy)
 	{
-		assignedRoom.MoveEnemyIn(enemy);
+		//assignedRoom.MoveEnemyIn(enemy);
 		//Set off traps
 		if (assignedRoom.trapInRoom!=null) 
 		{
 			assignedRoom.trapInRoom.SetOff(enemy);
 		}
-		
+		/*
 		//Do hearing tokens
 		if (isWithinHearingRange && !isVisible && GetComponentInChildren<HearingTokenHandler>()==null)
 		{
@@ -175,29 +297,32 @@ public class RoomButtonHandler : MonoBehaviour, IPointerEnterHandler//, IDropHan
 			newObject.transform.SetParent(this.transform,false);
 			newObject.transform.position=transform.position;
 		}
-		
 		if (assignedRoom.hasEnemies!=hasEnemies) 
 		{
 			hasEnemies=assignedRoom.hasEnemies;
 			UpdateVisuals();
-		}
+		}*/
 	}
+	//Currently unused
+	/*
 	public void MoveEnemyOutOfRoom(EncounterEnemy enemy)
 	{
 		assignedRoom.MoveEnemyOut(enemy);
+
 		if (assignedRoom.hasEnemies!=hasEnemies) 
 		{
 			hasEnemies=assignedRoom.hasEnemies;
 			UpdateVisuals();
 		}
-	}
+	}*/
 	
 	public void SetTrap(Trap trap, bool addToAssignedRoom)
 	{
 		if (addToAssignedRoom) assignedRoom.trapInRoom=trap;
 		TrapToken trapToken=Instantiate(trapPrefab);
 		trap.assignedToken=trapToken;
-		trapToken.transform.SetParent(transform,false);
+		enemiesGroup.gameObject.SetActive(true);
+		trapToken.transform.SetParent(enemiesGroupFront,false);
 		trapToken.transform.position=transform.position;
 		trapToken.AssignTrap(trap,assignedRoom);
 	}
@@ -208,7 +333,7 @@ public class RoomButtonHandler : MonoBehaviour, IPointerEnterHandler//, IDropHan
 		else
 		{
 			assignedRoom.trapInRoom=null;
-			TrapToken myChildTrapToken=GetComponentInChildren<TrapToken>();
+			TrapToken myChildTrapToken=enemiesGroupFront.GetComponentInChildren<TrapToken>();
 			if (myChildTrapToken!=null) GameObject.Destroy(myChildTrapToken.gameObject);
 		}
 	}
@@ -343,20 +468,29 @@ public class RoomButtonHandler : MonoBehaviour, IPointerEnterHandler//, IDropHan
 				if (barricadeMaterialsText!=null) barricadeMaterialsText.text=assignedRoom.barricadeMaterials.ToString();
 			}
 			else barricadeBuildToken.SetActive(false);
-			
+
+			//Find nonred damping (how red the color should be)
+
+			//Color32 roomColor=new Color32(255,nonRedColorComponent,nonRedColorComponent,255);
+
 			if (!isVisible) 
 			{
 				//Hide barricades
 				BarricadeToken assignedBarricadeToken=GetComponentInChildren<BarricadeToken>();
 				if (assignedBarricadeToken!=null) {assignedBarricadeToken.SetHidden(true);}
 				//switch off Enemy Group and Member Group to hide enemies in fog of war
-				actorsGroup.gameObject.SetActive(false);
+				actorsGroup.gameObject.SetActive(false); //!!!
 				if (!isDiscovered) 
 				{
 					GetComponent<Button>().image.color=Color.gray;
 					itemsGroup.gameObject.SetActive(false);
 				}
-				else {GetComponent<Button>().image.color=new Color32(172,172,172,255);}
+				else 
+				{
+					byte baseColor=172;
+					byte nonRedColorComponent=(byte)Mathf.RoundToInt(baseColor-baseColor*_enemySpawnProbability*nonredColorDampingMult);
+					GetComponent<Button>().image.color=new Color32(baseColor,nonRedColorComponent,nonRedColorComponent,255);
+				}
 				//Hide traps
 				foreach (TrapToken trap in GetComponentsInChildren<TrapToken>())
 				{
@@ -379,7 +513,9 @@ public class RoomButtonHandler : MonoBehaviour, IPointerEnterHandler//, IDropHan
 				}
 				//if (assignedBarricadeToken!=null) {assignedBarricadeToken.GetComponent<Image>(}
 				//Set color
-				GetComponent<Button>().image.color=Color.white;
+				byte baseColor=255;
+				byte nonRedColorComponent=(byte)Mathf.RoundToInt(baseColor-baseColor*_enemySpawnProbability*nonredColorDampingMult);
+				GetComponent<Button>().image.color=new Color32(baseColor,nonRedColorComponent,nonRedColorComponent,255);
 				//Switch on Enemy Group and Member Group
 				actorsGroup.gameObject.SetActive(true);
 				itemsGroup.gameObject.SetActive(true);
@@ -480,28 +616,14 @@ public class RoomButtonHandler : MonoBehaviour, IPointerEnterHandler//, IDropHan
 	#region IPointerEnterHandler implementation
 	public void OnPointerEnter (PointerEventData eventData)
 	{
-		//List<Vector2> lineCoords=new List<Vector2>();
-		//print ("Room coords:"+transform.position);
-		/*
-		Vector3 newPoint;
-		RectTransformUtility.ScreenPointToWorldPointInRectangle
-		(GetComponent<RectTransform>()
-		 ,GetComponent<RectTransform>().rect.center
-		 ,Camera.main,
-		 out newPoint);
-		lineCoords.Add(newPoint);
-		RectTransform otherRect=EncounterCanvasHandler.main.roomButtons[EncounterCanvasHandler.main.memberCoords[EncounterCanvasHandler.main.selectedMember]]
-		.GetComponent<RectTransform>();
-		RectTransformUtility.ScreenPointToWorldPointInRectangle
-		(otherRect
-		 ,otherRect.rect.center
-		 ,Camera.main,
-		 out newPoint);
-		lineCoords.Add(newPoint);*/
-		
-		//lineCoords.Add(EncounterCanvasHandler.main.roomButtons[EncounterCanvasHandler.main.memberCoords[EncounterCanvasHandler.main.selectedMember]]
-		//.GetComponent<RectTransform>().position);
-		//List<Vector2> lineCoords=new List<Vector2>();
+		if (isDiscovered && !isWall)
+		{
+			//Show enemy spawn chance
+			string tooltipText="";
+			tooltipText+="Enemy encounter chance - "+enemySpawnProbability;
+			TooltipManager.main.CreateTooltip(tooltipText,transform);
+		}
+
 		//For brevity
 		EncounterCanvasHandler handler=EncounterCanvasHandler.main;
 		//Dispose the old aimline
@@ -548,17 +670,15 @@ public class RoomButtonHandler : MonoBehaviour, IPointerEnterHandler//, IDropHan
 				}
 			}
 		}
-		/*
-		lineCoords.Add((Vector2)transform.position);//GetComponent<RectTransform>().rect.position);
-		lineCoords.Add((Vector2)EncounterCanvasHandler.main.roomButtons[EncounterCanvasHandler.main.memberCoords[EncounterCanvasHandler.main.selectedMember]]
-		.transform.position);*///GetComponent<RectTransform>().rect.position);
-		//lineCoords.Add(Vector3.zero);
-		//testLine=new VectorLine("testLine",lineCoords,3f);
-		//testLine.color=Color.black;
-		/*
-		VectorUI newThing=Instantiate(testThing);
-		newThing.AssignVectorLine(testLine,transform.parent);
-		myThing=newThing;*/
+	}
+
+	#endregion
+
+	#region IPointerExitHandler implementation
+
+	public void OnPointerExit(PointerEventData eventData)
+	{
+		TooltipManager.main.StopAllTooltips();
 	}
 
 	#endregion

@@ -634,13 +634,13 @@ public class MapRegion : MonoBehaviour
 				else
 				{
 					bool nonuniformPartyMoveCost=false;
-					int maxFatiguePenalty=PartyManager.mainPartyManager.selectedMembers[0].currentFatigueMovePenalty;
+					int maxFatiguePenalty=PartyManager.mainPartyManager.selectedMembers[0].currentFatigueMoveModifier;
 					foreach (PartyMember member in PartyManager.mainPartyManager.selectedMembers)
 					{
-						if (member.currentFatigueMovePenalty>maxFatiguePenalty) 
+						if (member.currentFatigueMoveModifier!=maxFatiguePenalty) 
 						{
 							nonuniformPartyMoveCost=true;
-							maxFatiguePenalty=member.currentFatigueMovePenalty;
+							maxFatiguePenalty=member.currentFatigueMoveModifier;
 						}
 					}
 					if (nonuniformPartyMoveCost) areaDescription+="--";

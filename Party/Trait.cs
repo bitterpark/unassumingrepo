@@ -164,7 +164,7 @@ public class Quiet:Skill
 		//member.dodgeChance+=0.25f;
 		
 	}//+=healthUpgrade;}
-	public override string GetMouseoverDescription (){return "Walks softly\n\nNo walking sound";}
+	public override string GetMouseoverDescription (){return "Walks softly\n\nReduces walking sound";}
 }
 
 public class Agile:Skill
@@ -195,6 +195,8 @@ public class Quick:Skill
 	}//+=healthUpgrade;}
 	public override string GetMouseoverDescription (){return "Good cardio\n\nExtra move per turn";}
 }
+
+
 //FIGHTER SKILLS
 /*
 public class Fighter:Skill
@@ -292,7 +294,42 @@ public class Fit:Skill
 	public override string GetMouseoverDescription (){return "Can run, jump and fight for extended periods of time\n\n+"+staminaUpgrade+" max stamina";}
 }
 
+//GENERIC SKILLS
+public class Scout:Skill
+{
+	int moveCostReduction=1;
+	public Scout()
+	{
+		name="Scout";
+		oppositePerk=typeof(Slow);
+	}
+	public override void ActivatePerk(PartyMember member)
+	{
+		member.currentFatigueMoveModifier-=moveCostReduction;//member.=0;//.barricadeAvoidanceEnabled=true;
+		//member.dodgeChance+=0.25f;
+		
+	}//+=healthUpgrade;}
+	public override string GetMouseoverDescription (){return "Trailblazer\n\nFatigue from map movement reduced by "+moveCostReduction;}
+}
+
 //GENERIC TRAITS
+
+public class Slow:Skill
+{
+	int moveCostIncrease=1;
+	public Slow()
+	{
+		name="Slow";
+		oppositePerk=typeof(Scout);
+	}
+	public override void ActivatePerk(PartyMember member)
+	{
+		member.currentFatigueMoveModifier+=moveCostIncrease;//member.=0;//.barricadeAvoidanceEnabled=true;
+		//member.dodgeChance+=0.25f;
+		
+	}//+=healthUpgrade;}
+	public override string GetMouseoverDescription (){return "Bad at navigating\n\nFatigue from map movement increased by "+moveCostIncrease;}
+}
 
 public class Scrawny:Trait
 {

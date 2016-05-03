@@ -3,11 +3,13 @@ using System.Collections;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
 
-public class BarricadeToken : MonoBehaviour, IPointerEnterHandler,IPointerExitHandler, IPointerDownHandler /*,IBeginDragHandler,IDragHandler,IEndDragHandler, IInitializePotentialDragHandler*/
+public class BarricadeToken : MonoBehaviour, IGotHitAnimation/*, IPointerEnterHandler,IPointerExitHandler, IPointerDownHandler ,IBeginDragHandler,IDragHandler,IEndDragHandler, IInitializePotentialDragHandler*/
 {
 	public static BarricadeToken barricadeTokenBeingDragged;
 	static bool dragPermitted=false;
 	public Text myHealthText;
+	public Image myImage;
+	const float gotHitAnimationTime=0.6f;
 	public RoomButtonHandler assignedRoomButton;
 	
 	public void AssignBarricade(RoomButtonHandler roomWithBarricade)
@@ -26,12 +28,12 @@ public class BarricadeToken : MonoBehaviour, IPointerEnterHandler,IPointerExitHa
 	{
 		if (hidden)
 		{
-			GetComponent<Image>().enabled=false;
+			myImage.enabled=false;
 			myHealthText.enabled=false;
 		}
 		else
 		{
-			GetComponent<Image>().enabled=true;
+			myImage.enabled=true;
 			myHealthText.enabled=true;
 		}
 	}
@@ -44,7 +46,7 @@ public class BarricadeToken : MonoBehaviour, IPointerEnterHandler,IPointerExitHa
 	{
 		EncounterCanvasHandler.main.BarricadeBashClicked(assignedRoomButton);
 	}*/
-
+	/*
 	#region IPointerDownHandler implementation
 
 	public void OnPointerDown (PointerEventData eventData)
@@ -78,6 +80,20 @@ public class BarricadeToken : MonoBehaviour, IPointerEnterHandler,IPointerExitHa
 		TooltipManager.main.StopAllTooltips();
 	}
 	
+	#endregion*/
+
+	#region IGotHitAnimation implementation
+
+	public IEnumerator GotHitAnimation ()
+	{
+		if (myImage!=null) myImage.transform.localScale=new Vector3(0.8f,0.8f,1f);
+		else yield break;
+		yield return new WaitForSeconds(gotHitAnimationTime);
+		//print ("yielding attack animation!");
+		if (myImage!=null) myImage.transform.localScale=new Vector3(1f,1f,1f);
+		yield break;
+	}
+
 	#endregion
 	/*
 	#region IBeginDragHandler implementation

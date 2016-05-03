@@ -49,7 +49,7 @@ public class MemberTokenHandler : MonoBehaviour, IAttackAnimation, IGotHitAnimat
 	}	
 	bool _selected=false;
 	
-	int currentAllowedMovesCount;
+	public int currentAllowedMovesCount;
 	int maxAllowedMovesCount;
 	void RefreshMaxAllowedMovesCount()
 	{
@@ -111,7 +111,8 @@ public class MemberTokenHandler : MonoBehaviour, IAttackAnimation, IGotHitAnimat
 	}
 	
 	bool _staminaRegenEnabled=false;
-	
+
+	public bool inFront=true;
 	
 	public bool rangedMode
 	{
@@ -195,7 +196,7 @@ public class MemberTokenHandler : MonoBehaviour, IAttackAnimation, IGotHitAnimat
 	{
 		
 	}*/
-	
+	//Remove stamina cost from this later
 	public bool TryMove(out bool doTurnOver)
 	{
 		doTurnOver=false;
@@ -266,7 +267,7 @@ public class MemberTokenHandler : MonoBehaviour, IAttackAnimation, IGotHitAnimat
 	//Check to see if this member can attack a specific enemy in encounter
 	public bool AttackIsPossible(ref bool isRanged, EncounterEnemy targetEnemy)
 	{
-		bool enemyReachable=false;
+		bool attackPossible=false;
 		
 		if (!attackDone)
 		{
@@ -285,21 +286,38 @@ public class MemberTokenHandler : MonoBehaviour, IAttackAnimation, IGotHitAnimat
 			if (Mathf.Abs(myX-enemyX)+Mathf.Abs(myY-enemyY)
 			    <=attackRange) 
 			{
-				enemyReachable=true;
-				//Second - see if any walls are blocking member (for ranged attacks)
-				if (attackRange>0)
+				//If melee attack - check against row restrictions
+				if (attackRange==0)
 				{
-					
+					//See if enemy is not covered behind frontliners
+					bool enemyReachable=false;
+					EncounterCanvasHandler encounterHandler=EncounterCanvasHandler.main;
+					if (targetEnemy.inFront) enemyReachable=true;
+					else 
+					{
+						if (EncounterCanvasHandler.main.roomButtons[targetEnemy.GetCoords()].enemiesInFront.Count==0) enemyReachable=true;
+					}
+					//If enemy is within reach, see if member is not standing behind allies
+					if (enemyReachable)
+					{
+						//If standing in front - enemies are within striking range
+						if (inFront) attackPossible=true;
+						else attackPossible=encounterHandler.roomButtons[EncounterCanvasHandler.main.memberCoords[myMember]].membersInFront.Count==0;
+					}
+				}
+				else
+				{
+					//Second - see if any walls are blocking member (for ranged attacks)
 					BresenhamLines.Line(myX,myY,enemyX,enemyY,(int x, int y)=>
 					                    {
 						//bool visionClear=true;
-						if (EncounterCanvasHandler.main.currentEncounter.encounterMap[new Vector2(x,y)].isWall) {enemyReachable=false;}
-						return enemyReachable;
+						if (EncounterCanvasHandler.main.currentEncounter.encounterMap[new Vector2(x,y)].isWall) {attackPossible=false;}
+						return attackPossible;
 					});
 				}
 			}
 		}
-		return enemyReachable;
+		return attackPossible;
 	}
 
 	#region AttackAnimation implementation

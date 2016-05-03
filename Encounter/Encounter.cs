@@ -10,7 +10,7 @@ public class Encounter
 	public int maxY=int.MinValue;
 	
 	protected const int safeDistanceFromEntrance=1;
-	const float barricadeChance=0.15f;//0.08f;
+	const float barricadeChance=0.35f;//0.08f;
 	const int normalChestCountMin=2;
 	const int normalChestCountMax=3;
 	const float baselineEnemyPerRoomRatio=0.1f;
@@ -164,7 +164,7 @@ public class Encounter
 		maxRequiredMembers=4;
 		Dictionary<Vector2,Dictionary<Vector2,EncounterRoom>> newEncounterSegments
 		=PrefabAssembler.assembler.GenerateEncounterMap(this,encounterAreaType,maxRequiredMembers,out nonSegmentRooms);
-		GenerateEncounterFromPrefabMap(newEncounterSegments,nonSegmentRooms,1.5f);
+		GenerateEncounterFromPrefabMap(newEncounterSegments,nonSegmentRooms);
 	}
 	//regular constructor
 	public Encounter ()
@@ -190,7 +190,7 @@ public class Encounter
 
 		encounterEnemyType=potentialEnemyTypes[Random.Range(0,potentialEnemyTypes.Count)];
 
-		//encounterEnemyType=EncounterEnemy.EnemyTypes.Gasser;
+		encounterEnemyType=EncounterEnemy.EnemyTypes.Muscle;
 		enemyDescription=EncounterEnemy.GetMapDescription(encounterEnemyType);
 		
 		//Determine member requirement
@@ -204,14 +204,12 @@ public class Encounter
 		//GenerateEncounter();
 		List<EncounterRoom> nonSegmentRooms=null;
 		Dictionary<Vector2,Dictionary<Vector2,EncounterRoom>> newEncounterSegments
-		=PrefabAssembler.assembler.GenerateEncounterMap(this,encounterAreaType,maxRequiredMembers,out nonSegmentRooms);
-		GenerateEncounterFromPrefabMap(newEncounterSegments,nonSegmentRooms,1f);//.SetupEncounterMap(this,encounterAreaType),1f);//0.15f);//0.3f);
+		=PrefabAssembler.assembler.GenerateEncounterMap(this,encounterAreaType,1,out nonSegmentRooms);
+		GenerateEncounterFromPrefabMap(newEncounterSegments,nonSegmentRooms);//.SetupEncounterMap(this,encounterAreaType),1f);//0.15f);//0.3f);
 		//GameManager.DebugPrint("New encounter added, maxX:"+maxX);
 	}
 	//enemy count modifier is no longer used
-	protected void GenerateEncounterFromPrefabMap(
-	Dictionary<Vector2,Dictionary<Vector2,EncounterRoom>> prefabMap, List<EncounterRoom> nonSegmentRooms
-	, float enemyCountModifier)
+	protected void GenerateEncounterFromPrefabMap(Dictionary<Vector2,Dictionary<Vector2,EncounterRoom>> prefabMap, List<EncounterRoom> nonSegmentRooms)
 	{
 		int segmentCount=0;
 		//Dictionary<Vector2,List<EncounterRoom>> segmentRoomsEligibleForEnemyPlacement=new Dictionary<Vector2,List<EncounterRoom>>();
@@ -235,8 +233,7 @@ public class Encounter
 				minY=Mathf.Min(minY,room.yCoord);
 				maxX=Mathf.Max(maxX,room.xCoord);
 				maxY=Mathf.Max(maxY,room.yCoord);
-				
-				
+
 				if (!room.isWall)
 				{
 					if (room.isEntrance) {entranceRoom=room;}
@@ -304,6 +301,8 @@ public class Encounter
 		}
 		
 		int currentEnemyCount=0;
+		//Disabled for the new system
+		/*
 		//while (currentEnemyCount<EncounterEnemy.GetEnemyCount(encounterEnemyType)*enemyCountModifier && roomsEligibleForEnemyPlacement.Count>0)
 		//Approximately between 1/3 and 1/2 of the rooms should have enemies (that's the baseline)
 		int desiredEnemyCount=
@@ -314,10 +313,11 @@ public class Encounter
 			randomlySelectedRoom.GenerateEnemy(encounterEnemyType);
 			currentEnemyCount++;
 			//roomsEligibleForEnemyPlacement.Remove(randomlySelectedRoom);
-		}
+		}*/
 		
 	}
 	//Called after an encounter finishes to reshuffle enemies, respawn dead enemies and simulate the passing of time
+	/*
 	public void RandomizeEnemyPositions()
 	{
 		List<EncounterRoom> emptyRooms=new List<EncounterRoom>();
@@ -377,7 +377,7 @@ public class Encounter
 			emptyRooms.Remove(randomlySelectedRoom);
 		}
 		
-	}
+	}*/
 }
 /*
 public class RandomAttack:Encounter

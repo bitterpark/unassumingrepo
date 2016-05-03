@@ -89,6 +89,8 @@ public class Cold:StatusEffect
 {
 	string _name="Cold";
 	int maxFatiguePenalty=3;
+	int sickMoralePenalty=15;
+	int cureMoraleBonus=10;
 	float cureChancePerHour=0.25f;
 
 	//int damageModDelta=-40;
@@ -101,7 +103,7 @@ public class Cold:StatusEffect
 		affectedMember.fatigueRestoreSleep-=maxFatiguePenalty;
 		affectedMember.fatigueRestoreWait-=maxFatiguePenalty;
 		//GameManager.DebugPrint("Cold activated!");
-		affectedMember.morale-=15;
+		affectedMember.morale-=sickMoralePenalty;
 		PartyManager.ETimePassed+=TimePassEffect;
 	}
 
@@ -124,7 +126,7 @@ public class Cold:StatusEffect
 		//affectedMember.meleeDamageMod-=damageModDelta;
 		affectedMember.fatigueRestoreSleep+=maxFatiguePenalty;
 		affectedMember.fatigueRestoreWait+=maxFatiguePenalty;
-		affectedMember.morale+=15;
+		affectedMember.morale+=cureMoraleBonus;
 	}
 
 	public override void TimePassEffect(int timePassed)
@@ -147,7 +149,7 @@ public class Cold:StatusEffect
 	}
 	public override void StackEffect ()
 	{
-		affectedMember.morale-=10;
+		affectedMember.morale-=sickMoralePenalty;
 	}
 	
 	
@@ -229,7 +231,7 @@ public class BrokenLegsMember:StatusEffect
 		affectedMember=member;
 		affectedMember.legsBroken=true;
 		affectedMember.morale-=15;
-		affectedMember.currentFatigueMovePenalty=fatigueMovePenalty;
+		affectedMember.currentFatigueMoveModifier=fatigueMovePenalty;
 	}
 
 	public void CureLegs()
@@ -238,7 +240,7 @@ public class BrokenLegsMember:StatusEffect
 		PartyManager.mainPartyManager.RemovePartyMemberStatusEffect(affectedMember,this);
 		affectedMember.legsBroken=false;
 		affectedMember.morale+=15;
-		affectedMember.currentFatigueMovePenalty=0;
+		affectedMember.currentFatigueMoveModifier=0;
 	}
 
 	

@@ -116,17 +116,17 @@ public class EnemyTokenHandler : MonoBehaviour, IAttackAnimation, IGotHitAnimati
 		}
 	}
 	
-	public IEnumerator TokenAttackTrigger(params PartyMember[] membersWithinReach)
+	public IEnumerator TokenAttackTrigger(params IGotHitAnimation[] targetsWithinReach)
 	{
 		if (!destroyed && EncounterCanvasHandler.main.encounterOngoing) 
 		{
-			EnemyAttack attackInfo=assignedEnemy.AttackAction(new List<PartyMember>(membersWithinReach));
-			EncounterCanvasHandler.main.ShowDamageToPartyMember(attackInfo);
+			EnemyAttack attackInfo=assignedEnemy.AttackAction(new List<IGotHitAnimation>(targetsWithinReach));
+			EncounterCanvasHandler.main.ShowDamageToFriendlyTarget(attackInfo);
 			IGotHitAnimation targetAnimation=null;
 			if (attackInfo.hitSuccesful)
 			{
-				if (EncounterCanvasHandler.main.memberTokens.ContainsKey(attackInfo.attackedMember)) 
-				targetAnimation=EncounterCanvasHandler.main.memberTokens[attackInfo.attackedMember];
+				//if (EncounterCanvasHandler.main.memberTokens.ContainsKey(attackInfo.attackedMember)) 
+				targetAnimation=attackInfo.attackedTarget;//EncounterCanvasHandler.main.memberTokens[attackInfo.attackedMember];
 			}
 			//(attackInfo.attackedMember,attackInfo.attackingEnemy,attackInfo.damageDealt,attackInfo.blocked);
 			yield return StartCoroutine(AttackAnimation(targetAnimation));
@@ -143,12 +143,12 @@ public class EnemyTokenHandler : MonoBehaviour, IAttackAnimation, IGotHitAnimati
 			bool roundIsAttack=assignedEnemy.DoMyRound(masks,memberCoords,currentPOI,out attackInfo, out movesInfo);
 			if (roundIsAttack)
 			{
-				EncounterCanvasHandler.main.ShowDamageToPartyMember(attackInfo);
+				EncounterCanvasHandler.main.ShowDamageToFriendlyTarget(attackInfo);
 				IGotHitAnimation targetAnimation=null;
 				if (attackInfo.hitSuccesful)
 				{
-					if (EncounterCanvasHandler.main.memberTokens.ContainsKey(attackInfo.attackedMember)) 
-					targetAnimation=EncounterCanvasHandler.main.memberTokens[attackInfo.attackedMember];
+					//if (EncounterCanvasHandler.main.memberTokens.ContainsKey(attackInfo.attackedMember)) 
+					targetAnimation=attackInfo.attackedTarget;//EncounterCanvasHandler.main.memberTokens[attackInfo.attackedMember];
 				}
 				//(attackInfo.attackedMember,attackInfo.attackingEnemy,attackInfo.damageDealt,attackInfo.blocked);
 				yield return StartCoroutine(AttackAnimation(targetAnimation));
