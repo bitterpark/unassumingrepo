@@ -13,6 +13,8 @@ public class EncounterCanvasHandler : MonoBehaviour
 	public bool encounterOngoing=false;
 	//factor closer to 0 makes the zoom more abrupt, factor closer to 1 makes it more gentle
 	const float zoomFactor=0.80f;
+	const int minZoomPower=5;
+	const int maxZoomPower=5;
 
 	public Encounter currentEncounter=null;
 	EncounterMap currentMap=null;
@@ -31,6 +33,9 @@ public class EncounterCanvasHandler : MonoBehaviour
 	*/
 	//Debug var
 	int iterationCount=0;
+
+	const float lootingEnemySpawnProbIncrease=0.05f;
+	const float bashingEnemySpawnProbIncrease=0.05f;
 	
 	bool damageNumberOut=false;
 	
@@ -101,29 +106,22 @@ public class EncounterCanvasHandler : MonoBehaviour
 	
 	public delegate void RoundoverDel();
 	public event RoundoverDel ERoundIsOver;
+
+	public delegate void EncounterExitDel(PartyMember exitingMember);
+	public event EncounterExitDel EEncounterExited;
 	
 	void FocusViewOnRoom(RectTransform roomTransform)
 	{
-		/*
-		Vector2 newPosition=roomTransform.localPosition;
-
-		Vector2 newFocus=Vector2.zero;
-		newFocus.x=newPosition.x/encounterMapGroup.GetComponent<RectTransform>().rect.width;
-		//This is necessary due to usual coords fuckery (scrollrect y pos 0 is bottom, but room coords 0 is top)
-		newFocus.y=(encounterMapGroup.GetComponent<RectTransform>().rect.height-Mathf.Abs(newPosition.y))
-		/encounterMapGroup.GetComponent<RectTransform>().rect.height;
-
-		encounterMapGroup.parent.GetComponent<ScrollRect>().normalizedPosition=newFocus;
-		*/
-		encounterMapGroup.localPosition=-roomTransform.localPosition;
+		Vector3 newCenterPosition=new Vector3(-roomTransform.localPosition.x*encounterMapGroup.localScale.x
+		,-roomTransform.localPosition.y*encounterMapGroup.localScale.y
+		,0);
+		encounterMapGroup.localPosition=newCenterPosition;
 	}
 	
 	IEnumerator EncounterStartViewFocus(RectTransform roomTransform)
 	{
 		yield return new WaitForEndOfFrame();
-		//Canvas.ForceUpdateCanvases();
 		FocusViewOnRoom(roomTransform);
-		//Canvas.ForceUpdateCanvases();
 		yield break;
 	}
 	
@@ -150,8 +148,6 @@ public class EncounterCanvasHandler : MonoBehaviour
 		currentEncounter=newEncounter;
 		currentMap=new EncounterMap(newEncounter.encounterMap);
 		EnableRender();
-		//If members ambushed, alert all enemies to their presence
-		if (isAmbush) MakeNoise(memberCoords[encounterMembers[0]],5);
 	}
 	
 	void EndEncounter()
@@ -164,7 +160,53 @@ public class EncounterCanvasHandler : MonoBehaviour
 			PartyStatusCanvasHandler.main.RefreshAssignmentButtons();
 		}
 	}
-	
+
+	public void ToggleMemberInventory(PartyMember toggledMember)
+	{
+		if (encounterOngoing && GetComponent<CanvasGroup>().interactable)
+		{
+			InventoryToggleType toggleType=GetInventoryToggleType(toggledMember);
+
+			if (toggleType==InventoryToggleType.Open)
+			{
+				if (!roomButtons[memberCoords[toggledMember]].RoomHasEnemies() || memberTokens[toggledMember].CanMove())
+				InventoryScreenHandler.mainISHandler.EncounterToggleNewSelectedMember(toggledMember);
+			}
+			if (toggleType==InventoryToggleType.Close)
+			{
+				if (!roomButtons[memberCoords[toggledMember]].RoomHasEnemies())
+				InventoryScreenHandler.mainISHandler.EncounterToggleNewSelectedMember(toggledMember);
+				else
+				{
+					bool doTurnOverForMember=false;
+					memberTokens[toggledMember].TryMove(out doTurnOverForMember);
+					InventoryScreenHandler.mainISHandler.EncounterToggleNewSelectedMember(toggledMember);
+					if (doTurnOverForMember) TurnOver(toggledMember,roomButtons[memberCoords[toggledMember]].assignedRoom,false);
+				}
+			}
+			if (toggleType==InventoryToggleType.Switch)
+			{
+				if (!roomButtons[memberCoords[InventoryScreenHandler.mainISHandler.selectedMember]].RoomHasEnemies()
+				&& !roomButtons[memberCoords[toggledMember]].RoomHasEnemies())
+				InventoryScreenHandler.mainISHandler.EncounterToggleNewSelectedMember(toggledMember);
+			}
+		}
+	}
+
+	enum InventoryToggleType {Close,Open,Switch};
+
+	InventoryToggleType GetInventoryToggleType(PartyMember toggledMember)
+	{
+		InventoryToggleType toggleType=default(InventoryToggleType);
+		if (!InventoryScreenHandler.mainISHandler.inventoryShown) toggleType=InventoryToggleType.Open;
+		else
+		{
+			if (InventoryScreenHandler.mainISHandler.selectedMember==toggledMember) toggleType=InventoryToggleType.Close;
+			else toggleType=InventoryToggleType.Switch;
+		}
+		return toggleType;
+	}
+
 	public void RoomClicked(RoomButtonHandler roomHandler)//EncounterRoomDrawer roomDrawer)
 	{
 		
@@ -233,10 +275,10 @@ public class EncounterCanvasHandler : MonoBehaviour
 			//if last party member didn't die moving away
 			if (encounterOngoing) 
 			{
-				MakeNoise(startingRoom.GetCoords(),1);
-				if (!selectedMember.isQuiet) MakeNoise(roomHandler.GetRoomCoords(),1);
-				//Roll to spawn enemies on moving into room
-				if (Random.value<roomHandler.enemySpawnProbability) SpawnEnemy(roomHandler.assignedRoom);
+				//MakeNoise(startingRoom.GetCoords(),1);
+				//if (!selectedMember.isQuiet) MakeNoise(roomHandler.GetRoomCoords(),1);
+				MakeNoise(roomHandler.GetRoomCoords(),selectedMember.movingEnemySpawnProbIncrease);
+				TriggerEnemySpawnProbability(roomHandler);
 				roomButtons[startingRoom.GetCoords()].MemberGone(memberTokens[selectedMember]);
 				MovePartyMemberToRoom(selectedMember,roomHandler,false);
 				DeadMemberCleanupCheck();
@@ -244,11 +286,17 @@ public class EncounterCanvasHandler : MonoBehaviour
 				
 				if (encounterOngoing)
 				{
-					//Despawn enemies from rooms when all members ran away from them
-					if (roomButtons[startingRoom.GetCoords()].GetTotalMembersInRoom()==0) 
-					foreach (EnemyTokenHandler enemyToken in new List<EnemyTokenHandler>(roomButtons[startingRoom.GetCoords()].GetAllEnemiesInRoom())) 
-					{DespawnEnemy(enemyToken.assignedEnemy);}
-
+					if (roomButtons[startingRoom.GetCoords()].RoomHasEnemies())
+					{
+						//Despawn enemies from rooms when all members ran away from them
+						if (roomButtons[startingRoom.GetCoords()].GetTotalMembersInRoom()==0)
+						{ 
+							foreach (EnemyTokenHandler enemyToken in new List<EnemyTokenHandler>(roomButtons[startingRoom.GetCoords()].GetAllEnemiesInRoom())) 
+							{DespawnEnemy(enemyToken.assignedEnemy);}
+							//Set room enemy spawn probability to 100% if all members ran away
+							roomButtons[startingRoom.GetCoords()].enemySpawnProbability=1;
+						}
+					}
 					//If moved member died during move, try to switch to next available member
 					if (!encounterMembers.Contains(selectedMember))
 					{
@@ -267,7 +315,6 @@ public class EncounterCanvasHandler : MonoBehaviour
 					else
 					{
 						//If moved member survived during move
-						if (selectedMember.legsBroken) doTurnover=true;
 						if (doTurnover) TurnOver(selectedMember,roomButtons[memberCoords[selectedMember]].assignedRoom,false);
 					}
 				}
@@ -679,7 +726,6 @@ public class EncounterCanvasHandler : MonoBehaviour
 		//Dictionary<Vector2, int> rawCostsDictionary=new Dictionary<Vector2, int>();
 		//RecursiveGrassfireMapper(entranceCoords,ref rawCostsDictionary,0);
 		Dictionary<Vector2, int> rawCostsDictionary=IterativeGrassfireMapper(entranceCoords);
-		//print ("entrance mask created. Iteration count:"+iterationCount);
 		//This sorts the raw dictionary using a LINQ query!
 		var items = from pair in rawCostsDictionary
 			orderby pair.Value ascending
@@ -927,15 +973,15 @@ public class EncounterCanvasHandler : MonoBehaviour
 		yield break;	
 	}*/
 
-	void SpawnEnemy(EncounterRoom spawnRoom)
+	void TriggerEnemySpawn(EncounterRoom spawnRoom)
 	{
 		RoomButtonHandler spawnRoomButton=roomButtons[spawnRoom.GetCoords()];
-		EnemyTokenHandler newEnemyToken=spawnRoomButton.SpawnNewEnemyInRoom();//spawnRoom.GenerateEnemy();
-		//EncounterEnemy catchEnemy=enemy;
-		enemyTokens.Add (newEnemyToken.assignedEnemy,newEnemyToken);
-		//EMoveEnemies+=newEnemyToken.TokenRoundoverTrigger;//catchEnemy.Move;
-		EMemberMoved+=newEnemyToken.UpdateTokenVision;
-		if (spawnRoom.trapInRoom!=null) spawnRoom.trapInRoom.SetOff(newEnemyToken.assignedEnemy);
+		foreach (EnemyTokenHandler newEnemyToken in spawnRoomButton.SpawnEnemiesWeightedOnSpawnChance())
+		{
+			enemyTokens.Add (newEnemyToken.assignedEnemy,newEnemyToken);
+			EMemberMoved+=newEnemyToken.UpdateTokenVision;
+			if (spawnRoom.trapInRoom!=null) spawnRoom.trapInRoom.SetOff(newEnemyToken.assignedEnemy);
+		}
 	}
 
 	//turn encounter render on and off (may consider moving this to StartEncounter, since it's only used in that one method
@@ -1139,6 +1185,7 @@ public class EncounterCanvasHandler : MonoBehaviour
 			AddNewLogMessage(selectedMember.name+" escapes!");
 			EncounterRoom exitRoom=roomHandler.assignedRoom;//currentEncounter.encounterMap[memberCoords[selectedMember]];
 			RemoveEncounterMember(selectedMember);
+			if (EEncounterExited!=null) EEncounterExited(selectedMember);
 			//selectedMember.EncounterEndTrigger();
 			//PartyManager.mainPartyManager.MemberLeavesEncounter();
 			//Dumps member's inventory to common inventory
@@ -1169,8 +1216,10 @@ public class EncounterCanvasHandler : MonoBehaviour
 	{
 		if (memberCoords[selectedMember]==new Vector2(roomHandler.assignedRoom.xCoord,roomHandler.assignedRoom.yCoord))//&& !memberTokens[selectedMember].moveTaken)
 		{
-			AddNewLogMessage(selectedMember.name+" loots the stash");
+			AddNewLogMessage(selectedMember.name+" loots the room");
 			roomHandler.LootRoom();
+			MakeNoise(roomHandler.GetRoomCoords(),lootingEnemySpawnProbIncrease);
+			TriggerEnemySpawnProbability(roomHandler);
 			TurnOver(selectedMember,roomHandler.assignedRoom,false);
 		}
 	}
@@ -1195,7 +1244,8 @@ public class EncounterCanvasHandler : MonoBehaviour
 			roomHandler.BashLock(bashStrength);
 			if (!roomHandler.assignedRoom.lootIsLocked) {AddNewLogMessage("The lock breaks!");}
 			//Do noise
-			MakeNoise(roomHandler.GetRoomCoords(),bashNoiseDistance);
+			MakeNoise(roomHandler.GetRoomCoords(),bashingEnemySpawnProbIncrease);
+			TriggerEnemySpawnProbability(roomHandler);
 			TurnOver(selectedMember,roomHandler.assignedRoom,false);
 		}
 	}
@@ -1244,10 +1294,11 @@ public class EncounterCanvasHandler : MonoBehaviour
 		else TurnOver(selectedMember,roomButtons[memberCoords[selectedMember]].assignedRoom,true);
 	}
 	
-	public void MakeNoise(Vector2 originCoords, int carryDistance)
+	public void MakeNoise(Vector2 originCoords, float probabilityIncrease)
 	{
 		//Create text
-		carryDistance=0;
+		//Noise distance mechanic currently disabled
+		int carryDistance=0;
 		if (encounterOngoing)
 		{
 			string noiseText="Noise";
@@ -1263,7 +1314,7 @@ public class EncounterCanvasHandler : MonoBehaviour
 					if (roomButtons.ContainsKey(cursorCoords))
 					{
 						if (!roomButtons[cursorCoords].assignedRoom.isWall) 
-						roomButtons[cursorCoords].enemySpawnProbability=roomButtons[cursorCoords].enemySpawnProbability+0.1f;//SpawnEnemy(roomButtons[cursorCoords].assignedRoom);
+						roomButtons[cursorCoords].enemySpawnProbability+=probabilityIncrease;//SpawnEnemy(roomButtons[cursorCoords].assignedRoom);
 						/*
 						if (roomButtons[cursorCoords].assignedRoom.hasEnemies)
 						{
@@ -1279,7 +1330,13 @@ public class EncounterCanvasHandler : MonoBehaviour
 			}
 		}
 	}	
-	
+
+	void TriggerEnemySpawnProbability(RoomButtonHandler spawnRoomHandler)
+	{
+		//Roll to spawn enemies on moving into room
+		if (Random.value<spawnRoomHandler.enemySpawnProbability) TriggerEnemySpawn(spawnRoomHandler.assignedRoom);
+	}
+
 	void SelectMember(MemberTokenHandler selectedHandler) 
 	{
 		PartyMember previousSelectedMember=null;
@@ -1505,18 +1562,18 @@ public class EncounterCanvasHandler : MonoBehaviour
 	
 	//Damage dealt to enemies
 	//Used by callbacks from set off traps
-	public void RegisterDamage(int damage, BodyPart attackedPart, bool isRanged,EncounterEnemy attackedEnemy, IAttackAnimation attackingEntity, bool hideResult)
+	public void RegisterDamage(int damage, EnemyBodyPart attackedPart, bool isRanged,EncounterEnemy attackedEnemy, IAttackAnimation attackingEntity, bool hideResult)
 	{
 		StartCoroutine(RegisterDamage(true,damage,attackedPart,isRanged,attackedEnemy,attackingEntity,hideResult));
 	}
 	public IEnumerator RegisterDamage(bool hitSuccessful, int damage
-	, BodyPart attackedPart, bool isRanged,EncounterEnemy attackedEnemy, IAttackAnimation attackingEntity)
+	, EnemyBodyPart attackedPart, bool isRanged,EncounterEnemy attackedEnemy, IAttackAnimation attackingEntity)
 	{
 		return RegisterDamage(hitSuccessful,damage,attackedPart,isRanged,attackedEnemy,attackingEntity,false);
 	}
 	//Used by callbacks from member tokens (and also daisy-chained by the overload above)
 	public IEnumerator RegisterDamage(bool hitSuccessful, int damage
-	, BodyPart attackedPart, bool isRanged,EncounterEnemy attackedEnemy, IAttackAnimation attackingEntity, bool hideResult)//Object attackingEntity)//PartyMember attackingMember)
+	, EnemyBodyPart attackedPart, bool isRanged,EncounterEnemy attackedEnemy, IAttackAnimation attackingEntity, bool hideResult)//Object attackingEntity)//PartyMember attackingMember)
 	{
 		//EncounterRoom currentRoom=currentEncounter.encounterMap[memberCoords[selectedMember]];
 		//int actualDmg=currentRoom.DamageEnemy(damage,attackedEnemy,isRanged);
@@ -1538,7 +1595,7 @@ public class EncounterCanvasHandler : MonoBehaviour
 			{
 				if (hitSuccessful)
 				{
-					MakeNoise(memberCoords[attackingMemberToken.myMember],attackSoundIntensity);
+					//MakeNoise(memberCoords[attackingMemberToken.myMember],attackSoundIntensity);
 
 					string hitMessage=" hits ";
 					if (isRanged) hitMessage=" shoots ";
@@ -1564,10 +1621,11 @@ public class EncounterCanvasHandler : MonoBehaviour
 			{
 				attackingMemberToken.myMember.ReactToKill();
 			}
-			//EMoveEnemies-=attackedEnemy.Move;
-			//EMemberMoved-=attackedEnemy.VisionUpdate;
-			//EMoveEnemies-=enemyTokens[attackedEnemy].TokenRoundoverTrigger;//enemy.Move;
+
+			RoomButtonHandler enemyRoom=roomButtons[attackedEnemy.GetCoords()];
 			DespawnEnemy(attackedEnemy);
+			//Reduce enemy spawn probability down to 0 if all enemies have been killed
+			if (!enemyRoom.RoomHasEnemies()) enemyRoom.enemySpawnProbability=0;
 		}
 		yield break;
 	}
@@ -1667,11 +1725,11 @@ public class EncounterCanvasHandler : MonoBehaviour
 		}*/
 	}
 	
-	public void AttackOnEnemy(EncounterEnemy enemy, bool ranged, BodyPart attackedPart, float hitChance)
+	public void AttackOnEnemy(EncounterEnemy enemy, bool ranged, EnemyBodyPart attackedPart, float hitChance)
 	{
 		StartCoroutine(AttackAnimationTurnoverSequence(enemy,ranged,attackedPart,hitChance));
 	}
-	IEnumerator AttackAnimationTurnoverSequence(EncounterEnemy enemy, bool ranged, BodyPart attackedPart, float hitChance)
+	IEnumerator AttackAnimationTurnoverSequence(EncounterEnemy enemy, bool ranged, EnemyBodyPart attackedPart, float hitChance)
 	{
 		int actualDmg=0;
 		bool hitSuccessful=false;
@@ -1791,64 +1849,36 @@ public class EncounterCanvasHandler : MonoBehaviour
 					TurnOver(unactedMember,roomButtons[memberCoords[unactedMember]].assignedRoom,true);
 				}
 			}
-			
+
+			if (Input.GetKeyDown(KeyCode.I))
+			{
+				ToggleMemberInventory(selectedMember);
+			}
+
 			if (Input.GetKeyDown(KeyCode.Q)) 
 			{
-				List<PartyMember> cyclableMembers=new List<PartyMember>(encounterMembers);
-				foreach (MemberTokenHandler token in memberTokens.Values)
+				if (!InventoryScreenHandler.mainISHandler.inventoryShown)
 				{
-					if (token.turnTaken) {cyclableMembers.Remove(token.myMember);}
-				}
-				
-				SelectMember(memberTokens[cyclableMembers[(int)Mathf.Repeat(cyclableMembers.IndexOf(selectedMember)+1,cyclableMembers.Count)]]);
-				
-				/*
-				bool allActionsTaken=true;
-				foreach (MemberTokenHandler token in memberTokens.Values)//CombatSelectorHandler selector in selectors.Values) 
-				{
-					if (!token.actionTaken) 
+					List<PartyMember> cyclableMembers=new List<PartyMember>(encounterMembers);
+					foreach (MemberTokenHandler token in memberTokens.Values)
 					{
-						allActionsTaken=false; 
-						if (token.myMember!=selectedMember) {SelectMember(token); break;}
+						if (token.turnTaken) {cyclableMembers.Remove(token.myMember);}
 					}
+					SelectMember(memberTokens[cyclableMembers[(int)Mathf.Repeat(cyclableMembers.IndexOf(selectedMember)+1,cyclableMembers.Count)]]);
 				}
-				if (allActionsTaken) {throw new System.Exception("Toggling next member when all members have acted!");}*/
 			}
-			if (Input.GetKeyDown(KeyCode.E)) 
+			/*
+			if (Input.GetKeyDown(KeyCode.P))
 			{
-				//MakeNoise(memberCoords[selectedMember],2);
-				//AddNewLogMessage(selectedMember.name+" makes some noise");
-			}
+				TriggerEnemySpawn(roomButtons[memberCoords[selectedMember]].assignedRoom);
+			}*/
 
 			//ZOOM OUT
 			if (Input.GetAxis("Mouse ScrollWheel")<0)
 			{
-				/*
-				//Find room under cursor before zoom occurs
-				PointerEventData pointerData=new PointerEventData(EventSystem.current);
-				pointerData.position=Input.mousePosition;
-				List<RaycastResult> raycastResults=new List<RaycastResult>();
-				EventSystem.current.RaycastAll(pointerData,raycastResults);
-
-				RectTransform zoomRoomTransform=null;
-				//print("Raycast done, parsing raycast result");
-				foreach (RaycastResult result in raycastResults)
-				{
-					//print("Checking hit object type:"+result.gameObject.GetType());
-					if (result.gameObject.GetComponent<RoomButtonHandler>()!=null)
-					{
-						zoomRoomTransform=result.gameObject.GetComponent<RectTransform>();
-						//print("View focused on cursor room!");
-						break;
-					}
-				}*/
-
 				//Do zoom
-				float scaleFactor=Mathf.Max(encounterMapGroup.transform.localScale.x*zoomFactor,Mathf.Pow(zoomFactor,3));
+				float scaleFactor=Mathf.Max(encounterMapGroup.transform.localScale.x*zoomFactor,Mathf.Pow(zoomFactor,minZoomPower));
 				encounterMapGroup.transform.localScale=new Vector3(scaleFactor,scaleFactor,1);
-
-				//Focus view on cursor room after zoom
-				//if (zoomRoomTransform!=null) FocusViewOnRoom(zoomRoomTransform);
 			}
 			//ZOOM IN
 			if (Input.GetAxis("Mouse ScrollWheel")>0)
@@ -1871,14 +1901,13 @@ public class EncounterCanvasHandler : MonoBehaviour
 						break;
 					}
 				}
-				//Do zoom
-				float scaleFactor=Mathf.Min(encounterMapGroup.transform.localScale.x/zoomFactor,1/Mathf.Pow(zoomFactor,3));
-				encounterMapGroup.transform.localScale=new Vector3(scaleFactor,scaleFactor,1);
 
+				//Do zoom
+				float scaleFactor=Mathf.Min(encounterMapGroup.transform.localScale.x/zoomFactor,1/Mathf.Pow(zoomFactor,maxZoomPower));
+				encounterMapGroup.transform.localScale=new Vector3(scaleFactor,scaleFactor,1);
 				//Focus view on cursor room after zoom
 				if (zoomRoomTransform!=null) FocusViewOnRoom(zoomRoomTransform);
 			}
-			
 		}
 	}
 }

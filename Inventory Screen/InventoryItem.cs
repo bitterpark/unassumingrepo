@@ -80,7 +80,7 @@ public abstract class InventoryItem
 			}
 			case LootMetatypes.ApartmentSalvage:
 			{
-				metatypeDesc="Fuel";
+				metatypeDesc="Firewood";
 				break;
 			}
 			case LootMetatypes.WarehouseSalvage:
@@ -96,229 +96,214 @@ public abstract class InventoryItem
 		}
 		return metatypeDesc;
 	}
-	
-	public static List<InventoryItem> GenerateLootSet(LootMetatypes metaType)
+
+	public static List<InventoryItem> GenerateLockedRoomLoot(LootMetatypes metaType)
 	{
 		float randomRoll=Random.value;
 		List<InventoryItem> setItems=new List<InventoryItem>();
+		ProbabilityList<InventoryItem[]> itemsList=new ProbabilityList<InventoryItem[]>();
 		switch(metaType)
 		{
 			case LootMetatypes.FoodItems:
 			{
-				setItems.Add (new FoodSmall());
-				setItems.Add (new FoodSmall());
-				if (randomRoll<0.5f)
-				{
-					setItems.Clear();
-					setItems.Add (new FoodBig());
-				}
-				if (randomRoll<0.25f)
-				{
-					setItems.Clear();
-					setItems.Add (new FoodSmall());
-				}
+				itemsList.AddProbability(new InventoryItem[]{new FoodSmall(),new FoodSmall()},0.5f);
+				itemsList.AddProbability(new InventoryItem[]{new FoodBig()},0.25f);
+				itemsList.AddProbability(new InventoryItem[]{new FoodSmall()},0.25f);
+				InventoryItem[] result=null;
+				itemsList.RollProbability(out result);
+				return new List<InventoryItem>(result);
 				break;
 			}
 			case LootMetatypes.Medical:
 			{
-				ProbabilityList<List<InventoryItem>> equipmentList=new ProbabilityList<List<InventoryItem>>();
-				List<InventoryItem> itemSet=new List<InventoryItem>();
-				itemSet.Add(new Medkit());
-				equipmentList.AddProbability(new List<InventoryItem>(itemSet),0.2f);
-
-				itemSet.Clear();
-				itemSet.Add(new Medkit());
-				itemSet.Add(new Bandages());
-				equipmentList.AddProbability(new List<InventoryItem>(itemSet),0.2f);
-
-				itemSet.Clear();
-				itemSet.Add(new Bandages());
-				itemSet.Add(new Pills());
-				equipmentList.AddProbability(new List<InventoryItem>(itemSet),0.2f);
-
-				itemSet.Clear();
-				itemSet.Add(new Medkit());
-				itemSet.Add(new Pills());
-				equipmentList.AddProbability(new List<InventoryItem>(itemSet),0.2f);
-
-				itemSet.Clear();
-				itemSet.Add(new Medkit());
-				itemSet.Add(new Medkit());
-				equipmentList.AddProbability(new List<InventoryItem>(itemSet),0.2f);
-
-				List<InventoryItem> resultingSet=itemSet;
-				if (equipmentList.RollProbability(out resultingSet)) setItems.AddRange(resultingSet);
-				else throw new System.Exception("Could not roll a positive result on equipment loot table!");
+				itemsList.AddProbability(new InventoryItem[]{new Medkit()},0.2f);
+				itemsList.AddProbability(new InventoryItem[]{new Medkit(),new Bandages()},0.2f);
+				itemsList.AddProbability(new InventoryItem[]{new Bandages(),new Pills()},0.2f);
+				itemsList.AddProbability(new InventoryItem[]{new Medkit(),new Pills()},0.2f);
+				itemsList.AddProbability(new InventoryItem[]{new Medkit(),new Medkit()},0.2f);
+				InventoryItem[] result=null;
+				itemsList.RollProbability(out result);
+				return new List<InventoryItem>(result);
 				break;
 			}
 			case LootMetatypes.Melee:
 			{
-				//Default <1 option
-				setItems.Add (new Knife());
-				//Other options
-				if (randomRoll<0.3f)
-				{
-					setItems.Clear();
-					setItems.Add (new Axe());
-				}
+				itemsList.AddProbability(new InventoryItem[]{new Knife()},0.7f);
+				itemsList.AddProbability(new InventoryItem[]{new Axe()},0.3f);
+				InventoryItem[] result=null;
+				itemsList.RollProbability(out result);
+				return new List<InventoryItem>(result);
 				break;
 			}
 			case LootMetatypes.Guns:
 			{
-				//Default <1 option
-				setItems.Add (new AmmoBox());
-				//Other options
-				if (randomRoll<0.4f)
-				{
-					setItems.Clear();
-					setItems.Add (new NineM());
-				}
-				if (randomRoll<0.2f)
-				{
-					setItems.Clear();
-					setItems.Add (new AssaultRifle());
-				}
-				if (randomRoll<0.1f)
-				{
-					setItems.Clear();
-					setItems.Add (new Shotgun());
-				}
+				itemsList.AddProbability(new InventoryItem[]{new AmmoBox()},0.6f);
+				itemsList.AddProbability(new InventoryItem[]{new NineM()},0.2f);
+				itemsList.AddProbability(new InventoryItem[]{new AssaultRifle()},0.1f);
+				itemsList.AddProbability(new InventoryItem[]{new Shotgun()},0.1f);
+				InventoryItem[] result=null;
+				itemsList.RollProbability(out result);
+				return new List<InventoryItem>(result);
 				break;
 			}
 			case LootMetatypes.Equipment:
 			{
-				ProbabilityList<List<InventoryItem>> equipmentList=new ProbabilityList<List<InventoryItem>>();
-				List<InventoryItem> itemSet=new List<InventoryItem>();
-				itemSet.Add(new SettableTrap());
-				itemSet.Add(new SettableTrap());
-				equipmentList.AddProbability(new List<InventoryItem>(itemSet),0.2f);
-
-				itemSet.Clear();
-				itemSet.Add(new Bed());
-				equipmentList.AddProbability(new List<InventoryItem>(itemSet),0.3f);
-
-				itemSet.Clear();
-				itemSet.Add(new Toolbox());
-				equipmentList.AddProbability(new List<InventoryItem>(itemSet),0.25f);
-
-				itemSet.Clear();
-				itemSet.Add(new Backpack());
-				equipmentList.AddProbability(new List<InventoryItem>(itemSet),0.25f);
-
-
-				List<InventoryItem> resultingSet=itemSet;
-				if (equipmentList.RollProbability(out resultingSet)) setItems.AddRange(resultingSet);
-				else throw new System.Exception("Could not roll a positive result on equipment loot table!");
+				itemsList.AddProbability(new InventoryItem[]{new SettableTrap(),new SettableTrap()},0.2f);
+				itemsList.AddProbability(new InventoryItem[]{new Bed()},0.3f);
+				itemsList.AddProbability(new InventoryItem[]{new Toolbox()},0.25f);
+				itemsList.AddProbability(new InventoryItem[]{new Backpack()},0.25f);
+				InventoryItem[] result=null;
+				itemsList.RollProbability(out result);
+				return new List<InventoryItem>(result);
 				break;
 			}
 			case LootMetatypes.Gear:
 			{
-				ProbabilityList<List<InventoryItem>> equipmentList=new ProbabilityList<List<InventoryItem>>();
-				List<InventoryItem> itemSet=new List<InventoryItem>();
-				itemSet.Add(new AmmoBox());
-				equipmentList.AddProbability(new List<InventoryItem>(itemSet),0.4f);
-
-				itemSet.Clear();
-				itemSet.Add(new ArmorVest());
-				equipmentList.AddProbability(new List<InventoryItem>(itemSet),0.3f);
-
-				itemSet.Clear();
-				itemSet.Add(new Backpack());
-				equipmentList.AddProbability(new List<InventoryItem>(itemSet),0.3f);
-
-
-				List<InventoryItem> resultingSet=itemSet;
-				if (equipmentList.RollProbability(out resultingSet)) setItems.AddRange(resultingSet);
-				else throw new System.Exception("Could not roll a positive result on equipment loot table!");
+				itemsList.AddProbability(new InventoryItem[]{new AmmoBox()},0.4f);
+				itemsList.AddProbability(new InventoryItem[]{new ArmorVest()},0.3f);
+				itemsList.AddProbability(new InventoryItem[]{new Backpack()},0.3f);
+				InventoryItem[] result=null;
+				itemsList.RollProbability(out result);
+				return new List<InventoryItem>(result);
 				break;
 			}
-			case LootMetatypes.Radio:
-			{
-				setItems.Add(new Radio());
-				break;
-			}
-			case LootMetatypes.Salvage:
-			{
-				ProbabilityList<List<InventoryItem>> equipmentList=new ProbabilityList<List<InventoryItem>>();
-				List<InventoryItem> setOne=new List<InventoryItem>();
-				setOne.Add(new Scrap());
-				equipmentList.AddProbability(new List<InventoryItem>(setOne),0.25f);
-				setOne.Clear();
-				setOne=new List<InventoryItem>();
-				setOne.Add(new Scrap());
-				setOne.Add(new Scrap());
-				equipmentList.AddProbability(new List<InventoryItem>(setOne),0.20f);
-				
-				List<InventoryItem> setTwo=new List<InventoryItem>();
-				setTwo.Add(new Scrap());
-				setTwo.Add(new Gunpowder());
-				equipmentList.AddProbability(setTwo,0.1f);
-				//Scrap(),0.5f);
-				
-				List<InventoryItem> setThree=new List<InventoryItem>();
-				setThree.Add(new FoodSmall());
-				setThree.Add(new FoodSmall());
-				equipmentList.AddProbability(setThree,0.1f);
-				
-				List<InventoryItem> setFour=new List<InventoryItem>();
-				setFour.Add(new Medkit());
-				setFour.Add(new Pills());
-				equipmentList.AddProbability(setFour,0.1f);
 
-				List<InventoryItem> setFive=new List<InventoryItem>();
-				setFive.Add(new Fuel());
-				setFive.Add(new Fuel());
-				equipmentList.AddProbability(setFive,0.25f);
-
-				List<InventoryItem> resultingSet=setOne;
-				if (equipmentList.RollProbability(out resultingSet)) setItems.AddRange(resultingSet);
-				else throw new System.Exception("Could not roll a positive result on equipment loot table!");
-				break;
-			}
 			case LootMetatypes.ApartmentSalvage:
 			{
-				ProbabilityList<List<InventoryItem>> equipmentList=new ProbabilityList<List<InventoryItem>>();
-				List<InventoryItem> setOne=new List<InventoryItem>();
-				setOne.Add(new Fuel());
-				equipmentList.AddProbability(setOne,0.2f);
-				
-				List<InventoryItem> setTwo=new List<InventoryItem>();
-				setTwo.Add(new Fuel());
-				setTwo.Add(new Fuel());
-				equipmentList.AddProbability(setTwo,0.6f);
-
-				List<InventoryItem> setThree=new List<InventoryItem>();
-				setThree.Add(new Fuel());
-				setThree.Add(new Fuel());
-				setThree.Add(new Fuel());
-				equipmentList.AddProbability(setThree,0.2f);
-
-				List<InventoryItem> resultingSet=setOne;
-				if (equipmentList.RollProbability(out resultingSet)) setItems.AddRange(resultingSet);
-				else throw new System.Exception("Could not roll a positive result on equipment loot table!");
-				break;	
+				itemsList.AddProbability(new InventoryItem[]{new Firewood()},0.2f);
+				itemsList.AddProbability(new InventoryItem[]{new Firewood(),new Firewood()},0.6f);
+				itemsList.AddProbability(new InventoryItem[]{new Firewood(),new Firewood(), new Firewood()},0.2f);
+				InventoryItem[] result=null;
+				itemsList.RollProbability(out result);
+				return new List<InventoryItem>(result);
+				break;
 			}
 			case LootMetatypes.WarehouseSalvage:
 			{
-				ProbabilityList<List<InventoryItem>> equipmentList=new ProbabilityList<List<InventoryItem>>();
-				List<InventoryItem> setOne=new List<InventoryItem>();
-				setOne.Add(new Scrap());
-				equipmentList.AddProbability(setOne,0.2f);
-				
-				List<InventoryItem> setTwo=new List<InventoryItem>();
-				setTwo.Add(new Scrap());
-				setTwo.Add(new Scrap());
-				equipmentList.AddProbability(setTwo,0.6f);
+				itemsList.AddProbability(new InventoryItem[]{new Scrap()},0.2f);
+				itemsList.AddProbability(new InventoryItem[]{new Scrap(),new Scrap()},0.6f);
+				itemsList.AddProbability(new InventoryItem[]{new Scrap(),new Scrap(), new Scrap()},0.2f);
+				InventoryItem[] result=null;
+				itemsList.RollProbability(out result);
+				return new List<InventoryItem>(result);
+				break;
+			}
+		}
+		return setItems;
+	}	
 
-				List<InventoryItem> setThree=new List<InventoryItem>();
-				setThree.Add(new Scrap());
-				setThree.Add(new Scrap());
-				setThree.Add(new Scrap());
-				equipmentList.AddProbability(setThree,0.2f);
+	public static List<InventoryItem> GenerateUnlockedRoomLoot(LootMetatypes metaType)
+	{
+		float randomRoll=Random.value;
+		List<InventoryItem> setItems=new List<InventoryItem>(); // - unused
+		ProbabilityList<InventoryItem[]> itemsList=new ProbabilityList<InventoryItem[]>();
+		switch(metaType)
+		{
+			case LootMetatypes.FoodItems:
+			{
+				itemsList.AddProbability(new InventoryItem[0],0.8f);
+				itemsList.AddProbability(new InventoryItem[]{new FoodBig()},0.1f);
+				itemsList.AddProbability(new InventoryItem[]{new FoodSmall()},0.1f);
+				InventoryItem[] result=null;
+				itemsList.RollProbability(out result);
+				return new List<InventoryItem>(result);
+				break;
+			}
+			case LootMetatypes.Medical:
+			{
+				itemsList.AddProbability(new InventoryItem[0],0.8f);
+				itemsList.AddProbability(new InventoryItem[]{new Bandages()},0.1f);
+				itemsList.AddProbability(new InventoryItem[]{new Pills()},0.1f);
+				InventoryItem[] result=null;
+				itemsList.RollProbability(out result);
+				return new List<InventoryItem>(result);
+				break;
+			}
+			case LootMetatypes.Melee:
+			{
+				itemsList.AddProbability(new InventoryItem[0],0.8f);
+				itemsList.AddProbability(new InventoryItem[]{new Knife()},0.1f);
+				itemsList.AddProbability(new InventoryItem[]{new Axe()},0.1f);
+				InventoryItem[] result=null;
+				itemsList.RollProbability(out result);
+				return new List<InventoryItem>(result);
+				break;
+			}
+			case LootMetatypes.Guns:
+			{
+				itemsList.AddProbability(new InventoryItem[0],0.7f);
+				itemsList.AddProbability(new InventoryItem[]{new NineM()},0.1f);
+				itemsList.AddProbability(new InventoryItem[]{new AmmoBox()},0.2f);
+				InventoryItem[] result=null;
+				itemsList.RollProbability(out result);
+				return new List<InventoryItem>(result);
+				break;
+			}
+			case LootMetatypes.Equipment:
+			{
+				itemsList.AddProbability(new InventoryItem[0],0.9f);
+				itemsList.AddProbability(new InventoryItem[]{new Backpack()},0.033f);
+				itemsList.AddProbability(new InventoryItem[]{new Bed()},0.033f);
+				itemsList.AddProbability(new InventoryItem[]{new Toolbox()},0.034f);
+				InventoryItem[] result=null;
+				itemsList.RollProbability(out result);
+				return new List<InventoryItem>(result);
+				break;
+			}
+			case LootMetatypes.Gear:
+			{
+				itemsList.AddProbability(new InventoryItem[0],0.9f);
+				itemsList.AddProbability(new InventoryItem[]{new Backpack()},0.033f);
+				itemsList.AddProbability(new InventoryItem[]{new AmmoBox()},0.033f);
+				itemsList.AddProbability(new InventoryItem[]{new ArmorVest()},0.034f);
+				InventoryItem[] result=null;
+				itemsList.RollProbability(out result);
+				return new List<InventoryItem>(result);
+				break;
+			}
 
-				List<InventoryItem> resultingSet=setOne;
-				if (equipmentList.RollProbability(out resultingSet)) setItems.AddRange(resultingSet);
-				else throw new System.Exception("Could not roll a positive result on equipment loot table!");
+			case LootMetatypes.ApartmentSalvage:
+			{
+				itemsList.AddProbability(new InventoryItem[0],0.8f);
+				itemsList.AddProbability(new InventoryItem[]{new Firewood()},0.1f);
+				itemsList.AddProbability(new InventoryItem[]{new Firewood(),new Firewood()},0.1f);
+				InventoryItem[] result=null;
+				itemsList.RollProbability(out result);
+				return new List<InventoryItem>(result);
+				break;
+			}
+			case LootMetatypes.WarehouseSalvage:
+			{
+				itemsList.AddProbability(new InventoryItem[0],0.8f);
+				itemsList.AddProbability(new InventoryItem[]{new Scrap()},0.1f);
+				itemsList.AddProbability(new InventoryItem[]{new Scrap(),new Scrap()},0.1f);
+				InventoryItem[] result=null;
+				itemsList.RollProbability(out result);
+				return new List<InventoryItem>(result);
+				break;
+			}
+		}
+		return null;
+	}
+
+	public static List<InventoryItem> GenerateMapSalvageLoot(LootMetatypes metaType)
+	{
+		float randomRoll=Random.value;
+		List<InventoryItem> setItems=new List<InventoryItem>();
+		ProbabilityList<InventoryItem[]> itemsList=new ProbabilityList<InventoryItem[]>();
+		switch(metaType)
+		{
+			case LootMetatypes.Salvage:
+			{
+				itemsList.AddProbability(new InventoryItem[]{new Scrap()},0.25f);
+				itemsList.AddProbability(new InventoryItem[]{new Scrap(),new Scrap()},0.2f);
+				itemsList.AddProbability(new InventoryItem[]{new Scrap(),new Gunpowder()},0.1f);
+				itemsList.AddProbability(new InventoryItem[]{new FoodSmall(),new FoodSmall()},0.1f);
+				itemsList.AddProbability(new InventoryItem[]{new Medkit(),new Pills()},0.1f);
+				itemsList.AddProbability(new InventoryItem[]{new Firewood(), new Firewood()},0.25f);
+				InventoryItem[] result=null;
+				itemsList.RollProbability(out result);
+				return new List<InventoryItem>(result);
 				break;
 			}
 		}
@@ -331,7 +316,7 @@ public abstract class InventoryItem
 	,Gas
 	,Food,Junkfood,Cookedfood/*,PerishableFood*/
 	,Ammopack,Ammo
-	,Fuel,CampBarricade
+	,Firewood,CampBarricade
 	,Flashlight,Radio,Bed,Backpack
 	,Scrap,Gunpowder
 	,SettableTrap
@@ -374,7 +359,7 @@ public abstract class InventoryItem
 			case LootItems.Gas:{lootedItem=new Gasoline(); break;}
 			//CAMP ITEMS
 			case LootItems.CampBarricade:{lootedItem=new CampBarricade(); break;}
-			case LootItems.Fuel:{lootedItem=new Fuel(); break;}
+			case LootItems.Firewood:{lootedItem=new Firewood(); break;}
 			//INGREDIENTS
 			case LootItems.Scrap:{lootedItem=new Scrap(); break;}
 			case LootItems.Gunpowder:{lootedItem=new Gunpowder(); break;}
@@ -406,11 +391,11 @@ public class CampBarricade: InventoryItem
 	}
 }
 
-public class Fuel: InventoryItem
+public class Firewood: InventoryItem
 {
-	public Fuel()
+	public Firewood()
 	{
-		itemName="Fuel";
+		itemName="Firewood";
 	}
 
 	public override Sprite GetItemSprite() {return SpriteBase.mainSpriteBase.fuelSprite;}
@@ -525,7 +510,7 @@ public class Pills:InventoryItem
 		
 		//do cold
 		List<Cold> colds=new List<Cold>();
-		foreach (StatusEffect effect in member.activeStatusEffects)
+		foreach (MemberStatusEffect effect in member.activeStatusEffects)
 		{
 			if (effect.GetType()==typeof(Cold)) {colds.Add(effect as Cold);}
 		}
@@ -565,7 +550,7 @@ public class Medkit:InventoryItem
 		//do bleeding
 		//find all bleeding lacerations
 		List<Bleed> lacerations=new List<Bleed>();
-		foreach (StatusEffect effect in member.activeStatusEffects)
+		foreach (MemberStatusEffect effect in member.activeStatusEffects)
 		{
 			if (effect.GetType()==typeof(Bleed)) {lacerations.Add(effect as Bleed);}
 		}
@@ -600,7 +585,7 @@ public class Bandages: InventoryItem
 		//do bleeding
 		//find all bleeding lacerations
 		List<Bleed> lacerations=new List<Bleed>();
-		foreach (StatusEffect effect in member.activeStatusEffects)
+		foreach (MemberStatusEffect effect in member.activeStatusEffects)
 		{
 			if (effect.GetType()==typeof(Bleed)) {lacerations.Add(effect as Bleed);}
 		}
@@ -952,7 +937,7 @@ public class NineM:RangedWeapon
 	{
 		itemName="9mm Pistol";
 		baseDamage=45;
-		accuracyMod=0.2f;
+		accuracyMod=0.1f;
 	}
 
 	//string name="9mm Pistol";
@@ -1019,8 +1004,8 @@ public class AssaultRifle:RangedWeapon
 	public AssaultRifle()
 	{
 		itemName="Assault Rifle";
-		oneShotDamage=90;
-		accuracyMod=-0.15f;
+		oneShotDamage=60;
+		accuracyMod=-0.1f;
 		baseDamage=oneShotDamage*ammoPerShot;
 	}
 	int oneShotDamage;

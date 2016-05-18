@@ -18,22 +18,8 @@ public class EncounterRoom
 	//public int currentCost=0;
 	
 	public bool isWall;
-	
-	public bool isExit
-	{
-		get {return _isExit;}
-		set 
-		{
-			_isExit=value;
-			if (_isExit) 
-			{
-				//hasEnemies=false;
-				hasLoot=false;
-				description="This room leads outside";
-			}
-		}
-	}
-	public bool _isExit=false;
+
+	public bool isExit=false;
 	
 	public bool isEntrance=false;
 	public bool isDiscovered=false;
@@ -63,21 +49,7 @@ public class EncounterRoom
 	//public List<EncounterEnemy> enemiesInRoom=new List<EncounterEnemy>();
 	
 	/////LOOT
-	public bool hasLoot
-	{
-		get {return _hasLoot;}
-		set 
-		{
-			_hasLoot=value;
-			if (_hasLoot) 
-			{
-				if (Random.value<0.7f) {lootIsLocked=true;}
-			}
-			else {lootIsLocked=false;}
-		}
-	
-	}
-	public bool _hasLoot=false;
+	public bool hasLoot=false;
 	public List<InventoryItem> lootInRoom=new List<InventoryItem>();
 	//LOCK
 	public const int maxLockStrength=180;
@@ -161,65 +133,26 @@ public class EncounterRoom
 	}
 	
 	public EncounterRoom(Encounter parent) {parentEncounter=parent;}
-	
-	//ENEMY METHODS
-	/*
-	public EncounterEnemy GenerateEnemy()
+
+	public void GenerateUnlockedRoomLoot()
 	{
-		EncounterEnemy newEnemy=EncounterEnemy.GetEnemy(parentEncounter.encounterEnemyType, new Vector2(xCoord,yCoord));
-		enemiesInRoom.Add(newEnemy);
-		hasEnemies=true;
-		return newEnemy;
+		InventoryItem.LootMetatypes lootType=default(InventoryItem.LootMetatypes);
+		parentEncounter.chestTypes.RollProbability(out lootType);
+		lootInRoom.Clear();
+		lootInRoom.AddRange(InventoryItem.GenerateUnlockedRoomLoot(lootType));
+		hasLoot=true;
 	}
 
-	public void GenerateEnemy(EncounterEnemy.EnemyTypes enemyType)
+	public void GenerateRoomLockedLoot()
 	{
-		EncounterEnemy newEnemy=EncounterEnemy.GetEnemy(enemyType, new Vector2(xCoord,yCoord));
-		enemiesInRoom.Add(newEnemy);
-		hasEnemies=true;
-	}
-	*/
-	public void AddLootItem(InventoryItem newLootItem)
-	{
-		lootInRoom.Add(newLootItem);
+		InventoryItem.LootMetatypes lootType=default(InventoryItem.LootMetatypes);
+		parentEncounter.chestTypes.RollProbability(out lootType);
+		lootInRoom.Clear();
+		lootInRoom.AddRange(InventoryItem.GenerateLockedRoomLoot(lootType));
 		hasLoot=true;
-	}	
-	
-	//These two methods are called from the corresponding RoomButton, the button is called first, and then it updates the assignedRoom
-	/*
-	public void MoveEnemyIn(EncounterEnemy newEnemy)
-	{
-		enemiesInRoom.Add(newEnemy);
-		hasEnemies=true;
-	}*/
-	/*
-	public void MoveEnemyOut(EncounterEnemy movingEnemy)
-	{
-		//GameManager.DebugPrint("enemy moved out of:"+new Vector2(xCoord,yCoord));
-		enemiesInRoom.Remove(movingEnemy);
-		if (enemiesInRoom.Count==0) {hasEnemies=false;}
-		//GameManager.DebugPrint("enemies remaining in"+new Vector2(xCoord,yCoord)+":"+enemiesInRoom.Count);
-	}*/
-	/*
-	public int DamageEnemy(int damage, BodyPart attackedPart, EncounterEnemy damagedEnemy, bool isRanged)
-	{
-		if (enemiesInRoom.Contains(damagedEnemy))
-		{
-			//enemyInRoom.health-=damage;
-			int enemyIndex=enemiesInRoom.IndexOf(damagedEnemy);
-			int actualDmgTaken=damagedEnemy.TakeDamage(damage,attackedPart,isRanged);
-			if (damagedEnemy.health<=0) 
-			{
-				//check if any more enemies remain in room
-				enemiesInRoom.Remove(damagedEnemy);
-				if (enemiesInRoom.Count==0) {hasEnemies=false;}
-				//GameManager.DebugPrint(enemiesInRoom.Count+" enemies left");
-			}
-			return actualDmgTaken;
-		}
-		else {throw new System.Exception("Trying to damage an enemy that does not exist in the room!");}
-	}*/
-	
+		lootIsLocked=true;
+	}
+
 	//LOOT/ITEM METHODS
 	public void AddFloorItem(InventoryItem item)
 	{

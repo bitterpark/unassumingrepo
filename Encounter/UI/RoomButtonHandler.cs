@@ -87,19 +87,24 @@ public class RoomButtonHandler : MonoBehaviour, IPointerEnterHandler, IPointerEx
 	public VectorUI aimLinePrefab;
 	protected static VectorUI aimLine;
 
-	public EnemyTokenHandler SpawnNewEnemyInRoom()
+	public List<EnemyTokenHandler> SpawnEnemiesWeightedOnSpawnChance()
 	{
-		EnemyTokenHandler newEnemyToken=Instantiate(EncounterCanvasHandler.main.enemyTokenPrefab);
-		newEnemyToken.AssignEnemy(EncounterEnemy.GetEnemy(assignedRoom.parentEncounter.encounterEnemyType,GetRoomCoords()));
-		return newEnemyToken;
+		List<EnemyTokenHandler> resultList=new List<EnemyTokenHandler>();
+		int spawnWeight=Mathf.Max(1,Mathf.RoundToInt(enemySpawnProbability*5));
+
+		foreach (EncounterEnemy newEnemy in EncounterEnemy.GenerateWeightedEnemySet(spawnWeight,GetRoomCoords()))
+		{
+			EnemyTokenHandler newEnemyToken=Instantiate(EncounterCanvasHandler.main.enemyTokenPrefab);
+			newEnemyToken.AssignEnemy(newEnemy);
+			resultList.Add(newEnemyToken);
+		}
+		return resultList;
 	}
 
 	public void AttachEnemyToken(Transform tokenTransform)
 	{
 		enemiesGroup.gameObject.SetActive(true);
 		//If an enemy moves into a room with no members present - center the token, else - set up token anchoring for battle mode
-		UpdateMemberGroup();
-
 		EnemyTokenHandler enemyToken=tokenTransform.GetComponent<EnemyTokenHandler>();
 
 		if (tokenTransform.GetComponent<EnemyTokenHandler>().assignedEnemy.inFront)
@@ -115,6 +120,13 @@ public class RoomButtonHandler : MonoBehaviour, IPointerEnterHandler, IPointerEx
 			if (enemiesInFront.Contains(enemyToken)) enemiesInFront.Remove(enemyToken);
 			enemiesInBack.Add(enemyToken);
 		}
+
+		//This has to be done to prevent members being misaligned due to the engine misaligning layout element positions
+		//when enemy layout activates and shuffles the member layout downward
+		membersGroupFront.GetComponent<LayoutGroup>().childAlignment=TextAnchor.MiddleLeft;
+		membersGroupBack.GetComponent<LayoutGroup>().childAlignment=TextAnchor.MiddleLeft;
+		membersGroupFront.GetComponent<LayoutGroup>().childAlignment=TextAnchor.MiddleCenter;
+		membersGroupBack.GetComponent<LayoutGroup>().childAlignment=TextAnchor.MiddleCenter;
 	}
 
 	public void EnemyTokenDestroyed(EnemyTokenHandler token)
@@ -189,13 +201,14 @@ public class RoomButtonHandler : MonoBehaviour, IPointerEnterHandler, IPointerEx
 
 	public void UpdateMemberGroup()
 	{
-		if (membersInFront.Count==0 && membersInBack.Count==0 && assignedRoom.barricadeInRoom==null) membersGroup.gameObject.SetActive(false);
 		MemberTokenHandler selectedMember=EncounterCanvasHandler.main.memberTokens[EncounterCanvasHandler.main.selectedMember];
 		if (!membersInFront.Contains(selectedMember) && !membersInBack.Contains(selectedMember))
 		{ 
 			moveToBackButton.gameObject.SetActive(false);
 			moveToFrontButton.gameObject.SetActive(false);
 		}
+		if (membersInFront.Count==0 && membersInBack.Count==0 && assignedRoom.barricadeInRoom==null) membersGroup.gameObject.SetActive(false);
+
 	}
 
 	public void AssignRoom(EncounterRoom newRoom)
@@ -371,12 +384,13 @@ public class RoomButtonHandler : MonoBehaviour, IPointerEnterHandler, IPointerEx
 		canBarricade=assignedRoom.canBarricade;
 		UpdateVisuals();
 	}
-	
+
+	//Calls to encounter canvas handler
 	public void LootTokenClicked()
 	{
 		EncounterCanvasHandler.main.LootClicked(this);
 	}
-	
+	//Called back from encounter canvas handler 
 	public void LootRoom()
 	{
 		//Compiler made me assign this

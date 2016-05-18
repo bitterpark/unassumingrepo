@@ -48,29 +48,35 @@ public class MapScoutingHandler : MonoBehaviour {
 	{
 		if (assignedRegion.regionalEncounter!=null)
 		{
-			descriptionText.text=assignedRegion.regionalEncounter.lootDescription+" infested with "+assignedRegion.regionalEncounter.enemyDescription;
-			confirmButton.gameObject.SetActive(true);
-			confirmButton.GetComponentInChildren<Text>().text="Enter ("+PartyMember.fatigueIncreasePerEncounter+" fatigue)";
-			foreach (PartyMember member in assignedRegion.localPartyMembers)//PartyManager.mainPartyManager.selectedMembers) 
-			{
-				MissionSelectorHandler newSelector=Instantiate (memberSelectorPrefab) as MissionSelectorHandler;
-				newSelector.AssignMember(member);
-				newSelector.GetComponent<Button>().onClick.AddListener(()=>ToggleMissionMember(newSelector));
-				newSelector.transform.SetParent(memberSelectorGroup,false);
-				selectCountText.text=selectedForMission.Count+"/"+assignedRegion.regionalEncounter.maxRequiredMembers;//+EncounterCanvasHandler.encounterMaxPlayerCount;
-				selectionText.text="";
-			}
+			ShowPrepForEncounter();
 		}
 		else
 		{
 			//If a region has no encounter, assume that it has an event
-			descriptionText.text=assignedRegion.regionalEvent.GetScoutingDescription();
-			if (!assignedRegion.regionalEvent.eventCompleted)
-			{
-				confirmButton.GetComponentInChildren<Text>().text="Investigate";
-				//confirmButtonText.GetComponentInParent<Button>().interactable=true;
-			}
-			//else confirmButtonText.GetComponentInParent<Button>().gameObject.SetActive(false);
+			ShowPrepForEvent();
+		}
+	}
+	void ShowPrepForEncounter()
+	{
+		descriptionText.text=assignedRegion.regionalEncounter.lootDescription+" infested with "+assignedRegion.regionalEncounter.enemyDescription;
+		confirmButton.gameObject.SetActive(true);
+		confirmButton.GetComponentInChildren<Text>().text="Enter ("+PartyMember.fatigueIncreasePerEncounter+" fatigue)";
+		foreach (PartyMember member in assignedRegion.localPartyMembers)//PartyManager.mainPartyManager.selectedMembers) 
+		{
+			MissionSelectorHandler newSelector=Instantiate (memberSelectorPrefab) as MissionSelectorHandler;
+			newSelector.AssignMember(member);
+			newSelector.GetComponent<Button>().onClick.AddListener(()=>ToggleMissionMember(newSelector));
+			newSelector.transform.SetParent(memberSelectorGroup,false);
+			selectCountText.text=selectedForMission.Count+"/"+assignedRegion.regionalEncounter.maxRequiredMembers;//+EncounterCanvasHandler.encounterMaxPlayerCount;
+			selectionText.text="";
+		}
+	}
+	void ShowPrepForEvent()
+	{
+		descriptionText.text=assignedRegion.regionalEvent.GetScoutingDescription();
+		if (!assignedRegion.regionalEvent.eventCompleted)
+		{
+			confirmButton.GetComponentInChildren<Text>().text="Investigate";
 		}
 	}
 

@@ -40,13 +40,13 @@ public class EnemyTokenHandler : MonoBehaviour, IAttackAnimation, IGotHitAnimati
 	public void AssignEnemy(EncounterEnemy newEnemy)
 	{
 		myImage.sprite=newEnemy.GetSprite();
+		myImage.color=newEnemy.color;
 		assignedEnemy=newEnemy;
 		healthText.text=assignedEnemy.health.ToString();
 		newEnemy.HealthChanged+=HealthChangeHandler;
 		assignedEnemy.StatusEffectsChanged+=StatusEffectChangeHandler;
 		StatusEffectChangeHandler();
 		EncounterCanvasHandler.main.roomButtons[assignedEnemy.GetCoords()].AttachEnemyToken(transform);
-		UpdateVisionStatusDisplay();
 	}
 	
 	public void Clicked()
@@ -111,8 +111,6 @@ public class EnemyTokenHandler : MonoBehaviour, IAttackAnimation, IGotHitAnimati
 			//If some members are seen currently, forget the POI and start pursuing them instead
 			if (currentSeenMembers.Count>0) {currentPOI=null;}
 			lastSeenMembers=currentSeenMembers;
-			//assignedEnemy.VisionUpdate();
-			UpdateVisionStatusDisplay();
 		}
 	}
 	
@@ -195,12 +193,6 @@ public class EnemyTokenHandler : MonoBehaviour, IAttackAnimation, IGotHitAnimati
 		}
 	}
 	
-	void UpdateVisionStatusDisplay()
-	{
-		if (lastSeenMembers.Count>0) {myImage.color=Color.red;}
-		else {myImage.color=Color.gray;}
-	}
-	
 	//Consider generalizing this to include health and status effect updates (somehow)?
 	/*
 	void UpdateToken()
@@ -243,16 +235,13 @@ public class EnemyTokenHandler : MonoBehaviour, IAttackAnimation, IGotHitAnimati
 				string tooltipText=assignedEnemy.name;
 				EncounterCanvasHandler encounterHandler=EncounterCanvasHandler.main;
 				//Limb info
-				if (assignedEnemy.bodyParts.Count>0)
+				//tooltipText+="\nB";
+				foreach (EnemyBodyPart part in assignedEnemy.body.GetHealthyParts())
 				{
-					//tooltipText+="\nB";
-					foreach (BodyPart part in assignedEnemy.bodyParts)
-					{
-						float adjustedHitChance=Mathf.Clamp
-						(referencedMember.GetCurrentAttackHitChance(EncounterCanvasHandler.main.memberTokens[referencedMember].rangedMode)
-						+part.hitPercentageModifier,0,1f);
-						tooltipText+="\n"+part.name+":"+part.hp+" ("+Mathf.RoundToInt((adjustedHitChance*100f)).ToString()+"%)";
-					}
+					float adjustedHitChance=Mathf.Clamp
+					(referencedMember.GetCurrentAttackHitChance(EncounterCanvasHandler.main.memberTokens[referencedMember].rangedMode)
+					+part.currentHitchanceShare,0,1f);
+					tooltipText+="\n"+part.name+":"+part.hp+" ("+Mathf.RoundToInt((adjustedHitChance*100f)).ToString()+"%)";
 				}
 				//Info on attacking this enemy
 				bool textForRangedAttack=false;
@@ -283,20 +272,20 @@ public class EnemyTokenHandler : MonoBehaviour, IAttackAnimation, IGotHitAnimati
 	
 	void StatusEffectChangeHandler()
 	{
-		Dictionary<StatusEffect,StatusEffectImageHandler> effectHandlers=new Dictionary<StatusEffect, StatusEffectImageHandler>();
+		Dictionary<EnemyStatusEffect,StatusEffectImageHandler> effectHandlers=new Dictionary<EnemyStatusEffect, StatusEffectImageHandler>();
 		//StatusEffectImageHandler[] currentEffects=GetComponentsInChildren<StatusEffectImageHandler>();
 		foreach (StatusEffectImageHandler handler in GetComponentsInChildren<StatusEffectImageHandler>())
 		{
-			effectHandlers.Add(handler.assignedEffect,handler);
+			effectHandlers.Add(handler.assignedEffect as EnemyStatusEffect,handler);
 		}
 		
 		//remove outdated
 		foreach (StatusEffectImageHandler handler in effectHandlers.Values)
 		{
-			if (!assignedEnemy.activeEffects.Contains(handler.assignedEffect)) 
+			if (!assignedEnemy.activeEffects.Contains(handler.assignedEffect as EnemyStatusEffect)) 
 			{GameObject.Destroy(handler.gameObject);}
 		}
-		foreach (StatusEffect effect in assignedEnemy.activeEffects)
+		foreach (EnemyStatusEffect effect in assignedEnemy.activeEffects)
 		{
 			if (!effectHandlers.ContainsKey(effect)) 
 			{

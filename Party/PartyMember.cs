@@ -93,7 +93,7 @@ public class PartyMember
 
 		public void CalculateHitChances()
 		{
-			float totalHitProbability=1-assignedMember.dodgeChance;
+			float totalHitProbability=1-assignedMember.currentDodgeChance;
 			
 			partHitChances=new ProbabilityList<MemberBodyPart>();
 			
@@ -192,7 +192,7 @@ public class PartyMember
 			public int health;
 			public bool broken=false;
 			PartyMember member;
-			StatusEffect ongoingEffect;
+			MemberStatusEffect ongoingEffect;
 			//public readonly string partName;
 			
 			public MemberBodyPart(PartyMember partOwner,BodyPartTypes type, int hp)
@@ -508,7 +508,7 @@ public class PartyMember
 	
 	//public int fatigueIncreasePerAction;
 	public int maxStaminaReductionFromFatigue=6;
-	public const int fatigueIncreasePerEncounter=5;
+	public const int fatigueIncreasePerEncounter=4;
 	//public const int mapMoveFatigueCost=25;
 	public const int campSetupFatigueCost=1;
 	public const int fatigueMoveCost=2;
@@ -548,17 +548,18 @@ public class PartyMember
 		return currentMod;
 	}
 	//DODGE
-	public float dodgeChance
+	public float currentDodgeChance
 	{
-		get {return _dodgeChance;}
+		get {return _currentDodgeChance;}
 		set 
 		{
-			_dodgeChance=value;
+			_currentDodgeChance=value;
 			if (memberBodyParts!=null) memberBodyParts.CalculateHitChances();
 		}
 	}
 	
-	float _dodgeChance=0.5f;
+	float _currentDodgeChance;
+	public float maxDodgeChance=0.5f;
 	public BodyParts memberBodyParts;
 	
 	//public float friendshipChance;
@@ -573,8 +574,9 @@ public class PartyMember
 		}
 	}
 	int _skillpoints;
-	
-	public bool legsBroken=false;
+
+	public float movingEnemySpawnProbIncrease=0.05f;
+
 	public bool hasLight=false;
 	public bool hasBedroll=false;
 	public bool isCook=false;
@@ -589,7 +591,6 @@ public class PartyMember
 	public bool isScout=false;
 	public bool extraMoveEnabled=false; 
 	//public bool barricadeAvoidanceEnabled=false;
-	public bool isQuiet=false;
 	//Fighter
 	public bool hitAndRunEnabled=false;
 	
@@ -629,7 +630,7 @@ public class PartyMember
 		else carriedItems.Remove(item);
 	}
 	
-	public List<StatusEffect> activeStatusEffects=new List<StatusEffect>();
+	public List<MemberStatusEffect> activeStatusEffects=new List<MemberStatusEffect>();
 	public List<Trait> traits=new List<Trait>();
 	public void ActivateSkill(Skill activatedSkill)
 	{
@@ -756,6 +757,7 @@ public class PartyMember
 		
 		///////
 		name=memberName;
+		_currentDodgeChance=maxDodgeChance;
 		memberBodyParts=new BodyParts(this, defaultHandsHealth,defaultLegsHealth,defaultVitalsHealth);
 
 		baseMaxStamina=10;
@@ -767,7 +769,9 @@ public class PartyMember
 		
 		fatigue=0;
 		//fatigueIncreasePerAction=10;
-		
+
+
+
 		armorValue=0;
 		maxCarryCapacity=4;//
 		visibilityMod=0;
@@ -807,10 +811,10 @@ public class PartyMember
 		PartyManager.ETimePassedEnd+=LateTimePassEffect;
 	}
 	
-	public bool AddStatusEffect(StatusEffect newEffect)
+	public bool TryAddOrStackStatusEffect(MemberStatusEffect newEffect)
 	{
 		//bool newEffectAdded=true;
-		foreach (StatusEffect activeEffect in activeStatusEffects)
+		foreach (MemberStatusEffect activeEffect in activeStatusEffects)
 		{
 			if(activeEffect.GetType()==newEffect.GetType())
 			{
@@ -859,7 +863,7 @@ public class PartyMember
 		PartyManager.ETimePassed-=TimePassEffect;
 		PartyManager.ETimePassedEnd-=LateTimePassEffect;
 		PartyManager.mainPartyManager.RemovePartyMember(this);
-		foreach (StatusEffect effect in activeStatusEffects) {effect.CleanupEffect();}
+		foreach (MemberStatusEffect effect in activeStatusEffects) {effect.CleanupEffect();}
 		activeStatusEffects=null;
 		PartyStatusCanvasHandler.main.NewNotification(name+" has died!");
 	}
@@ -902,7 +906,7 @@ public class PartyMember
 	}
 	public void RemoveRelatonship(PartyMember removedMember) {relationships.Remove(removedMember);}
 	
-	public void TimePassEffect(int hoursPassed)
+	public void TimePassEffect()
 	{
 		/*
 		float maxStamReductionPerHungerPoint=0.1f;
@@ -932,7 +936,7 @@ public class PartyMember
 		{
 			if (member.isCook) {cookMult=Cook.hungerIncreaseMult; break;}
 		}	
-		ChangeHunger((int)(hungerIncreasePerHour*cookMult)*hoursPassed);
+		ChangeHunger((int)(hungerIncreasePerHour*cookMult));
 		//Calculate OverHunger
 		int hungerOverload=Mathf.FloorToInt((hunger-100)*0.1f);
 		//Reset hunger from over 100
@@ -967,12 +971,12 @@ public class PartyMember
 		//If hunger reached >100
 		if (hungerOverload>0)
 		{
-			hoursPassed*=hungerOverload;
+			//hoursPassed*=hungerOverload;
 		//if (hunger==100)
 		//{
-			TakeDamage(1*hoursPassed,false,BodyPartTypes.Hands);
-			TakeDamage(1*hoursPassed,false,BodyPartTypes.Legs);
-			TakeDamage(1*hoursPassed,false,BodyPartTypes.Vitals);
+			TakeDamage(1,false,BodyPartTypes.Hands);
+			TakeDamage(1,false,BodyPartTypes.Legs);
+			TakeDamage(1,false,BodyPartTypes.Vitals);
 			//{health-=2*hoursPassed;}
 		//}		
 		
@@ -983,7 +987,7 @@ public class PartyMember
 		stamina=currentMaxStamina;*/
 		//DO MORALE
 		//if party is starving, morale drops
-			morale-=adjustedDecayValue*hoursPassed;
+			morale-=adjustedDecayValue;
 		}
 		else
 		{
@@ -995,14 +999,14 @@ public class PartyMember
 				//if morale is increasing (from <base)
 				if (decaySign>0)
 				{
-					moraleChange=adjustedRestoreValue*hoursPassed*decaySign;
+					moraleChange=adjustedRestoreValue*decaySign;
 					if (morale+moraleChange>baseMorale) {morale=baseMorale;}
 					else {morale+=moraleChange;}
 				}
 				//if morale is lowering (from >base)
 				if (decaySign<0)
 				{
-					moraleChange=adjustedDecayValue*hoursPassed*decaySign;
+					moraleChange=adjustedDecayValue*decaySign;
 					if (morale+moraleChange<baseMorale) {morale=baseMorale;}
 					else {morale+=moraleChange;}
 				}
@@ -1014,7 +1018,7 @@ public class PartyMember
 		//RollRelationships();
 	}
 
-	public void LateTimePassEffect(int hoursPassed)
+	public void LateTimePassEffect()
 	{
 		//Resting fatigue restore
 		int fatigueRestoreAmount=fatigueRestoreWait;

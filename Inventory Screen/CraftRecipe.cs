@@ -29,7 +29,6 @@ public class CraftRecipe
 			recipeList.Add(new PipegunToScrap());
 			recipeList.Add(new PipeToScrap());
 			recipeList.Add(new KnifeToScrap());
-
 			recipeList.Add(new AxeToScrap());
 		}
 		return recipeList;
@@ -62,7 +61,7 @@ public class BulletRecipe: CraftRecipe
 {
 	public  BulletRecipe()
 	{
-		requiredFatigue=1;
+		requiredFatigue=2;
 		description="Make bullets";
 		requiredIngredients=new Dictionary<InventoryItem.LootItems, int>();
 		requiredIngredients.Add(InventoryItem.LootItems.Scrap,1);
@@ -88,7 +87,7 @@ public class CampUpgradeRecipe: CraftRecipe
 {
 	public  CampUpgradeRecipe()
 	{
-		requiredFatigue=5;
+		requiredFatigue=6;
 		description="Make camp barricade";
 		requiredIngredients=new Dictionary<InventoryItem.LootItems, int>();
 		requiredIngredients.Add(InventoryItem.LootItems.Scrap,3);
@@ -101,7 +100,7 @@ public class MeleeWeaponRecipe: CraftRecipe
 {
 	public MeleeWeaponRecipe()
 	{
-		requiredFatigue=3;
+		requiredFatigue=2;
 		description="Make pipe";
 		requiredIngredients=new Dictionary<InventoryItem.LootItems, int>();
 		requiredIngredients.Add(InventoryItem.LootItems.Scrap,1);
@@ -113,7 +112,7 @@ public class RangedWeaponRecipe: CraftRecipe
 {
 	public RangedWeaponRecipe()
 	{
-		requiredFatigue=3;
+		requiredFatigue=2;
 		description="Make pipegun";
 		requiredIngredients=new Dictionary<InventoryItem.LootItems, int>();
 		requiredIngredients.Add(InventoryItem.LootItems.Scrap,1);
@@ -125,12 +124,12 @@ public class JunkCookingRecipe: CraftRecipe
 {
 	public JunkCookingRecipe()
 	{
-		requiredFatigue=5;
+		requiredFatigue=6;
 		description="Cook food";
 
 		requiredIngredients=new Dictionary<InventoryItem.LootItems, int>();
 		requiredIngredients.Add(InventoryItem.LootItems.Junkfood,2);
-		requiredIngredients.Add(InventoryItem.LootItems.Fuel,1);
+		requiredIngredients.Add(InventoryItem.LootItems.Firewood,1);
 		SetResultItem(InventoryItem.LootItems.Cookedfood,2);
 	}
 }
@@ -143,7 +142,7 @@ public class FuelToScrap :CraftRecipe
 		description="Make scrap";
 
 		requiredIngredients=new Dictionary<InventoryItem.LootItems, int>();
-		requiredIngredients.Add(InventoryItem.LootItems.Fuel,1);
+		requiredIngredients.Add(InventoryItem.LootItems.Firewood,1);
 		SetResultItem(InventoryItem.LootItems.Scrap,1);
 	}
 }

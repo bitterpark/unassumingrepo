@@ -298,7 +298,7 @@ public class LostInAnomaly:GameEvent
 public class CacheInAnomaly:GameEvent
 {	
 	string eventDescription="";
-	int fatiguePenalty=1;
+	int fatiguePenalty=2;
 	
 	public override string GetDescription(MapRegion eventRegion, List<PartyMember> movedMembers) 
 	{
@@ -385,7 +385,7 @@ public class MedicalCache:GameEvent
 	public override string DoChoice (string choiceString, MapRegion eventRegion, List<PartyMember> movedMembers)
 	{
 		string eventResult=null;
-		int fatigueChangeSuccess=1;
+		int fatigueChangeSuccess=2;
 		int fatigueChangeFailure=2;
 		
 		switch (choiceString)
@@ -844,7 +844,7 @@ public class GasolineEvent:PersistentEvent
 {
     string eventDescription="";
 
-    int fatigueRequirement=5;
+    int fatigueRequirement=4;
 
     public GasolineEvent()
     {
@@ -912,7 +912,7 @@ public class GasolineEvent:PersistentEvent
 				eventResult=presentMember.name+" sets to work, dragging out tools and twisting off locks.";
 	            eventResult+="\nThe sounds of metal on metal ring out trough the eerie silence. The work is dirty";
 	            eventResult+="\nand moments tense, but only the cold wind stirs the nearby ruins.";
-	            List<InventoryItem> scavengedItems=InventoryItem.GenerateLootSet(InventoryItem.LootMetatypes.Salvage);
+	            List<InventoryItem> scavengedItems=InventoryItem.GenerateMapSalvageLoot(InventoryItem.LootMetatypes.Salvage);
 	            eventResult+="\n\n"+fatigueRequirement+" fatigue for "+presentMember.name+"\n"+gasCanisterCount+" gas canisters";
 
 	            presentMember.ChangeFatigue(fatigueRequirement);
@@ -997,7 +997,7 @@ public class ScrapTrade:TradeEvent
     	{
 	        requiredItemType=typeof(Scrap);
 	        requiredItemCount=3;
-			rewardItems.Add(new Fuel(),fuelRewardCount);
+			rewardItems.Add(new Firewood(),fuelRewardCount);
 		}
 		else
 		{
@@ -1142,7 +1142,7 @@ public class WoundedSurvivor:TradeEvent
 {
     string eventDescription="";
 
-    int fatigueRequirement=5;
+    int fatigueRequirement=6;
 
 	public WoundedSurvivor()
     {
@@ -1250,7 +1250,7 @@ public class TownMove:GameEvent
 {
 	string eventDescription="";
 	int gasCost=MapManager.townToTownGasCost;
-	int fatiguePenaltyCost=100;
+	int fatiguePenaltyCost=10;
 	
 	public override string GetDescription(MapRegion eventRegion, List<PartyMember> movedMembers) 
 	{
@@ -1770,7 +1770,7 @@ public class ScavengeEventOne:GameEvent
             {
                 eventResult="Safer-looking ruins are inspected, rubble cleared and plywood pried off, as you search";
                 eventResult+="\namid distant echoes of otherworldly sounds.\nA safe search yields a modest bounty";
-                List<InventoryItem> scavengedItems=InventoryItem.GenerateLootSet(InventoryItem.LootMetatypes.Salvage);
+                List<InventoryItem> scavengedItems=InventoryItem.GenerateMapSalvageLoot(InventoryItem.LootMetatypes.Salvage);
                 eventResult+="\n\n";
                 bool firstAdded=true;
                 foreach (InventoryItem item in scavengedItems)

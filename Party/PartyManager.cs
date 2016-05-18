@@ -102,8 +102,6 @@ public class PartyManager : MonoBehaviour
 		PartyStatusCanvasHandler.main.RefreshAssignmentButtons(selectedMembers);
 	}
 	//public List<PartyMemberSelector> selectors;
-	public StatusEffectDrawer effectTokenPrefab;
-	Dictionary<int,List<StatusEffectDrawer>> statusEffectTokens;
 	
 	public PartyStatusCanvasHandler statusCanvas;
 	public PartyMemberCanvasHandler partyMemberCanvasPrefab;
@@ -131,9 +129,9 @@ public class PartyManager : MonoBehaviour
 	public delegate void InventoryChangedDeleg();
 	public static event InventoryChangedDeleg InventoryChanged;
 	
-	public delegate void TimePassedDeleg(int hours);
+	public delegate void TimePassedDeleg();
 	public static event TimePassedDeleg ETimePassed;
-	public delegate void TimePassedEndDeleg(int hours);
+	public delegate void TimePassedEndDeleg();
 	public static event TimePassedEndDeleg ETimePassedEnd;
 	
 	Dictionary<PartyMember,AssignedTask> assignedTasks;
@@ -175,9 +173,6 @@ public class PartyManager : MonoBehaviour
 		if (!assignedTasks.ContainsKey(member)) throw new System.Exception("Trying to remove task from member with no task!");
 		else TryRemoveMemberTask(member);
 	}
-	//public PartyMemberSelector selectorPrefab;
-	
-	//public void SetDefaultState() {}
 	
 	//Setup start of game
 	public void SetDefaultState()
@@ -193,14 +188,13 @@ public class PartyManager : MonoBehaviour
 		//partyVisibilityMod=0;
 		//foodSupply=0;//2;
 		daysLeft=campaignDays;
-		ammo=500;//500;//5;
-		gas=0;
+		ammo=0;//500;//5;
+		gas=1;
 		
 		partyMembers=new List<PartyMember>();
 		selectedMembers=new List<PartyMember>();
 		assignedTasks=new Dictionary<PartyMember, AssignedTask>();
 		//selectors=new List<PartyMemberSelector>();
-		//statusEffectTokens=new Dictionary<int, List<StatusEffectDrawer>>();
 		
 		AddNewPartyMember(new PartyMember(startingRegion));
 		AddNewPartyMember(new PartyMember(startingRegion));
@@ -216,39 +210,10 @@ public class PartyManager : MonoBehaviour
 		startingRegion.StashItem(new FoodSmall());
 		startingRegion.StashItem(new FoodSmall());
 
-		//startingRegion.StashItem(new Pills());
-		//startingRegion.StashItem(new Scrap());
-		//startingRegion.StashItem(new Scrap());
-		//startingRegion.StashItem(new Scrap());
-		//startingRegion.StashItem(new Fuel());
-		//startingRegion.StashItem(new Fuel());
-		//startingRegion.StashItem(new Fuel());
-		//startingRegion.StashItem(new Fuel());
 
-		MapManager.main.FocusViewOnRegion(startingRegion.GetComponent<RectTransform>());
-
-		startingRegion.StashItem(new AssaultRifle());
-		startingRegion.StashItem(new AssaultRifle());
-		startingRegion.StashItem(new SettableTrap());
-		startingRegion.StashItem(new SettableTrap());
-		//startingRegion.StashItem(new SettableTrap());
-		//startingRegion.StashItem(new Bandages());
-		//startingRegion.StashItem(new CampBarricade());
-		//startingRegion.StashItem(new CampBarricade());
-		//startingRegion.StashItem(new CampBarricade());
-		//startingRegion.StashItem(new Medkit());
-		//startingRegion.StashItem(new Medkit());
-		//startingRegion.StashItem(new Backpack());
-		//startingRegion.StashItem(new Backpack());
-		//startingRegion.StashItem(new ArmorVest());
-		//startingRegion.StashItem(new NineM());
-		//startingRegion.StashItem(new ArmorVest());
-		//startingRegion.StashItem(new Bed());
-		//startingRegion.StashItem(new Bed());
-		//startingRegion.StashItem(new Pot());//
-		//startingRegion.StashItem(new Scrap());
 		//Do this to setup proper background color
 		//PassTime(1);
+		MapManager.main.FocusViewOnRegion(startingRegion.GetComponent<RectTransform>());
 	}
 	/*
 	void PassTime(int hoursPassed)
@@ -295,7 +260,7 @@ public class PartyManager : MonoBehaviour
 			PartyStatusCanvasHandler.main.NewNotification(timePassageText);
 			//dayTime=(int)Mathf.Repeat(dayTime+hoursPassed,24);
 			//foreach (PartyMember member in partyMembers) {member.hunger+=10*hoursPassed;}
-			if (ETimePassed!=null) {ETimePassed(hoursPassed);}
+			if (ETimePassed!=null) {ETimePassed();}
 			
 			//Adjust camera bg color
 			float lightBottomThreshold=0.5f;
@@ -345,7 +310,7 @@ public class PartyManager : MonoBehaviour
 			//This may cause issues on gameover
 			PartyStatusCanvasHandler.main.RefreshAssignmentButtons(selectedMembers);
 			InventoryScreenHandler.mainISHandler.RefreshInventoryItems();
-			if (ETimePassedEnd!=null) ETimePassedEnd(1);
+			if (ETimePassedEnd!=null) ETimePassedEnd();
 		}
 		else
 		{
@@ -375,6 +340,7 @@ public class PartyManager : MonoBehaviour
 	
 	public void RemovePartyMember(PartyMember removedMember)
 	{
+		removedMember.currentRegion.localPartyMembers.Remove(removedMember);
 		if (assignedTasks.ContainsKey(removedMember)) RemoveMemberTask(removedMember);
 		if (selectedMembers.Contains(removedMember)) selectedMembers.Remove(removedMember);
 		MapManager.main.RemoveMemberToken(removedMember);
@@ -488,117 +454,39 @@ public class PartyManager : MonoBehaviour
 		return moveSuccesful;
 	}
 	
-	public void AddPartyMemberStatusEffect(PartyMember member, StatusEffect effect)//(int memberIndex, StatusEffect effect)
+	public void AddPartyMemberStatusEffect(PartyMember member, MemberStatusEffect effect)//(int memberIndex, StatusEffect effect)
 	{
 		if (partyMembers.Contains(member))
 		{
 			//member.activeStatusEffects.Add(effect);
-			if (member.AddStatusEffect(effect)) partyMemberCanvases[member].AddStatusEffectToken(effect);
+			if (member.TryAddOrStackStatusEffect(effect)) 
+			{
+				partyMemberCanvases[member].AddStatusEffectToken(effect);
+				//If an encounter is happening, add effect tokens to encounter member tokens too
+				if (EncounterCanvasHandler.main.encounterOngoing)
+				{
+					MemberTokenHandler memberToken;
+					if (EncounterCanvasHandler.main.memberTokens.TryGetValue(member,out memberToken)) memberToken.AddNewStatusEffectToken(effect);
+				}
+			}
 		}
 	}
 	
-	public void RemovePartyMemberStatusEffect(PartyMember member, StatusEffect effect)//(int memberIndex, StatusEffect effect)
+	public void RemovePartyMemberStatusEffect(PartyMember member, MemberStatusEffect effect)//(int memberIndex, StatusEffect effect)
 	{
 		if (partyMembers.Contains(member))
 		{
 			member.activeStatusEffects.Remove(effect);
 			partyMemberCanvases[member].RemoveStatusEffectToken(effect);
-
+			//If an encounter is happening, remove effect tokens from encounter member tokens too
+			if (EncounterCanvasHandler.main.encounterOngoing)
+			{
+				MemberTokenHandler memberToken;
+				if (EncounterCanvasHandler.main.memberTokens.TryGetValue(member,out memberToken)) memberToken.RemoveOldstatusEffectToken(effect);
+			}
 		}
 		effect.CleanupEffect();
 	}
-	/*
-	public void DamagePartyMember(PartyMember member, int dmg)
-	{
-		//PartyMember affected=partyMembers[memberIndex];
-		member.health-=dmg;
-		if (member.health==0) 
-		{
-			RemovePartyMember(member);
-		}
-	}*/
-	/*
-	public bool HealPartyMember(int memberIndex, int amountHealed)
-	{
-		return HealPartyMember(partyMembers[memberIndex],amountHealed);
-	}*/
-	/*
-	public bool HealPartyMember (PartyMember member, int amountHealed)
-	{
-		bool healingSuccesful=false;
-		{
-			if (member.health<member.healthMax)
-			{
-				member.health+=amountHealed;
-				healingSuccesful=true;
-			}
-		}
-		return healingSuccesful;
-	}*/
-	/*
-	public bool FeedPartyMember(PartyMember member, int amountFed)
-	{
-		bool feedSuccesful=false;
-		if (member.hunger>0)
-		{
-			//member.health+=amountHealed;
-			member.hunger-=amountFed;
-			feedSuccesful=true;
-		}
-		return feedSuccesful;
-	}*/
-	/*
-	public bool partyMemberDoPunch(PartyMember member)
-	{
-		bool strongPunch=false;
-		if (member.stamina>0) 
-		{
-			member.stamina-=1;
-			strongPunch=true;
-		}
-		return strongPunch;
-	}*/
-	
-	/*
-	void DrawPartyMemberStats()
-	{
-		float startX=partyStatsStartX;
-		float startY=partyStatsStartY;
-		//float offsetY=0;
-		float sizeX=100;
-		float sizeY=25;
-		
-		Rect itemRect=new Rect(startX,startY,sizeX,sizeY);
-		int i=0;
-		foreach(PartyMember member in partyMembers)
-		{
-			GUI.Box(itemRect,member.name);
-			itemRect.y+=sizeY+17;
-			Vector3 newSelectorPos=Camera.main.ScreenToWorldPoint(new Vector2(itemRect.x+sizeX*0.5f,Screen.height-itemRect.y));
-			newSelectorPos.z=-2;
-			//adjust selectors
-			selectors[i].transform.position=newSelectorPos;//Camera.main.ScreenToWorldPoint(new Vector2(500,Screen.height-500));//itemRect.x,Screen.height-itemRect.y));
-			//adjust status effect tokens
-			if (statusEffectTokens[i].Count>0)
-			{
-				Vector3 newTokenPos=newSelectorPos+new Vector3(25,0,0);
-				foreach(StatusEffectDrawer drawer in statusEffectTokens[i]) 
-				{
-					drawer.transform.position=newTokenPos;
-					newTokenPos+=new Vector3(25,0,0);
-				}
-			}
-			itemRect.y+=17;
-			GUI.Box(itemRect,"Health:"+member.health);
-			itemRect.y+=sizeY+3;
-			GUI.Box(itemRect,"Stamina:"+member.stamina);
-			itemRect.y+=sizeY+3;
-			GUI.Box(itemRect,"Hunger:"+member.hunger);
-			itemRect.y+=sizeY+3;
-			i++;
-		}
-		//Camera.main.ScreenToWorldPoint(new Vector2(partyMemberStartX+partyMemberXGap*i,Screen.height-(partyMemberStartY)))
-	}*/
 	
 	public void GameOverCleanup()
 	{
@@ -618,28 +506,8 @@ public class PartyManager : MonoBehaviour
 		GameManager.GameOver+=GameOverCleanup;
 	}
 
-	//Debug
-	void Update() 
+	void Update()
 	{
-		if (Input.GetKeyDown(KeyCode.M)) 
-		{
-			//partyMembers[0].TakeDamage(partyMembers[0].vitalsMaxHealth-1,false);
-			//partyMembers[0].AddStatusEffect(new Bleed(partyMembers[0]));
-			//AddPartyMemberStatusEffect(partyMembers[0],new Bleed(partyMembers[0]));
-			//AddNewPartyMember(new PartyMember(selectedMembers[0].currentRegion));
-			//partyMembers[0].TakeDamage(50,false,PartyMember.BodyPartTypes.Hands);
-			//partyMembers[1].TakeDamage(50,false,PartyMember.BodyPartTypes.Legs);
-			//AddPartyMemberStatusEffect(partyMembers[0],new Cold());
-			partyMembers[0].skillpoints+=2;
-		}
-		/*
-		if (Input.GetKeyDown(KeyCode.Space))
-		{
-			if (GameManager.main.gameStarted && !EncounterCanvasHandler.main.encounterOngoing && !GameEventManager.mainEventManager.drawingEvent)
-			{
-				AdvanceMapTurn();
-				//foreach (MemberMapToken token in MapManager.main.memberTokens) token.moved=false;
-			}
-		}*/
+		if (Input.GetKeyDown(KeyCode.K)) {AddPartyMemberStatusEffect(partyMembers[0],new Bleed());} 
 	}
 }

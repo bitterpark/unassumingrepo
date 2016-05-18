@@ -49,78 +49,31 @@ public class MapManager : MonoBehaviour
 		return description;
 	}*/
 
-	void SetDailyTemperatureRating(int emptyInt)
+	void SetDailyTemperatureRating()
 	{
 		float rand=Random.value;
 		if (rand<=1f) mapTemperatureRating=MapRegion.TemperatureRating.Freezing;
 		if (rand<=0.66f) mapTemperatureRating=MapRegion.TemperatureRating.Cold;
 		if (rand<=0.33f) mapTemperatureRating=MapRegion.TemperatureRating.Okay; 
 	}
-	
-	//THIS METHOD CAUSES THE DISPLACEMENT BUG
+
 	public void FocusViewOnRegion(RectTransform regionTransform)
 	{
-		/*
-		Vector2 newPosition=regionTransform.rect.center+(Vector2)regionTransform.localPosition;
-		//print ("Moving to local position:"+regionTransform.localPosition);
-		Vector2 scrollrectFocus=Vector2.zero;
-		scrollrectFocus.x=(newPosition.x/regionsGridGroup.GetComponent<RectTransform>().rect.width);
-		//!!!Y NEEDS TO BE CORRECTLY INVERTED!!! - in scrollrects, y=0 represents bottom, which is inverse to the way the rest of this setup works
-		scrollrectFocus.y=(regionsGridGroup.GetComponent<RectTransform>().rect.height-Mathf.Abs(newPosition.y))
-		/regionsGridGroup.GetComponent<RectTransform>().rect.height;
-		//scrollrectFocus=new Vector2(-5.0f,-5.0f);
-		//newPosition.x/=regionsGridGroup.GetComponent<RectTransform>().rect.width;
-		//newPosition.y/=regionsGridGroup.GetComponent<RectTransform>().rect.height;//
-		*/
-		//regionsGridGroup.parent.GetComponent<ScrollRect>().normalizedPosition=scrollrectFocus;
-		regionsGridGroup.localPosition=-regionTransform.localPosition;
-		/*
-		CreateRegion(new Vector2
-		(testMod*regionsGridGroup.GetComponent<RectTransform>().rect.width
-		,-(regionsGridGroup.GetComponent<RectTransform>().rect.height-(testMod*regionsGridGroup.GetComponent<RectTransform>().rect.height))));
-		Canvas.ForceUpdateCanvases();//*/
+		FocusViewOnLocalPoint(regionTransform.localPosition);
 	}
-
-	public void FocusViewOnScreenPoint(Vector2 screenPointCoords)
+	void FocusViewOnScreenPoint(Vector2 screenPointCoords)
 	{
-		Vector2 localPoint=Vector2.zero;
+		Vector2 localPoint;
 		if (RectTransformUtility.ScreenPointToLocalPointInRectangle(regionsGridGroup.GetComponent<RectTransform>(),screenPointCoords,null
-		,out localPoint))
-		{
-			//
-		 	
-			Vector2 newPosition=localPoint;
-			//print ("Moving to local position:"+regionTransform.localPosition);
-			Vector2 scrollrectFocus=Vector2.zero;
-			scrollrectFocus.x=(newPosition.x/regionsGridGroup.GetComponent<RectTransform>().rect.width);
-			//!!!Y NEEDS TO BE CORRECTLY INVERTED!!! - in scrollrects, y=0 represents bottom, which is inverse to the way the rest of this setup works
-			scrollrectFocus.y=(regionsGridGroup.GetComponent<RectTransform>().rect.height-Mathf.Abs(newPosition.y))
-			/regionsGridGroup.GetComponent<RectTransform>().rect.height;
-			//scrollrectFocus=new Vector2(-5.0f,-5.0f);
-			//newPosition.x/=regionsGridGroup.GetComponent<RectTransform>().rect.width;
-			//newPosition.y/=regionsGridGroup.GetComponent<RectTransform>().rect.height;//
-			//print ("Scrollrect focus x is:"+scrollrectFocus.x+ToString());
-			/*
-			float testMod=0.5f;
-			print ("Zooming to x:"+(testMod*regionsGridGroup.GetComponent<RectTransform>().rect.width)
-			+", y:"+(testMod*regionsGridGroup.GetComponent<RectTransform>().rect.height));//*/
-			regionsGridGroup.localPosition=-localPoint;//.parent.GetComponent<ScrollRect>().normalizedPosition=scrollrectFocus;
-			//print(localPoint);
-		}// else, do nothing
-		/*
-		CreateRegion(new Vector2
-		(testMod*regionsGridGroup.GetComponent<RectTransform>().rect.width
-		,-(regionsGridGroup.GetComponent<RectTransform>().rect.height-(testMod*regionsGridGroup.GetComponent<RectTransform>().rect.height))));
-		Canvas.ForceUpdateCanvases();//*/
+		,out localPoint)) FocusViewOnLocalPoint(localPoint);
+	}
+	void FocusViewOnLocalPoint(Vector2 localPoint)
+	{
+		Vector3 result=new Vector3(-localPoint.x*regionsGridGroup.transform.localScale.x
+		,-localPoint.y*regionsGridGroup.transform.localScale.y,0);
+		regionsGridGroup.localPosition=result;
 	}
 
-	IEnumerator MapGenViewFocus(RectTransform regionTransform)
-	{
-		yield return new WaitForEndOfFrame();
-		FocusViewOnRegion(regionTransform);
-		yield break;
-	}
-	
 	public void GenerateNewMap()
 	{
 		memberTokens=new Dictionary<PartyMember,MemberMapToken>();
@@ -435,38 +388,7 @@ public class MapManager : MonoBehaviour
 		PartyManager.ETimePassed+=SetDailyTemperatureRating;
 	}
 	
-	void Update()
-	{
-		if (Input.GetKeyDown(KeyCode.H)) {FocusViewOnScreenPoint(Input.mousePosition);}//FocusViewOnRegion(mapRegions[0].GetComponent<RectTransform>());}
-			
 
-			//ZOOM OUT
-			if (Input.GetAxis("Mouse ScrollWheel")<0)
-			{
-				//Do zoom
-				float scaleFactor=Mathf.Max(regionsGridGroup.transform.localScale.x*zoomFactor,Mathf.Pow(zoomFactor,3));
-				regionsGridGroup.transform.localScale=new Vector3(scaleFactor,scaleFactor,1);
-				//Canvas.ForceUpdateCanvases();
-
-				//Focus view on cursor room after zoom
-				//FocusViewOnScreenPoint(Input.mousePosition);
-				//if (zoomRoomTransform!=null) FocusViewOnRoom(zoomRoomTransform);
-			}
-			//ZOOM IN
-			if (Input.GetAxis("Mouse ScrollWheel")>0)
-			{
-				//Do zoom
-				float scaleFactor=Mathf.Min(regionsGridGroup.transform.localScale.x/zoomFactor,1/Mathf.Pow(zoomFactor,3));
-				regionsGridGroup.transform.localScale=new Vector3(scaleFactor,scaleFactor,1);
-				//regionsGridGroup.transform.localScale=Mathf.Min(regionsGridGroup.transform.localScale/zoomFactor,1/Mathf.Pow(zoomFactor,3));
-				//Canvas.ForceUpdateCanvases();
-
-				//Focus view on cursor room after zoom
-				//FocusViewOnScreenPoint(Input.mousePosition);
-				//if (zoomRoomTransform!=null) FocusViewOnRoom(zoomRoomTransform);
-			}
-
-	}
 	
 	/*
 	MapRegion CreateNewRegion(Vector2 newRegionPos, int xCoord, int yCoord)
@@ -485,18 +407,13 @@ public class MapManager : MonoBehaviour
 		newRegion.GenerateEncounter(false);
 		return newRegion;
 	}*/
-	//For regular regions
+
 	MapRegion CreateRegion(Vector2 newRegionPos)
-	{
-		return CreateRegion(newRegionPos,false);
-	}
-	//For endgame region
-	MapRegion CreateRegion(Vector2 newRegionPos, bool isEndgame)
 	{
 		MapRegion newRegion=Instantiate(mapRegionPrefab,newRegionPos,Quaternion.identity) as MapRegion;
 		newRegion.transform.SetParent(regionsGridGroup);
 		newRegion.transform.localPosition=newRegionPos;
-		newRegion.GenerateEncounter(isEndgame);
+		newRegion.GenerateEncounter();
 		mapRegions.Add(newRegion);
 		return newRegion;
 	}
@@ -618,7 +535,6 @@ public class MapManager : MonoBehaviour
 			if (clickedRegion.localPartyMembers.Count>0) 
 			MapManager.main.scoutingHandler.StartDialog(clickedRegion);
 		}
-		
 	}
 	/*
 	public void MoveMembersToRegion(Vector2 newRegionCoords, params PartyMember[] movedMembers)
@@ -762,135 +678,27 @@ public class MapManager : MonoBehaviour
 		//GameManager.GameStart+=GenerateNewMap;
 		GameManager.GameOver+=ClearMap;
 	}
-	/*
-	void OnGUI()
+
+	void Update()
 	{
-		if (GameManager.main.gameStarted && !EncounterCanvasHandler.main.encounterOngoing && PartyManager.mainPartyManager.selectedMembers.Count>0)
+		if (!EncounterCanvasHandler.main.encounterOngoing)
 		{
-			if (!InventoryScreenHandler.mainISHandler.inventoryShown && !GameEventManager.mainEventManager.drawingEvent)
+			//ZOOM OUT
+			if (Input.GetAxis("Mouse ScrollWheel")<0)
 			{
-				MapRegion checkedRegion=mapRegions[PartyManager.mainPartyManager.selectedMembers[0].worldCoords];
-				Rect encounterStartRect=new Rect(110,10,80,25);
-				
-				List<PartyMember> membersFreeToAct=new List<PartyMember>();
-				
-				foreach (PartyMember member in PartyManager.mainPartyManager.selectedMembers)
-				{
-					if (!memberTokens[member].moved)
-					{
-						membersFreeToAct.Add(member);
-					}
-				}
-				//{
-				Rect restButtonRect=new Rect(110,35,140,25);
-				if (membersFreeToAct.Count>0)
-				{
-					if (checkedRegion.hasEncounter)
-					{
-						if (GUI.Button (encounterStartRect,"Explore")) 
-						{
-							if (scoutingHandler.GetComponent<Canvas>().enabled) {scoutingHandler.EndDialog();}
-							else
-							{	
-								scoutingHandler.StartDialog(checkedRegion);
-							}
-						}
-					}
-					
-					
-					if (checkedRegion.hasCamp)
-					{
-						if (GUI.Button(restButtonRect,"Rest")) 
-						{
-							foreach (PartyMember member in membersFreeToAct)
-							{
-								PartyManager.mainPartyManager.Rest(member);
-							}
-						
-						}
-					}
-					else
-					{
-						if (GUI.Button(restButtonRect,"Setup camp("+checkedRegion.campSetupTimeRemaining+" hours)")) 
-						{
-							int totalInvestedHours=0;
-							//PartyManager.mainPartyManager.PassTime(campSetupTime);
-							foreach (PartyMember member in membersFreeToAct)
-							{
-								//token.moved=true;
-								//totalInvestedHours+=1;
-								//if (totalInvestedHours==checkedRegion.campSetupTimeRemaining) break;
-								AssignedTask campBuildingTask=new AssignedTask(member,AssignedTaskTypes.BuildCamp
-								,()=>
-								{
-									if (!checkedRegion.hasCamp) return true;
-									else return false;
-								}
-								,()=>
-								{
-									checkedRegion.SetUpCamp(1);
-								}
-								);
-								PartyManager.mainPartyManager.AssignMemberNewTask(campBuildingTask);
-							}
-							//checkedRegion.SetUpCamp(totalInvestedHours);
-						}
-					}
-				}
-				else
-				{
-					if (checkedRegion.hasCamp)
-					{
-						List<PartyMember> buildingMembers=new List<PartyMember>();
-						foreach (PartyMember member in PartyManager.mainPartyManager.selectedMembers)
-						{
-							AssignedTaskTypes memberTaskType;
-							if (PartyManager.mainPartyManager.GetAssignedTask(member,out memberTaskType))
-							{
-								if (memberTaskType==AssignedTaskTypes.Rest) 
-									buildingMembers.Add(member);
-							}
-						}
-						if (buildingMembers.Count>0)
-						{
-							if (GUI.Button(restButtonRect,"Stop resting")) 
-							{
-								foreach (PartyMember member in buildingMembers)
-								{
-									PartyManager.mainPartyManager.RemoveMemberTask(member);//.assignedTasks.Remove(token.assignedMember);
-									//token.moved=false;
-								}
-								
-							}
-						}
-					}
-					else
-					{
-						List<PartyMember> buildingMembers=new List<PartyMember>();
-						foreach (PartyMember member in PartyManager.mainPartyManager.selectedMembers)
-						{
-							AssignedTaskTypes memberTaskType;
-							if (PartyManager.mainPartyManager.GetAssignedTask(member,out memberTaskType))
-							{
-								if (memberTaskType==AssignedTaskTypes.BuildCamp) 
-								buildingMembers.Add(member);
-							}
-						}
-						if (buildingMembers.Count>0)
-						{
-							if (GUI.Button(restButtonRect,"Stop building camp")) 
-							{
-								foreach (PartyMember member in buildingMembers)
-								{
-									PartyManager.mainPartyManager.RemoveMemberTask(member);//.assignedTasks.Remove(token.assignedMember);
-									//token.moved=false;
-								}
-								
-							}
-						}
-					}
-				}
+				//Do zoom
+				float scaleFactor=Mathf.Max(regionsGridGroup.transform.localScale.x*zoomFactor,Mathf.Pow(zoomFactor,3));
+				regionsGridGroup.transform.localScale=new Vector3(scaleFactor,scaleFactor,1);
+			}
+			//ZOOM IN
+			if (Input.GetAxis("Mouse ScrollWheel")>0)
+			{
+				//Do zoom
+				float scaleFactor=Mathf.Min(regionsGridGroup.transform.localScale.x/zoomFactor,1/Mathf.Pow(zoomFactor,3));
+				regionsGridGroup.transform.localScale=new Vector3(scaleFactor,scaleFactor,1);
+				//Refocus camera
+				FocusViewOnScreenPoint(Input.mousePosition);
 			}
 		}
-	}*/
+	}
 }

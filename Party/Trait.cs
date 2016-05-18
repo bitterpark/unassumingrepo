@@ -26,12 +26,12 @@ public abstract class Trait
 		allTraits.Add (new Antisocial());
 		allTraits.Add (new WeakArm());
 		allTraits.Add (new PoorShot());
-		allTraits.Add (new Medic());
 		allTraits.Add (new WeakBack());
-		allTraits.Add(new Loner());
-		allTraits.Add(new SocialAnimal());
-		allTraits.Add(new Violent());
-		allTraits.Add(new Kleptomaniac());
+		allTraits.Add (new Loner());
+		allTraits.Add (new SocialAnimal());
+		allTraits.Add (new Violent());
+		allTraits.Add (new Kleptomaniac());
+		allTraits.Add(new Slow());
 		/*
 		allTraits.Add(new Loner());
 		allTraits.Add(new SocialAnimal());
@@ -49,7 +49,8 @@ public abstract class Trait
 			{
 				resultList.Add(new Dodge());
 				resultList.Add(new Technique());
-				resultList.Add(new HitAndRun());
+				resultList.Add(new Deadeye());
+				//resultList.Add(new HitAndRun());
 				break;
 			}
 			case Skilltree.Carrier:
@@ -61,9 +62,11 @@ public abstract class Trait
 			}
 			case Skilltree.Scout:
 			{
-				resultList.Add(new Quick());
+				//resultList.Add(new Quick());
+				resultList.Add(new Medic());
 				resultList.Add(new Quiet());
-				resultList.Add(new Agile());
+				resultList.Add(new Scout());
+				//resultList.Add(new Agile());
 				break;
 			}
 		}
@@ -154,19 +157,20 @@ public abstract class Skill:Trait
 //SCOUT SKILLS
 public class Quiet:Skill
 {	
+	float probIncreaseMult=0.5f;
 	public Quiet()
 	{
 		name="Quiet";
 	}
 	public override void ActivatePerk(PartyMember member)
 	{
-		member.isQuiet=true;
+		member.movingEnemySpawnProbIncrease*=probIncreaseMult;
 		//member.dodgeChance+=0.25f;
 		
 	}//+=healthUpgrade;}
-	public override string GetMouseoverDescription (){return "Walks softly\n\nReduces walking sound";}
+	public override string GetMouseoverDescription (){return "Walks softly\n\nHalves movement sound";}
 }
-
+//Currently unused
 public class Agile:Skill
 {
 	public Agile()
@@ -181,6 +185,18 @@ public class Agile:Skill
 	}//+=healthUpgrade;}
 	public override string GetMouseoverDescription (){return "Grace of a cat\n\nMoves freely through barricades";}
 }
+
+public class Medic:Skill
+{
+	public static int healBonus=10;
+	public Medic ()
+	{
+		name="Medic";
+	}
+	public override void ActivatePerk(PartyMember member) {member.isMedic=true;}
+	public override string GetMouseoverDescription () {return "Has first aid training\n\nIncreases healing from medkits by "+healBonus;}
+}
+//Currently unused
 public class Quick:Skill
 {
 	public Quick()
@@ -196,6 +212,22 @@ public class Quick:Skill
 	public override string GetMouseoverDescription (){return "Good cardio\n\nExtra move per turn";}
 }
 
+public class Scout:Skill
+{
+	int moveCostReduction=1;
+	public Scout()
+	{
+		name="Scout";
+		oppositePerk=typeof(Slow);
+	}
+	public override void ActivatePerk(PartyMember member)
+	{
+		member.currentFatigueMoveModifier-=moveCostReduction;//member.=0;//.barricadeAvoidanceEnabled=true;
+		//member.dodgeChance+=0.25f;
+		
+	}//+=healthUpgrade;}
+	public override string GetMouseoverDescription (){return "Trailblazer\n\nFatigue from map movement reduced by "+moveCostReduction;}
+}
 
 //FIGHTER SKILLS
 /*
@@ -219,13 +251,13 @@ public class Dodge:Skill
 	{
 		name="Avoidance";
 	}
-	public override void ActivatePerk(PartyMember member) {member.dodgeChance+=dodgeChanceDelta;}//member.meleeDamageMod+=meleeDamageChange;}
+	public override void ActivatePerk(PartyMember member) {member.maxDodgeChance+=dodgeChanceDelta;}//member.meleeDamageMod+=meleeDamageChange;}
 	public override string GetMouseoverDescription () {return "Ducks and weaves\n\n+"+dodgeChanceDelta+" to dodge chance";}//+meleeDamageChange+" to melee damage";}
 }
 public class Technique:Skill
 {	
 	//int meleeDamageChange=50;
-	float hitChanceDelta=0.25f;
+	float hitChanceDelta=0.15f;
 	public Technique()
 	{
 		name="Precision";
@@ -234,6 +266,7 @@ public class Technique:Skill
 	public override void ActivatePerk(PartyMember member) {member.meleeHitchanceMod+=hitChanceDelta;}//member.meleeDamageMod+=meleeDamageChange;}
 	public override string GetMouseoverDescription () {return "Fighting technique\n\n"+hitChanceDelta+" to melee hit chance";}//+meleeDamageChange+" to melee damage";}
 }
+//Currently unused
 public class HitAndRun:Skill
 {	
 	//int meleeDamageChange=50;
@@ -243,6 +276,19 @@ public class HitAndRun:Skill
 	}
 	public override void ActivatePerk(PartyMember member) {member.hitAndRunEnabled=true;}//member.meleeDamageMod+=meleeDamageChange;}
 	public override string GetMouseoverDescription () {return "Fights dirty\n\nCan move after attacking";}//+meleeDamageChange+" to melee damage";}
+}
+
+public class Deadeye: Skill
+{
+	//int rangedDamageChange=20;
+	float rangedHitchanceChange=0.3f;
+	public Deadeye ()
+	{
+		name="Deadeye";
+		oppositePerk=typeof(PoorShot);
+	}
+	public override void ActivatePerk(PartyMember member) {member.rangedHitchanceMod+=rangedHitchanceChange;}
+	public override string GetMouseoverDescription () {return "Always hits the bullseye\n\n"+rangedHitchanceChange+" to ranged hit chance";}//+rangedDamageChange+" to ranged damage";}
 }
 
 //CARRIER SKILLS
@@ -282,7 +328,7 @@ public class Tough:Skill
 
 public class Fit:Skill
 {
-	int staminaUpgrade=2;
+	int staminaUpgrade=6;
 	//string name="Enduring";
 	public Fit ()
 	{
@@ -295,26 +341,11 @@ public class Fit:Skill
 }
 
 //GENERIC SKILLS
-public class Scout:Skill
-{
-	int moveCostReduction=1;
-	public Scout()
-	{
-		name="Scout";
-		oppositePerk=typeof(Slow);
-	}
-	public override void ActivatePerk(PartyMember member)
-	{
-		member.currentFatigueMoveModifier-=moveCostReduction;//member.=0;//.barricadeAvoidanceEnabled=true;
-		//member.dodgeChance+=0.25f;
-		
-	}//+=healthUpgrade;}
-	public override string GetMouseoverDescription (){return "Trailblazer\n\nFatigue from map movement reduced by "+moveCostReduction;}
-}
+
 
 //GENERIC TRAITS
 
-public class Slow:Skill
+public class Slow:Trait
 {
 	int moveCostIncrease=1;
 	public Slow()
@@ -605,7 +636,7 @@ public class Powerhouse: Perk
 public class WeakArm: Trait
 {
 	//int meleeDamageChange=-10;
-	float hitChanceDelta=-0.15f;
+	float hitChanceDelta=-0.1f;
 	public WeakArm ()
 	{
 		name="Weak arm";
@@ -615,18 +646,6 @@ public class WeakArm: Trait
 	public override string GetMouseoverDescription () {return "Hits like a pansy\n\n"+hitChanceDelta+" to melee hit chance";}//return "Hits like a pansy\n\n"+meleeDamageChange+" to melee damage";}
 }
 
-public class Deadeye: Skill
-{
-	//int rangedDamageChange=20;
-	float rangedHitchanceChange=0.3f;
-	public Deadeye ()
-	{
-		name="Deadeye";
-		oppositePerk=typeof(PoorShot);
-	}
-	public override void ActivatePerk(PartyMember member) {member.rangedHitchanceMod+=rangedHitchanceChange;}
-	public override string GetMouseoverDescription () {return "Always hits the bullseye\n\n"+rangedHitchanceChange+" to ranged hit chance";}//+rangedDamageChange+" to ranged damage";}
-}
 public class PoorShot: Trait
 {
 	//int rangedDamageChange=-20;
@@ -663,16 +682,6 @@ public class WeakBack: Trait
 	public override string GetMouseoverDescription () {return "Doesn't even lift\n\n"+inventorySizeChange+" to carry capacity";}
 }
 
-public class Medic: Trait
-{
-	public static int healBonus=15;
-	public Medic ()
-	{
-		name="Medic";
-	}
-	public override void ActivatePerk(PartyMember member) {member.isMedic=true;}
-	public override string GetMouseoverDescription () {return "Has first aid training\n\nIncreases healing from medkits";}
-}
 public class Cook: Trait
 {
 	public static float hungerIncreaseMult=0.2f;

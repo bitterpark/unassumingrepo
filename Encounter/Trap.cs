@@ -18,10 +18,10 @@ public class Trap
 		{
 			if (assignedToken==null) {throw new System.Exception("Trying to set off a trap with no token assigned!");}
 			//GameManager.DebugPrint("begginning trap setoff");
-			BodyPart attackedPart=null;
+			EnemyBodyPart attackedPart=null;
 			bool attackSuccessful=false;
-			if (activatingEnemy.TryGetBodyPart(BodyPart.PartTypes.Legs,out attackedPart)) attackSuccessful=true;
-			else if (activatingEnemy.TryGetBodyPart(BodyPart.PartTypes.Vitals,out attackedPart)) attackSuccessful=true;
+			if (activatingEnemy.body.TryGetBodyPart(EnemyBodyPart.PartTypes.Legs,out attackedPart)) attackSuccessful=true;
+			else if (activatingEnemy.body.TryGetBodyPart(EnemyBodyPart.PartTypes.Vitals,out attackedPart)) attackSuccessful=true;
 			
 			if (attackSuccessful)
 			{

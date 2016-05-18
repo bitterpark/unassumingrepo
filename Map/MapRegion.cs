@@ -166,7 +166,7 @@ public class MapRegion : MonoBehaviour
 	}*/
 
 	public TemperatureRating localTemperature=TemperatureRating.Freezing;
-	public void SetLocalTemperature(int hours)
+	public void SetLocalTemperature()
 	{
 		localTemperature=MapManager.mapTemperatureRating;
 	}
@@ -246,7 +246,8 @@ public class MapRegion : MonoBehaviour
 	public bool hasEncounter=false;
 	
 	public bool hasCamp=false;
-	public int campSetupTimeRemaining=5;
+	int campSetupTimeRemaining=4;
+	public int GetRemainingCampSetupTime() {return campSetupTimeRemaining;}
 	public Camp campInRegion;
 	
 	public List<PartyMember> localPartyMembers=new List<PartyMember>();
@@ -339,7 +340,6 @@ public class MapRegion : MonoBehaviour
 	}
 	bool _isHive=false;
 	*/
-	bool drawMouseoverText=false;
 	
 	void UpdateVisuals()
 	{
@@ -414,37 +414,20 @@ public class MapRegion : MonoBehaviour
 		}
 	}
 	
-	public void GenerateEncounter(bool isEndgame)
+	public void GenerateEncounter()
 	{
 		hasEncounter=true;
-		if (isEndgame) 
-		{
-			regionalEncounter=new Encounter(true);
-			//threatLevel=ThreatLevels.High;
-		}
-		else 
-		{
-			regionalEncounter=new Encounter();
+		regionalEncounter=new Encounter();
 			
-			float threatRoll=Random.value;
-			if (threatRoll<0.75f) ambientThreatNumber=1;
-			if (threatRoll<0.5f) ambientThreatNumber=2;
-			if (threatRoll<0.25f) ambientThreatNumber=3;
-		}
+		float threatRoll=Random.value;
+		if (threatRoll<0.75f) ambientThreatNumber=1;
+		if (threatRoll<0.5f) ambientThreatNumber=2;
+		if (threatRoll<0.25f) ambientThreatNumber=3;
+
 		teamSizeText.text=regionalEncounter.minRequiredMembers+"-"+regionalEncounter.maxRequiredMembers;
 		//if (threatLevel==ThreatLevels.Low) campSetupTimeRemaining+=2;
 		//if (threatLevel==ThreatLevels.Medium) campSetupTimeRemaining+=4;
 		//if (threatLevel==ThreatLevels.High) campSetupTimeRemaining+=6;
-	}
-	
-	public void GenerateHorde(int emptySigVar)
-	{
-		/*
-		if (Random.value<0.1f) 
-		{
-			MapManager.main.AddHorde(new Vector2(xCoord,yCoord),regionalEncounter.encounterEnemyType);
-			//GameManager.DebugPrint("New horde added, maxX:");
-		}*/
 	}
 	
 	public void SetUpCamp(int manhoursInvested)
@@ -593,33 +576,24 @@ public class MapRegion : MonoBehaviour
 		if (!scouted) {areaDescription="Not scouted";}
 		else 
 		{
-			/*
-			if (hasHorde)
+			if (hasEncounter)
 			{
-				areaDescription+=hordeEncounter.lootDescription;
+				areaDescription+=regionalEncounter.lootDescription+"\n\n";
+				//Describe all potential loot
+				areaDescription+="May contain:\n";
+				foreach (InventoryItem.LootMetatypes metatype in regionalEncounter.chestTypes.probabilities.Keys)
+				{
+					areaDescription+="-"+InventoryItem.GetLootMetatypeDescription(metatype)+"\n";
+				}
+				//areaDescription+="Enemies: "+regionalEncounter.enemyDescription+"\n";//
+				areaDescription+="\nRequired team size: "+regionalEncounter.minRequiredMembers+"-"+regionalEncounter.maxRequiredMembers;
+				//if (isHive) {areaDescription+="\nHive";}
+				//areaDescription+="\nExploration threat: "+CalculateThreatLevel(0);
 			}
-			else*/
+			else 
 			{
-				if (hasEncounter)
-				{
-					
-					areaDescription+=regionalEncounter.lootDescription+"\n\n";
-					//Describe all potential loot
-					areaDescription+="May contain:\n";
-					foreach (InventoryItem.LootMetatypes metatype in regionalEncounter.chestTypes.probabilities.Keys)
-					{
-						areaDescription+="-"+InventoryItem.GetLootMetatypeDescription(metatype)+"\n";
-					}
-					areaDescription+="Enemies: "+regionalEncounter.enemyDescription+"\n";
-					areaDescription+="\nRequired team size: "+regionalEncounter.minRequiredMembers+"-"+regionalEncounter.maxRequiredMembers;
-					//if (isHive) {areaDescription+="\nHive";}
-					//areaDescription+="\nExploration threat: "+CalculateThreatLevel(0);
-				}
-				else 
-				{
-					textExists=true;
-					areaDescription=regionalEvent.GetTooltipDescription();
-				}
+				textExists=true;
+				areaDescription=regionalEvent.GetTooltipDescription();
 			}
 		}
 		if (PartyManager.mainPartyManager.selectedMembers.Count>0)
@@ -693,61 +667,4 @@ public class MapRegion : MonoBehaviour
 	{
 		TooltipManager.main.StopAllTooltips();
 	}
-
-	/*
-	void OnMouseEnter()
-	{
-		//TooltipManager.main.CreateTooltip("Map thing",this.transform,true);
-	}*
-	
-	void OnMouseOver()
-	{
-		drawMouseoverText=false;//true;
-		
-	}
-	
-	void OnMouseExit()
-	{
-		drawMouseoverText=false;
-	}
-	
-	void OnGUI()
-	{
-		if (drawMouseoverText && !EventSystem.current.IsPointerOverGameObject())
-		{
-			float height=60;
-			Vector3 myScreenPos=Camera.main.WorldToScreenPoint(transform.position);
-			bool textExists=true;
-			string areaDescription="";
-			if (!discovered) {areaDescription="Undiscovered";}
-			else 
-			{
-				if (hasHorde)
-				{
-					areaDescription+=hordeEncounter.lootDescription;
-				}
-				else
-				{
-					if (hasEncounter)
-					{
-						if (!scouted) {areaDescription="Not scouted";}
-						else
-						{
-							areaDescription+=regionalEncounter.lootDescription+"\n";
-							areaDescription+="Enemies: "+regionalEncounter.enemyDescription+"\n";
-							areaDescription+="Ambush threat: "+threatLevel;
-							//if (isHive) {areaDescription+="\nHive";}
-						}
-					}
-					else {textExists=false;}
-				}
-			}
-			
-			if (textExists)
-			{
-				Rect textRect=new Rect(myScreenPos.x+50,Screen.height-myScreenPos.y-height*0.5f,200,height);
-				GUI.Box(textRect,areaDescription);
-			}
-		}	
-	}*/
 }

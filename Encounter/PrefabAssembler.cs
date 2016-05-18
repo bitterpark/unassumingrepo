@@ -77,9 +77,12 @@ public class PrefabAssembler : MonoBehaviour
 			}
 		}
 		//Deprecate above later
-		//resultList.Clear();
-		//resultList.AddRange(smallPresets);
-		resultList=new List<GameObject>(smallPresets);
+		resultList.Clear();
+		for (int i=0;i<segmentCount; i++)
+		{
+			resultList.Add(smallPresets[Random.Range(0,smallPresets.Count)]);
+		}
+
 		return resultList;
 	}
 	List<GameObject> GetAllPresetsList(Encounter.AreaTypes areaType)

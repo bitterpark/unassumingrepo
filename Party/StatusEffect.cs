@@ -1,14 +1,26 @@
 ﻿using UnityEngine;
 using System.Collections;
 
-public abstract class StatusEffect 
+
+public interface IStatusEffectTokenInfo
 {
-	public abstract Sprite effectSprite {get;}
-	public abstract string effectName {get;}
-	
+	Sprite GetEffectSprite();
+	string GetEffectName();
+	string GetMouseoverDescription();
+}
+
+public abstract class MemberStatusEffect: IStatusEffectTokenInfo
+{
+	protected Sprite effectSprite;
+	protected string effectName;
+
+	#region IEffectTokenInfo implementation
+	public Sprite GetEffectSprite() {return effectSprite;}
+	public string GetEffectName() {return effectName;}
 	public abstract string GetMouseoverDescription();
-	public virtual void TurnOverEffect() {}
-	public virtual void TimePassEffect(int hoursPassed) {}
+	#endregion
+
+	public virtual void TimePassEffect() {}
 	public virtual void ActivateEffect(PartyMember member) {}
 	public virtual void CleanupEffect() {}
 	public virtual void StackEffect() {}
@@ -16,82 +28,79 @@ public abstract class StatusEffect
 }
 
 //MEMBER EFFECTS
-public class Bleed:StatusEffect
+public class Bleed:MemberStatusEffect
 {
-	string _name="Bleeding";
-	public override string effectName 
-	{
-		get {return _name;}
-	}
-	public override Sprite effectSprite 
-	{
-		get {return SpriteBase.mainSpriteBase.bleedSprite;}
-	}
+	
 	//int affectedPartyMemberIndex;
 	PartyMember affectedMember;
-	int hoursDuration=2;
-	int hoursPassed=0;
-	int bleedDmg=10;
+	int roundsDuration=2;
+	//int hoursPassed=0;
+	int bleedDmg=5;
 	
-	public override void TimePassEffect(int timePassed)
+	public override void TimePassEffect()
 	{
-		for (int i=0; i<timePassed; i++)
+
+		affectedMember.TakeDamage(bleedDmg,false);
+		roundsDuration--;
+		if (roundsDuration<=0) 
 		{
-			//affectedPartyMember.health-=bleedDmg*timePassed;
-			//PartyManager.mainPartyManager.DamagePartyMember(affectedMember,bleedDmg);
-			affectedMember.TakeDamage(bleedDmg,false);
-			hoursPassed+=1;
-			if (hoursPassed==hoursDuration) 
-			{
-				//PartyManager.TimePassed-=TimePassEffect;
-				//PartyManager.mainPartyManager.RemovePartyMemberStatusEffect(affectedMember,this);
-				CureBleed();
-				break;
-			}
+			CureBleed();
 		}
 	}
 
 	public override void ActivateEffect(PartyMember member)
 	{
 		affectedMember=member;
-		PartyManager.ETimePassed+=TimePassEffect;
+		//EncounterCanvasHandler.main.EMe
+		//PartyManager.ETimePassed+=TimePassEffect;
+		EncounterCanvasHandler.main.ERoundIsOver+=TimePassEffect;
+		EncounterCanvasHandler.main.EEncounterExited+=EncounterExitEffect;
 	}
 
 	public void CureBleed()
 	{
-		PartyStatusCanvasHandler.main.NewNotification(affectedMember.name+" has stopped bleeding");
-		PartyManager.mainPartyManager.RemovePartyMemberStatusEffect(affectedMember,this);
+		if (PartyManager.mainPartyManager.partyMembers.Contains(affectedMember))
+		{
+			//PartyStatusCanvasHandler.main.NewNotification(affectedMember.name+" has stopped bleeding");
+			PartyManager.mainPartyManager.RemovePartyMemberStatusEffect(affectedMember,this);
+		}
 	}
 	
 	public override void CleanupEffect()
 	{
-		PartyManager.ETimePassed-=TimePassEffect;
+		EncounterCanvasHandler.main.ERoundIsOver-=TimePassEffect;
+		EncounterCanvasHandler.main.EEncounterExited-=EncounterExitEffect;
 	}
 	
 	public override void StackEffect ()
 	{
-		hoursDuration+=hoursDuration;
+		roundsDuration+=roundsDuration;
 	}
 	
 	public override string GetMouseoverDescription ()
 	{
-		return _name+"\n-"+bleedDmg+" vitals every rest\nDuration:"+(hoursDuration-hoursPassed);
+		return effectName+"\n-"+bleedDmg+" vitals every turn\nDuration:"+roundsDuration;
+	}
+
+	public void EncounterExitEffect(PartyMember exitingMember)
+	{
+		if (affectedMember==exitingMember) while (roundsDuration>0) TimePassEffect();
 	}
 	
 	public Bleed () 
 	{
-		//affectedPartyMemberIndex=affectedMemberIndex;
+		effectName="Bleeding";
+		effectSprite=SpriteBase.mainSpriteBase.bleedSprite;
 		canStack=true;
 	}
 }
 
-public class Cold:StatusEffect
+public class Cold:MemberStatusEffect
 {
-	string _name="Cold";
-	int maxFatiguePenalty=3;
+	int maxFatiguePenalty=4;
 	int sickMoralePenalty=15;
-	int cureMoraleBonus=10;
-	float cureChancePerHour=0.25f;
+	int cureMoraleBonus=5;
+	float cureChancePerCycle=0.25f;
 
 	//int damageModDelta=-40;
 
@@ -107,14 +116,6 @@ public class Cold:StatusEffect
 		PartyManager.ETimePassed+=TimePassEffect;
 	}
 
-	public override string effectName 
-	{
-		get {return _name;}
-	}
-	public override Sprite effectSprite 
-	{
-		get {return SpriteBase.mainSpriteBase.coldSprite;}
-	}
 	//int affectedPartyMemberIndex;
 	PartyMember affectedMember;
 
@@ -129,17 +130,12 @@ public class Cold:StatusEffect
 		affectedMember.morale+=cureMoraleBonus;
 	}
 
-	public override void TimePassEffect(int timePassed)
+	public override void TimePassEffect()
 	{
-		for (int i=0; i<timePassed; i++)
+
+		if (Random.value<=cureChancePerCycle) 
 		{
-			if (Random.value<=cureChancePerHour) 
-			{
-				//PartyManager.TimePassed-=TimePassEffect;
-				//PartyManager.mainPartyManager.RemovePartyMemberStatusEffect(affectedMember,this);
-				CureCold();
-				break;
-			}
+			CureCold();
 		}
 	}
 
@@ -155,31 +151,23 @@ public class Cold:StatusEffect
 	
 	public override string GetMouseoverDescription ()
 	{
-		return _name+"\nFatigue restore reduced by "+maxFatiguePenalty;//"\n Damage dealt reduced by "+damageModDelta;
+		return effectName+"\nFatigue restore reduced by "+maxFatiguePenalty;//"\n Damage dealt reduced by "+damageModDelta;
 	}
 
 	public Cold () 
 	{
+		effectName="Cold";
+		effectSprite=SpriteBase.mainSpriteBase.coldSprite;
 		canStack=true;
 	}
 }
 
-public class BrokenArmsMember:StatusEffect
+public class BrokenArmsMember:MemberStatusEffect
 {
-	string _name="Broken arms";
 	int craftFatiguePenalty=1;
 
 	//int damageModDelta=-40;
 	float hitChanceChange=0.4f;
-
-	public override string effectName 
-	{
-		get {return _name;}
-	}
-	public override Sprite effectSprite 
-	{
-		get {return SpriteBase.mainSpriteBase.brokenArmsSprite;}
-	}
 	//int affectedPartyMemberIndex;
 	PartyMember affectedMember;
 
@@ -201,35 +189,32 @@ public class BrokenArmsMember:StatusEffect
 		affectedMember.morale+=15;
 		affectedMember.currentFatigueCraftPenalty=0;
 	}
-	
-	
+
 	public override string GetMouseoverDescription ()
 	{
-		return _name+"\n Hit chande reduced by "+hitChanceChange+"\nCrafting fatigue cost increased by "+craftFatiguePenalty;//"\n Damage dealt reduced by "+damageModDelta;
+		return effectName+"\n Hit chande reduced by "+hitChanceChange+"\nCrafting fatigue cost increased by "+craftFatiguePenalty;//"\n Damage dealt reduced by "+damageModDelta;
+	}
+
+	public BrokenArmsMember()
+	{
+		effectName="Broken arms";
+		effectSprite=SpriteBase.mainSpriteBase.brokenArmsSprite;
 	}
 }
 
-public class BrokenLegsMember:StatusEffect
+public class BrokenLegsMember:MemberStatusEffect
 {
-	string _name="Broken legs";
 	int fatigueMovePenalty=1;
+	float dodgeChanceMult=0.5f;
 
-	
-	public override string effectName 
-	{
-		get {return _name;}
-	}
-	public override Sprite effectSprite 
-	{
-		get {return SpriteBase.mainSpriteBase.brokenLegsSprite;}
-	}
 	//int affectedPartyMemberIndex;
 	PartyMember affectedMember;
 
 	public override void ActivateEffect(PartyMember member)
 	{
 		affectedMember=member;
-		affectedMember.legsBroken=true;
+		//affectedMember.legsBroken=true;
+		affectedMember.currentDodgeChance=affectedMember.maxDodgeChance*dodgeChanceMult;
 		affectedMember.morale-=15;
 		affectedMember.currentFatigueMoveModifier=fatigueMovePenalty;
 	}
@@ -238,7 +223,8 @@ public class BrokenLegsMember:StatusEffect
 	{
 		//PartyStatusCanvasHandler.main.NewNotification(affectedMember.name+" has stopped bleeding");
 		PartyManager.mainPartyManager.RemovePartyMemberStatusEffect(affectedMember,this);
-		affectedMember.legsBroken=false;
+		//affectedMember.legsBroken=false;
+		affectedMember.currentDodgeChance=affectedMember.maxDodgeChance;
 		affectedMember.morale+=15;
 		affectedMember.currentFatigueMoveModifier=0;
 	}
@@ -246,76 +232,75 @@ public class BrokenLegsMember:StatusEffect
 	
 	public override string GetMouseoverDescription ()
 	{
-		return _name+"\n Reduced move speed\nMap movement cost increased by "+fatigueMovePenalty;
+		return effectName+"\n Dodge chance halved\nMap movement cost increased by "+fatigueMovePenalty;
+	}
+
+	public BrokenLegsMember()
+	{
+		effectName="Broken legs";
+		effectSprite=SpriteBase.mainSpriteBase.brokenLegsSprite;
 	}
 }
 
 //ENEMY EFFECTS
-public class PhasedOut:StatusEffect
+public abstract class EnemyStatusEffect:IStatusEffectTokenInfo
 {
-	string _name="Phased out";
-	public override string effectName 
-	{
-		get {return _name;}
-	}
-	public override Sprite effectSprite 
-	{
-		get {return SpriteBase.mainSpriteBase.phasedOutSprite;}
-	}
+	protected Sprite effectSprite;
+	protected string effectName;
+	#region IEffectTokenInfo implementation
+	public Sprite GetEffectSprite() {return effectSprite;}
+	public string GetEffectName() {return effectName;}
+	public abstract string GetMouseoverDescription();
+	#endregion
+}
+
+public class PhasedOut:EnemyStatusEffect
+{
 	
 	public override string GetMouseoverDescription ()
 	{
-		return _name+"\nCannot be harmed";
+		return effectName+"\nCannot be harmed";
+	}
+	public PhasedOut()
+	{
+		effectName="Phased out";
+		effectSprite=SpriteBase.mainSpriteBase.phasedOutSprite;
 	}
 }
 
-public class NoLegs:StatusEffect
+public class NoLegs:EnemyStatusEffect
 {
-	int movementReduction=1;
-	
-	string _name="Broken legs";
-	public override string effectName 
-	{
-		get {return _name;}
-	}
-	public override Sprite effectSprite 
-	{
-		get {return SpriteBase.mainSpriteBase.brokenLegsSprite;}
-	}
+	//int movementReduction=1;
+	float dodgeChanceMult=0.5f;
 	
 	public override string GetMouseoverDescription ()
 	{
-		return _name+"\nReduced movement";
+		return effectName+"\nReduced dodge";
 	}
 	
 	public NoLegs(EncounterEnemy affectedEnemy)
 	{
-		affectedEnemy.movesPerTurn-=movementReduction;
+		effectName="Broken legs";
+		effectSprite=SpriteBase.mainSpriteBase.brokenLegsSprite;
+		affectedEnemy.body.SetNewDodgeChance(affectedEnemy.body.dodgeChance*dodgeChanceMult);
 	}
 }
 
-public class NoArms:StatusEffect
+public class NoArms:EnemyStatusEffect
 {
 	int staminaDamageReduction=1;
 	float damageModMultiplier=0.5f;
 	
-	string _name="Broken arms";
-	public override string effectName 
-	{
-		get {return _name;}
-	}
-	public override Sprite effectSprite 
-	{
-		get {return SpriteBase.mainSpriteBase.brokenArmsSprite;}
-	}
-	
 	public override string GetMouseoverDescription ()
 	{
-		return _name+"\nReduced attack power";
+		return effectName+"\nReduced damage";
 	}
 	
 	public NoArms(EncounterEnemy affectedEnemy)
 	{
+		effectName="Broken arms";
+		effectSprite=SpriteBase.mainSpriteBase.brokenArmsSprite;
+		
 		affectedEnemy.staminaDamage-=staminaDamageReduction;
 		affectedEnemy.damageMod*=damageModMultiplier;
 	}

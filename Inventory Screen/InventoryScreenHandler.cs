@@ -51,50 +51,90 @@ public class InventoryScreenHandler : MonoBehaviour
 	{
 		if (GetComponent<Canvas>().enabled==true) {RefreshInventoryItems();}
 	}*/
-	
-	public void AssignSelectedMember(PartyMember newMember)
+
+	public void MapOrEncounterToggleSelectedMember(PartyMember newMember)
+	{
+		if (EncounterCanvasHandler.main.encounterOngoing) EncounterCanvasHandler.main.ToggleMemberInventory(newMember);
+		else MapToggleNewSelectedMember(newMember);
+	}
+
+	void MapToggleNewSelectedMember(PartyMember newMember)
 	{
 		if (selectedMember!=newMember)
 		{
 			//Determine whether or not inventory screen is allowed to be opened at this time
-			bool allow=false;
 			EncounterCanvasHandler encounterManager=EncounterCanvasHandler.main;
 			if (!GameEventManager.mainEventManager.drawingEvent)
 			{
 				if (!encounterManager.encounterOngoing) 
 				{
-					allow=true;
+					OpenScreen(newMember);
 					if (PartyManager.mainPartyManager.partyMembers.Count>1) kickMemberButton.gameObject.SetActive(true);
 					else kickMemberButton.gameObject.SetActive(false);
 				}
-				else 
-				{
-					kickMemberButton.gameObject.SetActive(false);
-					//make sure guys outside of encounter can't interact with guys within an encounter and members currently in combat can't open inv
-					if(encounterManager.encounterMembers.Contains(newMember) 
-					 && !encounterManager.roomButtons[encounterManager.memberCoords[newMember]].RoomHasEnemies())
-					{allow=true;}
-				}
-			}
-			//If inventory is allowed to be opened
-			if (allow)
-			{
-				selectedMember=newMember;
-				memberPortrait.color=newMember.color;
-				GetComponent<Canvas>().enabled=true;
-				inventoryShown=true;
-				memberNameText.text=newMember.name;		
-				/*
-				if (!EncounterCanvasHandler.main.encounterOngoing)
-				{
-					campingCanvas.AssignCampRegion(selectedMember.currentRegion);
-				}*/
-				RefreshInventoryItems();
+				else throw new System.Exception("Trying to do MapToggleNewSelectedMember from encounter!");
 			}
 		} 
 		else CloseScreen();
 	}
-	
+
+	public void EncounterToggleNewSelectedMember(PartyMember newMember)
+	{
+		if (selectedMember!=newMember) OpenScreen(newMember);
+		else CloseScreen();
+	}
+
+	void OpenScreen(PartyMember newMember)
+	{
+		selectedMember=newMember;
+		memberPortrait.color=newMember.color;
+		GetComponent<Canvas>().enabled=true;
+		inventoryShown=true;
+		memberNameText.text=newMember.name;		
+		RefreshInventoryItems();
+	}
+	/*
+	void InventoryCloseEncounterEffect()
+	{
+		EncounterCanvasHandler encounterManager=EncounterCanvasHandler.main;
+		if (selectedMember!=null && encounterManager.encounterOngoing)
+		{
+			if (IsMemberInBattle(selectedMember))
+			{
+				bool emptyBool;
+				encounterManager.memberTokens[selectedMember].TryMove(out emptyBool);
+			}
+		}
+	}
+
+	bool AllowToggleInventoryFromEncounter(PartyMember newMember)
+	{
+		bool allowToggle=false;
+		EncounterCanvasHandler encounterManager=EncounterCanvasHandler.main;
+		//make sure guys outside of encounter can't interact with guys within an encounter and members currently in combat can't open inv
+		if(encounterManager.encounterMembers.Contains(newMember) 
+		&& (!IsMemberInBattle(newMember) || encounterManager.memberTokens[newMember].CanMove()))
+		{
+			//Only allow to open the member's inventory while in battle, do not allow to switch from it
+			if (selectedMember==null) allowToggle=true;
+			else if (!IsMemberInBattle(selectedMember)) allowToggle=true;
+		}
+		return allowToggle;
+	}
+
+	bool IsMemberInBattle(PartyMember checkedMember)
+	{
+		EncounterCanvasHandler encounterManager=EncounterCanvasHandler.main;
+		if (encounterManager.encounterOngoing)
+		{
+			if (!encounterManager.roomButtons[encounterManager.memberCoords[checkedMember]].RoomHasEnemies())
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+	*/
 	public void GameEndHandler()
 	{
 		CloseScreen();
@@ -326,16 +366,16 @@ public class InventoryScreenHandler : MonoBehaviour
 		{
 			if (GameManager.main.gameStarted && EncounterCanvasHandler.main.GetComponent<CanvasGroup>().interactable)
 			{
-				//IF INSIDE AN ENCOUNTER
+				//IF INSIDE AN ENCOUNTER DO NOTHING (The toggle will be handled from within EncounterCanvasHandler instead
 				if (EncounterCanvasHandler.main.encounterOngoing)
 				{
-					AssignSelectedMember(EncounterCanvasHandler.main.selectedMember);
+					//ToggleNewSelectedMember(EncounterCanvasHandler.main.selectedMember);
 				}
 				else 
 				{
 					//IF ON WORLD MAP
-					if (PartyManager.mainPartyManager.selectedMembers.Count>0) AssignSelectedMember(PartyManager.mainPartyManager.selectedMembers[0]);
-					else AssignSelectedMember(PartyManager.mainPartyManager.partyMembers[0]);
+					if (PartyManager.mainPartyManager.selectedMembers.Count>0) MapToggleNewSelectedMember(PartyManager.mainPartyManager.selectedMembers[0]);
+					else MapToggleNewSelectedMember(PartyManager.mainPartyManager.partyMembers[0]);
 				}
 			}
 		}
@@ -347,7 +387,7 @@ public class InventoryScreenHandler : MonoBehaviour
 				//IF INSIDE AN ENCOUNTER
 				if (EncounterCanvasHandler.main.encounterOngoing)
 				{
-					AssignSelectedMember(EncounterCanvasHandler.main.selectedMember);
+					//ToggleNewSelectedMember(EncounterCanvasHandler.main.selectedMember);
 				}
 				else 
 				{
@@ -364,7 +404,7 @@ public class InventoryScreenHandler : MonoBehaviour
 					{
 						int selectedIndex=PartyManager.mainPartyManager.partyMembers.IndexOf(selectedMember);
 						int  nextIndex=(int)Mathf.Repeat(selectedIndex+1,PartyManager.mainPartyManager.partyMembers.Count);
-						if (selectedIndex!=nextIndex) AssignSelectedMember(PartyManager.mainPartyManager.partyMembers[nextIndex]);
+						if (selectedIndex!=nextIndex) MapToggleNewSelectedMember(PartyManager.mainPartyManager.partyMembers[nextIndex]);
 					}
 				}
 			}

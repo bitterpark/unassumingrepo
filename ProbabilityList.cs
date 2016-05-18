@@ -4,6 +4,7 @@ using System.Collections.Generic;
 
 public class ProbabilityListValueTypes<T> where T: struct
 {
+	
 	//Dictionary<,float> probabilities=new Dictionary<Object, float>();
 	public Dictionary<T,float> probabilities;
 	
@@ -58,6 +59,7 @@ public class ProbabilityListValueTypes<T> where T: struct
 
 public class ProbabilityList <T> where T: class
 {
+
 	//Dictionary<,float> probabilities=new Dictionary<Object, float>();
 	public Dictionary<T,float> probabilities;
 	

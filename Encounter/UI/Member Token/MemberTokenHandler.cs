@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine.UI;
 
 public interface IAttackAnimation
@@ -32,7 +33,10 @@ public class MemberTokenHandler : MonoBehaviour, IAttackAnimation, IGotHitAnimat
 	public Text armsHealthText;
 	public Text legsHealthText;
 	public Text vitalsHealthText;
-	
+
+	public Transform statusEffectTokensGroup;
+	public StatusEffectImageHandler statusEffectTokenPrefab;
+
 	public ActionToken myActionToken;
 	public MoveToken myMoveToken;
 	public DefenceToken myDefenceToken;
@@ -44,7 +48,7 @@ public class MemberTokenHandler : MonoBehaviour, IAttackAnimation, IGotHitAnimat
 		set 
 		{
 			_selected=value;
-			DetermineColor();
+			UpdateSelectionArrow();
 		}
 	}	
 	bool _selected=false;
@@ -53,23 +57,11 @@ public class MemberTokenHandler : MonoBehaviour, IAttackAnimation, IGotHitAnimat
 	int maxAllowedMovesCount;
 	void RefreshMaxAllowedMovesCount()
 	{
-		maxAllowedMovesCount=2;
-		if (myMember.legsBroken) maxAllowedMovesCount-=1;
-		else if (myMember.extraMoveEnabled) maxAllowedMovesCount+=1;
+		maxAllowedMovesCount=1;
+		//if (myMember.legsBroken) maxAllowedMovesCount-=1;
+		//else if (myMember.extraMoveEnabled) maxAllowedMovesCount+=1;
 		if (currentAllowedMovesCount>maxAllowedMovesCount) currentAllowedMovesCount=maxAllowedMovesCount;
 	}
-	bool moveTaken
-	{
-		get {return _moveTaken;}
-		set 
-		{
-			_moveTaken=value;
-			myMoveToken.MoveStatusChanged(_moveTaken,turnTaken,myMember.stamina>=myMember.staminaMoveCost);
-			//myDefenceToken.DefenceStatusChanged(_moveTaken,turnTaken);
-		}	
-	}
-	 
-	bool _moveTaken=false;
 	
 	public bool attackDone=false;
 	
@@ -82,8 +74,8 @@ public class MemberTokenHandler : MonoBehaviour, IAttackAnimation, IGotHitAnimat
 			if (_turnTaken) {Deselect();}
 			myActionToken.ActionStatusChanged(_turnTaken);
 			//myDefenceToken.DefenceStatusChanged(moveTaken,_turnTaken);
-			myMoveToken.MoveStatusChanged(moveTaken,_turnTaken,myMember.stamina>=myMember.staminaMoveCost);
-			DetermineColor();
+			myMoveToken.MoveStatusChanged(false,_turnTaken,myMember.stamina>=myMember.staminaMoveCost);
+			UpdateSelectionArrow();
 		}
 	}
 	bool _turnTaken=false;
@@ -145,8 +137,10 @@ public class MemberTokenHandler : MonoBehaviour, IAttackAnimation, IGotHitAnimat
 		currentAllowedMovesCount=maxAllowedMovesCount;
 		//myDefenceToken.DefenceStatusChanged(moveTaken,turnTaken);
 		myActionToken.ActionStatusChanged(turnTaken);
-		myMoveToken.MoveStatusChanged(moveTaken,turnTaken,myMember.stamina>=myMember.staminaMoveCost);
+		myMoveToken.MoveStatusChanged(false,turnTaken,myMember.stamina>=myMember.staminaMoveCost);
 		myStaminaRegenToken.StaminaRegenStatusChanged(staminaRegenEnabled);
+
+		foreach (MemberStatusEffect statusEffect in myMember.activeStatusEffects) AddNewStatusEffectToken(statusEffect);
 	}
 	
 	public bool TryHitAssignedMember(int damage, out int realDamage, out int staminaDamage, out PartyMember.BodyPartTypes hitPart)
@@ -182,7 +176,6 @@ public class MemberTokenHandler : MonoBehaviour, IAttackAnimation, IGotHitAnimat
 	{
 		int staminaRegenAmount=myMember.staminaRegen;
 		if (staminaRegenEnabled) myMember.stamina+=staminaRegenAmount;
-		moveTaken=false;
 		attackDone=false;
 		turnTaken=false;
 		RefreshMaxAllowedMovesCount();
@@ -196,24 +189,30 @@ public class MemberTokenHandler : MonoBehaviour, IAttackAnimation, IGotHitAnimat
 	{
 		
 	}*/
-	//Remove stamina cost from this later
+
+	public bool CanMove()
+	{
+		bool canMove=false;
+		if (currentAllowedMovesCount>0) canMove=true;
+		return canMove;
+	}
+
 	public bool TryMove(out bool doTurnOver)
 	{
 		doTurnOver=false;
 		//This is necessary incase member legs get crippled as he moves out with 2 moves left
-		currentAllowedMovesCount-=1;
+		//currentAllowedMovesCount-=1;
+		//currentAllowedMovesCount=0;
 		RefreshMaxAllowedMovesCount();
 		//Stamina cost is currently 0, deprecate this later
-		int moveStaminaCost=myMember.staminaMoveCost;
-		if (myMember.stamina>=moveStaminaCost) 
+		if (CanMove()) 
 		{
-			myMember.stamina-=moveStaminaCost;
-			staminaRegenEnabled=false;
+			currentAllowedMovesCount--;
 			if (currentAllowedMovesCount<=0) 
 			{
 				doTurnOver=true;
 			}
-			if (currentAllowedMovesCount<=1) moveTaken=true;
+			if (currentAllowedMovesCount<=1) myMoveToken.MoveStatusChanged(true,turnTaken,myMember.stamina>=myMember.staminaMoveCost);
 			return true;
 		}
 		else return false;
@@ -235,35 +234,36 @@ public class MemberTokenHandler : MonoBehaviour, IAttackAnimation, IGotHitAnimat
 		rangedMode=false;
 	}
 	
-	void DetermineColor()
+	void UpdateSelectionArrow()
 	{
 		if (!turnTaken)
 		{
 			//myImage.GetComponent<Button>().interactable=true;
-			if (_selected) 
-			{
-				
-				//myImage.GetComponent<Button>().image.color=Color.blue;
-				mySelectedArrow.SetActive(true);
-			}
-			else 
-			{
-				myImage.GetComponent<Button>().image.color=myMember.color;
-				mySelectedArrow.SetActive(false);
-			}
+			if (_selected) mySelectedArrow.SetActive(true);
+			else mySelectedArrow.SetActive(false);
 		}
-		else 
-		{
-			//myImage.GetComponent<Button>().interactable=false; 
-			mySelectedArrow.SetActive(false);
-		}//GetComponent<Button>().image.color=Color.gray;}
+		else mySelectedArrow.SetActive(false);
 	}
-	
+
 	public void UpdateTokenPos(RoomButtonHandler newRoomHandler)
 	{
 		newRoomHandler.AttachMemberToken(transform);
 	}
-	
+
+	public void AddNewStatusEffectToken(MemberStatusEffect newEffect)
+	{
+		StatusEffectImageHandler newToken=Instantiate(statusEffectTokenPrefab);
+		newToken.AssignStatusEffect(newEffect);
+		newToken.transform.SetParent(statusEffectTokensGroup,false);
+	}
+	public void RemoveOldstatusEffectToken(MemberStatusEffect removedEffect)
+	{
+		foreach (StatusEffectImageHandler token in new List<StatusEffectImageHandler>(statusEffectTokensGroup.GetComponentsInChildren<StatusEffectImageHandler>()))
+		{
+			if (token.assignedEffect==removedEffect)GameObject.Destroy(token.gameObject);
+		}
+	}
+
 	//Check to see if this member can attack a specific enemy in encounter
 	public bool AttackIsPossible(ref bool isRanged, EncounterEnemy targetEnemy)
 	{
@@ -308,8 +308,9 @@ public class MemberTokenHandler : MonoBehaviour, IAttackAnimation, IGotHitAnimat
 				else
 				{
 					//Second - see if any walls are blocking member (for ranged attacks)
+					attackPossible=true;
 					BresenhamLines.Line(myX,myY,enemyX,enemyY,(int x, int y)=>
-					                    {
+					{
 						//bool visionClear=true;
 						if (EncounterCanvasHandler.main.currentEncounter.encounterMap[new Vector2(x,y)].isWall) {attackPossible=false;}
 						return attackPossible;

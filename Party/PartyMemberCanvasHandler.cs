@@ -16,19 +16,19 @@ public class PartyMemberCanvasHandler : MonoBehaviour {
 	public Text fatigueText;
 	public Button memberSelector;
 	public Button assignmentButton;
-	Dictionary<StatusEffect,StatusEffectImageHandler> statusEffectTokens=new Dictionary<StatusEffect, StatusEffectImageHandler>();
+	Dictionary<MemberStatusEffect,StatusEffectImageHandler> statusEffectTokens=new Dictionary<MemberStatusEffect, StatusEffectImageHandler>();
 	public StatusEffectImageHandler tokenPrefab;
 	
 	public void AssignPartyMember(PartyMember assigned) {assignedMember=assigned;}
 	
-	public void AddStatusEffectToken(StatusEffect effect)
+	public void AddStatusEffectToken(MemberStatusEffect effect)
 	{
 		StatusEffectImageHandler newStatusToken=Instantiate(tokenPrefab) as StatusEffectImageHandler;
 		newStatusToken.transform.SetParent(transform.FindChild("Status Tokens Group"),false);
 		newStatusToken.AssignStatusEffect(effect);
 		statusEffectTokens.Add(effect,newStatusToken);
 	}
-	public void RemoveStatusEffectToken(StatusEffect effect)
+	public void RemoveStatusEffectToken(MemberStatusEffect effect)
 	{
 		StatusEffectImageHandler removedToken=statusEffectTokens[effect];
 		statusEffectTokens.Remove(effect);
@@ -100,7 +100,7 @@ public class PartyMemberCanvasHandler : MonoBehaviour {
 					{
 					assignmentButton.gameObject.SetActive(true);
 					assignmentButton.GetComponentInChildren<Text>().text="Build camp("
-					+PartyMember.campSetupFatigueCost+"/"+(checkedRegion.campSetupTimeRemaining*PartyMember.campSetupFatigueCost)+")";
+					+PartyMember.campSetupFatigueCost+"/"+(checkedRegion.GetRemainingCampSetupTime()*PartyMember.campSetupFatigueCost)+")";
 					assignmentButton.onClick.RemoveAllListeners();
 					assignmentButton.onClick.AddListener(
 					()=>
@@ -156,7 +156,7 @@ public class PartyMemberCanvasHandler : MonoBehaviour {
 	void Start() 
 	{
 		memberSelector.GetComponent<Image>().color=assignedMember.color;
-		memberSelector.onClick.AddListener(()=>InventoryScreenHandler.mainISHandler.AssignSelectedMember(assignedMember));
+		memberSelector.onClick.AddListener(()=>InventoryScreenHandler.mainISHandler.MapOrEncounterToggleSelectedMember(assignedMember));
 	}//PartyScreenManager.mainPSManager.MemberClicked(assignedMember));}
 	
 	void Update()

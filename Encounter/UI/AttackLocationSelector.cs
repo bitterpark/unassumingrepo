@@ -18,13 +18,13 @@ public class AttackLocationSelector : MonoBehaviour
 		GetComponent<Canvas>().overrideSorting=true;
 		GetComponent<Canvas>().sortingOrder=10;
 		//Create attack selection buttons
-		foreach (BodyPart part in enemyToken.assignedEnemy.bodyParts)
+		foreach (EnemyBodyPart part in enemyToken.assignedEnemy.body.GetHealthyParts())
 		{
 			//Adjust hit chance for enemy bodypart modifier, and clamp between 0 and 1
 			PartyMember attackingMember=EncounterCanvasHandler.main.selectedMember;
 			float adjustedHitChance=Mathf.Clamp
 			(attackingMember.GetCurrentAttackHitChance(EncounterCanvasHandler.main.memberTokens[attackingMember].rangedMode)
-			+part.hitPercentageModifier,0,1f);
+			+part.currentHitchanceShare,0,1f);
 			Text newButtonBase=Instantiate(selectButtonBasePrefab);
 			foreach (Text buttonText in newButtonBase.GetComponentsInChildren<Text>())
 			{
@@ -33,7 +33,7 @@ public class AttackLocationSelector : MonoBehaviour
 			//newButtonBase.text=
 			//newButtonBase.GetComponentInChildren<Text>().text=newButtonBase.text;
 			newButtonBase.transform.SetParent(transform,false);
-			BodyPart selectorPart=part;
+			EnemyBodyPart selectorPart=part;
 			newButtonBase.GetComponentInChildren<Button>().onClick.AddListener(()=>
 			{
 				EncounterCanvasHandler.main.AttackOnEnemy(enemyToken.assignedEnemy,ranged,selectorPart,adjustedHitChance);

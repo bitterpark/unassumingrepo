@@ -4,13 +4,13 @@ using UnityEngine.UI;
 public class StatusEffectImageHandler : MonoBehaviour 
 {
 
-	public StatusEffect assignedEffect;
+	public IStatusEffectTokenInfo assignedEffect;
 	bool drawMouseoverText=false;
 	
-	public void AssignStatusEffect(StatusEffect effect) 
+	public void AssignStatusEffect(IStatusEffectTokenInfo effect) 
 	{
 		assignedEffect=effect;
-		GetComponent<Image>().sprite=assignedEffect.effectSprite;
+		GetComponent<Image>().sprite=assignedEffect.GetEffectSprite();
 	}	
 	
 	public void DrawMouseoverText()
