@@ -24,7 +24,7 @@ public class AttackLocationSelector : MonoBehaviour
 			PartyMember attackingMember=EncounterCanvasHandler.main.selectedMember;
 			float adjustedHitChance=Mathf.Clamp
 			(attackingMember.GetCurrentAttackHitChance(EncounterCanvasHandler.main.memberTokens[attackingMember].rangedMode)
-			+part.currentHitchanceShare,0,1f);
+			+part.currentHitchanceShare-enemyToken.assignedEnemy.body.dodgeChance,0,1f);
 			Text newButtonBase=Instantiate(selectButtonBasePrefab);
 			foreach (Text buttonText in newButtonBase.GetComponentsInChildren<Text>())
 			{

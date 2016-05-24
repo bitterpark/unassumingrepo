@@ -29,6 +29,7 @@ public class EnemyBodyPart
 		destructionEffect=newDestroyEffect;
 		damageEffect=newDamageEffect;
 		defaultHitchanceShare=hitModifier;
+        //currentHitchanceShare = defaultHitchanceShare;
 		partType=type;
 	}
 	
@@ -76,27 +77,27 @@ public class EnemyBody
 		foreach (EnemyBodyPart part in enemyParts) currentParts.Add(part);
 		SetNewDodgeChance(totalDodgeChance);
 	}
-
+    
 	public void CalculateHitChances()
 	{
-		float totalHitProbability=1-dodgeChance;
+        float totalHitProbability = 0;//1-dodgeChance;
 		
 		float missingHitChanceFromBrokenParts=0;
 		foreach (EnemyBodyPart part in currentParts)
 		{
-			if (part.hp<=0) missingHitChanceFromBrokenParts+=totalHitProbability*part.defaultHitchanceShare;
+            totalHitProbability+=part.defaultHitchanceShare;
+            if (part.hp <= 0) missingHitChanceFromBrokenParts += part.defaultHitchanceShare;//totalHitProbability*part.defaultHitchanceShare;
 		}
 		System.Action<EnemyBodyPart> partHitChanceCalculation=(EnemyBodyPart part)=>
 		{
 			if (part.hp>0) 
 			{
-				float adjustedHitChance=totalHitProbability*part.defaultHitchanceShare;
+                float adjustedHitChance = part.defaultHitchanceShare;//totalHitProbability*part.defaultHitchanceShare;
 				if (missingHitChanceFromBrokenParts>0)
 				{
 					//Increase for body parts that get broken
 					float addedHitChance=missingHitChanceFromBrokenParts*(adjustedHitChance/(totalHitProbability-missingHitChanceFromBrokenParts));
 					adjustedHitChance+=addedHitChance;
-					//missingHitChanceFromBrokenParts-=addedHitChance;
 				}
 				//currentPartHitChances.AddProbability(part,adjustedHitChance);
 				part.currentHitchanceShare=adjustedHitChance;
@@ -106,13 +107,6 @@ public class EnemyBody
 		{
 			partHitChanceCalculation.Invoke(part);
 		}
-			/*
-			//For debug purposes only
-			GameManager.DebugPrint("New hit probabilities:");
-			foreach (MemberBodyPart part in partHitChances.probabilities.Keys)
-			{
-				GameManager.DebugPrint(part.partType.ToString()+":"+partHitChances.probabilities[part]);
-			}*/
 	}
 
 	public void DamageBodyPart(EnemyBodyPart damagedPart, int damage)
@@ -742,11 +736,11 @@ public class QuickMass:EncounterEnemy
 		maxDamage=10;
 		color=Color.blue;
 
-		defaultDodgeChance=0.3f;
+		defaultDodgeChance=0.25f;
 		body=new EnemyBody(defaultDodgeChance
-		,new EnemyBodyPart("Vitals",health,null,(int newHealth)=>{this.health=newHealth;},EnemyBodyPart.PartTypes.Vitals,0.1f)
-		,new EnemyBodyPart("Arms",45,()=>{this.AddStatusEffect(new NoArms(this));},null,EnemyBodyPart.PartTypes.Hands,0.2f)
-		,new EnemyBodyPart("Legs",90,()=>{this.AddStatusEffect(new NoLegs(this));},null,EnemyBodyPart.PartTypes.Legs,0.7f));
+		,new EnemyBodyPart("Vitals",health,null,(int newHealth)=>{this.health=newHealth;},EnemyBodyPart.PartTypes.Vitals,0.3f)
+		,new EnemyBodyPart("Arms",30,()=>{this.AddStatusEffect(new NoArms(this));},null,EnemyBodyPart.PartTypes.Hands,0.5f)
+		,new EnemyBodyPart("Legs",60,()=>{this.AddStatusEffect(new NoLegs(this));},null,EnemyBodyPart.PartTypes.Legs,0.9f));
 	}
 }
 
@@ -831,8 +825,8 @@ public class Gasser:EncounterEnemy
 
 		defaultDodgeChance=0.1f;
 		body=new EnemyBody(defaultDodgeChance
-		,new EnemyBodyPart("Vitals",health,null,(int newHealth)=>{this.health=newHealth;},EnemyBodyPart.PartTypes.Vitals,0.3f)
-		,new EnemyBodyPart("Legs",45,()=>{this.AddStatusEffect(new NoLegs(this));},null,EnemyBodyPart.PartTypes.Legs,0.7f));
+		,new EnemyBodyPart("Vitals",health,null,(int newHealth)=>{this.health=newHealth;},EnemyBodyPart.PartTypes.Vitals,0.4f)
+		,new EnemyBodyPart("Legs",30,()=>{this.AddStatusEffect(new NoLegs(this));},null,EnemyBodyPart.PartTypes.Legs,0.9f));
 	}
 	
 	//Potentially deprecate this mechanic later
@@ -874,11 +868,11 @@ public class FleshMass:EncounterEnemy
 
 		color=Color.yellow;
 
-		defaultDodgeChance=0.05f;
+		defaultDodgeChance=0.1f;
 		body=new EnemyBody(defaultDodgeChance
-		,new EnemyBodyPart("Vitals",health,null,(int newHealth)=>{this.health=newHealth;},EnemyBodyPart.PartTypes.Vitals,0.1f)
-		,new EnemyBodyPart("Arms",90,()=>{this.AddStatusEffect(new NoArms(this));},null,EnemyBodyPart.PartTypes.Hands,0.4f)
-		,new EnemyBodyPart("Legs",180,()=>{this.AddStatusEffect(new NoLegs(this));},null,EnemyBodyPart.PartTypes.Legs,0.45f));
+		,new EnemyBodyPart("Vitals",health,null,(int newHealth)=>{this.health=newHealth;},EnemyBodyPart.PartTypes.Vitals,0.4f)
+		,new EnemyBodyPart("Arms",90,()=>{this.AddStatusEffect(new NoArms(this));},null,EnemyBodyPart.PartTypes.Hands,0.6f)
+		,new EnemyBodyPart("Legs",180,()=>{this.AddStatusEffect(new NoLegs(this));},null,EnemyBodyPart.PartTypes.Legs,0.6f));
 	}
 }
 
@@ -891,13 +885,13 @@ public class Spindler:EncounterEnemy
 		minDamage=11;
 		maxDamage=15;
 
-		color=Color.grey;
+		color=Color.black;
 
 		defaultDodgeChance=0.05f;
 		body=new EnemyBody(defaultDodgeChance
-		,new EnemyBodyPart("Vitals",health,null,(int newHealth)=>{this.health=newHealth;},EnemyBodyPart.PartTypes.Vitals,0.1f)
-		,new EnemyBodyPart("Arms",45,()=>{this.AddStatusEffect(new NoArms(this));},null,EnemyBodyPart.PartTypes.Hands,0.6f)
-		,new EnemyBodyPart("Legs",45,()=>{this.AddStatusEffect(new NoLegs(this));},null,EnemyBodyPart.PartTypes.Legs,0.3f));
+		,new EnemyBodyPart("Vitals",health,null,(int newHealth)=>{this.health=newHealth;},EnemyBodyPart.PartTypes.Vitals,0.5f)
+		,new EnemyBodyPart("Arms",30,()=>{this.AddStatusEffect(new NoArms(this));},null,EnemyBodyPart.PartTypes.Hands,0.8f)
+		,new EnemyBodyPart("Legs",90,()=>{this.AddStatusEffect(new NoLegs(this));},null,EnemyBodyPart.PartTypes.Legs,0.6f));
 	}
 	
 		public override EnemyAttack AttackAction (List<IGotHitAnimation> presenttargets)//Dictionary<PartyMember,Vector2> memberCoords)
@@ -934,9 +928,9 @@ public class MuscleMass:EncounterEnemy
 
 		defaultDodgeChance=0.05f;
 		body=new EnemyBody(defaultDodgeChance
-		,new EnemyBodyPart("Vitals",health,null,(int newHealth)=>{this.health=newHealth;},EnemyBodyPart.PartTypes.Vitals,0.2f)
-		,new EnemyBodyPart("Arms",90,()=>{this.AddStatusEffect(new NoArms(this));},null,EnemyBodyPart.PartTypes.Hands,0.5f)
-		,new EnemyBodyPart("Legs",180,()=>{this.AddStatusEffect(new NoLegs(this));},null,EnemyBodyPart.PartTypes.Legs,0.3f));
+		,new EnemyBodyPart("Vitals",health,null,(int newHealth)=>{this.health=newHealth;},EnemyBodyPart.PartTypes.Vitals,0.4f)
+		,new EnemyBodyPart("Arms",90,()=>{this.AddStatusEffect(new NoArms(this));},null,EnemyBodyPart.PartTypes.Hands,0.8f)
+		,new EnemyBodyPart("Legs",180,()=>{this.AddStatusEffect(new NoLegs(this));},null,EnemyBodyPart.PartTypes.Legs,0.8f));
 	}
 }
 
@@ -957,8 +951,8 @@ public class SlimeMass:EncounterEnemy
 
 		defaultDodgeChance=0f;
 		body=new EnemyBody(defaultDodgeChance
-		,new EnemyBodyPart("Vitals",health,null,(int newHealth)=>{this.health=newHealth;},EnemyBodyPart.PartTypes.Vitals,0.4f)
-		,new EnemyBodyPart("Arms",180,()=>{this.AddStatusEffect(new NoArms(this));},null,EnemyBodyPart.PartTypes.Hands,0.6f));
+		,new EnemyBodyPart("Vitals",health,null,(int newHealth)=>{this.health=newHealth;},EnemyBodyPart.PartTypes.Vitals,0.5f)
+		,new EnemyBodyPart("Arms",180,()=>{this.AddStatusEffect(new NoArms(this));},null,EnemyBodyPart.PartTypes.Hands,0.8f));
 	}
 	
 	//int rangedResistance=3;

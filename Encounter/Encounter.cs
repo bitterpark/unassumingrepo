@@ -144,6 +144,7 @@ public class Encounter
 		encounterMap.Clear();
 		TurnPrefabToEncounterMap(prefabMap,nonSegmentRooms);
 		PlaceLootInEncounterRooms(new List<EncounterRoom>(encounterMap.Values));
+		AddBarricadesToEncounterRooms(new List<EncounterRoom>(encounterMap.Values));
 	}
 
 	void TurnPrefabToEncounterMap(Dictionary<Vector2,Dictionary<Vector2,EncounterRoom>> prefabMap, List<EncounterRoom> nonSegmentRooms)
@@ -171,6 +172,11 @@ public class Encounter
 			maxX=Mathf.Max(maxX,room.xCoord);
 			maxY=Mathf.Max(maxY,room.yCoord);
 		}
+	}
+
+	void AddBarricadesToEncounterRooms(List<EncounterRoom> allEncounterRooms)
+	{
+		foreach (EncounterRoom room in allEncounterRooms) {if (Random.value<barricadeChance) room.canBarricade=true;}
 	}
 
 	void PlaceLootInEncounterRooms(List<EncounterRoom> allEncounterRooms)

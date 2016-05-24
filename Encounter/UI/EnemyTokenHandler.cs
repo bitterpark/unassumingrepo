@@ -231,16 +231,21 @@ public class EnemyTokenHandler : MonoBehaviour, IAttackAnimation, IGotHitAnimati
 				//If selected member was switched during mouseover, update mouseover text to fit new selected member
 				referencedMember=EncounterCanvasHandler.main.selectedMember;
 				TooltipManager.main.StopAllTooltips();
-				//Name
+				//NAME
 				string tooltipText=assignedEnemy.name;
-				EncounterCanvasHandler encounterHandler=EncounterCanvasHandler.main;
-				//Limb info
+				//GENERAL INFO
+                tooltipText += "\nDamage: " + assignedEnemy.GetDamageString();
+                tooltipText += "\nDodge: " + (Mathf.RoundToInt(assignedEnemy.body.dodgeChance*100)) + "%";
+
+                EncounterCanvasHandler encounterHandler=EncounterCanvasHandler.main;
+				tooltipText+="\n";
+                //LIMB INFO
 				//tooltipText+="\nB";
 				foreach (EnemyBodyPart part in assignedEnemy.body.GetHealthyParts())
 				{
 					float adjustedHitChance=Mathf.Clamp
 					(referencedMember.GetCurrentAttackHitChance(EncounterCanvasHandler.main.memberTokens[referencedMember].rangedMode)
-					+part.currentHitchanceShare,0,1f);
+					+part.currentHitchanceShare-assignedEnemy.body.dodgeChance,0,1f);
 					tooltipText+="\n"+part.name+":"+part.hp+" ("+Mathf.RoundToInt((adjustedHitChance*100f)).ToString()+"%)";
 				}
 				//Info on attacking this enemy

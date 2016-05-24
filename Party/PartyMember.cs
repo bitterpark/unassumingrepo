@@ -419,7 +419,7 @@ public class PartyMember
 		}
 	}
 	int _currentMaxStamina;
-	void RefreshMaxStamina()
+	public void RefreshMaxStamina()
 	{
 		currentMaxStamina=baseMaxStamina;
 		//Currently cancelled
@@ -501,14 +501,14 @@ public class PartyMember
 		}
 		else return true;
 	}
-	public int fatigueRestoreWait=5;
+	public int fatigueRestoreWait=6;
 	//These are applied on top of fatigueRestoreWait (both are actually applied by two different methods)
 	public int fatigueRestoreSleep=10;
 	//public int fatigueRestoreSleepInBed=60;
 	
 	//public int fatigueIncreasePerAction;
 	public int maxStaminaReductionFromFatigue=6;
-	public const int fatigueIncreasePerEncounter=4;
+	public const int fatigueIncreasePerEncounter=2;
 	//public const int mapMoveFatigueCost=25;
 	public const int campSetupFatigueCost=1;
 	public const int fatigueMoveCost=2;

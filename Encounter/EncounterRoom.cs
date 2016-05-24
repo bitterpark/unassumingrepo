@@ -10,7 +10,7 @@ public class Barricade
 
 public class EncounterRoom
 {
-	int barricadeBuildHealth=25;
+	int barricadeBuildHealth=90;
 	
 	public Encounter parentEncounter;
 	public List<InventoryItem> floorItems=new List<InventoryItem>();
@@ -23,6 +23,7 @@ public class EncounterRoom
 	
 	public bool isEntrance=false;
 	public bool isDiscovered=false;
+    public bool isVisited = false;
 	/*
 	public bool hasEnemies
 	{
@@ -87,7 +88,7 @@ public class EncounterRoom
 		set 
 		{
 			_canBarricade=value;
-			if (_canBarricade) {barricadeMaterials=5;}
+			if (_canBarricade) {barricadeMaterials=1;}
 		}
 	}
 	bool _canBarricade=false;

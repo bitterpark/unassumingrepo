@@ -25,7 +25,7 @@ public class Trap
 			
 			if (attackSuccessful)
 			{
-				EncounterCanvasHandler.main.RegisterDamage(trapDamage,attackedPart,false,activatingEnemy,assignedToken,!assignedToken.GetComponent<Image>().enabled);
+				EncounterCanvasHandler.main.RegisterDamageToEnemy(trapDamage,attackedPart,false,activatingEnemy,assignedToken,!assignedToken.GetComponent<Image>().enabled);
 				sprung=true;
 				assignedToken.BeginDispose();
 			}

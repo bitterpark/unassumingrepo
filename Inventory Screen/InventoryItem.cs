@@ -106,9 +106,11 @@ public abstract class InventoryItem
 		{
 			case LootMetatypes.FoodItems:
 			{
-				itemsList.AddProbability(new InventoryItem[]{new FoodSmall(),new FoodSmall()},0.5f);
-				itemsList.AddProbability(new InventoryItem[]{new FoodBig()},0.25f);
-				itemsList.AddProbability(new InventoryItem[]{new FoodSmall()},0.25f);
+				itemsList.AddProbability(new InventoryItem[]{new FoodSmall(),new FoodSmall()},0.2f);
+                itemsList.AddProbability(new InventoryItem[] {new FoodSmall(), new Coffee() }, 0.2f);
+                itemsList.AddProbability(new InventoryItem[]{new FoodSmall(), new Alcohol() }, 0.2f);
+				itemsList.AddProbability(new InventoryItem[]{new FoodBig(),new Coffee()},0.2f);
+                itemsList.AddProbability(new InventoryItem[]{new FoodSmall(), new FoodSmall(), new FoodSmall()}, 0.2f);
 				InventoryItem[] result=null;
 				itemsList.RollProbability(out result);
 				return new List<InventoryItem>(result);
@@ -116,11 +118,10 @@ public abstract class InventoryItem
 			}
 			case LootMetatypes.Medical:
 			{
-				itemsList.AddProbability(new InventoryItem[]{new Medkit()},0.2f);
-				itemsList.AddProbability(new InventoryItem[]{new Medkit(),new Bandages()},0.2f);
-				itemsList.AddProbability(new InventoryItem[]{new Bandages(),new Pills()},0.2f);
-				itemsList.AddProbability(new InventoryItem[]{new Medkit(),new Pills()},0.2f);
-				itemsList.AddProbability(new InventoryItem[]{new Medkit(),new Medkit()},0.2f);
+				itemsList.AddProbability(new InventoryItem[]{new Medkit(),new Bandages()},0.25f);
+				itemsList.AddProbability(new InventoryItem[]{new Bandages(),new Pills()},0.25f);
+				itemsList.AddProbability(new InventoryItem[]{new Medkit(),new Pills()},0.25f);
+				itemsList.AddProbability(new InventoryItem[]{new Medkit(),new Medkit()},0.25f);
 				InventoryItem[] result=null;
 				itemsList.RollProbability(out result);
 				return new List<InventoryItem>(result);
@@ -137,8 +138,9 @@ public abstract class InventoryItem
 			}
 			case LootMetatypes.Guns:
 			{
-				itemsList.AddProbability(new InventoryItem[]{new AmmoBox()},0.6f);
-				itemsList.AddProbability(new InventoryItem[]{new NineM()},0.2f);
+				itemsList.AddProbability(new InventoryItem[]{new AmmoBox()},0.4f);
+                itemsList.AddProbability(new InventoryItem[] {new Gunpowder(),new Gunpowder()}, 0.25f);
+				itemsList.AddProbability(new InventoryItem[]{new NineM()},0.15f);
 				itemsList.AddProbability(new InventoryItem[]{new AssaultRifle()},0.1f);
 				itemsList.AddProbability(new InventoryItem[]{new Shotgun()},0.1f);
 				InventoryItem[] result=null;
@@ -201,9 +203,11 @@ public abstract class InventoryItem
 		{
 			case LootMetatypes.FoodItems:
 			{
-				itemsList.AddProbability(new InventoryItem[0],0.8f);
-				itemsList.AddProbability(new InventoryItem[]{new FoodBig()},0.1f);
-				itemsList.AddProbability(new InventoryItem[]{new FoodSmall()},0.1f);
+				itemsList.AddProbability(new InventoryItem[0],0.66f);
+                itemsList.AddProbability(new InventoryItem[] { new FoodBig() }, 0.08f);
+                itemsList.AddProbability(new InventoryItem[] { new FoodSmall() }, 0.08f);
+                itemsList.AddProbability(new InventoryItem[] { new Alcohol() }, 0.09f);
+                itemsList.AddProbability(new InventoryItem[] { new Coffee() }, 0.09f);
 				InventoryItem[] result=null;
 				itemsList.RollProbability(out result);
 				return new List<InventoryItem>(result);
@@ -211,9 +215,10 @@ public abstract class InventoryItem
 			}
 			case LootMetatypes.Medical:
 			{
-				itemsList.AddProbability(new InventoryItem[0],0.8f);
-				itemsList.AddProbability(new InventoryItem[]{new Bandages()},0.1f);
-				itemsList.AddProbability(new InventoryItem[]{new Pills()},0.1f);
+				itemsList.AddProbability(new InventoryItem[0],0.67f);
+				itemsList.AddProbability(new InventoryItem[]{new Bandages()},0.11f);
+				itemsList.AddProbability(new InventoryItem[]{new Pills()},0.11f);
+                itemsList.AddProbability(new InventoryItem[]{new Medkit() }, 0.11f);
 				InventoryItem[] result=null;
 				itemsList.RollProbability(out result);
 				return new List<InventoryItem>(result);
@@ -221,9 +226,9 @@ public abstract class InventoryItem
 			}
 			case LootMetatypes.Melee:
 			{
-				itemsList.AddProbability(new InventoryItem[0],0.8f);
-				itemsList.AddProbability(new InventoryItem[]{new Knife()},0.1f);
-				itemsList.AddProbability(new InventoryItem[]{new Axe()},0.1f);
+				itemsList.AddProbability(new InventoryItem[0],0.68f);
+				itemsList.AddProbability(new InventoryItem[]{new Knife()},0.16f);
+				itemsList.AddProbability(new InventoryItem[]{new Axe()},0.16f);
 				InventoryItem[] result=null;
 				itemsList.RollProbability(out result);
 				return new List<InventoryItem>(result);
@@ -231,9 +236,10 @@ public abstract class InventoryItem
 			}
 			case LootMetatypes.Guns:
 			{
-				itemsList.AddProbability(new InventoryItem[0],0.7f);
-				itemsList.AddProbability(new InventoryItem[]{new NineM()},0.1f);
-				itemsList.AddProbability(new InventoryItem[]{new AmmoBox()},0.2f);
+				itemsList.AddProbability(new InventoryItem[0],0.67f);
+                itemsList.AddProbability(new InventoryItem[]{new Gunpowder(),new Gunpowder()}, 0.11f);
+				itemsList.AddProbability(new InventoryItem[]{new NineM()},0.11f);
+				itemsList.AddProbability(new InventoryItem[]{new AmmoBox()},0.11f);
 				InventoryItem[] result=null;
 				itemsList.RollProbability(out result);
 				return new List<InventoryItem>(result);
@@ -241,10 +247,10 @@ public abstract class InventoryItem
 			}
 			case LootMetatypes.Equipment:
 			{
-				itemsList.AddProbability(new InventoryItem[0],0.9f);
-				itemsList.AddProbability(new InventoryItem[]{new Backpack()},0.033f);
-				itemsList.AddProbability(new InventoryItem[]{new Bed()},0.033f);
-				itemsList.AddProbability(new InventoryItem[]{new Toolbox()},0.034f);
+				itemsList.AddProbability(new InventoryItem[0],0.67f);
+				itemsList.AddProbability(new InventoryItem[]{new Backpack()},0.11f);
+				itemsList.AddProbability(new InventoryItem[]{new Bed()},0.11f);
+				itemsList.AddProbability(new InventoryItem[]{new Toolbox()},0.11f);
 				InventoryItem[] result=null;
 				itemsList.RollProbability(out result);
 				return new List<InventoryItem>(result);
@@ -252,10 +258,11 @@ public abstract class InventoryItem
 			}
 			case LootMetatypes.Gear:
 			{
-				itemsList.AddProbability(new InventoryItem[0],0.9f);
-				itemsList.AddProbability(new InventoryItem[]{new Backpack()},0.033f);
-				itemsList.AddProbability(new InventoryItem[]{new AmmoBox()},0.033f);
-				itemsList.AddProbability(new InventoryItem[]{new ArmorVest()},0.034f);
+				itemsList.AddProbability(new InventoryItem[0],0.68f);
+				itemsList.AddProbability(new InventoryItem[]{new Backpack()},0.08f);
+				itemsList.AddProbability(new InventoryItem[]{new AmmoBox()},0.08f);
+				itemsList.AddProbability(new InventoryItem[]{new ArmorVest()},0.08f);
+                itemsList.AddProbability(new InventoryItem[]{new Gunpowder(),new Gunpowder()}, 0.08f);
 				InventoryItem[] result=null;
 				itemsList.RollProbability(out result);
 				return new List<InventoryItem>(result);
@@ -264,9 +271,9 @@ public abstract class InventoryItem
 
 			case LootMetatypes.ApartmentSalvage:
 			{
-				itemsList.AddProbability(new InventoryItem[0],0.8f);
-				itemsList.AddProbability(new InventoryItem[]{new Firewood()},0.1f);
-				itemsList.AddProbability(new InventoryItem[]{new Firewood(),new Firewood()},0.1f);
+				itemsList.AddProbability(new InventoryItem[0],0.68f);
+				itemsList.AddProbability(new InventoryItem[]{new Firewood()},0.16f);
+				itemsList.AddProbability(new InventoryItem[]{new Firewood(),new Firewood()},0.16f);
 				InventoryItem[] result=null;
 				itemsList.RollProbability(out result);
 				return new List<InventoryItem>(result);
@@ -274,9 +281,9 @@ public abstract class InventoryItem
 			}
 			case LootMetatypes.WarehouseSalvage:
 			{
-				itemsList.AddProbability(new InventoryItem[0],0.8f);
-				itemsList.AddProbability(new InventoryItem[]{new Scrap()},0.1f);
-				itemsList.AddProbability(new InventoryItem[]{new Scrap(),new Scrap()},0.1f);
+				itemsList.AddProbability(new InventoryItem[0],0.68f);
+				itemsList.AddProbability(new InventoryItem[]{new Scrap()},0.16f);
+				itemsList.AddProbability(new InventoryItem[]{new Scrap(),new Scrap()},0.16f);
 				InventoryItem[] result=null;
 				itemsList.RollProbability(out result);
 				return new List<InventoryItem>(result);
@@ -295,12 +302,14 @@ public abstract class InventoryItem
 		{
 			case LootMetatypes.Salvage:
 			{
-				itemsList.AddProbability(new InventoryItem[]{new Scrap()},0.25f);
-				itemsList.AddProbability(new InventoryItem[]{new Scrap(),new Scrap()},0.2f);
+				itemsList.AddProbability(new InventoryItem[]{new Scrap()},0.2f);
 				itemsList.AddProbability(new InventoryItem[]{new Scrap(),new Gunpowder()},0.1f);
-				itemsList.AddProbability(new InventoryItem[]{new FoodSmall(),new FoodSmall()},0.1f);
-				itemsList.AddProbability(new InventoryItem[]{new Medkit(),new Pills()},0.1f);
-				itemsList.AddProbability(new InventoryItem[]{new Firewood(), new Firewood()},0.25f);
+                itemsList.AddProbability(new InventoryItem[] { new Gunpowder(), new Gunpowder() }, 0.1f);
+				itemsList.AddProbability(new InventoryItem[]{new FoodSmall()},0.1f);
+				itemsList.AddProbability(new InventoryItem[]{new Medkit()},0.1f);
+				itemsList.AddProbability(new InventoryItem[]{new Bandages()},0.1f);
+				itemsList.AddProbability(new InventoryItem[]{new Pills()},0.1f);
+				itemsList.AddProbability(new InventoryItem[]{new Firewood()},0.2f);
 				InventoryItem[] result=null;
 				itemsList.RollProbability(out result);
 				return new List<InventoryItem>(result);
@@ -310,12 +319,12 @@ public abstract class InventoryItem
 		return setItems;
 	}
 
-	//Deprecated (un-deprecated as of right now)
+	//Deprecated (un-deprecated as of right now) (used for crafting)
 	public enum LootItems 
 	{Medkits,Bandages,Pills
 	,Gas
 	,Food,Junkfood,Cookedfood/*,PerishableFood*/
-	,Ammopack,Ammo
+	,Ammopack,Ammo,Firecracker
 	,Firewood,CampBarricade
 	,Flashlight,Radio,Bed,Backpack
 	,Scrap,Gunpowder
@@ -331,7 +340,7 @@ public abstract class InventoryItem
 			//AMMO
 			case LootItems.Ammopack:{lootedItem=new AmmoBox(); break;}
 			case LootItems.Ammo:{lootedItem=new Bullet(); break;}
-			
+            case LootItems.Firecracker: { lootedItem = new Firecracker(); break;}
 			//FOOD
 			case LootItems.Food:{lootedItem=new FoodBig(); break;}
 			case LootItems.Junkfood: {lootedItem=new FoodSmall(); break;}
@@ -685,6 +694,95 @@ public class FoodCooked:InventoryItem
 	{
 		return itemName+"\nRestores "+nutritionAmount+" hunger";
 	}
+}
+
+public class Alcohol : InventoryItem
+{
+    public Alcohol()
+	{
+		itemName="Alcohol";
+	}
+	
+	int moraleRestore=40;
+	public override Sprite GetItemSprite() {return SpriteBase.mainSpriteBase.alcohol;}
+	
+	public override bool UseAction(PartyMember usingMember)
+	{
+        if (!EncounterCanvasHandler.main.encounterOngoing)
+        {
+            usingMember.currentRegion.TryRaiseTemperature(1);
+            foreach (PartyMember member in usingMember.currentRegion.localPartyMembers) member.morale += moraleRestore;
+            return true;
+        }
+        return false;
+	}
+	
+	public override string GetMouseoverDescription ()
+	{
+		return itemName+"\nWarms and restores "+moraleRestore+" morale";
+	}
+
+}
+
+public abstract class EncounterItem : InventoryItem
+{
+    public override bool UseAction(PartyMember member)
+    {
+        if (EncounterCanvasHandler.main.encounterOngoing) return true;
+        else return false;
+    }
+}
+
+public class Firecracker : EncounterItem
+{
+    public override Sprite GetItemSprite() { return SpriteBase.mainSpriteBase.firecracker; }
+    
+    public Firecracker()
+    {
+        itemName="Firecracker";
+    }
+
+    float spawnChanceReduction = 0.2f;
+
+    public override bool UseAction(PartyMember member)
+    {
+        if (base.UseAction(member))
+        {
+            EncounterCanvasHandler.main.SetCurrentSpawnThreat(EncounterCanvasHandler.main.currentSpawnThreat-spawnChanceReduction);
+            return true;
+        }
+        return false;
+    }
+
+    public override string GetMouseoverDescription()
+    {
+        return itemName + "\nWhen indoors, reduces threat by " + (spawnChanceReduction*100) + "%";
+    }
+}
+
+public class Coffee : EncounterItem
+{
+     public override Sprite GetItemSprite() { return SpriteBase.mainSpriteBase.coffee; }
+    
+    public Coffee()
+    {
+        itemName="Coffee";
+    }
+
+    public override bool UseAction(PartyMember member)
+    {
+        if (base.UseAction(member))
+        {
+            member.RefreshMaxStamina();
+            return true;
+        }
+        return false;
+    }
+
+    public override string GetMouseoverDescription()
+    {
+        return itemName + "\nRestores stamina to full";
+    }
 }
 /*
 public class PerishableFood:InventoryItem

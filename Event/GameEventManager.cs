@@ -117,10 +117,13 @@ public class GameEventManager : MonoBehaviour
 			float eventsRoll=Random.value;
 			EventChance trackedEventRecord=new EventChance();
 			resEvent=PickRandomEvent(scavengingEvents, ref trackedEventRecord,eventsRoll, eventRegion, presentMembers);
+            if (!resEvent.repeatable) scavengingEvents.Remove(trackedEventRecord);
 		}
 		if (resEvent!=null) StartEventDraw(resEvent, eventRegion, presentMembers);
 	}
+    /*
 	//Currently unused
+    
 	public void RollEvents(ref bool moveAllowed, MapRegion eventRegion, List<PartyMember> movedMembers, bool queueEvent)
 	{
 		//bool eventFired=false;
@@ -144,7 +147,7 @@ public class GameEventManager : MonoBehaviour
 		else moveAllowed=true;
 		
 		//return eventFired;
-	}
+	}*/
 	
 	public void DoEvent(GameEvent newEvent, MapRegion eventRegion, List<PartyMember> eventMembers)
 	{
@@ -302,11 +305,11 @@ public class GameEventManager : MonoBehaviour
 	{
 		scavengingEvents.Clear();
 		scavengingEvents.Add(new EventChance(new ScavengeEventOne(),1f));
-		scavengingEvents.Add(new EventChance(new CarFindEvent(),0.1f));
-		scavengingEvents.Add (new EventChance(new CacheInAnomaly(),0.04f));
+		scavengingEvents.Add(new EventChance(new CarFindEvent(),0.11f));
+		scavengingEvents.Add (new EventChance(new CacheInAnomaly(),0.036f));
 		//scavengingEvents.Add( new EventChance(new NewSurvivor(),0.04f));
-		scavengingEvents.Add( new EventChance(new MedicalCache(),0.04f));
-		//scavengingEvents.Add (new EventChance(new SurvivorRescue(),0.04f));
+		scavengingEvents.Add( new EventChance(new MedicalCache(),0.036f));
+		scavengingEvents.Add (new EventChance(new SurvivorRescue(),0.036f));
 		//scavengingEvents.Add(new EventChance(new SearchForSurvivor(),0.04f));
 
 		moraleEvents.Clear();

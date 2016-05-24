@@ -18,6 +18,7 @@ public class CraftRecipe
 		List<CraftRecipe> recipeList=new List<CraftRecipe>();
 		recipeList.Add(new JunkCookingRecipe());
 		recipeList.Add(new CampUpgradeRecipe());
+        recipeList.Add(new FirecrackerRecipe());
 		recipeList.Add(new TrapRecipe());
 		recipeList.Add(new BulletRecipe());
 		recipeList.Add(new MeleeWeaponRecipe());
@@ -66,8 +67,20 @@ public class BulletRecipe: CraftRecipe
 		requiredIngredients=new Dictionary<InventoryItem.LootItems, int>();
 		requiredIngredients.Add(InventoryItem.LootItems.Scrap,1);
 		requiredIngredients.Add(InventoryItem.LootItems.Gunpowder,1);
-		SetResultItem(InventoryItem.LootItems.Ammo,5);
+		SetResultItem(InventoryItem.LootItems.Ammopack);
 	}
+}
+
+public class FirecrackerRecipe : CraftRecipe
+{
+    public FirecrackerRecipe()
+    {
+        requiredFatigue = 2;
+        description = "Make firecrackers";
+        requiredIngredients = new Dictionary<InventoryItem.LootItems, int>();
+        requiredIngredients.Add(InventoryItem.LootItems.Gunpowder, 1);
+        SetResultItem(InventoryItem.LootItems.Firecracker, 1);
+    }
 }
 
 public class TrapRecipe: CraftRecipe

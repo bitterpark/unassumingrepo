@@ -22,6 +22,10 @@ public class SpriteBase : MonoBehaviour {
 	public Sprite bandageSprite;
 	public Sprite perishableFoodSprite;
 	public Sprite pillsSprite;
+    public Sprite alcohol;
+    //Usable encounter items
+    public Sprite firecracker;
+    public Sprite coffee;
 	//Food
 	public Sprite foodSprite;
 	public Sprite foodSpriteSmall;

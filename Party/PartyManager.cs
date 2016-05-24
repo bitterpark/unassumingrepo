@@ -189,7 +189,7 @@ public class PartyManager : MonoBehaviour
 		//foodSupply=0;//2;
 		daysLeft=campaignDays;
 		ammo=0;//500;//5;
-		gas=1;
+		gas=0;
 		
 		partyMembers=new List<PartyMember>();
 		selectedMembers=new List<PartyMember>();

@@ -362,6 +362,11 @@ public class CacheInAnomaly:GameEvent
 
 		return eventResult;
 	}
+
+	public CacheInAnomaly()
+	{
+		repeatable=false;
+	}
 }
 
 public class MedicalCache:GameEvent
@@ -424,6 +429,11 @@ public class MedicalCache:GameEvent
 		}
 		return eventResult;
 	}
+
+	public MedicalCache()
+	{
+		repeatable=false;
+	}
 }
 
 public class SurvivorRescue:GameEvent
@@ -466,8 +476,8 @@ public class SurvivorRescue:GameEvent
 				}
 				else
 				{
-					PartyMember newGuy=new PartyMember(eventRegion);
-					eventResult="Before you can close the distance, the creature reacts and lunges at you!\nAmid a flurry of vicious attacks, you barely manage to fight it off with the help of the survivor.\n\n"+newGuy.name+" joins your party\n\n";
+					
+					eventResult="Before you can close the distance, the creature reacts and lunges at you!\nAmid a flurry of vicious attacks, you barely manage to fight it off with the help of the survivor.\n\n";
 					//Order is
 					PartyMember.BodyPartTypes partType;
 					foreach (PartyMember member in movedMembers) 
@@ -476,10 +486,12 @@ public class SurvivorRescue:GameEvent
 						eventResult+=member.name+" takes "+failPartyDamage+" "+partType+" damage\n";
 					}//member.health+=failPartyDamage;}
 					//important
+                    PartyMember newGuy = new PartyMember(eventRegion);
+                    eventResult +="\n\n"+newGuy.name + " joins your party\n";
 					PartyManager.mainPartyManager.AddNewPartyMember(newGuy);
 
-					partType=newGuy.TakeRandomPartDamage(failPartyDamage,true);
-					eventResult+=newGuy.name+" takes "+failPartyDamage+" "+partType+" damage\n";
+                    partType = newGuy.TakeRandomPartDamage(newMemberHealthPenalty, true);
+                    eventResult += newGuy.name + " takes " + newMemberHealthPenalty + " " + partType + " damage\n";
 					//newGuy.health+=newMemberHealthPenalty;
 				}
 				break;
@@ -493,6 +505,10 @@ public class SurvivorRescue:GameEvent
 		}
 		return eventResult;
 	}
+    public SurvivorRescue()
+    {
+        repeatable = false;
+    }
 }
 
 public class SearchForSurvivor:GameEvent
@@ -1056,13 +1072,14 @@ public class ScrapTrade:TradeEvent
 		string scoutingDescription="";
 		if (!eventCompleted)
 		{
-			scoutingDescription="Survivors holed up here offer to trade";
-			scoutingDescription+=" "+requiredItemCount+" "+requiredItemType+" for";
+			scoutingDescription="Survivors holed up here offer to trade you";
+            foreach (InventoryItem item in rewardItems.Keys)
+            {
+                scoutingDescription += " " + rewardItems[item] + " " + item.itemName;
+            }
+            scoutingDescription += " for " + requiredItemCount + " " + requiredItemType;
 			scoutingDescription+="\n";
-			foreach (InventoryItem item in rewardItems.Keys)
-			{
-				scoutingDescription+=" "+rewardItems[item]+" "+item.itemName;
-			}
+			
 		}
 		else scoutingDescription="The hideout is trashed and empty. It looks like the survivors left, or got chased off.\nYou wonder what became of them.";
 		return scoutingDescription;
@@ -1768,7 +1785,7 @@ public class ScavengeEventOne:GameEvent
         {
             case"Scavenge":
             {
-                eventResult="Safer-looking ruins are inspected, rubble cleared and plywood pried off, as you search";
+                eventResult="Safer-looking ruins are inspected, rubble cleared and plywood pried off, as you loot";
                 eventResult+="\namid distant echoes of otherworldly sounds.\nA safe search yields a modest bounty";
                 List<InventoryItem> scavengedItems=InventoryItem.GenerateMapSalvageLoot(InventoryItem.LootMetatypes.Salvage);
                 eventResult+="\n\n";
