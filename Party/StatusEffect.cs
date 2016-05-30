@@ -33,10 +33,11 @@ public class Bleed:MemberStatusEffect
 	
 	//int affectedPartyMemberIndex;
 	PartyMember affectedMember;
-	int roundsDuration=2;
+	int roundsDuration=5;
 	//int hoursPassed=0;
-	int bleedDmg=5;
-	
+	const int bleedDmg=1;
+    int currentDmgPerRound;
+
 	public override void TimePassEffect()
 	{
 
@@ -75,6 +76,7 @@ public class Bleed:MemberStatusEffect
 	public override void StackEffect ()
 	{
 		roundsDuration+=roundsDuration;
+        currentDmgPerRound += bleedDmg;
 	}
 	
 	public override string GetMouseoverDescription ()
@@ -92,13 +94,14 @@ public class Bleed:MemberStatusEffect
 		effectName="Bleeding";
 		effectSprite=SpriteBase.mainSpriteBase.bleedSprite;
 		canStack=true;
+        currentDmgPerRound = bleedDmg;
 	}
 }
 
 public class Cold:MemberStatusEffect
 {
 	int maxFatiguePenalty=4;
-	int sickMoralePenalty=15;
+	int sickMoralePenalty=10;
 	int cureMoraleBonus=5;
 	float cureChancePerCycle=0.25f;
 
@@ -214,9 +217,9 @@ public class BrokenLegsMember:MemberStatusEffect
 	{
 		affectedMember=member;
 		//affectedMember.legsBroken=true;
-		affectedMember.currentDodgeChance=affectedMember.maxDodgeChance*dodgeChanceMult;
+		affectedMember.SetDodgeMultiplier(dodgeChanceMult);
 		affectedMember.morale-=15;
-		affectedMember.currentFatigueMoveModifier=fatigueMovePenalty;
+		affectedMember.currentFatigueMoveModifier+=fatigueMovePenalty;
 	}
 
 	public void CureLegs()
@@ -224,9 +227,9 @@ public class BrokenLegsMember:MemberStatusEffect
 		//PartyStatusCanvasHandler.main.NewNotification(affectedMember.name+" has stopped bleeding");
 		PartyManager.mainPartyManager.RemovePartyMemberStatusEffect(affectedMember,this);
 		//affectedMember.legsBroken=false;
-		affectedMember.currentDodgeChance=affectedMember.maxDodgeChance;
+        affectedMember.SetDodgeMultiplier(1);
 		affectedMember.morale+=15;
-		affectedMember.currentFatigueMoveModifier=0;
+		affectedMember.currentFatigueMoveModifier-=fatigueMovePenalty;
 	}
 
 	
@@ -293,7 +296,7 @@ public class NoArms:EnemyStatusEffect
 	
 	public override string GetMouseoverDescription ()
 	{
-		return effectName+"\nReduced damage";
+		return effectName+"\nDamage halved";
 	}
 	
 	public NoArms(EncounterEnemy affectedEnemy)
@@ -302,6 +305,6 @@ public class NoArms:EnemyStatusEffect
 		effectSprite=SpriteBase.mainSpriteBase.brokenArmsSprite;
 		
 		affectedEnemy.staminaDamage-=staminaDamageReduction;
-		affectedEnemy.damageMod*=damageModMultiplier;
+		affectedEnemy.damageMult=damageModMultiplier;
 	}
 }

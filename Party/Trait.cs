@@ -188,13 +188,13 @@ public class Agile:Skill
 
 public class Medic:Skill
 {
-	public static int healBonus=10;
+	public static float healMultiplier=1.5f;
 	public Medic ()
 	{
 		name="Medic";
 	}
 	public override void ActivatePerk(PartyMember member) {member.isMedic=true;}
-	public override string GetMouseoverDescription () {return "Has first aid training\n\nIncreases healing from medkits by "+healBonus;}
+	public override string GetMouseoverDescription () {return "Has first aid training\n\nIncreases the effectiveness of medical supplies by half";}
 }
 //Currently unused
 public class Quick:Skill
@@ -251,8 +251,8 @@ public class Dodge:Skill
 	{
 		name="Avoidance";
 	}
-	public override void ActivatePerk(PartyMember member) {member.maxDodgeChance+=dodgeChanceDelta;}//member.meleeDamageMod+=meleeDamageChange;}
-	public override string GetMouseoverDescription () {return "Ducks and weaves\n\n+"+dodgeChanceDelta+" to dodge chance";}//+meleeDamageChange+" to melee damage";}
+	public override void ActivatePerk(PartyMember member) {member.IncrementMaxDodgeChance(dodgeChanceDelta);}//member.meleeDamageMod+=meleeDamageChange;}
+	public override string GetMouseoverDescription () {return "Ducks and weaves\n\n+"+(dodgeChanceDelta*100)+"% to dodge chance";}//+meleeDamageChange+" to melee damage";}
 }
 public class Technique:Skill
 {	
@@ -328,7 +328,7 @@ public class Tough:Skill
 
 public class Fit:Skill
 {
-	int staminaUpgrade=6;
+	int staminaUpgrade=4;
 	//string name="Enduring";
 	public Fit ()
 	{
@@ -364,7 +364,7 @@ public class Slow:Trait
 
 public class Scrawny:Trait
 {
-	float healthMod=0.7f;
+	float healthMod=0.8f;
 	// name="Scrawny";
 	public Scrawny ()
 	{
@@ -478,7 +478,7 @@ public class Moody: Trait
 
 public class Bloodthirsty: Trait
 {
-	int moraleFromKill=5;
+	int moraleFromKill=10;
 	public Bloodthirsty ()
 	{
 		name="Bloodthirsty";
@@ -490,7 +490,7 @@ public class Bloodthirsty: Trait
 
 public class Pacifist: Trait
 {
-	int moraleFromKill=-5;
+	int moraleFromKill=-10;
 	public Pacifist ()
 	{
 		name="Pacifist";
@@ -536,7 +536,7 @@ public class Downer: Trait
 
 public class PeoplePerson: Trait
 {
-	float friendChanceChange=0.2f;
+	float friendChanceChange=0.3f;
 	public PeoplePerson ()
 	{
 		name="People person";

@@ -156,10 +156,12 @@ public class EnemyTokenHandler : MonoBehaviour, IAttackAnimation, IGotHitAnimati
 				int totalMovesCount=movesInfo.enemyMoveCoords.Count;
 				if (totalMovesCount>0)
 				{
+					EncounterCanvasHandler.main.roomButtons[movesInfo.startCoords].EnemyTokenRemoved(this);
 					for (int i=0; i<totalMovesCount; i++)
 					{
 						
 						//if (EncounterCanvasHandler.main.roomButtons[movesInfo.enemyMoveCoords[i]]);
+						if (i > 0) EncounterCanvasHandler.main.roomButtons[movesInfo.enemyMoveCoords[i-1]].EnemyTokenRemoved(this);
 						EncounterCanvasHandler.main.roomButtons[movesInfo.enemyMoveCoords[i]].AttachEnemyToken(transform);
 						UpdateTokenVision();
 						bool doMoveAnimation=false;

@@ -227,10 +227,13 @@ public abstract class EncounterEnemy
 		Dictionary<EnemyTypes,int> weightsDict=new Dictionary<EnemyTypes, int>();
 		List<EnemyTypes> allEnemyTypes=new List<EnemyTypes>();
 
-		//TRANSIENTS ARE CURRENTLY REMOVED FROM THE LIST
-		foreach (EnemyTypes type in System.Enum.GetValues(typeof(EnemyTypes)))
+		List<EnemyTypes> allowedTypes = new List<EnemyTypes>();
+		allowedTypes.Add(EnemyTypes.Quick);
+
+		//QUICKS ARE CURRENTLY REMOVED FROM THE LIST DUE TO THE FREEZE BUG
+		foreach (EnemyTypes type in allowedTypes)//System.Enum.GetValues(typeof(EnemyTypes)))
 		{
-			if (type!=EnemyTypes.Transient)
+			//if (type!=EnemyTypes.Quick)
 			{
 				weightsDict.Add(type,GetEnemy(type,spawnCoords).weight);
 				allEnemyTypes.Add(type);
@@ -273,8 +276,10 @@ public abstract class EncounterEnemy
 
 	protected float defaultDodgeChance;
 
+	protected float bleedChance=0.5f;
+
 	public int staminaDamage=2;
-	public float damageMod=1f;
+	public float damageMult=1f;
 	protected int maxAttackRange=0;
 	public float movesPerTurn=1;
 	public float currentAccumulatedMoves=0;
@@ -296,7 +301,7 @@ public abstract class EncounterEnemy
 	public delegate void HealthChangeDel();
 	public event HealthChangeDel HealthChanged;
 	
-	public string GetDamageString() {return minDamage+"-"+maxDamage;}
+	public string GetDamageString() {return (minDamage*damageMult)+"-"+(maxDamage*damageMult);}
 	
 	public Sprite GetSprite() {return SpriteBase.mainSpriteBase.genericEnemySprite;}
 	
@@ -330,33 +335,13 @@ public abstract class EncounterEnemy
 	
 	public virtual EnemyAttack AttackAction(List<IGotHitAnimation> targetsWithinReach)//Dictionary<PartyMember,Vector2> memberCoords)
 	{
-		/*List<PartyMember> membersInRoom=new List<PartyMember>();
-		foreach (PartyMember key in memberCoords.Keys) 
-		{
-			if (memberCoords[key]==new Vector2(xCoord,yCoord)) membersInRoom.Add(key);
-		}*/
 		IGotHitAnimation attackedTarget=null;
 		EnemyAttack performedAttack=new EnemyAttack();
 		if (targetsWithinReach.Count>0)
 		{
 			//Determine member to attack
 			attackedTarget=null;//targetsWithinReach[Random.Range(0,targetsWithinReach.Count)];
-			//actionMsg=null;
-			//return damage;
-			/*
-			EncounterCanvasHandler manager=EncounterCanvasHandler.main;//EncounterCanvasHandler.main;
-			//See if a member without defence mode on can be found within reach, if so pick the target out of those members
 
-			List<PartyMember> membersWithoutDefence=new List<PartyMember>();
-			foreach (PartyMember member in membersWithinReach)
-			{
-				if (member.stamina<staminaDamage)//!manager.memberTokens[member].defenceMode) 
-				{
-					membersWithoutDefence.Add(member);
-				}
-			}
-			if (membersWithoutDefence.Count>0) attackedMember=membersWithoutDefence[Random.Range(0,membersWithoutDefence.Count)];
-			*/
 			//If a barricade is in the room, pick that as target, else - pick a random available members
 			if (maxAttackRange==0)
 			{
@@ -368,17 +353,12 @@ public abstract class EncounterEnemy
 			//If no barricade target is found, attack a random available member
 			if (attackedTarget==null) attackedTarget=targetsWithinReach[Random.Range(0,targetsWithinReach.Count)];
 
-
-			//PartyMember attackedMember=manager.selectedMember;
-			//int targetedPCIndex=manager.selectedMember;
-			//manager.DamagePlayerCharacter(manager.selectedMember,damage);
-
 			bool hitConnected=false;
 			bool blocked=false;
 
 			EncounterCanvasHandler manager=EncounterCanvasHandler.main;
 			int myDamageRoll=Random.Range(minDamage,maxDamage+1);
-			myDamageRoll=Mathf.RoundToInt(myDamageRoll*damageMod);
+			myDamageRoll=Mathf.RoundToInt(myDamageRoll*damageMult);
 			int realDmg=0;
 			PartyMember.BodyPartTypes hitMemberPart=PartyMember.BodyPartTypes.Hands;
 
@@ -390,7 +370,6 @@ public abstract class EncounterEnemy
 				MemberTokenHandler attackedMemberToken=attackedTarget as MemberTokenHandler;
 				//See if damage gets blocked
 				int realStaminaDamage=staminaDamage;
-				//manager.memberTokens[attackedMember].DamageAssignedMember(myDamageRoll,ref realStaminaDamage);//attackedMember.TakeDamage(myDamageRoll);
 				//Have to assign this because value types can't be assigned null
 
 				hitConnected=attackedMemberToken.TryHitAssignedMember(myDamageRoll,out realDmg, out realStaminaDamage, out hitMemberPart);
@@ -407,11 +386,20 @@ public abstract class EncounterEnemy
 				hitConnected=true;
 			}
 
-			//manager.VisualizeDamageToMember(realDmg,blocked,attackedMember,this);
 			performedAttack=new EnemyAttack(hitConnected,realDmg,blocked,attackedTarget,this, hitMemberPart);
-			int attackNoiseIntensity=1;
-			//manager.MakeNoise(GetCoords(),attackNoiseIntensity);
-			//StartCoroutine(manager.VisualizeAttack(realDmg,manager.enemyTokens[this],manager.memberTokens[attackedMember]));
+			//Apply bleed
+			//Make sure the bleed is being applies to a member and not a barricade
+			if (performedAttack.attackedTarget.GetType() == typeof(MemberTokenHandler))
+			{
+				MemberTokenHandler attackedMemberToken = performedAttack.attackedTarget as MemberTokenHandler;
+				PartyMember targetMember = attackedMemberToken.myMember;//memberCoords);
+				//Stamina damage part makes sure it can't inflict bleed while under NoArms
+				if (targetMember != null)
+				{
+					if (performedAttack.hitSuccesful && Random.value < bleedChance) PartyManager.mainPartyManager.AddPartyMemberStatusEffect(targetMember, new Bleed());
+				}
+				else { throw new System.Exception("Enemy tried to assign bleed to null PartyMember"); }
+			}
 		} 
 		else {throw new System.Exception("EncounterEnemy attack called while no members are within reach!");}
 		return performedAttack;//attackedMember;
@@ -725,15 +713,15 @@ public abstract class EncounterEnemy
 	
 }
 
-//LIGHT TIER
+
 public class QuickMass:EncounterEnemy
 {
 	public QuickMass(Vector2 coords) : base(coords)
 	{
 		name="Quick mass";
 		health=45;
-		minDamage=6;
-		maxDamage=10;
+		minDamage=3;
+		maxDamage=4;
 		color=Color.blue;
 
 		defaultDodgeChance=0.25f;
@@ -813,15 +801,16 @@ public class Gasser:EncounterEnemy
 	{
 		name="Gas spitter";
 		health=45;
-		minDamage=6;
-		maxDamage=10;
+		minDamage=3;
+		maxDamage=5;
 
 		color=Color.green;
 
 		visionRange=1;
 		maxAttackRange=1;
 		inFront=false;
-		if (Random.value<0.5f) inFront=true;
+		bleedChance = 0;
+		//if (Random.value<0.5f) inFront=true;
 
 		defaultDodgeChance=0.1f;
 		body=new EnemyBody(defaultDodgeChance
@@ -856,15 +845,38 @@ public class Gasser:EncounterEnemy
 	}
 }
 
-//MEDIUM TIER
+public class Spindler : EncounterEnemy
+{
+	public Spindler(Vector2 coords)
+		: base(coords)
+	{
+		name = "Spindler";
+		health = 45;
+		minDamage = 5;
+		maxDamage = 7;
+
+		bleedChance = 0.8f;
+
+		color = Color.black;
+
+		defaultDodgeChance = 0.05f;
+		body = new EnemyBody(defaultDodgeChance
+		, new EnemyBodyPart("Vitals", health, null, (int newHealth) => { this.health = newHealth; }, EnemyBodyPart.PartTypes.Vitals, 0.5f)
+		, new EnemyBodyPart("Arms", 30, () => { this.AddStatusEffect(new NoArms(this)); }, null, EnemyBodyPart.PartTypes.Hands, 0.8f)
+		, new EnemyBodyPart("Legs", 90, () => { this.AddStatusEffect(new NoLegs(this)); }, null, EnemyBodyPart.PartTypes.Legs, 0.6f));
+	}
+}
+
 public class FleshMass:EncounterEnemy
 {
 	public FleshMass(Vector2 coords) : base(coords)
 	{
 		name="Flesh mass";
 		health=90;
-		minDamage=10;
-		maxDamage=12;
+		minDamage=6;
+		maxDamage=9;
+
+		weight = 2;
 
 		color=Color.yellow;
 
@@ -876,61 +888,25 @@ public class FleshMass:EncounterEnemy
 	}
 }
 
-public class Spindler:EncounterEnemy
-{
-	public Spindler(Vector2 coords) : base(coords)
-	{
-		name="Spindler";
-		health=45;
-		minDamage=11;
-		maxDamage=15;
 
-		color=Color.black;
-
-		defaultDodgeChance=0.05f;
-		body=new EnemyBody(defaultDodgeChance
-		,new EnemyBodyPart("Vitals",health,null,(int newHealth)=>{this.health=newHealth;},EnemyBodyPart.PartTypes.Vitals,0.5f)
-		,new EnemyBodyPart("Arms",30,()=>{this.AddStatusEffect(new NoArms(this));},null,EnemyBodyPart.PartTypes.Hands,0.8f)
-		,new EnemyBodyPart("Legs",90,()=>{this.AddStatusEffect(new NoLegs(this));},null,EnemyBodyPart.PartTypes.Legs,0.6f));
-	}
-	
-		public override EnemyAttack AttackAction (List<IGotHitAnimation> presenttargets)//Dictionary<PartyMember,Vector2> memberCoords)
-	{
-		EnemyAttack performedAttack=base.AttackAction(presenttargets);
-		if (performedAttack.attackedTarget.GetType()==typeof(MemberTokenHandler))
-		{
-			MemberTokenHandler attackedMemberToken=performedAttack.attackedTarget as MemberTokenHandler;
-			PartyMember targetMember=attackedMemberToken.myMember;//memberCoords);
-			//Stamina damage part makes sure it can't inflict bleed while under NoArms
-			if (targetMember!=null)
-			{
-				if (staminaDamage>=2 && performedAttack.hitSuccesful) PartyManager.mainPartyManager.AddPartyMemberStatusEffect(targetMember,new Bleed());
-			} 
-			else {throw new System.Exception("Spindler tried to assign bleed to null PartyMember");}
-		}
-		return performedAttack;
-	}
-}
-
-//HEAVY TIER
 public class MuscleMass:EncounterEnemy
 {
 	public MuscleMass(Vector2 coords) : base(coords)
 	{
 		name="Muscle mass";
 		health=90;
-		minDamage=12;
-		maxDamage=15;
+		minDamage=7;
+		maxDamage=11;
 
 		color=Color.red;
 
 		weight=2;
 
-		defaultDodgeChance=0.05f;
+		defaultDodgeChance=0f;
 		body=new EnemyBody(defaultDodgeChance
 		,new EnemyBodyPart("Vitals",health,null,(int newHealth)=>{this.health=newHealth;},EnemyBodyPart.PartTypes.Vitals,0.4f)
-		,new EnemyBodyPart("Arms",90,()=>{this.AddStatusEffect(new NoArms(this));},null,EnemyBodyPart.PartTypes.Hands,0.8f)
-		,new EnemyBodyPart("Legs",180,()=>{this.AddStatusEffect(new NoLegs(this));},null,EnemyBodyPart.PartTypes.Legs,0.8f));
+		,new EnemyBodyPart("Arms",90,()=>{this.AddStatusEffect(new NoArms(this));},null,EnemyBodyPart.PartTypes.Hands,0.7f)
+		,new EnemyBodyPart("Legs",90,()=>{this.AddStatusEffect(new NoLegs(this));},null,EnemyBodyPart.PartTypes.Legs,0.8f));
 	}
 }
 
@@ -942,8 +918,8 @@ public class SlimeMass:EncounterEnemy
 	{
 		name="Slime mass";
 		health=180;
-		minDamage=5;
-		maxDamage=10;
+		minDamage=4;
+		maxDamage=6;
 
 		color=Color.magenta;
 

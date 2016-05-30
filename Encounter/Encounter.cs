@@ -143,8 +143,9 @@ public class Encounter
 		//Dictionary<Vector2,List<EncounterRoom>> segmentRoomsEligibleForEnemyPlacement=new Dictionary<Vector2,List<EncounterRoom>>();
 		encounterMap.Clear();
 		TurnPrefabToEncounterMap(prefabMap,nonSegmentRooms);
-		PlaceLootInEncounterRooms(new List<EncounterRoom>(encounterMap.Values));
+		AddLootToEncounterRooms(new List<EncounterRoom>(encounterMap.Values));
 		AddBarricadesToEncounterRooms(new List<EncounterRoom>(encounterMap.Values));
+		AddSpawnersToEncounterRooms(new List<EncounterRoom>(encounterMap.Values));
 	}
 
 	void TurnPrefabToEncounterMap(Dictionary<Vector2,Dictionary<Vector2,EncounterRoom>> prefabMap, List<EncounterRoom> nonSegmentRooms)
@@ -179,7 +180,35 @@ public class Encounter
 		foreach (EncounterRoom room in allEncounterRooms) {if (Random.value<barricadeChance) room.canBarricade=true;}
 	}
 
-	void PlaceLootInEncounterRooms(List<EncounterRoom> allEncounterRooms)
+	void AddSpawnersToEncounterRooms(List<EncounterRoom> allEncounterRooms)
+	{
+		int requiredSpawnerCount = 2;
+		List<EncounterRoom> potentialSpawners = FindRoomsEligibleForSpawners(allEncounterRooms);
+		int createdSpawnerCount=0;
+		while (createdSpawnerCount < requiredSpawnerCount && potentialSpawners.Count > 0)
+		{
+			EncounterRoom randomlySelectedPotentialRoom=potentialSpawners[Random.Range(0,potentialSpawners.Count)];
+			randomlySelectedPotentialRoom.isSpawner = true;
+			potentialSpawners.Remove(randomlySelectedPotentialRoom);
+			createdSpawnerCount++;
+		}
+		//Remove spawners from the rooms that were not selected
+		foreach (EncounterRoom room in potentialSpawners) room.isSpawner = false;
+
+	}
+
+	List<EncounterRoom> FindRoomsEligibleForSpawners(List<EncounterRoom> allEncounterRooms)
+	{
+		List<EncounterRoom> potentialSpawnerRooms = new List<EncounterRoom>();
+		foreach (EncounterRoom room in allEncounterRooms)
+		{
+			if (room.isSpawner) potentialSpawnerRooms.Add(room);
+		}
+		return potentialSpawnerRooms;
+	}
+
+
+	void AddLootToEncounterRooms(List<EncounterRoom> allEncounterRooms)
 	{
 		List<EncounterRoom> roomsEligibleForLoot=FindRoomsEligibleForLoot(allEncounterRooms);
 		List<EncounterRoom> roomsEligibleForLockedLoot=FindRoomsEligibleForLockedLoot(allEncounterRooms);

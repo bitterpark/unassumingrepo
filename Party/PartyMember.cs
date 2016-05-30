@@ -431,7 +431,12 @@ public class PartyMember
 	}
 	
 	public int staminaRegen=3;
-	public int staminaMoveCost=0;
+	public int staminaInventoryCost = 2;
+	public int staminaMoveCost=2;
+	public int staminaBashLootCost = 2;
+	public int staminaLootCost = 2;
+	public int staminaBarricadeBuildCost = 2;
+	public int staminaBarricadeBashCost = 2;
 	public int barricadeVaultCost=2;
 	
 	//HUNGER
@@ -511,7 +516,7 @@ public class PartyMember
 	public const int fatigueIncreasePerEncounter=2;
 	//public const int mapMoveFatigueCost=25;
 	public const int campSetupFatigueCost=1;
-	public const int fatigueMoveCost=2;
+	public const int defaultFatigueMoveCost=2;
 	public int currentFatigueMoveModifier=0;
 	public int currentFatigueCraftPenalty=0;
 	public const int maxFatigue=10;
@@ -530,8 +535,8 @@ public class PartyMember
 	}
 	int _morale;
 	int baseMorale;
-	public int moraleRestorePerHour=5;
-	public int moraleDecayPerHour=5;
+	public int moraleRestorePerHour=10;
+	public int moraleDecayPerHour=10;
 	public int moraleFatigueMinThreshold=0;
 	//per point above/below 50
 	public float moraleDamageMod;
@@ -551,15 +556,28 @@ public class PartyMember
 	public float currentDodgeChance
 	{
 		get {return _currentDodgeChance;}
-		set 
-		{
-			_currentDodgeChance=value;
-			if (memberBodyParts!=null) memberBodyParts.CalculateHitChances();
-		}
 	}
-	
+    void RecalculateCurrentDodgeChance()
+    {
+        _currentDodgeChance = maxDodgeChance * dodgeMultiplier;
+        if (memberBodyParts != null) memberBodyParts.CalculateHitChances();
+    }
+
 	float _currentDodgeChance;
-	public float maxDodgeChance=0.5f;
+
+    float dodgeMultiplier=1;
+    public void SetDodgeMultiplier(float newDodgeMultiplier)
+    {
+        dodgeMultiplier = newDodgeMultiplier;
+        RecalculateCurrentDodgeChance();
+    }
+
+    public void IncrementMaxDodgeChance(float maxDodgeIncrement) 
+    { 
+        maxDodgeChance += maxDodgeIncrement;
+        RecalculateCurrentDodgeChance();
+    }
+	float maxDodgeChance=0.5f;
 	public BodyParts memberBodyParts;
 	
 	//public float friendshipChance;
@@ -971,22 +989,12 @@ public class PartyMember
 		//If hunger reached >100
 		if (hungerOverload>0)
 		{
-			//hoursPassed*=hungerOverload;
-		//if (hunger==100)
-		//{
-			TakeDamage(1,false,BodyPartTypes.Hands);
-			TakeDamage(1,false,BodyPartTypes.Legs);
-			TakeDamage(1,false,BodyPartTypes.Vitals);
-			//{health-=2*hoursPassed;}
-		//}		
-		
-		//DO MAX STAMINA
-		/*
-		currentMaxStamina
-		=baseMaxStamina-Mathf.RoundToInt(maxStaminaReductionFromHunger*hunger*0.01f)-Mathf.RoundToInt(maxStaminaReductionFromFatigue*fatigue*0.01f);
-		stamina=currentMaxStamina;*/
-		//DO MORALE
-		//if party is starving, morale drops
+			TakeDamage(5,false,BodyPartTypes.Hands);
+			TakeDamage(5,false,BodyPartTypes.Legs);
+			TakeDamage(5,false,BodyPartTypes.Vitals);	
+
+			//DO MORALE
+			//if party is starving, morale drops
 			morale-=adjustedDecayValue;
 		}
 		else
@@ -1013,17 +1021,18 @@ public class PartyMember
 			}
 			//hunger+=(int)(hungerIncreasePerHour*cookMult)*hoursPassed;
 		}
+		//Resting fatigue restore
+		int fatigueRestoreAmount = fatigueRestoreWait;
+		if (currentRegion.hasCamp || hasBedroll) fatigueRestoreAmount = fatigueRestoreSleep;
+		ChangeFatigue(-fatigueRestoreAmount);
 					
 		//DO RELATIONSHIPS
 		//RollRelationships();
 	}
-
+    //Currently unused, might want to use later
 	public void LateTimePassEffect()
 	{
-		//Resting fatigue restore
-		int fatigueRestoreAmount=fatigueRestoreWait;
-		if (currentRegion.hasCamp || hasBedroll) fatigueRestoreAmount=fatigueRestoreSleep;
-		ChangeFatigue(-fatigueRestoreAmount);
+		
 	}
 	/*
 	public AssignedTask GetRestTask(bool restInBed)
@@ -1119,15 +1128,15 @@ public class PartyMember
 			{
 				foreach (PartyMember member in EncounterCanvasHandler.main.encounterMembers)
 				{
-					if (member.isMedic) {amountHealed+=Medic.healBonus; break;}
+					if (member.isMedic) {amountHealed=Mathf.RoundToInt(amountHealed*Medic.healMultiplier); break;}
 				}	
 			}
 			else
 			{
 				//if healing is done outside of encounter
-				foreach (PartyMember member in PartyManager.mainPartyManager.partyMembers)
+				foreach (PartyMember member in InventoryScreenHandler.mainISHandler.selectedMember.currentRegion.localPartyMembers)
 				{
-					if (member.isMedic) {amountHealed+=Medic.healBonus; break;}
+					if (member.isMedic) { amountHealed = Mathf.RoundToInt(amountHealed*Medic.healMultiplier); break; }
 				}	
 			}
 			//health+=amountHealed;

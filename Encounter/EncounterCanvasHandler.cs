@@ -42,14 +42,10 @@ public class EncounterCanvasHandler : MonoBehaviour
     {
         currentSpawnThreat = newThreat;
         currentSpawnThreat = Mathf.Clamp(currentSpawnThreat, 0, 1);
-        spawnThreatText.text = "Threat:"+(Mathf.RoundToInt(newThreat*100))+"%";
+		spawnThreatText.text = "Threat:" + (Mathf.RoundToInt(currentSpawnThreat * 100)) + "%";
     }
 	public float currentSpawnThreat;
 
-
-	bool damageNumberOut=false;
-	
-	bool enemyTurnOngoing=false;
 	//public GameObject memberToken;
 	//GUI HANDLER ELEMENTS
 	//PREFABS
@@ -180,8 +176,9 @@ public class EncounterCanvasHandler : MonoBehaviour
 		{
 			InventoryToggleType toggleType=GetInventoryToggleType(toggledMember);
 
-			if (toggleType==InventoryToggleType.Open)
+			if (toggleType==InventoryToggleType.Open && toggledMember.stamina<=toggledMember.staminaInventoryCost)
 			{
+				toggledMember.stamina -= toggledMember.staminaInventoryCost;
 				if (!roomButtons[memberCoords[toggledMember]].RoomHasEnemies() || memberTokens[toggledMember].CanMove())
 				InventoryScreenHandler.mainISHandler.EncounterToggleNewSelectedMember(toggledMember);
 			}
@@ -194,11 +191,12 @@ public class EncounterCanvasHandler : MonoBehaviour
 					bool doTurnOverForMember=false;
 					memberTokens[toggledMember].TryMove(out doTurnOverForMember);
 					InventoryScreenHandler.mainISHandler.EncounterToggleNewSelectedMember(toggledMember);
-					if (doTurnOverForMember) TurnOver(toggledMember,roomButtons[memberCoords[toggledMember]].assignedRoom,false);
+					//if (doTurnOverForMember) TurnOver(toggledMember,roomButtons[memberCoords[toggledMember]].assignedRoom,false);
 				}
 			}
-			if (toggleType==InventoryToggleType.Switch)
+			if (toggleType == InventoryToggleType.Switch && toggledMember.stamina <= toggledMember.staminaInventoryCost)
 			{
+				toggledMember.stamina -= toggledMember.staminaInventoryCost;
 				if (!roomButtons[memberCoords[InventoryScreenHandler.mainISHandler.selectedMember]].RoomHasEnemies()
 				&& !roomButtons[memberCoords[toggledMember]].RoomHasEnemies())
 				InventoryScreenHandler.mainISHandler.EncounterToggleNewSelectedMember(toggledMember);
@@ -292,7 +290,7 @@ public class EncounterCanvasHandler : MonoBehaviour
 				//MakeNoise(startingRoom.GetCoords(),1);
 				//if (!selectedMember.isQuiet) MakeNoise(roomHandler.GetRoomCoords(),1);
 				MakeNoise(roomHandler.GetRoomCoords(),selectedMember.movingEnemySpawnProbIncrease);
-				TriggerEnemySpawnProbability(roomHandler);
+				//TriggerEnemySpawnProbability(roomHandler);
 				roomButtons[startingRoom.GetCoords()].MemberGone(memberTokens[selectedMember]);
 				MovePartyMemberToRoom(selectedMember,roomHandler,false);
 				DeadMemberCleanupCheck();
@@ -300,6 +298,7 @@ public class EncounterCanvasHandler : MonoBehaviour
 				
 				if (encounterOngoing)
 				{
+					/*
 					if (roomButtons[startingRoom.GetCoords()].RoomHasEnemies())
 					{
 						//Despawn enemies from rooms when all members ran away from them
@@ -310,7 +309,7 @@ public class EncounterCanvasHandler : MonoBehaviour
 							//Increase room enemy spawn probability if all members ran away
                             MakeNoise(startingRoom.GetCoords(), runawayEnemySpawnProbIncrease);
 						}
-					}
+					}*/
 					//If moved member died during move, try to switch to next available member
 					if (!encounterMembers.Contains(selectedMember))
 					{
@@ -329,7 +328,7 @@ public class EncounterCanvasHandler : MonoBehaviour
 					else
 					{
 						//If moved member survived during move
-						if (doTurnover) TurnOver(selectedMember,roomButtons[memberCoords[selectedMember]].assignedRoom,false);
+						//if (doTurnover) TurnOver(selectedMember,roomButtons[memberCoords[selectedMember]].assignedRoom,false);
 					}
 				}
 			}
@@ -403,7 +402,7 @@ public class EncounterCanvasHandler : MonoBehaviour
 					{
 						//If moved member survived during move
 						//if (selectedMember.legsBroken) doTurnover=true;
-						if (doTurnover) TurnOver(selectedMember,roomButtons[memberCoords[selectedMember]].assignedRoom,false);
+						//if (doTurnover) TurnOver(selectedMember,roomButtons[memberCoords[selectedMember]].assignedRoom,false);
 					}
 				}
 			}
@@ -451,14 +450,10 @@ public class EncounterCanvasHandler : MonoBehaviour
 		//update member token pos
 		memberTokens[member].UpdateTokenPos(roomButton);
 		//reveal party vision
-		//UpdateMemberMoveMask(member);
 		RevealPartySenses();
         roomButton.SetVisited();
 		if (EMemberMoved!=null) EMemberMoved();
-		if (doTurnover) TurnOver(member,roomButton.assignedRoom,false);
-		//RefreshRoom(room);
-		//CheckRoomForEnemies(room);
-		//check for combat start
+		//if (doTurnover) TurnOver(member,roomButton.assignedRoom,false);
 	}
 	//called after member move or initial member placement - !!! CONSIDER MOVING THIS TO MOvePartyMemberToRoom !!!
 	//!!!!DEPRECATED!!!! remove this later
@@ -655,7 +650,6 @@ public class EncounterCanvasHandler : MonoBehaviour
 		PartyStatusCanvasHandler.main.NewNotification("Enemy turn",noteTime);
 		//!!IMPORTANT!! THIS IS CALLED ON TOP OF =true AND =false IN ATTACK VISUALIZATION ROUTINE. It is here in case no attack animations occur
 		//during the enemy turn, otherwise the =true after an attack animation will cancel this!!!
-		enemyTurnOngoing=true;
 		GetComponent<CanvasGroup>().interactable=false;
 		yield return new WaitForSeconds(noteTime);
 		if (ERoundIsOver!=null) ERoundIsOver(); //necessary for hearing token placement
@@ -672,7 +666,7 @@ public class EncounterCanvasHandler : MonoBehaviour
 		if (encounterOngoing) 
 		{
 			PartyStatusCanvasHandler.main.NewNotification("Survivors' turn",noteTime);
-			NextRound();
+			NewRound();
 		}
 		yield break;
 	}
@@ -684,14 +678,14 @@ public class EncounterCanvasHandler : MonoBehaviour
 		
 	}*/
 	
-	void NextRound()
+	void NewRound()
 	{
 		//if (encounterOngoing)
 		{
 			//Update tokens on round end
 			foreach (MemberTokenHandler token in memberTokens.Values)//CombatSelectorHandler selector in selectors.Values) 
 			{
-				token.NextTurn();
+				token.NewRoundStarted();
 			}
 			//Make sure this doesn't update after the encounter is finished (from a TPK)
 			SelectMember(memberTokens[encounterMembers[0]]);//selectors[encounterMembers[0]]);
@@ -1231,23 +1225,24 @@ public class EncounterCanvasHandler : MonoBehaviour
 	
 	public void LootClicked(RoomButtonHandler roomHandler)
 	{
-		if (memberCoords[selectedMember]==new Vector2(roomHandler.assignedRoom.xCoord,roomHandler.assignedRoom.yCoord))//&& !memberTokens[selectedMember].moveTaken)
+		if (memberCoords[selectedMember]==new Vector2(roomHandler.assignedRoom.xCoord,roomHandler.assignedRoom.yCoord)
+			&& selectedMember.stamina<=selectedMember.staminaLootCost)//&& !memberTokens[selectedMember].moveTaken)
 		{
+			selectedMember.stamina -= selectedMember.staminaLootCost;
 			AddNewLogMessage(selectedMember.name+" loots the room");
 			roomHandler.LootRoom();
 			MakeNoise(roomHandler.GetRoomCoords(),lootingEnemySpawnProbIncrease);
-			TriggerEnemySpawnProbability(roomHandler);
-			TurnOver(selectedMember,roomHandler.assignedRoom,false);
+			//TriggerEnemySpawnProbability(roomHandler);
+			//TurnOver(selectedMember,roomHandler.assignedRoom,false);
 		}
 	}
 	
-	 
-	
-	public void BashClicked(RoomButtonHandler roomHandler)
+	public void LootBashClicked(RoomButtonHandler roomHandler)
 	{
 		if (memberCoords[selectedMember]==new Vector2(roomHandler.assignedRoom.xCoord,roomHandler.assignedRoom.yCoord)
-		)//&& !memberTokens[selectedMember].moveTaken)
+		&& selectedMember.stamina<=selectedMember.staminaBashLootCost)//&& !memberTokens[selectedMember].moveTaken)
 		{
+			selectedMember.stamina -= selectedMember.staminaBashLootCost;
 			int bashStrength=selectedMember.MeleeAttack();
 			/*
 			bool lockExpertInTeam=false;
@@ -1261,19 +1256,20 @@ public class EncounterCanvasHandler : MonoBehaviour
 			if (!roomHandler.assignedRoom.lootIsLocked) {AddNewLogMessage("The lock breaks!");}
 			//Do noise
 			MakeNoise(roomHandler.GetRoomCoords(),bashingEnemySpawnProbIncrease);
-			TriggerEnemySpawnProbability(roomHandler);
-			TurnOver(selectedMember,roomHandler.assignedRoom,false);
+			//TriggerEnemySpawnProbability(roomHandler);
+			//TurnOver(selectedMember,roomHandler.assignedRoom,false);
 		}
 	}
 	
 	public void BarricadeBuildClicked(RoomButtonHandler roomHandler)
 	{
 		if (memberCoords[selectedMember]==new Vector2(roomHandler.assignedRoom.xCoord,roomHandler.assignedRoom.yCoord)
-		    )//&& !memberTokens[selectedMember].moveTaken)
+			&& selectedMember.stamina <= selectedMember.staminaBarricadeBuildCost)//&& !memberTokens[selectedMember].moveTaken)
 		{
+			selectedMember.stamina -= selectedMember.staminaBarricadeBuildCost;
 			AddNewLogMessage(selectedMember.name+" throws together a barricade");
 			roomHandler.BarricadeRoom();
-			TurnOver(selectedMember,roomHandler.assignedRoom,false);
+			//TurnOver(selectedMember,roomHandler.assignedRoom,false);
 		}
 	}
 	
@@ -1282,39 +1278,34 @@ public class EncounterCanvasHandler : MonoBehaviour
 		if (!roomHandler.RoomHasEnemies() 
 		    && Mathf.Abs(memberCoords[selectedMember].x-roomHandler.assignedRoom.xCoord)
 		    +Mathf.Abs(memberCoords[selectedMember].y-roomHandler.assignedRoom.yCoord)<=1
-		    )//&& !memberTokens[selectedMember].moveTaken)
+		    && selectedMember.stamina<=selectedMember.staminaBarricadeBashCost)//&& !memberTokens[selectedMember].moveTaken)
 		{
+			selectedMember.stamina -= selectedMember.staminaBarricadeBashCost;
 			int damageToBarricade=selectedMember.MeleeAttack();
 			AddNewLogMessage(selectedMember.name+" smashes the barricade for "+damageToBarricade);
 			roomHandler.BashBarricade(damageToBarricade);
 			//SendFloatingMessage(damageToBarricade.ToString(),roomHandler.transform,Color.black);
 			//if (roomHandler.assignedRoom.barricadeInRoom==null) {AddNewLogMessage("The barricade is cleared!");}
-			TurnOver(selectedMember,roomHandler.assignedRoom,false);
+			//TurnOver(selectedMember,roomHandler.assignedRoom,false);
 		}
-	}
-	
-	public void TurnoverSelectedMember()
-	{
-		TurnOver(selectedMember,roomButtons[memberCoords[selectedMember]].assignedRoom,false);
 	}
 	
 	
 	//select active member for combat (for button press and also private turnover reset)
-	
 	public void ClickMember(MemberTokenHandler selectedHandler)
 	{
 		if (selectedMember!=selectedHandler.myMember)
 		{
 			SelectMember(selectedHandler);
 		} 
-		else TurnOver(selectedMember,roomButtons[memberCoords[selectedMember]].assignedRoom,true);
+		//else TurnOver(selectedMember,roomButtons[memberCoords[selectedMember]].assignedRoom,true);
 	}
 	
 	public void MakeNoise(Vector2 originCoords, float probabilityIncrease)
 	{
 		//Create text
 		//Noise distance mechanic currently disabled
-		int carryDistance=0;
+		int carryDistance=10;
 		if (encounterOngoing)
 		{
 			string noiseText="Noise ("+probabilityIncrease+")";
@@ -1332,16 +1323,14 @@ public class EncounterCanvasHandler : MonoBehaviour
 						if (!roomButtons[cursorCoords].assignedRoom.isWall) 
                         SetCurrentSpawnThreat(currentSpawnThreat+probabilityIncrease);
 						//roomButtons[cursorCoords].enemySpawnProbability+=probabilityIncrease;//SpawnEnemy(roomButtons[cursorCoords].assignedRoom);
-						/*
-						if (roomButtons[cursorCoords].assignedRoom.hasEnemies)
+						
+						if (roomButtons[cursorCoords].RoomHasEnemies())
 						{
-							foreach (EncounterEnemy enemy in roomButtons[cursorCoords].assignedRoom.enemiesInRoom)
+							foreach (EnemyTokenHandler enemyToken in roomButtons[cursorCoords].GetAllEnemiesInRoom())
 							{
-								enemyTokens[enemy].AddNewPOI(originCoords,null,carryDistance);//moveMaskToSource);
+								enemyToken.AddNewPOI(originCoords, null, carryDistance);//moveMaskToSource);
 							}		
-						}*/
-						//SpawnEnemy(,);
-
+						}
 					}
 				}
 			}
@@ -1652,7 +1641,7 @@ public class EncounterCanvasHandler : MonoBehaviour
 	{
 		if (enemyTokens.ContainsKey(enemy))
 		{
-			roomButtons[enemy.GetCoords()].EnemyTokenDestroyed(enemyTokens[enemy]);//.assignedRoom.enemiesInRoom.Remove(enemy);
+			roomButtons[enemy.GetCoords()].EnemyTokenRemoved(enemyTokens[enemy]);//.assignedRoom.enemiesInRoom.Remove(enemy);
 			EMemberMoved-=enemyTokens[enemy].UpdateTokenVision;//enemy.VisionUpdate;
 			GameObject.Destroy(enemyTokens[enemy].gameObject);
 			enemyTokens.Remove(enemy);
@@ -1763,7 +1752,7 @@ public class EncounterCanvasHandler : MonoBehaviour
 			memberTokens[selectedMember].TryMove(out doTurnover);
 			memberTokens[selectedMember].attackDone=true;
 		}
-		if (doTurnover) TurnOver(selectedMember,roomButtons[memberCoords[selectedMember]].assignedRoom,false);
+		//if (doTurnover) TurnOver(selectedMember,roomButtons[memberCoords[selectedMember]].assignedRoom,false);
 	}
 	
 	public void AddNewLogMessage(string newMessage)
@@ -1885,11 +1874,11 @@ public class EncounterCanvasHandler : MonoBehaviour
 					SelectMember(memberTokens[cyclableMembers[(int)Mathf.Repeat(cyclableMembers.IndexOf(selectedMember)+1,cyclableMembers.Count)]]);
 				}
 			}
-			/*
+			
 			if (Input.GetKeyDown(KeyCode.P))
 			{
 				TriggerEnemySpawn(roomButtons[memberCoords[selectedMember]].assignedRoom);
-			}*/
+			}
 
 			//ZOOM OUT
 			if (Input.GetAxis("Mouse ScrollWheel")<0)

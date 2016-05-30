@@ -545,7 +545,7 @@ public class Medkit:InventoryItem
 		itemName="Medkit";
 	}
 	
-	int healAmount=15;
+	int healAmount=20;
 	//float healPercentage=0.35f;
 	public override Sprite GetItemSprite() {return SpriteBase.mainSpriteBase.medkitSprite;}
 	
@@ -571,10 +571,25 @@ public class Medkit:InventoryItem
 		return healingPerformed;
 	}
 	//Currently only works if tooltip is viewed from inventory screen
-	public override string GetMouseoverDescription ()
+	public override string GetMouseoverDescription()
 	{
-		//int healAmount=Mathf.FloorToInt(InventoryScreenHandler.mainISHandler.selectedMember.maxHealth*healPercentage);
-		return itemName+"\nUse to heal "+healAmount+" of hp for each body part\nCures bleed";
+		int totalHealAmount = healAmount;
+		if (EncounterCanvasHandler.main.encounterOngoing)
+		{
+			foreach (PartyMember member in EncounterCanvasHandler.main.encounterMembers)
+			{
+				if (member.isMedic) { totalHealAmount = Mathf.RoundToInt(totalHealAmount * Medic.healMultiplier); break; }
+			}
+		}
+		else
+		{
+			//if healing is done outside of encounter
+			foreach (PartyMember member in InventoryScreenHandler.mainISHandler.selectedMember.currentRegion.localPartyMembers)
+			{
+				if (member.isMedic) { totalHealAmount = Mathf.RoundToInt(totalHealAmount * Medic.healMultiplier); break; }
+			}
+		}
+		return itemName + "\nUse to heal " + totalHealAmount + " of hp for each body part\nCures bleed";
 	}
 }
 
@@ -585,12 +600,14 @@ public class Bandages: InventoryItem
 		itemName="Bandages";
 	}
 	
-	int healAmount=20;
+	int healAmount=5;
 	public override Sprite GetItemSprite() {return SpriteBase.mainSpriteBase.bandageSprite;}
 	
 	public override bool UseAction(PartyMember member)
 	{
 		bool healingPerformed=false;
+		//do health
+		if (member.Heal(healAmount)) { healingPerformed = true; }
 		//do bleeding
 		//find all bleeding lacerations
 		List<Bleed> lacerations=new List<Bleed>();
@@ -607,7 +624,23 @@ public class Bandages: InventoryItem
 	}
 	public override string GetMouseoverDescription ()
 	{
-		return itemName+"\nUse to cure bleed";
+		int totalHealAmount = healAmount;
+		if (EncounterCanvasHandler.main.encounterOngoing)
+		{
+			foreach (PartyMember member in EncounterCanvasHandler.main.encounterMembers)
+			{
+				if (member.isMedic) { totalHealAmount = Mathf.RoundToInt(totalHealAmount * Medic.healMultiplier); break; }
+			}
+		}
+		else
+		{
+			//if healing is done outside of encounter
+			foreach (PartyMember member in InventoryScreenHandler.mainISHandler.selectedMember.currentRegion.localPartyMembers)
+			{
+				if (member.isMedic) { totalHealAmount = Mathf.RoundToInt(totalHealAmount * Medic.healMultiplier); break; }
+			}
+		}
+		return itemName + "\nUse to heal " + totalHealAmount + " of hp for each body part\nCures bleed";
 	}
 	
 }
@@ -719,7 +752,7 @@ public class Alcohol : InventoryItem
 	
 	public override string GetMouseoverDescription ()
 	{
-		return itemName+"\nWarms and restores "+moraleRestore+" morale";
+		return itemName+"\nWarms everyone in the area and restores "+moraleRestore+" morale";
 	}
 
 }

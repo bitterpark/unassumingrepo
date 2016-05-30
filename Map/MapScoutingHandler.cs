@@ -58,10 +58,10 @@ public class MapScoutingHandler : MonoBehaviour {
 	}
 	void ShowPrepForEncounter()
 	{
-		descriptionText.text=assignedRegion.regionalEncounter.lootDescription+" infested with "+assignedRegion.regionalEncounter.enemyDescription;
+		descriptionText.text = assignedRegion.regionalEncounter.lootDescription;//+" infested with "+assignedRegion.regionalEncounter.enemyDescription;
 		confirmButton.gameObject.SetActive(true);
 		confirmButton.GetComponentInChildren<Text>().text="Enter ("+PartyMember.fatigueIncreasePerEncounter+" fatigue)";
-		foreach (PartyMember member in assignedRegion.localPartyMembers)//PartyManager.mainPartyManager.selectedMembers) 
+		foreach (PartyMember member in PartyManager.mainPartyManager.selectedMembers)//assignedRegion.localPartyMembers)// 
 		{
 			MissionSelectorHandler newSelector=Instantiate (memberSelectorPrefab) as MissionSelectorHandler;
 			newSelector.AssignMember(member);
@@ -234,7 +234,8 @@ public class MapScoutingHandler : MonoBehaviour {
 		{
 			if (PartyManager.mainPartyManager.partyMembers.Contains(member)) survivingMembers.Add(member);
 		}
-		if (GameManager.main.gameStarted && survivingMembers.Count>0) StartEncounter(survivingMembers);
+		if (GameManager.main.gameStarted && survivingMembers.Count > 0) StartEncounter(survivingMembers);
+		else EndDialog();
 		yield break;
 	}
 

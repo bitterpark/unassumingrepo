@@ -1021,7 +1021,7 @@ public class ScrapTrade:TradeEvent
 	        requiredItemCount=3;
 			rewardItems.Add(new FoodSmall(),foodRewardCount);
 		}
-		repeatable=true;
+		repeatable=false;
     }
 
 	string GetResultDescription(System.Type requiredItem)
@@ -1038,7 +1038,7 @@ public class ScrapTrade:TradeEvent
 		}
 		if (requiredItem==typeof(Pills))
 		{
-			eventResult="A tense-looking survivor hurriedly brings several handfuls of firewood out of the hideout.";
+			eventResult="A tense-looking survivor hurriedly brings several handfuls of food out of the hideout.";
 	        eventResult+="\nThe whole time, you can't shake the feeling of being watched from within.";
 	        eventResult+="\nHe shakes your hand and briefly thanks you before running back, locking the door behind him.";
 
@@ -1159,8 +1159,6 @@ public class WoundedSurvivor:TradeEvent
 {
     string eventDescription="";
 
-    int fatigueRequirement=6;
-
 	public WoundedSurvivor()
     {
 		requiredItemType=typeof(Medkit);
@@ -1214,7 +1212,6 @@ public class WoundedSurvivor:TradeEvent
         List<EventChoice> choicesList=new List<EventChoice>();
         foreach (PartyMember presentMember in movedMembers)
         {
-        	if (presentMember.CheckEnoughFatigue(fatigueRequirement))
 			choicesList.Add(new EventChoice("Use "+requiredItemCount+" "+requiredItemType+" to help the survivor"
 			,!TryFindRequiredItems(requiredItemType,requiredItemCount,eventRegion,movedMembers,out foundMemberItems, out foundAreaItems)));
         }
@@ -1225,7 +1222,6 @@ public class WoundedSurvivor:TradeEvent
     public override string DoChoice (string choiceString,MapRegion eventRegion, List<PartyMember> movedMembers)
     {
         string eventResult=null;
-        int gasCanisterCount=1;
 		if (choiceString=="Use "+requiredItemCount+" "+requiredItemType+" to help the survivor")
 		{
 			PartyMember newMember=new PartyMember(eventRegion);

@@ -46,6 +46,7 @@ public class RoomButtonHandler : MonoBehaviour, IPointerEnterHandler, IPointerEx
 	bool isWall;
 	bool isExit;
 	bool isEntrance;
+	bool isSpawner;
 	public bool isVisible;
     bool isVisited;
 	bool isWithinHearingRange;
@@ -91,7 +92,7 @@ public class RoomButtonHandler : MonoBehaviour, IPointerEnterHandler, IPointerEx
 	public List<EnemyTokenHandler> SpawnEnemiesWeightedOnSpawnChance(float spawnProb)
 	{
 		List<EnemyTokenHandler> resultList=new List<EnemyTokenHandler>();
-		int spawnWeight=Mathf.Max(1,Mathf.RoundToInt(spawnProb*5));
+		int spawnWeight=Mathf.Max(1,Mathf.RoundToInt(spawnProb*4));
 
 		foreach (EncounterEnemy newEnemy in EncounterEnemy.GenerateWeightedEnemySet(spawnWeight,GetRoomCoords()))
 		{
@@ -130,7 +131,7 @@ public class RoomButtonHandler : MonoBehaviour, IPointerEnterHandler, IPointerEx
 		membersGroupBack.GetComponent<LayoutGroup>().childAlignment=TextAnchor.MiddleCenter;
 	}
 
-	public void EnemyTokenDestroyed(EnemyTokenHandler token)
+	public void EnemyTokenRemoved(EnemyTokenHandler token)
 	{
 		if (enemiesInFront.Contains(token)) enemiesInFront.Remove(token);
 		if (enemiesInBack.Contains(token)) enemiesInBack.Remove(token);
@@ -222,7 +223,9 @@ public class RoomButtonHandler : MonoBehaviour, IPointerEnterHandler, IPointerEx
 			//because unassigned bool==false, this is necessary
 			isWall=assignedRoom.isWall;
 			isExit=assignedRoom.isExit;
+			isSpawner = assignedRoom.isSpawner;
 			isDiscovered=assignedRoom.isDiscovered;
+			
 			//hasEnemies=assignedRoom.hasEnemies;
 			hasLoot=assignedRoom.hasLoot;
 			lootIsLocked=assignedRoom.lootIsLocked;
@@ -366,7 +369,7 @@ public class RoomButtonHandler : MonoBehaviour, IPointerEnterHandler, IPointerEx
 	
 	public void LockTokenClicked()
 	{
-		EncounterCanvasHandler.main.BashClicked(this);
+		EncounterCanvasHandler.main.LootBashClicked(this);
 	}
 	
 	public void BashLock(int bashStrength)
@@ -498,10 +501,11 @@ public class RoomButtonHandler : MonoBehaviour, IPointerEnterHandler, IPointerEx
 			if (!isVisible) 
 			{
 				//Hide barricades
-				BarricadeToken assignedBarricadeToken=GetComponentInChildren<BarricadeToken>();
-				if (assignedBarricadeToken!=null) {assignedBarricadeToken.SetHidden(true);}
+				//BarricadeToken assignedBarricadeToken=GetComponentInChildren<BarricadeToken>();
+				//if (assignedBarricadeToken!=null) {assignedBarricadeToken.SetHidden(true);}
+                
 				//switch off Enemy Group and Member Group to hide enemies in fog of war
-				actorsGroup.gameObject.SetActive(false); //!!!
+				//actorsGroup.gameObject.SetActive(false); //!!!
                 if (!isDiscovered)
                 {
                     GetComponent<Button>().image.color = Color.gray;
@@ -548,6 +552,7 @@ public class RoomButtonHandler : MonoBehaviour, IPointerEnterHandler, IPointerEx
 			}
 				
 			if (isExit) {exitToken.SetActive(true);}//GetComponent<Button>().image.color=Color.green;}
+			if (isDiscovered && isSpawner) GetComponent<Button>().image.color = Color.red;
 		}
 	}
     //Currently unused
@@ -577,8 +582,8 @@ public class RoomButtonHandler : MonoBehaviour, IPointerEnterHandler, IPointerEx
 			Vector2 selectedMemberCoords=EncounterCanvasHandler.main.memberCoords[EncounterCanvasHandler.main.selectedMember];
 			if ((selectedMemberCoords-GetRoomCoords()).magnitude==0) 
 			{
-				tooltipText+="\nClick: loot the stash (Noise "
-                +(EncounterCanvasHandler.lootingEnemySpawnProbIncrease*100)+"%)";
+				tooltipText+="\nClick: loot the stash (Noise)";// "
+                //+(EncounterCanvasHandler.lootingEnemySpawnProbIncrease*100)+"%)";
 			}
 		}
 		TooltipManager.main.CreateTooltip(tooltipText,lootToken.transform);
@@ -589,9 +594,9 @@ public class RoomButtonHandler : MonoBehaviour, IPointerEnterHandler, IPointerEx
 		if (EncounterCanvasHandler.main.selectedMember!=null)
 		{
 			Vector2 selectedMemberCoords=EncounterCanvasHandler.main.memberCoords[EncounterCanvasHandler.main.selectedMember];
-			if ((selectedMemberCoords-GetRoomCoords()).magnitude==0) 
-			tooltipText+="\nClick:"+EncounterCanvasHandler.main.selectedMember.GetMeleeAttackDescription()
-            + " (Noise " + (EncounterCanvasHandler.bashingEnemySpawnProbIncrease * 100) + "%)";
+			if ((selectedMemberCoords - GetRoomCoords()).magnitude == 0)
+				tooltipText += "\nClick:" + EncounterCanvasHandler.main.selectedMember.GetMeleeAttackDescription()
+				+ " (Noise) ";// +(EncounterCanvasHandler.bashingEnemySpawnProbIncrease * 100) + "%)";
 		}
 		TooltipManager.main.CreateTooltip(tooltipText,lockToken.transform);
 	}
@@ -660,8 +665,8 @@ public class RoomButtonHandler : MonoBehaviour, IPointerEnterHandler, IPointerEx
                     float actualThreat = EncounterCanvasHandler.main.currentSpawnThreat + EncounterCanvasHandler.main.selectedMember.movingEnemySpawnProbIncrease;
                     actualThreat = Mathf.Clamp(actualThreat, 0, 1);
                     if (isVisited) actualThreat *= 0.5f;
-                    tooltipText += "Click to move (Threat "
-                    + (actualThreat * 100) + "%)";
+					tooltipText += "Click to move (Noise)"; /*(Threat "
+                    + (actualThreat * 100) + "%)";*/
                     TooltipManager.main.CreateTooltip(tooltipText, transform);
                 }
 			}

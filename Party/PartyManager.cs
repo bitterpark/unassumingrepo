@@ -177,7 +177,7 @@ public class PartyManager : MonoBehaviour
 	//Setup start of game
 	public void SetDefaultState()
 	{
-		MapRegion startingRegion=MapManager.main.townCenterRegions[Random.Range(0,MapManager.main.townCenterRegions.Count)];
+		MapRegion startingRegion = MapManager.main.townCenterRegions[0];//Random.Range(0,MapManager.main.townCenterRegions.Count)];
 		//partyStatusCanvas.gameObject.SetActive(true);
 		statusCanvas.EnableStatusDisplay();
 		partyMemberCanvases=new Dictionary<PartyMember, PartyMemberCanvasHandler>();
@@ -209,6 +209,14 @@ public class PartyManager : MonoBehaviour
 		startingRegion.StashItem(new FoodBig());
 		startingRegion.StashItem(new FoodSmall());
 		startingRegion.StashItem(new FoodSmall());
+
+		startingRegion.StashItem(new Pills());
+		startingRegion.StashItem(new Pills());
+		startingRegion.StashItem(new Pills());
+
+		startingRegion.StashItem(new Scrap());
+		startingRegion.StashItem(new Scrap());
+		startingRegion.StashItem(new Scrap());
 
 
 		//Do this to setup proper background color
@@ -508,6 +516,14 @@ public class PartyManager : MonoBehaviour
 
 	void Update()
 	{
-		if (Input.GetKeyDown(KeyCode.K)) {AddPartyMemberStatusEffect(partyMembers[0],new Bleed());} 
+		if (Input.GetKeyDown(KeyCode.K)) 
+		{
+			partyMembers[0].TakeDamage(25,false,PartyMember.BodyPartTypes.Hands);
+			partyMembers[0].TakeDamage(25, false, PartyMember.BodyPartTypes.Legs);
+			partyMembers[0].TakeDamage(49, false, PartyMember.BodyPartTypes.Vitals);
+			partyMembers[1].TakeDamage(25, false, PartyMember.BodyPartTypes.Hands);
+			partyMembers[1].TakeDamage(25, false, PartyMember.BodyPartTypes.Legs);
+			partyMembers[1].TakeDamage(49, false, PartyMember.BodyPartTypes.Vitals);
+		} 
 	}
 }

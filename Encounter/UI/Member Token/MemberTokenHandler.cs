@@ -172,10 +172,11 @@ public class MemberTokenHandler : MonoBehaviour, IAttackAnimation, IGotHitAnimat
 		turnTaken=true;
 	}
 	
-	public void NextTurn()
+	public void NewRoundStarted()
 	{
-		int staminaRegenAmount=myMember.staminaRegen;
-		if (staminaRegenEnabled) myMember.stamina+=staminaRegenAmount;
+		//int staminaRegenAmount=myMember.staminaRegen;
+		//if (staminaRegenEnabled) myMember.stamina+=staminaRegenAmount;
+		myMember.stamina = myMember.currentMaxStamina;
 		attackDone=false;
 		turnTaken=false;
 		RefreshMaxAllowedMovesCount();
@@ -193,7 +194,7 @@ public class MemberTokenHandler : MonoBehaviour, IAttackAnimation, IGotHitAnimat
 	public bool CanMove()
 	{
 		bool canMove=false;
-		if (currentAllowedMovesCount>0) canMove=true;
+		if (myMember.stamina>=myMember.staminaMoveCost) canMove=true;
 		return canMove;
 	}
 
@@ -207,12 +208,14 @@ public class MemberTokenHandler : MonoBehaviour, IAttackAnimation, IGotHitAnimat
 		//Stamina cost is currently 0, deprecate this later
 		if (CanMove()) 
 		{
+			/*
 			currentAllowedMovesCount--;
 			if (currentAllowedMovesCount<=0) 
 			{
 				doTurnOver=true;
 			}
-			if (currentAllowedMovesCount<=1) myMoveToken.MoveStatusChanged(true,turnTaken,myMember.stamina>=myMember.staminaMoveCost);
+			if (currentAllowedMovesCount<=1) myMoveToken.MoveStatusChanged(true,turnTaken,myMember.stamina>=myMember.staminaMoveCost);*/
+			myMember.stamina -= myMember.staminaMoveCost;
 			return true;
 		}
 		else return false;
@@ -301,8 +304,12 @@ public class MemberTokenHandler : MonoBehaviour, IAttackAnimation, IGotHitAnimat
 					if (enemyReachable)
 					{
 						//If standing in front - enemies are within striking range
-						if (inFront) attackPossible=true;
-						else attackPossible=encounterHandler.roomButtons[EncounterCanvasHandler.main.memberCoords[myMember]].membersInFront.Count==0;
+						if (inFront) attackPossible = true;
+						else
+						{
+							RoomButtonHandler fightRoomButton = encounterHandler.roomButtons[EncounterCanvasHandler.main.memberCoords[myMember]];
+							attackPossible = (fightRoomButton.membersInFront.Count == 0 && fightRoomButton.assignedRoom.barricadeInRoom == null);
+						}
 					}
 				}
 				else
@@ -397,7 +404,7 @@ public class MemberTokenHandler : MonoBehaviour, IAttackAnimation, IGotHitAnimat
 			if (showTrait) text+="\n-"+trait.name;
 		}
 		foreach (PartyMember.BodyPartTypes part in myMember.memberBodyParts.currentParts.Keys)//.currentParts.Keys)
-		{text+="\n"+part.ToString()+" "+(myMember.memberBodyParts.GetPartHitChance(part)*100).ToString()+"%";}
+		{text+="\n"+part.ToString()+" "+Mathf.RoundToInt(myMember.memberBodyParts.GetPartHitChance(part)*100).ToString()+"%";}
 		TooltipManager.main.CreateTooltip(text,transform);
 	}
 	

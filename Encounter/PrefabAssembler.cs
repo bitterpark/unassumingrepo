@@ -636,6 +636,7 @@ public class PrefabAssembler : MonoBehaviour
 			if (child.isExit && makeEntrance){newRoom.isExit=true;}
 			if (child.isEntrance && makeEntrance) {newRoom.isEntrance=true;}
 			if (child.hasLoot){newRoom.hasLoot=true;}
+			if (child.isSpawner) newRoom.isSpawner = true;
 		}
 		//Find height and width
 		dimensions=new Vector2(xMax-xMin+1,yMax-yMin+1);

@@ -24,6 +24,7 @@ public class EncounterRoom
 	public bool isEntrance=false;
 	public bool isDiscovered=false;
     public bool isVisited = false;
+	public bool isSpawner = false;
 	/*
 	public bool hasEnemies
 	{

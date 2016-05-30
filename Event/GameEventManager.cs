@@ -334,6 +334,8 @@ public class GameEventManager : MonoBehaviour
 		possiblePersistentEvents.ClearList();
 		possiblePersistentEvents.Add(new WoundedSurvivor(),2);
 		possiblePersistentEvents.Add(new ScrapTrade(),1);
+		possiblePersistentEvents.Add(new ScrapTrade(), 1);
+		possiblePersistentEvents.Add(new ScrapTrade(), 1);
 	}
 
 	void Start()
