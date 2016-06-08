@@ -35,6 +35,7 @@ public class InventoryScreenHandler : MonoBehaviour
 	public RangedSlot rangedSlotPrefab;
 	public SlotItem slotItemPrefab;
 	
+	
 	//GROUPS
 	//public Transform weaponsGroup;
 	public Transform meleeSlotPlacement;
@@ -92,6 +93,8 @@ public class InventoryScreenHandler : MonoBehaviour
 		inventoryShown=true;
 		memberNameText.text=newMember.name;		
 		RefreshInventoryItems();
+		RecipeMakeButton.EItemMade += RefreshInventoryItems;
+		InventorySlot.EItemDropped += RefreshInventoryItems;
 	}
 	/*
 	void InventoryCloseEncounterEffect()
@@ -146,6 +149,8 @@ public class InventoryScreenHandler : MonoBehaviour
 		campingCanvas.CloseScreen();
 		GetComponent<Canvas>().enabled=false;
 		inventoryShown=false;
+		RecipeMakeButton.EItemMade -= RefreshInventoryItems;
+		InventorySlot.EItemDropped -= RefreshInventoryItems;
 	}
 	
 	public void RefreshInventoryItems()
@@ -343,7 +348,7 @@ public class InventoryScreenHandler : MonoBehaviour
 	{
 		PartyMember removedMember=selectedMember;
 		CloseScreen();
-		PartyManager.mainPartyManager.RemovePartyMember(removedMember);
+		PartyManager.mainPartyManager.RemovePartyMember(removedMember,false);
 	}
 
 	void Start() 
@@ -364,7 +369,8 @@ public class InventoryScreenHandler : MonoBehaviour
 	{	
 		if (Input.GetKeyDown(KeyCode.I))
 		{
-			if (GameManager.main.gameStarted && EncounterCanvasHandler.main.GetComponent<CanvasGroup>().interactable)
+			if (GameManager.main.gameStarted && EncounterCanvasHandler.main.GetComponent<CanvasGroup>().interactable 
+				&& PartyManager.mainPartyManager.partyMembers.Count>0)
 			{
 				//IF INSIDE AN ENCOUNTER DO NOTHING (The toggle will be handled from within EncounterCanvasHandler instead
 				if (EncounterCanvasHandler.main.encounterOngoing)

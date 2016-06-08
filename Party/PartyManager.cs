@@ -121,6 +121,7 @@ public class PartyManager : MonoBehaviour
 	int _ammo;
 	
 	public int gas;
+
 	//public int partyVisibilityMod;
 	
 	//List<InventoryItem> partyInventory;
@@ -196,13 +197,10 @@ public class PartyManager : MonoBehaviour
 		assignedTasks=new Dictionary<PartyMember, AssignedTask>();
 		//selectors=new List<PartyMemberSelector>();
 		
-		AddNewPartyMember(new PartyMember(startingRegion));
-		AddNewPartyMember(new PartyMember(startingRegion));
+		//AddNewPartyMember(new PartyMember(startingRegion));
+		//AddNewPartyMember(new PartyMember(startingRegion));
 		
-		//AddPartyMemberStatusEffect(partyMembers[0],new Bleed(partyMembers[0]));
-		//AddPartyMemberStatusEffect(partyMembers[0],new Bleed(partyMembers[0]));
-		
-		startingRegion.SetCar(true);
+		//startingRegion.SetCar(true);
 
 		//MapManager.main.TeleportToRegion(startingRegion);
 		startingRegion.StashItem(new FoodBig());
@@ -218,6 +216,7 @@ public class PartyManager : MonoBehaviour
 		startingRegion.StashItem(new Scrap());
 		startingRegion.StashItem(new Scrap());
 
+		startingRegion.StashItem(new Pipe());
 
 		//Do this to setup proper background color
 		//PassTime(1);
@@ -252,7 +251,7 @@ public class PartyManager : MonoBehaviour
 	public void AdvanceMapTurn()
 	{
 		if (InventoryScreenHandler.mainISHandler.inventoryShown) InventoryScreenHandler.mainISHandler.CloseScreen();
-		int hoursPassed=1;
+		/*
 		dayTime=(int)Mathf.Repeat(dayTime+12,24);//hoursPassed;
 		string timePassageText="";
 		if (dayTime>0) timePassageText="Daytime";
@@ -262,7 +261,9 @@ public class PartyManager : MonoBehaviour
 			daysPassed+=1;
 			daysLeft-=1;
 			foreach (PartyMember member in partyMembers) member.skillpoints+=1;
-		}
+		}*/
+		daysPassed++;
+		string timePassageText="Day"+daysPassed;
 		if (daysLeft>0)
 		{
 			PartyStatusCanvasHandler.main.NewNotification(timePassageText);
@@ -273,7 +274,7 @@ public class PartyManager : MonoBehaviour
 			//Adjust camera bg color
 			float lightBottomThreshold=0.5f;
 			float noonLightLevelBonus=0.5f;
-			InventoryScreenHandler.mainISHandler.RefreshInventoryItems();
+			//InventoryScreenHandler.mainISHandler.RefreshInventoryItems();
 
 			//Make sure the rest tasks and time skip occur in proper order
 			foreach (MemberMapToken token in MapManager.main.memberTokens.Values) 
@@ -317,7 +318,7 @@ public class PartyManager : MonoBehaviour
 			
 			//This may cause issues on gameover
 			PartyStatusCanvasHandler.main.RefreshAssignmentButtons(selectedMembers);
-			InventoryScreenHandler.mainISHandler.RefreshInventoryItems();
+			//InventoryScreenHandler.mainISHandler.RefreshInventoryItems();
 			if (ETimePassedEnd!=null) ETimePassedEnd();
 		}
 		else
@@ -335,6 +336,9 @@ public class PartyManager : MonoBehaviour
 	public void AddNewPartyMember(PartyMember newMember)
 	{
 		partyMembers.Add (newMember);
+		PartyManager.ETimePassed += newMember.TimePassEffect;
+		PartyManager.ETimePassedEnd += newMember.LateTimePassEffect;
+
 		PartyMemberCanvasHandler newPartyMemberCanvas=Instantiate(partyMemberCanvasPrefab);
 		newPartyMemberCanvas.AssignPartyMember(newMember);
 		newPartyMemberCanvas.transform.SetParent(statusCanvas.memberCanvasGroup,false);
@@ -346,38 +350,35 @@ public class PartyManager : MonoBehaviour
 		statusCanvas.NewNotification(newMember.name+" has joined the party");
 	}
 	
-	public void RemovePartyMember(PartyMember removedMember)
+	public void RemovePartyMember(PartyMember removedMember) {RemovePartyMember(removedMember,true);}
+
+	public void RemovePartyMember(PartyMember removedMember, bool dead)
+	{
+		RemoveMemberFromParty(removedMember);
+		if (!dead) TownManager.main.MercenaryContractFinished(removedMember);
+	}
+
+	void RemoveMemberFromParty(PartyMember removedMember)
 	{
 		removedMember.currentRegion.localPartyMembers.Remove(removedMember);
 		if (assignedTasks.ContainsKey(removedMember)) RemoveMemberTask(removedMember);
 		if (selectedMembers.Contains(removedMember)) selectedMembers.Remove(removedMember);
 		MapManager.main.RemoveMemberToken(removedMember);
-		PartyMemberCanvasHandler deletedHandler=partyMemberCanvases[removedMember];
+		PartyMemberCanvasHandler deletedHandler = partyMemberCanvases[removedMember];
 		partyMemberCanvases.Remove(removedMember);
 		GameObject.Destroy(deletedHandler.gameObject);
 		partyMembers.Remove(removedMember);
-		if (partyMembers.Count==0) {GameManager.main.EndCurrentGame(false);}//StartCoroutine(DoGameOver(false));}
-		else
+
+		//this is required for the vertical layout formation to update on time (damn bugs)
+		foreach (PartyMemberCanvasHandler memberCanvas in partyMemberCanvases.Values)
 		{
-			//this is required for the vertical layout formation to update on time (damn bugs)
-			foreach (PartyMemberCanvasHandler memberCanvas in partyMemberCanvases.Values) 
-			{
-				memberCanvas.GetComponent<Canvas>().enabled=false;
-				memberCanvas.GetComponent<Canvas>().enabled=true;
-			}
-			
-			foreach (PartyMember member in partyMembers) 
-			{
-				if (member.relationships.ContainsKey(removedMember))
-				{
-					member.morale-=40;
-					member.RemoveRelatonship(removedMember);
-				}
-				else member.morale-=25;
-			}
+			memberCanvas.GetComponent<Canvas>().enabled = false;
+			memberCanvas.GetComponent<Canvas>().enabled = true;
 		}
+		ETimePassed -= removedMember.TimePassEffect;
+		ETimePassedEnd -= removedMember.LateTimePassEffect;
 	}
-	
+
 	public void MapMemberClicked(PartyMember selectedMember)
 	{
 		if (selectedMembers.Contains(selectedMember))
@@ -524,6 +525,7 @@ public class PartyManager : MonoBehaviour
 			partyMembers[1].TakeDamage(25, false, PartyMember.BodyPartTypes.Hands);
 			partyMembers[1].TakeDamage(25, false, PartyMember.BodyPartTypes.Legs);
 			partyMembers[1].TakeDamage(49, false, PartyMember.BodyPartTypes.Vitals);
-		} 
+		}
+		if (Input.GetKeyDown(KeyCode.Space)) AdvanceMapTurn();
 	}
 }

@@ -65,8 +65,19 @@ public class SpriteBase : MonoBehaviour {
 	//Event sprites
 	public Sprite gasStationSprite;
 
+	//Building icons
+	public Sprite barIcon;
+	public Sprite padlockIcon;
+
 	public Color[] possibleMemberColors;
-	
+
+	//New stuff
+	public Sprite mercPortrait;
+	public Sprite enemyPortrait;
+
+	public Sprite bite;
+	public Sprite venom;
+
 	// Use this for initialization
 	void Start () 
 	{

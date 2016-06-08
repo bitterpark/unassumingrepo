@@ -153,7 +153,7 @@ public struct EnemyMove
 	}
 }
 
-public abstract class EncounterEnemy 
+public abstract class EncounterEnemy: Character 
 {	
 	//STATIC
 	public static string GetMapDescription(EnemyTypes enemyType)
@@ -300,7 +300,9 @@ public abstract class EncounterEnemy
 	public event StatusEffectDel StatusEffectsChanged;
 	public delegate void HealthChangeDel();
 	public event HealthChangeDel HealthChanged;
+
 	
+
 	public string GetDamageString() {return (minDamage*damageMult)+"-"+(maxDamage*damageMult);}
 	
 	public Sprite GetSprite() {return SpriteBase.mainSpriteBase.genericEnemySprite;}
@@ -705,12 +707,50 @@ public abstract class EncounterEnemy
 		return roundIsAttack;
 	}
 	
+	public EncounterEnemy() {}
+
 	public EncounterEnemy(Vector2 coords) 
 	{
 		xCoord=(int)coords.x;
 		yCoord=(int)coords.y;
 	}
-	
+
+	//NEW STUFF
+	protected Deck<CombatCard> combatDeck = new Deck<CombatCard>();
+	protected int stamina=0;
+
+	public string GetName()
+	{
+		return name;
+	}
+
+	public int GetHealth()
+	{
+		return health;
+	}
+
+	public int GetStartStamina()
+	{
+		return stamina;
+	}
+
+	public void SetStamina(int newStamina)
+	{
+		stamina = newStamina;
+		if (stamina < 0) stamina = 0;
+	}
+
+	public Sprite GetPortrait()
+	{
+		return SpriteBase.mainSpriteBase.enemyPortrait;
+	}
+
+	public Deck<CombatCard> GetCombatDeck()
+	{
+		return combatDeck;
+	}
+
+	public void TakeDamage(int damage) { health -= damage; }
 }
 
 
@@ -942,6 +982,201 @@ public class SlimeMass:EncounterEnemy
 			//EncounterCanvasHandler.main.DisplayNewMessage("Shots pass clean through the slime!");
 		}
 		return base.TakeDamage (dmgTaken,damagedPart, isRanged);
+	}
+}
+
+//New encounter enemies
+
+public class Skitter : EncounterEnemy
+{
+	public Skitter(): base()
+	{
+		name = "Skitter";
+		health = 40;
+
+		stamina = 2;
+
+		combatDeck.Populate(CombatCard.GetMultipleCards(typeof(Pinch),combatDeck,4));
+		combatDeck.Populate(CombatCard.GetMultipleCards(typeof(Burrow), combatDeck, 2));
+		combatDeck.Populate(CombatCard.GetMultipleCards(typeof(Bite), combatDeck, 2));
+	}
+}
+
+//Skitter cards
+public class Pinch : CombatCard
+{
+	public Pinch(Deck<CombatCard> originDeck)
+		: base(originDeck)
+	{
+		name = "Pinch";
+		description = "";
+		image=SpriteBase.mainSpriteBase.bite;
+		healthDamage = 5;
+		staminaCost = 2;
+		targetType = TargetType.Character;
+	}
+
+	public override void PlayCard()
+	{
+		userCharGraphic.IncrementStamina(-staminaCost);
+		targetCharGraphic.TakeHealthDamage(healthDamage);
+	}
+}
+
+public class Burrow : CombatCard
+{
+	int staminaRestore = 4;
+	public Burrow(Deck<CombatCard> originDeck)
+		: base(originDeck)
+	{
+		name = "Burrow";
+		description = "Restores "+staminaRestore+" stamina";
+		image = SpriteBase.mainSpriteBase.restSprite;
+		//healthDamage = 5;
+		//staminaCost = 1;
+		targetType = TargetType.None;
+	}
+
+	public override void PlayCard()
+	{
+		userCharGraphic.IncrementStamina(staminaRestore);
+	}
+}
+
+public class Bite : CombatCard
+{
+	public Bite(Deck<CombatCard> originDeck)
+		: base(originDeck)
+	{
+		name = "Bite";
+		//description = "Restores " + staminaRestore + " stamina";
+		image = SpriteBase.mainSpriteBase.bite;
+		healthDamage = 10;
+		staminaCost = 4;
+		targetType = TargetType.Character;
+	}
+
+	public override void PlayCard()
+	{
+		userCharGraphic.IncrementStamina(-staminaCost);
+		targetCharGraphic.TakeHealthDamage(healthDamage);
+	}
+}
+
+public class Bugzilla : EncounterEnemy
+{
+	public Bugzilla()
+		: base()
+	{
+		name = "Bugzilla";
+		health = 80;
+		stamina = 3;
+
+		combatDeck.Populate(CombatCard.GetMultipleCards(typeof(Swing), combatDeck, 2));
+		combatDeck.Populate(CombatCard.GetMultipleCards(typeof(Posture), combatDeck, 4));
+		combatDeck.Populate(CombatCard.GetMultipleCards(typeof(Charge), combatDeck, 2));
+	}
+}
+
+//Bugzilla cards
+public class Swing : CombatCard
+{
+	public Swing(Deck<CombatCard> originDeck)
+		: base(originDeck)
+	{
+		name = "Swing";
+		description = "";
+		image = SpriteBase.mainSpriteBase.bite;
+		healthDamage = 5;
+		staminaCost = 0;
+		targetType = TargetType.Character;
+	}
+
+	public override void PlayCard()
+	{
+		userCharGraphic.IncrementStamina(-staminaCost);
+		targetCharGraphic.TakeHealthDamage(healthDamage);
+	}
+}
+
+public class  Posture: CombatCard
+{
+	int staminaRestore = 3;
+	public Posture(Deck<CombatCard> originDeck)
+		: base(originDeck)
+	{
+		name = "Posture";
+		description = "Restores " + staminaRestore + " stamina";
+		image = SpriteBase.mainSpriteBase.restSprite;
+		//healthDamage = 5;
+		//staminaCost = 1;
+		targetType = TargetType.None;
+	}
+
+	public override void PlayCard()
+	{
+		userCharGraphic.IncrementStamina(staminaRestore);
+	}
+}
+
+public class Charge : CombatCard
+{
+	int staminaRestore = 4;
+	public Charge(Deck<CombatCard> originDeck)
+		: base(originDeck)
+	{
+		name = "Charge";
+		//description = "Restores " + staminaRestore + " stamina";
+		image = SpriteBase.mainSpriteBase.bite;
+		healthDamage = 20;
+		staminaCost = 6;
+		targetType = TargetType.Character;
+	}
+
+	public override void PlayCard()
+	{
+		userCharGraphic.IncrementStamina(-staminaCost);
+		targetCharGraphic.TakeHealthDamage(healthDamage);
+	}
+}
+
+public class Stinger : EncounterEnemy
+{
+	public Stinger()
+		: base()
+	{
+		name = "Stinger";
+		health = 60;
+		stamina = 0;
+
+		combatDeck.Populate(CombatCard.GetMultipleCards(typeof(Swing), combatDeck, 2));
+		combatDeck.Populate(CombatCard.GetMultipleCards(typeof(Posture), combatDeck, 3));
+		combatDeck.Populate(CombatCard.GetMultipleCards(typeof(Venom), combatDeck, 3));
+	}
+}
+
+//Stringer cards
+
+public class Venom : CombatCard
+{
+	int staminaRestore = 4;
+	public Venom(Deck<CombatCard> originDeck)
+		: base(originDeck)
+	{
+		name = "Venom";
+		//description = "Restores " + staminaRestore + " stamina";
+		image = SpriteBase.mainSpriteBase.venom;
+		healthDamage = 5;
+		staminaCost = 3;
+		staminaDamage = 1;
+		targetType = TargetType.Character;
+	}
+
+	public override void PlayCard()
+	{
+		userCharGraphic.IncrementStamina(-staminaCost);
+		targetCharGraphic.TakeHealthDamage(healthDamage);
+		targetCharGraphic.IncrementStamina(-staminaDamage);
 	}
 }
 

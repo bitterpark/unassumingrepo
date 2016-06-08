@@ -4,6 +4,9 @@ using UnityEngine.EventSystems;
 
 public class InventorySlot : MonoBehaviour, IDropHandler
 {
+	public delegate void ItemDroppedDeleg();
+	public static event ItemDroppedDeleg EItemDropped;
+	
 	protected SlotItem filledItem;
 		
 	//unconditional adding of items, for start init (visual assignment only, without duplicating items over into partyInventory)
@@ -73,7 +76,8 @@ public class InventorySlot : MonoBehaviour, IDropHandler
 			//If slot previously had an item in it - swap to other slot
 			if (oldItem!=null) {oldSlot.ItemSwapped(oldItem);}
 			//Update armor/damage/other stats on inventory screen
-			InventoryScreenHandler.mainISHandler.RefreshInventoryItems();
+			//InventoryScreenHandler.mainISHandler.RefreshInventoryItems();
+			if (EItemDropped != null) EItemDropped();
 		}
 	}
 	
@@ -93,6 +97,7 @@ public class InventorySlot : MonoBehaviour, IDropHandler
 			}
 		}
 		//InventoryScreenHandler.mainISHandler.RefreshInventoryItems();
+		
 	}
 
 	//Only works for inheriting classes, does nothing for this class

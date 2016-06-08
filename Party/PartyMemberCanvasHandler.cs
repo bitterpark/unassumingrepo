@@ -14,6 +14,7 @@ public class PartyMemberCanvasHandler : MonoBehaviour {
 	public Text hungerText;
 	public Text moraleText;
 	public Text fatigueText;
+	public Text contractTimeText;
 	public Button memberSelector;
 	public Button assignmentButton;
 	Dictionary<MemberStatusEffect,StatusEffectImageHandler> statusEffectTokens=new Dictionary<MemberStatusEffect, StatusEffectImageHandler>();
@@ -94,6 +95,7 @@ public class PartyMemberCanvasHandler : MonoBehaviour {
 			//if (!MapManager.main.memberTokens[assignedMember].moved)
 			//{
 				MapRegion checkedRegion=assignedMember.currentRegion;//MapManager.main.GetRegion(assignedMember.worldCoords);
+			/*
 				if (!checkedRegion.hasCamp)
 				{
 					if (assignedMember.CheckEnoughFatigue(PartyMember.campSetupFatigueCost))
@@ -109,47 +111,11 @@ public class PartyMemberCanvasHandler : MonoBehaviour {
 						assignedMember.ChangeFatigue(PartyMember.campSetupFatigueCost);
 						checkedRegion.SetUpCamp(1);
 						MapManager.main.memberTokens[assignedMember].moved=true;
-						//PartyManager.mainPartyManager.PassTime(campSetupTime);
-						/*
-						AssignedTask campBuildingTask=new AssignedTask(assignedMember,AssignedTaskTypes.BuildCamp
-						,()=>
-						{
-							if (!checkedRegion.hasCamp) return true;
-							else return false;
-						}
-						,()=>{checkedRegion.SetUpCamp(1);}
-						);
-						PartyManager.mainPartyManager.AssignMemberNewTask(campBuildingTask);*/
 						PartyStatusCanvasHandler.main.RefreshAssignmentButtons();
 					}
 					);
 					}
-				}
-				//Rest in bed assigned task buttons
-				//Currently deprecated
-				/*
-				else
-				{
-					if (assignedMember.CanRest())
-					{
-						assignmentButton.gameObject.SetActive(true);
-						string buttonText="Rest";
-						bool hasBed=false;
-						if (checkedRegion.campInRegion.freeBeds>0) 
-						{
-							hasBed=true;
-							buttonText="Rest(bed)";
-						}
-						assignmentButton.GetComponentInChildren<Text>().text=buttonText;
-						assignmentButton.onClick.RemoveAllListeners();
-						assignmentButton.onClick.AddListener(()=>
-						{
-							PartyManager.mainPartyManager.AssignMemberNewTask(assignedMember.GetRestTask(hasBed));//.Rest(member);
-							PartyStatusCanvasHandler.main.RefreshAssignmentButtons();
-						});
-					}
 				}*/
-			//}
 		}
 	}
 	
@@ -175,5 +141,6 @@ public class PartyMemberCanvasHandler : MonoBehaviour {
 		hungerText.text="Hunger:"+assignedMember.GetHunger()+"|100";
 		moraleText.text="Morale:"+assignedMember.morale+"|100";
 		fatigueText.text="Fatigue:"+assignedMember.GetFatigue()+"|"+PartyMember.maxFatigue;//
+		contractTimeText.text="Days left:"+assignedMember.hireDaysRemaining;
 	}
 }

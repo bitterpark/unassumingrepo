@@ -84,6 +84,11 @@ public class MapRegion : MonoBehaviour
 	public Text teamSizeText;
 	public Image teamSizeBg;
 	
+	//public delegate void InventoryChangeDeleg ();
+	//public static event InventoryChangeDeleg ERegionInventoryChanged;
+
+	//public static void GameEndClearEvent() { ERegionInventoryChanged = null; }
+
 	public Transform memberTokenGroup;
 	
 	public bool discovered
@@ -258,6 +263,7 @@ public class MapRegion : MonoBehaviour
 	{
 		stashedItems.Add(stashedItem);
 		stashToken.enabled=true;
+		//if (ERegionInventoryChanged!=null) ERegionInventoryChanged();
 	}
 	public void TakeStashItem(InventoryItem takenItem)
 	{
@@ -266,6 +272,7 @@ public class MapRegion : MonoBehaviour
 		{
 			stashedItems.Remove(takenItem);
 			if (stashedItems.Count==0) stashToken.enabled=false;
+			//if (ERegionInventoryChanged != null) ERegionInventoryChanged();
 		}
 	}
 	/*

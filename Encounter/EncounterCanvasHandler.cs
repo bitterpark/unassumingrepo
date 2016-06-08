@@ -443,7 +443,7 @@ public class EncounterCanvasHandler : MonoBehaviour
 		RevealPartyVision();
 		if (EMemberMoved!=null) EMemberMoved();*/
 	}
-	
+
 	void MovePartyMemberToRoom(PartyMember member, RoomButtonHandler roomButton, bool doTurnover)
 	{	
 		memberCoords[member]=roomButton.GetRoomCoords();

@@ -487,7 +487,8 @@ public class MapManager : MonoBehaviour
 		if (!tryingPartyMove)
 		{
 			//if (clickedRegion.localPartyMembers.Count>0) 
-			MapManager.main.scoutingHandler.StartDialog(clickedRegion);
+			if (clickedRegion == mapRegions[0]) TownScreen.main.OpenTownScreen();
+			else MapManager.main.scoutingHandler.StartDialog(clickedRegion);
 		}
 	}
 	/*
@@ -509,7 +510,6 @@ public class MapManager : MonoBehaviour
 		}
 		//DiscoverRegions(newRegion.GetCoords());
 		PartyStatusCanvasHandler.main.RefreshAssignmentButtons(PartyManager.mainPartyManager.selectedMembers);
-		
 	}	
 	//deprecated
 	/*

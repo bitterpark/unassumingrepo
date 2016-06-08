@@ -2,7 +2,18 @@
 using System.Collections;
 using System.Collections.Generic;
 
-public class PartyMember 
+public interface Character
+{
+	string GetName();
+	int GetHealth();
+	int GetStartStamina();
+	Sprite GetPortrait();
+	void SetStamina(int newStamina); //Currently unused
+	void TakeDamage(int damage);
+	Deck<CombatCard> GetCombatDeck();
+}
+
+public class PartyMember: Character
 {
 	public enum BodyPartTypes {Vitals, Hands, Legs};
 	public class BodyParts
@@ -290,6 +301,7 @@ public class PartyMember
 	static List<string> occupiedNames=new List<string>();
 	static string GenerateName()
 	{
+		
 		List<string> namesList=new List<string>();
 		namesList.Add("Ivan");
 		namesList.Add("Misha");
@@ -299,13 +311,14 @@ public class PartyMember
 		namesList.Add("Timur");
 		namesList.Add ("Kolya");
 		namesList.Add ("Max");
+		/*
 		foreach (string name in occupiedNames) {namesList.Remove(name);}
 		if (namesList.Count==0) {throw new System.Exception("All names are occupied!");}
 		
 		string finalName=namesList[Random.Range(0,namesList.Count)];
-		occupiedNames.Add(finalName);
+		occupiedNames.Add(finalName);*/
 		
-		return finalName;
+		return namesList[Random.Range(0,namesList.Count)];
 	}
 	
 	static List<Color> GetColors() 
@@ -321,22 +334,22 @@ public class PartyMember
 		possibleColors.Add(Color.magenta);*/
 		return possibleColors;
 	}
-	
-	public int health
+	static List<Color> availableColors=null;
+	static int lastUsedColorIndex = 0;
+	static Color GetPortraitColor()
+	{
+		if (availableColors == null) availableColors = GetColors();
+		int newColorIndex=lastUsedColorIndex+1;
+		if (newColorIndex > availableColors.Count - 1) newColorIndex = 0; 
+		lastUsedColorIndex=newColorIndex;
+		return availableColors[lastUsedColorIndex];
+	}
+
+	public int health = 100;
+		/*
 	{
 		get {return memberBodyParts.currentParts[BodyPartTypes.Vitals].health;}
-		/*
-		set 
-		{
-			if (value<=0) {_health=0;}//StartCoroutine(DoGameOver());}
-			else 
-			{
-				_health=value;
-				if (_health>maxHealth) {_health=maxHealth;}
-			}
-			//if (_health<=0) {GameManager.}
-		}*/
-	}
+	}*/
 	//public int _health;
 	//public int maxHealth;
 	//float healthRegenPercentage=0.2f;
@@ -545,6 +558,8 @@ public class PartyMember
 	public int aloneMoraleMod=0;
 	public int inTeamMoraleMod=0;
 
+	public int hireDaysRemaining = 0;
+
 	public float relationshipChancePerMoralePoint=0.035f;
 	public float baseRelationshipChanceModifier=0;
 	public float GetCurrentRelationshipMod()
@@ -670,6 +685,9 @@ public class PartyMember
 
 	public Dictionary<PartyMember,Relationship> relationships=new Dictionary<PartyMember, Relationship>();
 	
+	//NEW STUFF!!!
+	Deck<CombatCard> combatDeck = new Deck<CombatCard>();
+
 	public PartyMember (MapRegion startingRegion)//Vector2 startingWorldCoords)
 	{
 		GeneratePartyMember(GenerateName(), startingRegion);
@@ -679,23 +697,21 @@ public class PartyMember
 	{
 		GeneratePartyMember(memberName, startingRegion);
 	}
-	
+
 	void GeneratePartyMember(string memberName, MapRegion startingRegion)
 	{
+		combatDeck.Populate(CombatCard.GetMultipleCards(typeof(Smash),combatDeck,2));
+		combatDeck.Populate(CombatCard.GetMultipleCards(typeof(Knee), combatDeck, 2));
+		combatDeck.Populate(CombatCard.GetMultipleCards(typeof(Roundhouse), combatDeck, 1));
+		combatDeck.Populate(CombatCard.GetMultipleCards(typeof(Breather), combatDeck, 2));
+		combatDeck.Populate(CombatCard.GetMultipleCards(typeof(FullAuto), combatDeck, 1));
+		
 		//Pick color out of ones left
 		//worldCoords=startingCoords;
 		currentRegion=startingRegion;
 		startingRegion.localPartyMembers.Add(this);
-		color=Color.white;
-		foreach (Color c in GetColors())
-		{
-			bool colorTaken=false;
-			foreach (PartyMember member in PartyManager.mainPartyManager.partyMembers)
-			{
-				if (member.color==c) {colorTaken=true; break;}	
-			}
-			if (!colorTaken) {color=c; break;}
-		}
+
+		color = GetPortraitColor();
 		
 		
 		//Randomly pick out a specialty
@@ -825,8 +841,7 @@ public class PartyMember
 		//EquipWeapon(new Pipe());
 		//equippedMeleeWeapon=new Pipe();
 		equippedRangedWeapon=null;//new AssaultRifle();//null;
-		PartyManager.ETimePassed+=TimePassEffect;
-		PartyManager.ETimePassedEnd+=LateTimePassEffect;
+		
 	}
 	
 	public bool TryAddOrStackStatusEffect(MemberStatusEffect newEffect)
@@ -878,9 +893,9 @@ public class PartyMember
 		}
 		
 		occupiedNames.Remove(name);
-		PartyManager.ETimePassed-=TimePassEffect;
-		PartyManager.ETimePassedEnd-=LateTimePassEffect;
-		PartyManager.mainPartyManager.RemovePartyMember(this);
+		//PartyManager.ETimePassed-=TimePassEffect;
+		//PartyManager.ETimePassedEnd-=LateTimePassEffect;
+		PartyManager.mainPartyManager.RemovePartyMember(this,true);
 		foreach (MemberStatusEffect effect in activeStatusEffects) {effect.CleanupEffect();}
 		activeStatusEffects=null;
 		PartyStatusCanvasHandler.main.NewNotification(name+" has died!");
@@ -949,6 +964,7 @@ public class PartyMember
 		}
 		
 		//DO HUNGER INCREASE
+		/*
 		float cookMult=1;
 		foreach (PartyMember member in PartyManager.mainPartyManager.partyMembers)
 		{
@@ -1020,12 +1036,14 @@ public class PartyMember
 				}
 			}
 			//hunger+=(int)(hungerIncreasePerHour*cookMult)*hoursPassed;
-		}
+		}*/
 		//Resting fatigue restore
 		int fatigueRestoreAmount = fatigueRestoreWait;
 		if (currentRegion.hasCamp || hasBedroll) fatigueRestoreAmount = fatigueRestoreSleep;
 		ChangeFatigue(-fatigueRestoreAmount);
-					
+
+		hireDaysRemaining--;
+		if (hireDaysRemaining < 0) PartyManager.mainPartyManager.RemovePartyMember(this,false);
 		//DO RELATIONSHIPS
 		//RollRelationships();
 	}
@@ -1292,6 +1310,8 @@ public class PartyMember
 		if (dmgTaken<0) dmgTaken=0; 
 		return memberBodyParts.HitRandomPart(dmgTaken);
 	}
+	//Currently used one
+	public void TakeDamage(int dmgTaken) { health -= dmgTaken; }
 
 	public void TakeDamage(int dmgTaken, bool armorHelps)
 	{
@@ -1422,4 +1442,31 @@ public class PartyMember
 		UpdateCurrentCarryCapacity();
 		//currentCarryCapacity=Mathf.Min(maxCarryCapacity,currentCarryCapacity+uneqippedWeapon.GetWeight());
 	}
+
+	public string GetName()
+	{
+		return name;
+	}
+
+	public int GetHealth()
+	{
+		return health;
+	}
+
+	public int GetStartStamina()
+	{
+		return stamina;
+	}
+
+	public void SetStamina(int newStamina)
+	{
+		stamina = newStamina;
+	}
+
+	public Sprite GetPortrait()
+	{
+		return SpriteBase.mainSpriteBase.mercPortrait;
+	}
+
+	public Deck<CombatCard> GetCombatDeck() { return combatDeck; }
 }

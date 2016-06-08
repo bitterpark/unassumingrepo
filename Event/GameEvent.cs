@@ -702,7 +702,7 @@ public class LowMoraleQuit:GameEvent
 	
 	public override string GetDescription(MapRegion eventRegion, List<PartyMember> movedMembers) 
 	{
-		PartyManager.mainPartyManager.RemovePartyMember(leavingMember);
+		PartyManager.mainPartyManager.RemovePartyMember(leavingMember,false);
 
 		eventDescription="Fed up with the group, "+leavingMember.name+" decides to try his luck alone\n\n";
 		eventDescription+=leavingMember.name+" leaves the party";

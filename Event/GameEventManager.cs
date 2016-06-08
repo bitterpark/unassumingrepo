@@ -93,8 +93,10 @@ public class GameEventManager : MonoBehaviour
 	{
 		float eventsRoll=Random.value;
 		EventChance trackedEventRecord=new EventChance();
+		GameEvent resEvent;
+		/*
 		//Morale events
-		GameEvent resEvent=PickRandomEvent(moraleEvents, ref trackedEventRecord,eventsRoll, eventRegion, presentMembers);
+		resEvent=PickRandomEvent(moraleEvents, ref trackedEventRecord,eventsRoll, eventRegion, presentMembers);
 		if (resEvent!=null) QueueEvent(resEvent,eventRegion,presentMembers);//StartEventDraw(resEvent, eventRegion, presentMembers);
 		//Cold events
 		resEvent=PickRandomEvent(coldEvents, ref trackedEventRecord,eventsRoll, eventRegion, presentMembers);
@@ -107,6 +109,7 @@ public class GameEventManager : MonoBehaviour
 		if (resEvent!=null) QueueEvent(resEvent,eventRegion,presentMembers);
 		resEvent=PickRandomEvent(friendshipEvents, ref trackedEventRecord,eventsRoll, eventRegion, presentMembers);
 		if (resEvent!=null) QueueEvent(resEvent,eventRegion,presentMembers);
+		 */
 	}
 	public void RollScavengeEvents(MapRegion eventRegion,List<PartyMember> presentMembers)
 	{

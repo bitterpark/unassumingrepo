@@ -35,7 +35,7 @@ public class SlotItem : MonoBehaviour, IBeginDragHandler,IDragHandler,IEndDragHa
 			itemBeingDragged=this;
 			//makes sure OnDrop fires correctly for all objects
 			GetComponent<CanvasGroup>().blocksRaycasts=false;
-			transform.SetParent(InventoryScreenHandler.mainISHandler.transform);
+			transform.SetParent(PartyStatusCanvasHandler.main.transform);
 			//print ("drag start");
 		}
 	}
@@ -98,7 +98,7 @@ public class SlotItem : MonoBehaviour, IBeginDragHandler,IDragHandler,IEndDragHa
 
 	public void OnPointerClick(PointerEventData eventData)
 	{
-		if (eventData.button==PointerEventData.InputButton.Right) currentSlot.RclickAction();
+		if (eventData.button==PointerEventData.InputButton.Right && InventoryScreenHandler.mainISHandler.inventoryShown) currentSlot.RclickAction();
 	}
 
 	#endregion

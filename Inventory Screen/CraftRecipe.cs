@@ -7,7 +7,7 @@ public class CraftRecipe
 {
 	public string description;
 	public Dictionary<InventoryItem.LootItems,int> requiredIngredients;
-	public int requiredFatigue;
+	//public int requiredFatigue;
 	
 	//public List<InventoryItem.LootItems> resultItems=new List<InventoryItem.LootItems>();
 	public InventoryItem.LootItems resultItem;
@@ -62,7 +62,7 @@ public class BulletRecipe: CraftRecipe
 {
 	public  BulletRecipe()
 	{
-		requiredFatigue=2;
+		//requiredFatigue=2;
 		description="Make bullets";
 		requiredIngredients=new Dictionary<InventoryItem.LootItems, int>();
 		requiredIngredients.Add(InventoryItem.LootItems.Scrap,1);
@@ -75,7 +75,7 @@ public class FirecrackerRecipe : CraftRecipe
 {
     public FirecrackerRecipe()
     {
-        requiredFatigue = 2;
+        //requiredFatigue = 2;
         description = "Make firecrackers";
         requiredIngredients = new Dictionary<InventoryItem.LootItems, int>();
         requiredIngredients.Add(InventoryItem.LootItems.Gunpowder, 1);
@@ -87,7 +87,7 @@ public class TrapRecipe: CraftRecipe
 {
 	public  TrapRecipe()
 	{
-		requiredFatigue=2;
+		//requiredFatigue=2;
 		description="Make traps";
 		requiredIngredients=new Dictionary<InventoryItem.LootItems, int>();
 		requiredIngredients.Add(InventoryItem.LootItems.Scrap,1);
@@ -100,7 +100,7 @@ public class CampUpgradeRecipe: CraftRecipe
 {
 	public  CampUpgradeRecipe()
 	{
-		requiredFatigue=6;
+		//requiredFatigue=6;
 		description="Make camp barricade";
 		requiredIngredients=new Dictionary<InventoryItem.LootItems, int>();
 		requiredIngredients.Add(InventoryItem.LootItems.Scrap,3);
@@ -113,7 +113,7 @@ public class MeleeWeaponRecipe: CraftRecipe
 {
 	public MeleeWeaponRecipe()
 	{
-		requiredFatigue=2;
+		//requiredFatigue=2;
 		description="Make pipe";
 		requiredIngredients=new Dictionary<InventoryItem.LootItems, int>();
 		requiredIngredients.Add(InventoryItem.LootItems.Scrap,1);
@@ -125,7 +125,7 @@ public class RangedWeaponRecipe: CraftRecipe
 {
 	public RangedWeaponRecipe()
 	{
-		requiredFatigue=2;
+		//requiredFatigue=2;
 		description="Make pipegun";
 		requiredIngredients=new Dictionary<InventoryItem.LootItems, int>();
 		requiredIngredients.Add(InventoryItem.LootItems.Scrap,1);
@@ -137,7 +137,7 @@ public class JunkCookingRecipe: CraftRecipe
 {
 	public JunkCookingRecipe()
 	{
-		requiredFatigue=6;
+		//requiredFatigue=6;
 		description="Cook food";
 
 		requiredIngredients=new Dictionary<InventoryItem.LootItems, int>();
@@ -151,7 +151,7 @@ public class FuelToScrap :CraftRecipe
 {
 	public FuelToScrap()
 	{
-		requiredFatigue=2;
+		//requiredFatigue=2;
 		description="Make scrap";
 
 		requiredIngredients=new Dictionary<InventoryItem.LootItems, int>();
@@ -164,7 +164,7 @@ public class PipegunToScrap :CraftRecipe
 {
 	public PipegunToScrap()
 	{
-		requiredFatigue=2;
+		//requiredFatigue=2;
 		description="Make scrap";
 
 		requiredIngredients=new Dictionary<InventoryItem.LootItems, int>();
@@ -177,7 +177,7 @@ public class PipeToScrap :CraftRecipe
 {
 	public PipeToScrap()
 	{
-		requiredFatigue=2;
+		//requiredFatigue=2;
 		description="Make scrap";
 
 		requiredIngredients=new Dictionary<InventoryItem.LootItems, int>();
@@ -189,7 +189,7 @@ public class AxeToScrap :CraftRecipe
 {
 	public AxeToScrap()
 	{
-		requiredFatigue=2;
+		//requiredFatigue=2;
 		description="Make scrap";
 
 		requiredIngredients=new Dictionary<InventoryItem.LootItems, int>();
@@ -201,7 +201,7 @@ public class KnifeToScrap :CraftRecipe
 {
 	public KnifeToScrap()
 	{
-		requiredFatigue=2;
+		//requiredFatigue=2;
 		description="Make scrap";
 
 		requiredIngredients=new Dictionary<InventoryItem.LootItems, int>();

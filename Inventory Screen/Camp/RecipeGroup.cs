@@ -26,7 +26,7 @@ public class RecipeGroup : MonoBehaviour
 			newIngredientImage.transform.SetParent(ingredientsGroup,false);
 		}
 		descriptionText.text=newRecipe.description;
-		fatigueCostText.text=(newRecipe.requiredFatigue+InventoryScreenHandler.mainISHandler.selectedMember.currentFatigueCraftPenalty)+" fatigue";
+		//fatigueCostText.text=(newRecipe.requiredFatigue+InventoryScreenHandler.mainISHandler.selectedMember.currentFatigueCraftPenalty)+" fatigue";
 
 		//Refresh make button
 		makeButton.AssignMadeItem(assignedRecipe);

@@ -7,6 +7,9 @@ using UnityEngine.UI;
 public class RecipeMakeButton : MonoBehaviour,IPointerEnterHandler,IPointerExitHandler
 {
 	
+	public delegate void ItemMadeDeleg();
+	public static event ItemMadeDeleg EItemMade;
+
 	public Text resultItemCountText;
 	
 	InventoryItem.LootItems madeItemType;
@@ -20,12 +23,12 @@ public class RecipeMakeButton : MonoBehaviour,IPointerEnterHandler,IPointerExitH
 		//Find out if item can be made
 		bool canMakeItem=false;
 		List<InventoryItem> usedLocalItems=new List<InventoryItem>();
-		List<InventoryItem> usedCarriedItems=new List<InventoryItem>();
+		//List<InventoryItem> usedCarriedItems=new List<InventoryItem>();
 
-		PartyMember currentSelectedMember=InventoryScreenHandler.mainISHandler.selectedMember;
-		int totalBuildFatigueCost=newRecipe.requiredFatigue+currentSelectedMember.currentFatigueCraftPenalty;
+		//PartyMember currentSelectedMember=InventoryScreenHandler.mainISHandler.selectedMember;
+		//int totalBuildFatigueCost=newRecipe.requiredFatigue+currentSelectedMember.currentFatigueCraftPenalty;
 
-		if (currentSelectedMember.CheckEnoughFatigue(totalBuildFatigueCost))
+		//if (currentSelectedMember.CheckEnoughFatigue(totalBuildFatigueCost))
 		{
 			//Prep used item list and required item count dict
 			
@@ -33,7 +36,7 @@ public class RecipeMakeButton : MonoBehaviour,IPointerEnterHandler,IPointerExitH
 			//Run a check through local inventory and member personal inventory, to see if 
 			foreach (InventoryItem.LootItems ingredientKey in newRecipe.requiredIngredients.Keys)
 			{
-				foreach (InventoryItem localItem in InventoryScreenHandler.mainISHandler.selectedMember.currentRegion.GetStashedItems())
+				foreach (InventoryItem localItem in MapManager.main.mapRegions[0].GetStashedItems())//InventoryScreenHandler.mainISHandler.selectedMember.currentRegion.GetStashedItems())
 				{
 					if (localItem.GetType()==InventoryItem.GetLootingItem(ingredientKey).GetType())
 					{
@@ -42,6 +45,7 @@ public class RecipeMakeButton : MonoBehaviour,IPointerEnterHandler,IPointerExitH
 						if (availableIngredients[ingredientKey]==0) break;
 					}
 				}
+				/*
 				foreach (InventoryItem carriedItem in InventoryScreenHandler.mainISHandler.selectedMember.carriedItems)
 				{
 					if (carriedItem.GetType()==InventoryItem.GetLootingItem(ingredientKey).GetType())
@@ -50,7 +54,7 @@ public class RecipeMakeButton : MonoBehaviour,IPointerEnterHandler,IPointerExitH
 						usedCarriedItems.Add(carriedItem);
 						if (availableIngredients[ingredientKey]==0) break;
 					} 
-				} 
+				} */
 			}
 			bool enoughIngredients=true;
 			foreach (int remainingRequiredCount in availableIngredients.Values)
@@ -73,15 +77,13 @@ public class RecipeMakeButton : MonoBehaviour,IPointerEnterHandler,IPointerExitH
 			GetComponent<Button>().onClick.AddListener(
 			()=>
 			{
-				PartyMember creator=InventoryScreenHandler.mainISHandler.selectedMember;
-				creator.ChangeFatigue(totalBuildFatigueCost);	
-				foreach(InventoryItem usedLocalItem in usedLocalItems) creator.currentRegion.TakeStashItem(usedLocalItem);
-				foreach(InventoryItem usedCarriedItem in usedCarriedItems) creator.RemoveCarriedItem(usedCarriedItem);
-				for(int i=0; i<newRecipe.resultItemCount; i++) 
-				{
-					creator.currentRegion.StashItem(InventoryItem.GetLootingItem(madeItemType));
-				}
-				InventoryScreenHandler.mainISHandler.RefreshInventoryItems();
+				//PartyMember creator=InventoryScreenHandler.mainISHandler.selectedMember;
+				//creator.ChangeFatigue(totalBuildFatigueCost);	
+				MapRegion centralRegion = MapManager.main.mapRegions[0];
+				foreach (InventoryItem usedLocalItem in usedLocalItems) centralRegion.TakeStashItem(usedLocalItem);//creator.currentRegion.TakeStashItem(usedLocalItem);
+				//foreach(InventoryItem usedCarriedItem in usedCarriedItems) creator.RemoveCarriedItem(usedCarriedItem);
+				for(int i=0; i<newRecipe.resultItemCount; i++) centralRegion.StashItem(InventoryItem.GetLootingItem(madeItemType));
+				if (RecipeMakeButton.EItemMade != null) RecipeMakeButton.EItemMade();
 			});
 		}
 		else GetComponent<Button>().interactable=false;

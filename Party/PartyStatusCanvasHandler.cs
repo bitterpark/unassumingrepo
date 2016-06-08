@@ -6,7 +6,9 @@ using UnityEngine.UI;
 public class PartyStatusCanvasHandler : MonoBehaviour {
 
 	bool displayEnabled=false;
-	
+
+	public Text moneyText;
+
 	public Text mapXText;
 	public Text mapYText;
 	public Text timeText;
@@ -182,7 +184,8 @@ public class PartyStatusCanvasHandler : MonoBehaviour {
 			}	
 			//mapXText.text="X:"+PartyManager.mainPartyManager.mapCoordX.ToString();
 			//mapYText.text="Y:"+PartyManager.mainPartyManager.mapCoordY.ToString();
-			timeText.text="Days left:"+PartyManager.mainPartyManager.daysLeft;//PartyManager.mainPartyManager.dayTime.ToString()+":00";
+			moneyText.text = TownManager.main.money.ToString() + " $";
+			timeText.text="Day:"+PartyManager.mainPartyManager.daysPassed;//PartyManager.mainPartyManager.dayTime.ToString()+":00";
 			ammoText.text="Ammo:"+PartyManager.mainPartyManager.ammo.ToString();
 			fuelText.text="Gas:"+PartyManager.mainPartyManager.gas.ToString();
 			temperatureText.text="Temperature:"+MapRegion.GetTemperatureDescription(MapManager.mapTemperatureRating);

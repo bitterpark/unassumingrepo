@@ -48,6 +48,8 @@ public class GameManager : MonoBehaviour {
 		GameStart+=MapManager.main.GenerateNewMap;
 		while (PartyManager.mainPartyManager==null) yield return new WaitForFixedUpdate();
 		GameStart+=PartyManager.mainPartyManager.SetDefaultState;
+		while (TownManager.main == null) yield return new WaitForFixedUpdate();
+		GameStart += TownManager.main.NewGameState;
 		gamestartPrepared=true;
 		//RegisterClick();
 		yield break;
@@ -66,8 +68,7 @@ public class GameManager : MonoBehaviour {
 			StartNewGame();
 		}
 	}
-	
-	void Update() {if (Input.GetKeyDown(KeyCode.N)) EndCurrentGame(true);}
+
 	/*
 	void OnGUI()
 	{
