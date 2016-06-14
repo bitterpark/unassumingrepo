@@ -75,13 +75,16 @@ public class SpriteBase : MonoBehaviour {
 	public Sprite mercPortrait;
 	public Sprite enemyPortrait;
 
-	public Sprite bite;
+	public Sprite skull;
 	public Sprite venom;
+	public Sprite crosshair;
+	public Sprite fire;
+	public Sprite cover;
 
 	// Use this for initialization
 	void Start () 
 	{
-		mainSpriteBase=this;
+		mainSpriteBase=this;//
 	}
 	
 

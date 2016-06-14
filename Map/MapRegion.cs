@@ -384,6 +384,7 @@ public class MapRegion : MonoBehaviour
 					else
 					{
 						//If region has no encounter, assume it has an event
+						if (regionalEvent!=null)
 						regionGraphic.sprite=regionalEvent.GetRegionSprite();
 					}
 				}
@@ -435,6 +436,7 @@ public class MapRegion : MonoBehaviour
 		//if (threatLevel==ThreatLevels.Low) campSetupTimeRemaining+=2;
 		//if (threatLevel==ThreatLevels.Medium) campSetupTimeRemaining+=4;
 		//if (threatLevel==ThreatLevels.High) campSetupTimeRemaining+=6;
+		encounterInRegion = new Encounter(true);
 	}
 	
 	public void SetUpCamp(int manhoursInvested)
@@ -578,61 +580,16 @@ public class MapRegion : MonoBehaviour
 
 	public void ShowRegionTooltip()
 	{
-		bool textExists=true;
-		string areaDescription="";
-		if (!scouted) {areaDescription="Not scouted";}
-		else 
+		string areaDescription = "";
+		if (hasEncounter)
 		{
-			if (hasEncounter)
-			{
-				areaDescription+=regionalEncounter.lootDescription+"\n\n";
-				//Describe all potential loot
-				areaDescription+="May contain:\n";
-				foreach (InventoryItem.LootMetatypes metatype in regionalEncounter.chestTypes.probabilities.Keys)
-				{
-					areaDescription+="-"+InventoryItem.GetLootMetatypeDescription(metatype)+"\n";
-				}
-				//areaDescription+="Enemies: "+regionalEncounter.enemyDescription+"\n";//
-				areaDescription+="\nRequired team size: "+regionalEncounter.minRequiredMembers+"-"+regionalEncounter.maxRequiredMembers;
-				//if (isHive) {areaDescription+="\nHive";}
-				//areaDescription+="\nExploration threat: "+CalculateThreatLevel(0);
-			}
-			else 
-			{
-				textExists=true;
-				areaDescription=regionalEvent.GetTooltipDescription();
-			}
+			areaDescription = encounterInRegion.GetTooltipDescription();
 		}
-		if (PartyManager.mainPartyManager.selectedMembers.Count>0)
+		else
 		{
-			MapRegion cursorRegion=PartyManager.mainPartyManager.selectedMembers[0].currentRegion;
-			if (cursorRegion.connections.ContainsKey(this))
-			{
-				if (textExists) areaDescription+="\n";
-				textExists=true;
-				areaDescription+="Move cost:";
-				if (cursorRegion.connections[this].isIntercity) areaDescription+=cursorRegion.connections[this].moveCost+" gas or 100 fatigue";
-				else
-				{
-					bool nonuniformPartyMoveCost=false;
-					int maxFatiguePenalty=PartyManager.mainPartyManager.selectedMembers[0].currentFatigueMoveModifier;
-					foreach (PartyMember member in PartyManager.mainPartyManager.selectedMembers)
-					{
-						if (member.currentFatigueMoveModifier!=maxFatiguePenalty) 
-						{
-							nonuniformPartyMoveCost=true;
-							maxFatiguePenalty=member.currentFatigueMoveModifier;
-						}
-					}
-					if (nonuniformPartyMoveCost) areaDescription+="--";
-					else areaDescription+=(maxFatiguePenalty+cursorRegion.connections[this].moveCost).ToString();
-					areaDescription+=" fatigue";
-				}
-				
-			}
+			areaDescription = "Home, sweet home";
 		}
-		
-		if (textExists)	TooltipManager.main.CreateTooltip(areaDescription,this.transform);
+		TooltipManager.main.CreateTooltip(areaDescription, this.transform);
 	}
 
 	//ICON TOOLTIPS
@@ -674,4 +631,7 @@ public class MapRegion : MonoBehaviour
 	{
 		TooltipManager.main.StopAllTooltips();
 	}
+
+	public Encounter encounterInRegion;
+
 }

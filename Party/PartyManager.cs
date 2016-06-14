@@ -178,7 +178,7 @@ public class PartyManager : MonoBehaviour
 	//Setup start of game
 	public void SetDefaultState()
 	{
-		MapRegion startingRegion = MapManager.main.townCenterRegions[0];//Random.Range(0,MapManager.main.townCenterRegions.Count)];
+		MapRegion startingRegion = MapManager.main.GetTown();//Random.Range(0,MapManager.main.townCenterRegions.Count)];
 		//partyStatusCanvas.gameObject.SetActive(true);
 		statusCanvas.EnableStatusDisplay();
 		partyMemberCanvases=new Dictionary<PartyMember, PartyMemberCanvasHandler>();
@@ -271,14 +271,9 @@ public class PartyManager : MonoBehaviour
 			//foreach (PartyMember member in partyMembers) {member.hunger+=10*hoursPassed;}
 			if (ETimePassed!=null) {ETimePassed();}
 			
-			//Adjust camera bg color
-			float lightBottomThreshold=0.5f;
-			float noonLightLevelBonus=0.5f;
 			//InventoryScreenHandler.mainISHandler.RefreshInventoryItems();
 
 			//Make sure the rest tasks and time skip occur in proper order
-			foreach (MemberMapToken token in MapManager.main.memberTokens.Values) 
-			if (!assignedTasks.ContainsKey(token.assignedMember)) token.moved=false;
 			//List<PartyMember> membersRestingAtCamp=new List<PartyMember>();
 			List<MapRegion> campingRegions=new List<MapRegion>();
 
@@ -344,8 +339,8 @@ public class PartyManager : MonoBehaviour
 		newPartyMemberCanvas.transform.SetParent(statusCanvas.memberCanvasGroup,false);
 		partyMemberCanvases.Add(newMember,newPartyMemberCanvas);
 		
-		MapManager.main.AddMemberToken(newMember);
-		MapManager.main.MoveMembersToRegion(newMember.currentRegion,newMember);
+		//MapManager.main.AddMemberToken(newMember);
+		//MapManager.main.MoveMembersToRegion(newMember.currentRegion,newMember);
 		
 		statusCanvas.NewNotification(newMember.name+" has joined the party");
 	}

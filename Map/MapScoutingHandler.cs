@@ -58,10 +58,10 @@ public class MapScoutingHandler : MonoBehaviour {
 	}
 	void ShowPrepForEncounter()
 	{
-		descriptionText.text = assignedRegion.regionalEncounter.lootDescription;//+" infested with "+assignedRegion.regionalEncounter.enemyDescription;
+		descriptionText.text = assignedRegion.encounterInRegion.GetScoutingDescription();//+" infested with "+assignedRegion.regionalEncounter.enemyDescription;
 		confirmButton.gameObject.SetActive(true);
 		confirmButton.GetComponentInChildren<Text>().text="Enter ("+PartyMember.fatigueIncreasePerEncounter+" fatigue)";
-		foreach (PartyMember member in PartyManager.mainPartyManager.selectedMembers)//assignedRegion.localPartyMembers)// 
+		foreach (PartyMember member in PartyManager.mainPartyManager.partyMembers)//assignedRegion.localPartyMembers)// 
 		{
 			MissionSelectorHandler newSelector=Instantiate (memberSelectorPrefab) as MissionSelectorHandler;
 			newSelector.AssignMember(member);
@@ -88,6 +88,7 @@ public class MapScoutingHandler : MonoBehaviour {
 			{
 				if (assignedRegion.regionalEncounter!=null)
 				{
+					/*
 					ambushThreatText.text="Ambush threat:"+assignedRegion.CalculateThreatLevel(selectedForMission.Count);
 					if (assignedRegion.ambientThreatNumber<=0) scoutMoreButton.SetActive(false);
 					else 
@@ -97,7 +98,7 @@ public class MapScoutingHandler : MonoBehaviour {
 						//scoutMoreButton.GetComponent<Button>().interactable=true;
 						//else scoutMoreButton.GetComponent<Button>().interactable=false;
 					}
-					//Prevent from entering encounter when no party members are selected
+					//Prevent from entering encounter when no party members are selected*/
 					if (selectedForMission.Count>0) confirmButton.interactable=true;
 					else confirmButton.interactable=false;
 				}
@@ -181,25 +182,8 @@ public class MapScoutingHandler : MonoBehaviour {
 		{
 			if (assignedRegion.regionalEncounter!=null)
 			{
-				float targetValue=0;
-				switch (assignedRegion.CalculateThreatLevel(selectedForMission))
-				{
-					case MapRegion.ThreatLevels.None: {targetValue=0; break;}
-					case MapRegion.ThreatLevels.Low: {targetValue=0.3f; break;}
-					case MapRegion.ThreatLevels.Medium: {targetValue=0.6f; break;}
-					case MapRegion.ThreatLevels.High: {targetValue=0.9f; break;}
-				}
-
-				if (Random.value<targetValue) 
-				{
-					StartCoroutine(WaitForAmbushEvent(selectedForMission));
-					//GameEventManager.mainEventManager.DoEvent(new AmbushEvent(),assignedRegion,selectedForMission);
-				}
-				else StartEncounter(selectedForMission);
-				//EncounterCanvasHandler.mainEncounterCanvasHandler.StartNewEncounter(assignedRegion,selectedForMission);
-				//EndDialog();
-				//PartyManager.mainPartyManager.EnterPartyIntoEncounter(selectedForMission);
-				//Use this to indicate encounter having been visited
+				CardsScreen.main.OpenScreen(assignedRegion.encounterInRegion,selectedForMission.ToArray());
+				EndDialog();
 			}
 			else
 			{
@@ -243,7 +227,8 @@ public class MapScoutingHandler : MonoBehaviour {
 	{
 		//Highlights the region in white, marking the encounter as visited
 		assignedRegion.visible=true;
-		MapManager.main.EnterEncounter(assignedRegion.regionalEncounter,encounterMembers,false);
+		//MapManager.main.EnterEncounter(assignedRegion.regionalEncounter,encounterMembers,false);
+		//CardsScreen.main.OpenScreen(assignedRegion.encounterInRegion,encounterMembers.ToArray());
 	}
 
 	public void CancelPressed()

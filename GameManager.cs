@@ -45,7 +45,7 @@ public class GameManager : MonoBehaviour {
 		while (GameEventManager.mainEventManager==null) yield return new WaitForFixedUpdate();
 		GameStart+=GameEventManager.mainEventManager.GamestartGenerateEventLists;
 		while (MapManager.main==null) yield return new WaitForFixedUpdate();
-		GameStart+=MapManager.main.GenerateNewMap;
+		GameStart+=MapManager.main.GamestartMapSetup;
 		while (PartyManager.mainPartyManager==null) yield return new WaitForFixedUpdate();
 		GameStart+=PartyManager.mainPartyManager.SetDefaultState;
 		while (TownManager.main == null) yield return new WaitForFixedUpdate();

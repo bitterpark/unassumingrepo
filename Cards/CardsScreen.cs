@@ -6,22 +6,33 @@ using System.Collections.Generic;
 
 public class CardsScreen : MonoBehaviour 
 {
+	public delegate void RoundOverDeleg();
+	public static event RoundOverDeleg ERoundIsOver;
+
+	bool rangedAttacksAllowed = true;
+	public void SetRangedAttacksRestriction(bool allowed)
+	{
+		rangedAttacksAllowed = allowed;
+	}
+
 	const float cardPlayAnimationTime = 1f;
 
 	public Transform enemiesGroup;
 	public Transform enemyHand;
 	public Transform mercsGroup;
 	public Transform playerHand;
+	public Transform roomCardsGroup;
 
 	public Transform encounterDeckGroup;
 
-	public Transform cardPlaySpot;
+	public Transform centerPlayArea;
 
 	public CombatCardGraphic combatCardPrefab;
 	public VisualCardGraphic visualCardPrefab;
 	public RewardCardGraphic rewardCardPrefab;
 	public CharacterGraphic mercGraphicPrefab;
 	public CharacterGraphic enemyGraphicPrefab;
+	public EncounterCardGraphic encounterCardPrefab;
 	
 	public CharacterGraphic selectedCharacter;
 
@@ -35,36 +46,69 @@ public class CardsScreen : MonoBehaviour
 	public Image selectModeMessage;
 	public Button skipTurnButton;
 	public Button discardHandButton;
+	public Button finishButton;
 
 	public List<CharacterGraphic> mercGraphics=new List<CharacterGraphic>();
 	public List<CharacterGraphic> enemyGraphics = new List<CharacterGraphic>();
 
 	//public Deck<EncounterCard> encounterDeck = new Deck<EncounterCard>();
-	List<EncounterCard> encounter = new List<EncounterCard>();
-	Deck<RewardCard> rewards;
+	//List<EncounterCard> encounter = new List<EncounterCard>();
+	//Deck<RewardCard> rewards;
 
 	Dictionary<Character, Deck<CombatCard>> characterDecks = new Dictionary<Character, Deck<CombatCard>>();
 	Dictionary<Character, List<CombatCard>> characterHands = new Dictionary<Character, List<CombatCard>>();
 
+	public List<RoomCard> activeRoomCards = new List<RoomCard>();
+
 	const int handSize = 4;
+	const int staminaRegen = 1;
 
 	bool handPeekingAllowed = false;
 
-	public void OpenScreen()
+	Encounter playedEncounter;
+
+	public void OpenScreen(Encounter newEncounter, PartyMember[] team)
 	{
 		GetComponent<Canvas>().enabled = true;
-		AddMercenary(new PartyMember(MapManager.main.mapRegions[0]));
-		AddMercenary(new PartyMember(MapManager.main.mapRegions[0]));
-
-		encounter.Clear();
-		encounter.Add(new Hallway());
-		encounter.Add(new EngineRoom());
-		rewards = new Deck<RewardCard>();
-		rewards.Populate(new CashStash(),new CashStash(), new AmmoStash(), new AmmoStash(), new AmmoStash(), new AmmoStash());
-		rewards.Shuffle();
-		StartCoroutine(ProgressThroughEncounter());
+		playedEncounter=newEncounter;
+		foreach (PartyMember merc in team)
+		{
+			AddMercenary(merc);
+		}
+		ProgressThroughEncounter();
 	}
 
+	void CloseScreen()
+	{
+		selectModeMessage.gameObject.SetActive(false);
+		finishButton.gameObject.SetActive(false);
+		
+		selectionArrow.SetParent(this.transform, false);
+		RemoveAllRoomCards();
+		ClearDisplayedHand(playerHand);
+		ClearDisplayedHand(enemyHand);
+		foreach (CharacterGraphic graphic in new List<CharacterGraphic>(mercGraphics)) 
+			RemoveMercenary(graphic);
+		foreach (CharacterGraphic graphic in new List<CharacterGraphic>(enemyGraphics)) 
+		{ 
+			RemoveEnemy(graphic);
+		}
+		GetComponent<Canvas>().enabled = false;
+		PartyManager.mainPartyManager.AdvanceMapTurn();
+	}
+
+	void ProgressThroughEncounter()
+	{
+		if (!playedEncounter.IsFinished()) ShowEncounterSelection();
+		else
+		{
+			selectModeMessage.gameObject.SetActive(true);
+			selectModeMessage.GetComponentInChildren<Text>().text = "Run complete";
+			finishButton.gameObject.SetActive(true);
+		}
+	}
+
+	/*
 	IEnumerator ProgressThroughEncounter()
 	{
 		if (encounter.Count > 0)
@@ -74,7 +118,7 @@ public class CardsScreen : MonoBehaviour
 			ShowEncounterDeck();
 			VisualCardGraphic nextCardGraphic = Instantiate(visualCardPrefab);
 			nextCardGraphic.AssignCard(nextEncounterCard);
-			PutCardInCenterSpot(nextCardGraphic);
+			PutCardToCenter(nextCardGraphic);
 			yield return new WaitForSeconds(cardPlayAnimationTime);
 			GameObject.Destroy(nextCardGraphic.gameObject);
 			HideEncounterDeck();
@@ -82,104 +126,110 @@ public class CardsScreen : MonoBehaviour
 		}
 		else CloseScreen();
 		yield break;
-	}
+	}*/
 
+	public void PlayEncounterCard(EncounterCardGraphic playedCardGraphic)
+	{
+		EncounterCard playedCard = playedCardGraphic.assignedCard;
+		GameObject.Destroy(playedCardGraphic.gameObject);
+		ClearEncounterSelection();
+		StartCombat(playedCard, playedEncounter.GenerateEnemies(3));
+	}
+	/*
 	EncounterEnemy[] GenerateRandomEnemyEncounter(int enemiesCount)
 	{
 		//Dictionary<System.Type, int> enemyWeights;
-		List<System.Type> enemyTypes = new List<System.Type>();
-		enemyTypes.Add(typeof(Stinger));
-		enemyTypes.Add(typeof(Skitter));
-		enemyTypes.Add(typeof(Bugzilla));
+		
 		EncounterEnemy[] resultList = new EncounterEnemy[enemiesCount];
 		for (int i = 0; i < enemiesCount; i++)
 		{
-			resultList[i] = (EncounterEnemy)System.Activator.CreateInstance(enemyTypes[Random.Range(0,enemyTypes.Count)]);
+			resultList[i] = (EncounterEnemy)System.Activator.CreateInstance(playedEncounter.enemyTypes[Random.Range(0, playedEncounter.enemyTypes.Count)]);
 		}
 		return resultList;
-	}
+	}*/
 
-	void ShowEncounterDeck()
+	void ShowEncounterSelection()
 	{
+		foreach (EncounterCard room in playedEncounter.GetRoomSelection(2))
+		{
+			EncounterCardGraphic cardGraphic = Instantiate(encounterCardPrefab);
+			cardGraphic.AssignCard(room);
+			cardGraphic.transform.SetParent(centerPlayArea, false);
+		}
+		/*
 		foreach (EncounterCard card in encounter)
 		{
-			VisualCardGraphic cardGraphic = Instantiate(visualCardPrefab);
+			EncounterCardGraphic cardGraphic = Instantiate(encounterCardPrefab);
 			cardGraphic.AssignCard(card);
-			cardGraphic.transform.SetParent(playerHand, false);
+			cardGraphic.transform.SetParent(centerPlayArea, false);
+		}*/
+	}
+
+	void ClearEncounterSelection()
+	{
+		foreach (EncounterCardGraphic graphic in centerPlayArea.GetComponentsInChildren<EncounterCardGraphic>())
+		{
+			GameObject.Destroy(graphic.gameObject);
 		}
 	}
 
-	void HideEncounterDeck()
-	{
-		//foreach (VisualCardGraphic card in playerHand.GetComponentsInChildren<VisualCardGraphic>()) GameObject.Destroy(card.gameObject);
-		ClearDisplayedHand(playerHand);
-	}
 
-	void CloseScreen()
+	void StartCombat(EncounterCard playedRoom ,params EncounterEnemy[] enemies)
 	{
-		selectionArrow.SetParent(this.transform,false);
-		ClearDisplayedHand(playerHand);
-		ClearDisplayedHand(enemyHand);
-		foreach (CharacterGraphic graphic in new List<CharacterGraphic>(mercGraphics)) RemoveMercenary(graphic);
-		foreach (CharacterGraphic graphic in new List<CharacterGraphic>(enemyGraphics)) RemoveEnemy(graphic);
-		GetComponent<Canvas>().enabled = false;
-	}
-
-	void PutCardInCenterSpot(CardGraphic playedCardGraphic)
-	{
-		playedCardGraphic.transform.SetParent(cardPlaySpot, false);
-	}
-
-	void PutCardToCharacter(CardGraphic playedCardGraphic, CharacterGraphic character)
-	{
-		playedCardGraphic.transform.SetParent(character.appliedCardsGroup,false);
-	}
-
-	public void CharacterKilled(CharacterGraphic killedCharGraphic)
-	{
-		if (killedCharGraphic.assignedCharacter.GetType() == typeof(PartyMember)) RemoveMercenary(killedCharGraphic);
-		else RemoveEnemy(killedCharGraphic);
-	}
-
-	void StartCombat(params EncounterEnemy[] enemies)
-	{
+		handPeekingAllowed = true;
 		foreach (EncounterEnemy enemy in enemies) AddEnemy(enemy);
-		//characterHands[mercGraphics[0].assignedCharacter].AddRange(characterDecks[mercGraphics[0].assignedCharacter].DrawCards(4));
+
 		//Deal out all hands
 		foreach (CharacterGraphic enemy in enemyGraphics)
-			characterHands[enemy.assignedCharacter].AddRange(characterDecks[enemy.assignedCharacter].DrawCards(handSize));
-		foreach (CharacterGraphic merc in mercGraphics)
-			characterHands[merc.assignedCharacter].AddRange(characterDecks[merc.assignedCharacter].DrawCards(handSize));
+		{
+			enemy.SetStartStamina();
+			characterHands[enemy.GetCharacter()].AddRange(characterDecks[enemy.GetCharacter()].DrawCards(handSize));
+		}
+			foreach (CharacterGraphic merc in mercGraphics)
+		{
+			merc.SetStartStamina();
+			characterHands[merc.GetCharacter()].AddRange(characterDecks[merc.GetCharacter()].DrawCards(handSize));
+		}
+
+		foreach (RoomCard card in playedRoom.GetRoomCards())
+		{
+			PlaceRoomCard(card);
+		}
+
 		StartPlayerTurn();
 	}
 
-
 	void StartPlayerTurn()
 	{
-		foreach (CharacterGraphic mercGraphic in mercGraphics) 
-		{ mercGraphic.GiveTurn(); mercGraphic.SetStamina(mercGraphic.assignedCharacter.GetStartStamina()); }
+		foreach (CharacterGraphic merc in mercGraphics)
+		{
+			merc.GiveTurn();
+		}
 		List<CombatCardGraphic> playerHandCards=new List<CombatCardGraphic>(playerHand.GetComponentsInChildren<CombatCardGraphic>());
 		foreach (CombatCardGraphic card in playerHandCards) card.GetComponent<Button>().interactable = true;
 		turnStatus = TurnStatus.Player;
 		SelectCharacter(mercGraphics[0]);
 	}
 
-	public void PlayerCombatCardPlay(CombatCardGraphic cardGraphic)
+	public void PlayerTurnProcess(CombatCardGraphic cardGraphic)
 	{
 		CombatCard playedCard = cardGraphic.assignedCard;
-		if (selectedCharacter.stamina >= playedCard.staminaCost
-			&& selectedCharacter.assignedCharacter.GetHealth() >= playedCard.ammoCost)
+		if (CardRequirementsMet(playedCard))
 		{
 			discardHandButton.interactable = false;
-			if (playedCard.targetType == CombatCard.TargetType.Character)
+			if (playedCard.targetType == CombatCard.TargetType.Select)
 			{
-				if (turnStatus == TurnStatus.Player) StartCoroutine("CharacterTargetCombatCardPlaying", cardGraphic);
+				StartCoroutine("CharacterTargetSelect", cardGraphic);
 			}
-			else StartCoroutine("CombatCardPlayed", cardGraphic);
+			else
+			{
+				AssignCardTargets(cardGraphic.assignedCard);
+				StartCoroutine("CombatCardPlayed", cardGraphic);
+			}
 		}
 	}
 
-	IEnumerator CharacterTargetCombatCardPlaying(CombatCardGraphic playedCardGraphic)
+	IEnumerator CharacterTargetSelect(CombatCardGraphic playedCardGraphic)
 	{
 		CharacterGraphic targetChar = null;
 		selectModeMessage.gameObject.SetActive(true);
@@ -215,7 +265,7 @@ public class CardsScreen : MonoBehaviour
 		selectModeMessage.gameObject.SetActive(false);
 		if (targetChar != null)
 		{
-			playedCardGraphic.assignedCard.targetCharGraphic = targetChar;
+			playedCardGraphic.assignedCard.targetChars.Add(targetChar);
 			yield return StartCoroutine("CombatCardPlayed", playedCardGraphic);
 		}
 		handPeekingAllowed = true;
@@ -224,33 +274,41 @@ public class CardsScreen : MonoBehaviour
 
 	void StartEnemyTurn()
 	{
-		foreach (CharacterGraphic enemyGraphic in enemyGraphics)
-		{ enemyGraphic.GiveTurn(); enemyGraphic.SetStamina(enemyGraphic.assignedCharacter.GetStartStamina()); }
-		foreach (CombatCardGraphic card in playerHand.GetComponentsInChildren<CombatCardGraphic>()) card.GetComponent<Button>().interactable = false;
+		foreach (CharacterGraphic enemy in enemyGraphics)
+		{
+			enemy.GiveTurn();
+		}
+		foreach (CombatCardGraphic card in playerHand.GetComponentsInChildren<CombatCardGraphic>())
+		{
+			card.GetComponent<Button>().interactable = false;
+		}
 		turnStatus = TurnStatus.Enemy;
-		//print("Enemy turn started");
 		SelectCharacter(enemyGraphics[0]);
 		StartCoroutine(EnemyTurnProcess());
 	}
 
 	IEnumerator EnemyTurnProcess()
 	{
-		yield return new WaitForSeconds(cardPlayAnimationTime);
 		List<CombatCard> playableCards = SortOutPlayableEnemyCards();
 		while (playableCards.Count > 0)
 		{
-			CombatCard playedCard = playableCards[Random.Range(0, playableCards.Count)];
+			//yield return new WaitForSeconds(cardPlayAnimationTime);
+			if (!PlayerWonOrLost())
+			{
+				CombatCard playedCard = playableCards[Random.Range(0, playableCards.Count)];
+				AssignCardTargets(playedCard);
 
-			if (playedCard.targetType == CombatCard.TargetType.Character) playedCard.targetCharGraphic = mercGraphics[Random.Range(0, mercGraphics.Count)];
+				CombatCardGraphic playedCardGraphic = null;
+				foreach (CombatCardGraphic cardGraphic in enemyHand.GetComponentsInChildren<CombatCardGraphic>())
+					if (cardGraphic.assignedCard == playedCard) { playedCardGraphic = cardGraphic; break; }
 
-			CombatCardGraphic playedCardGraphic = null;
-			foreach (CombatCardGraphic cardGraphic in enemyHand.GetComponentsInChildren<CombatCardGraphic>())
-				if (cardGraphic.assignedCard == playedCard) { playedCardGraphic = cardGraphic; break; }
+				if (playedCardGraphic == null) throw new System.Exception("No graphic found for played card!");
 
-			if (playedCardGraphic == null) throw new System.Exception("No graphic found for played card!");
-
-			yield return StartCoroutine("CombatCardPlayed", playedCardGraphic);
-			playableCards = SortOutPlayableEnemyCards();
+				yield return StartCoroutine("CombatCardPlayed", playedCardGraphic);
+				//If enemy died after playing a card, finish turn
+				if (selectedCharacter == null) break;
+				playableCards = SortOutPlayableEnemyCards();
+			}
 		}
 		TransferTurn();
 		yield break;
@@ -260,41 +318,99 @@ public class CardsScreen : MonoBehaviour
 	{
 		List<CombatCard> playableCards = new List<CombatCard>();
 
-		if (characterHands[selectedCharacter.assignedCharacter].Count > 0)
+		if (characterHands[selectedCharacter.GetCharacter()].Count > 0)
 		{
-			foreach (CombatCard card in characterHands[selectedCharacter.assignedCharacter])
+			foreach (CombatCard card in characterHands[selectedCharacter.GetCharacter()])
 			{
-				if (selectedCharacter.stamina >= card.staminaCost
-					&& selectedCharacter.assignedCharacter.GetHealth() >= card.ammoCost)
+				if (CardRequirementsMet(card))
 					playableCards.Add(card);
 			}
 		}
 		return playableCards;
 	}
 
+	bool CardRequirementsMet(CombatCard card)
+	{
+		if (selectedCharacter.stamina >= card.staminaCost
+			&& selectedCharacter.GetAmmo() >= card.ammoCost)
+		{
+			if (card.cardType == CombatCard.CardType.Ranged_Attack && rangedAttacksAllowed)
+			{
+				return true;
+			}
+			if (card.cardType != CombatCard.CardType.Ranged_Attack) return true;
+			return false;
+		}
+		return false;
+	}
+
+	void AssignCardTargets(CombatCard playedCard)
+	{
+		List<CharacterGraphic> targetGroup;
+		if (turnStatus == TurnStatus.Player) targetGroup = enemyGraphics;
+		else targetGroup = mercGraphics;
+
+		if (playedCard.targetType == CombatCard.TargetType.None)
+		{
+			return;
+		}
+		if (playedCard.targetType == CombatCard.TargetType.Select)
+		{
+			playedCard.targetChars.Add(targetGroup[Random.Range(0, targetGroup.Count)]);
+		}
+		if (playedCard.targetType == CombatCard.TargetType.All)
+		{
+			playedCard.targetChars.AddRange(targetGroup);
+		}
+		if (playedCard.targetType == CombatCard.TargetType.Weakest)
+		{
+			CharacterGraphic weakestCharGraphic = targetGroup[0];
+			foreach (CharacterGraphic charGraphic in targetGroup)
+			{
+				if (charGraphic.GetHealth() < weakestCharGraphic.GetHealth()) weakestCharGraphic = charGraphic;
+			}
+			playedCard.targetChars.Add(weakestCharGraphic);
+		}
+		if (playedCard.targetType == CombatCard.TargetType.Strongest)
+		{
+			CharacterGraphic strongestCharGraphic = targetGroup[0];
+			foreach (CharacterGraphic charGraphic in targetGroup)
+			{
+				if (charGraphic.GetHealth() > strongestCharGraphic.GetHealth()) strongestCharGraphic = charGraphic;
+			}
+			playedCard.targetChars.Add(strongestCharGraphic);
+		}
+	}
+
+
 	IEnumerator CombatCardPlayed(CombatCardGraphic playedCardGraphic)
 	{
 		handPeekingAllowed = false;
 		CombatCard playedCard = playedCardGraphic.assignedCard;
-		if (playedCard.targetType==CombatCard.TargetType.None) PutCardInCenterSpot(playedCardGraphic);
-		if (playedCard.targetType == CombatCard.TargetType.Character) PutCardToCharacter(playedCardGraphic, playedCard.targetCharGraphic);
+		if (playedCard.targetType==CombatCard.TargetType.None)
+ 			PutCardToCharacter(playedCardGraphic, selectedCharacter);
+		if (playedCard.targetType==CombatCard.TargetType.All)
+			PutCardToCenter(playedCardGraphic);
+		if (playedCard.targetType!=CombatCard.TargetType.None && playedCard.targetType!=CombatCard.TargetType.All)  
+			PutCardToCharacter(playedCardGraphic, playedCard.targetChars[0]);
 
 		yield return new WaitForSeconds(cardPlayAnimationTime);
 		GameObject.Destroy(playedCardGraphic.gameObject);
 
 		playedCard.userCharGraphic = selectedCharacter;
-		playedCard.PlayCard();
-		characterHands[selectedCharacter.assignedCharacter].Remove(playedCard);
+		characterHands[selectedCharacter.GetCharacter()].Remove(playedCard);
 		playedCard.originDeck.DiscardCards(playedCard);
+		playedCard.PlayCard();
+		
 
 		//If neither all mercs nor all enemies died as a result of the turn, continue turn order as usual
 		/*
 		if (!CheckIfPlayerWonOrLost())
 		{
-			if (selectedCharacter.assignedCharacter.GetHealth() > 0) 
+			if (selectedCharacter.GetCharacter().GetHealth() > 0) 
 			{	
-				int cardsMissing = handSize - characterHands[selectedCharacter.assignedCharacter].Count;
-				characterHands[selectedCharacter.assignedCharacter].AddRange(characterDecks[selectedCharacter.assignedCharacter].DrawCards(cardsMissing)); 
+				int cardsMissing = handSize - characterHands[selectedCharacter.GetCharacter()].Count;
+				characterHands[selectedCharacter.GetCharacter()].AddRange(characterDecks[selectedCharacter.GetCharacter()].DrawCards(cardsMissing)); 
 			}
 			TransferTurn();
 		}*/
@@ -305,15 +421,15 @@ public class CardsScreen : MonoBehaviour
 	void TransferTurn()
 	{
 
-		if (!CheckIfPlayerWonOrLost())
+		if (!PlayerWonOrLost())
 		{
-			if (selectedCharacter.assignedCharacter.GetHealth() > 0)
+			if (selectedCharacter!=null)
 			{
-				int cardsMissing = handSize - characterHands[selectedCharacter.assignedCharacter].Count;
-				characterHands[selectedCharacter.assignedCharacter].AddRange(characterDecks[selectedCharacter.assignedCharacter].DrawCards(cardsMissing));
+				int cardsMissing = handSize - characterHands[selectedCharacter.GetCharacter()].Count;
+				characterHands[selectedCharacter.GetCharacter()].AddRange(characterDecks[selectedCharacter.GetCharacter()].DrawCards(cardsMissing));
+				selectedCharacter.TurnDone();
 			}
-
-			selectedCharacter.TurnDone();
+			
 			if (turnStatus == TurnStatus.Player)
 			{
 				//ClearHand(playerHand);
@@ -335,23 +451,46 @@ public class CardsScreen : MonoBehaviour
 						StartCoroutine(EnemyTurnProcess());
 						return;
 					}
-				StartPlayerTurn();
+				StartNewRound();
+				if (!PlayerWonOrLost())
+					StartPlayerTurn();
 			}
 		}
 	}
 
-	bool CheckIfPlayerWonOrLost()
+	void StartNewRound()
+	{
+		RoundStaminaRegen();
+		if (ERoundIsOver != null) ERoundIsOver();
+	}
+
+	void RoundStaminaRegen()
+	{
+		foreach (CharacterGraphic mercGraphic in mercGraphics)
+		{
+			mercGraphic.IncrementStamina(staminaRegen);
+		}
+		foreach (CharacterGraphic enemyGraphic in enemyGraphics)
+		{
+			enemyGraphic.IncrementStamina(staminaRegen);
+		}
+	}
+
+	bool PlayerWonOrLost()
 	{
 		bool winOrLossHappened = false;
-		if (enemyGraphics.Count == 0)
-		{
-			winOrLossHappened = true;
-			EndCombat();
-		}
 		if (mercGraphics.Count == 0)
 		{
 			winOrLossHappened = true;
 			CloseScreen();
+		}
+		else
+		{
+			if (enemyGraphics.Count == 0)
+			{
+				winOrLossHappened = true;
+				EndCombat();
+			}
 		}
 		return winOrLossHappened;
 	}
@@ -368,11 +507,12 @@ public class CardsScreen : MonoBehaviour
 			selectionArrow.GetComponent<RectTransform>().anchorMin = Vector2.zero;
 			selectionArrow.GetComponent<RectTransform>().anchorMax = Vector2.zero;
 			selectionArrow.SetParent(newSelectedCharacter.transform, false);
-			
+			selectionArrow.GetComponent<RectTransform>().anchoredPosition = new Vector2(-10f,20f);//GetComponent<RectTransform>().Translate(-20f,-10f,0);//Translate(0, 20f, 0);
+
 			skipTurnButton.interactable = true;
 			discardHandButton.interactable = true;
 			handPeekingAllowed = true;
-			DisplayHand(playerHand, characterHands[newSelectedCharacter.assignedCharacter].ToArray());
+			DisplayHand(playerHand, characterHands[newSelectedCharacter.GetCharacter()].ToArray());
 		}
 		else
 		{
@@ -380,19 +520,20 @@ public class CardsScreen : MonoBehaviour
 			selectionArrow.GetComponent<RectTransform>().anchorMin = new Vector2(0,1f);
 			selectionArrow.GetComponent<RectTransform>().anchorMax = new Vector2(0,1f);
 			selectionArrow.SetParent(newSelectedCharacter.transform, false);
+			selectionArrow.GetComponent<RectTransform>().anchoredPosition = new Vector2(-10f, -20f);//selectionArrow.GetComponent<RectTransform>().Translate(20f, -10f, 0);
 
 			handPeekingAllowed = false;
 			skipTurnButton.interactable = false;
 			discardHandButton.interactable = false;
-			DisplayHand(enemyHand, characterHands[newSelectedCharacter.assignedCharacter].ToArray());
+			DisplayHand(enemyHand, characterHands[newSelectedCharacter.GetCharacter()].ToArray());
 		}
 	}
 
 	public void DiscardHand()
 	{
-		characterDecks[selectedCharacter.assignedCharacter].DiscardCards(characterHands[selectedCharacter.assignedCharacter].ToArray());
-		characterHands[selectedCharacter.assignedCharacter].Clear();
-		characterHands[selectedCharacter.assignedCharacter].AddRange(characterDecks[selectedCharacter.assignedCharacter].DrawCards(handSize));
+		characterDecks[selectedCharacter.GetCharacter()].DiscardCards(characterHands[selectedCharacter.GetCharacter()].ToArray());
+		characterHands[selectedCharacter.GetCharacter()].Clear();
+		characterHands[selectedCharacter.GetCharacter()].AddRange(characterDecks[selectedCharacter.GetCharacter()].DrawCards(handSize));
 		SkipCharacterTurn();
 	}
 
@@ -403,6 +544,8 @@ public class CardsScreen : MonoBehaviour
 
 	void EndCombat()
 	{
+		handPeekingAllowed = false;
+		RemoveAllRoomCards();
 		ClearDisplayedHand(enemyHand);
 		ClearDisplayedHand(playerHand);
 		foreach (List<CombatCard> hand in characterHands.Values)
@@ -412,15 +555,25 @@ public class CardsScreen : MonoBehaviour
 		}
 		ShowRewards();
 	}
+	
 
 	void ShowRewards()
 	{
-		foreach (RewardCard reward in rewards.DrawCards(3))
+		RewardCard[] rewardsSelection;
+		if (!playedEncounter.IsFinished())
+		{
+			rewardsSelection = playedEncounter.GetRewardCardSelection(2);
+			playedEncounter.DiscardRewardCards(rewardsSelection);
+		}
+		else
+		{
+			rewardsSelection = playedEncounter.GetMissionEndRewards();
+		}
+		foreach (RewardCard reward in rewardsSelection)
 		{
 			RewardCardGraphic newGraphic = Instantiate(rewardCardPrefab);
 			newGraphic.AssignCard(reward);
 			newGraphic.transform.SetParent(playerHand, false);
-			rewards.DiscardCards(reward);
 		}
 	}
 
@@ -431,18 +584,29 @@ public class CardsScreen : MonoBehaviour
 
 	IEnumerator RewardCardPlaying(RewardCardGraphic cardGraphic)
 	{
-		PutCardInCenterSpot(cardGraphic);
+		PutCardToCenter(cardGraphic);
 		cardGraphic.assignedCard.PlayCard();
 		yield return new WaitForSeconds(cardPlayAnimationTime);
 		GameObject.Destroy(cardGraphic.gameObject);
 		HideRewards();
-		StartCoroutine(ProgressThroughEncounter());
+		ProgressThroughEncounter();
 		yield break;
 	}
 
 	void HideRewards()
 	{
 		ClearDisplayedHand(playerHand);
+	}
+
+	public void CharacterKilled(CharacterGraphic killedCharGraphic)
+	{
+		if (selectedCharacter == killedCharGraphic)
+		{
+			selectedCharacter = null;
+			selectionArrow.SetParent(transform, false);
+		}
+		if (killedCharGraphic.GetCharacterType() == typeof(PartyMember)) RemoveMercenary(killedCharGraphic);
+		else RemoveEnemy(killedCharGraphic);
 	}
 
 	void AddMercenary(Character newMerc)
@@ -458,8 +622,8 @@ public class CardsScreen : MonoBehaviour
 	void RemoveMercenary(CharacterGraphic removedMerc)
 	{
 		mercGraphics.Remove(removedMerc);
-		characterDecks.Remove(removedMerc.assignedCharacter);
-		characterHands.Remove(removedMerc.assignedCharacter);
+		characterDecks.Remove(removedMerc.GetCharacter());
+		characterHands.Remove(removedMerc.GetCharacter());
 		GameObject.Destroy(removedMerc.gameObject);
 	}
 
@@ -477,14 +641,60 @@ public class CardsScreen : MonoBehaviour
 	void RemoveEnemy(CharacterGraphic removedEnemy)
 	{
 		enemyGraphics.Remove(removedEnemy);
-		characterDecks.Remove(removedEnemy.assignedCharacter);
-		characterHands.Remove(removedEnemy.assignedCharacter);
+		characterDecks.Remove(removedEnemy.GetCharacter());
+		characterHands.Remove(removedEnemy.GetCharacter());
 		GameObject.Destroy(removedEnemy.gameObject);
+	}
+
+	public void DamageAllMercs(int damage)
+	{
+		foreach (CharacterGraphic graphic in new List<CharacterGraphic>(mercGraphics))
+		{
+			graphic.TakeHealthDamage(damage);
+		}
+	}
+	public void DamageAllEnemies(int damage)
+	{
+		foreach (CharacterGraphic graphic in new List<CharacterGraphic>(enemyGraphics))
+		{
+			graphic.TakeHealthDamage(damage);
+		}
+	}
+
+	void PlaceRoomCard(RoomCard playedCard)
+	{
+		VisualCardGraphic cardGraphic = Instantiate(visualCardPrefab);
+		cardGraphic.AssignCard(playedCard);
+		cardGraphic.transform.SetParent(roomCardsGroup.transform, false);
+		playedCard.ActivateCard();
+		activeRoomCards.Add(playedCard);
+	}
+
+	void RemoveRoomCard(RoomCard removedCard)
+	{
+		removedCard.DeactivateCard();
+		foreach (VisualCardGraphic graphic in roomCardsGroup.GetComponentsInChildren<VisualCardGraphic>())
+		{
+			if (graphic.assignedCard == removedCard)
+			{
+				GameObject.Destroy(graphic.gameObject);
+				break;
+			}
+		}
+		activeRoomCards.Remove(removedCard);
+	}
+
+	void RemoveAllRoomCards()
+	{
+		foreach (RoomCard card in new List<RoomCard>(activeRoomCards))
+		{
+			RemoveRoomCard(card);
+		}
 	}
 
 	public void PeekCharacterHand(Character shownCharacter)
 	{
-		if (handPeekingAllowed && shownCharacter!=selectedCharacter.assignedCharacter)
+		if (handPeekingAllowed && shownCharacter!=selectedCharacter.GetCharacter())
 		{
 			ClearDisplayedHand(playerHand);
 			ClearDisplayedHand(enemyHand);
@@ -504,9 +714,9 @@ public class CardsScreen : MonoBehaviour
 		{
 			ClearDisplayedHand(playerHand);
 			ClearDisplayedHand(enemyHand);
-			if (selectedCharacter.assignedCharacter.GetType() == typeof(PartyMember))
-				DisplayHand(playerHand, characterHands[selectedCharacter.assignedCharacter].ToArray());
-			else DisplayHand(enemyHand, characterHands[selectedCharacter.assignedCharacter].ToArray());
+			if (selectedCharacter.GetCharacter().GetType() == typeof(PartyMember))
+				DisplayHand(playerHand, characterHands[selectedCharacter.GetCharacter()].ToArray());
+			else DisplayHand(enemyHand, characterHands[selectedCharacter.GetCharacter()].ToArray());
 		}
 	}
 
@@ -529,16 +739,33 @@ public class CardsScreen : MonoBehaviour
 		}
 	}
 
+	void PutCardToCenter(CardGraphic playedCardGraphic)
+	{
+		playedCardGraphic.transform.SetParent(centerPlayArea, false);
+	}
+
+	void PutCardToCharacter(CardGraphic playedCardGraphic, CharacterGraphic character)
+	{
+		playedCardGraphic.transform.SetParent(character.appliedCardsGroup, false);
+	}
+
 	void Start() 
 	{ 
 		main = this;
 		skipTurnButton.onClick.AddListener(()=>SkipCharacterTurn());
 		discardHandButton.onClick.AddListener(() => DiscardHand());
+		finishButton.onClick.AddListener(() => CloseScreen());
+		
 	}
 
 	void Update()
 	{
-		if (Input.GetKeyDown(KeyCode.C)) OpenScreen(); 
+		if (Input.GetKeyDown(KeyCode.C))
+		{
+			PartyMember[] newTeam = new PartyMember[1];
+			newTeam[0]= new PartyMember(MapManager.main.GetTown());
+			OpenScreen(new Encounter(true), newTeam);
+		}
 	}
 
 }

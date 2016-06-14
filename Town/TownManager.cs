@@ -23,7 +23,7 @@ public class TownManager : MonoBehaviour {
 	{
 		while (mercenaryHireList.Count < requiredMercHireListSize)
 		{
-			mercenaryHireList.Add(new PartyMember(MapManager.main.mapRegions[0]));
+			mercenaryHireList.Add(new PartyMember(MapManager.main.GetTown()));
 		}
 	}
 

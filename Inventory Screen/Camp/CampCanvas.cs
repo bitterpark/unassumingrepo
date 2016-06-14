@@ -8,10 +8,8 @@ public class CampCanvas : MonoBehaviour {
 	public bool campShown=false;
 	public SlotItem slotItemPrefab;
 	
-	public CookingSlot cookingSlotPrefab;
 	public Transform cookingSlotPlacement;
 	
-	public BedSlot bedSlotPrefab;
 	public Transform bedSlotGroup;
 	public Text freeBedsCount;
 
@@ -85,40 +83,7 @@ public class CampCanvas : MonoBehaviour {
 			GetComponent<Canvas>().enabled=true;
 
 			assignedCamp=InventoryScreenHandler.mainISHandler.selectedMember.currentRegion.campInRegion;
-			//Cooking slot and bed slot are currently unused
-			//Refresh cooking slot
-			CookingSlot newCookingSlot=Instantiate(cookingSlotPrefab);
-			newCookingSlot.transform.SetParent(cookingSlotPlacement,false);
-			if (assignedCamp.cookingImplement!=null)
-			{
-				
-				SlotItem cookingImplement=Instantiate(slotItemPrefab);
-				cookingImplement.AssignItem(assignedCamp.cookingImplement);
-				newCookingSlot.AssignItem(cookingImplement);
-				//!!NO ONCLICK LISTENER ASSIGNED!!
-			}
 
-			//Refresh bed slots
-			int bedSlotCount=assignedCamp.beds.Count+1;
-			int occupiedBedsCount=assignedCamp.beds.Count-assignedCamp.freeBeds;
-			for (int i=0; i<bedSlotCount; i++)
-			{
-				BedSlot newBedSlot=Instantiate(bedSlotPrefab);
-				newBedSlot.transform.SetParent(bedSlotGroup,false);
-				if (i<assignedCamp.beds.Count)
-				{
-					SlotItem newBed=Instantiate(slotItemPrefab);
-					newBed.AssignItem(assignedCamp.beds[i]);
-					newBedSlot.AssignItem(newBed);
-					if (occupiedBedsCount>0)
-					{
-						newBed.draggable=false;
-						occupiedBedsCount-=1;
-					}
-					//!!NO ONCLICK LISTENER ASSIGNED!!
-				}
-			}
-			freeBedsCount.text="Free beds:"+assignedCamp.freeBeds;
 
 			//Refresh crafting recipes
 			foreach (CraftRecipe recipe in availableRecipes)

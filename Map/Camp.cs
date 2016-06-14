@@ -78,20 +78,5 @@ public class Camp
 	{
 		cookingImplement=null;
 	}
-	
-	public void AddBed(Bed newBed)
-	{
-		beds.Add(newBed);
-		freeBeds+=1;
-		//Consider moving to bed slot instead
-		if (InventoryScreenHandler.mainISHandler.campingCanvas.campShown) InventoryScreenHandler.mainISHandler.campingCanvas.RefreshSlots();
-	}
-	public void RemoveBed(Bed removedBed)
-	{
-		beds.Remove(removedBed);
-		freeBeds-=1;
-		//Consider moving to bed slot instead
-		if (InventoryScreenHandler.mainISHandler.campingCanvas.campShown) InventoryScreenHandler.mainISHandler.campingCanvas.RefreshSlots();
-	}
 }
 

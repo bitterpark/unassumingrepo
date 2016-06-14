@@ -8,6 +8,14 @@ public class Deck<T> where T:class
 	List<T> drawPile=new List<T>();
 	List<T> discardPile=new List<T>();
 
+	public List<T> GetDeckCards()
+	{
+		List<T> allCards = new List<T>();
+		allCards.AddRange(drawPile);
+		allCards.AddRange(discardPile);
+		return allCards;
+	}
+
 	public void Populate(params T[] cards)
 	{
 		Populate(true, cards);
@@ -34,10 +42,21 @@ public class Deck<T> where T:class
 
 		for (int i = 0; i < number; i++)
 		{
-			drawnCards.Add(drawPile[drawPile.Count-1]);
-			drawPile.RemoveAt(drawPile.Count-1);
+			drawnCards.Add(DrawCard());
 		}
 		return drawnCards;
+	}
+
+	public T DrawCard()
+	{
+		if (drawPile.Count < 1)
+		{
+			if (drawPile.Count + discardPile.Count < 1) throw new System.Exception("Trying to draw more cards than exist in the deck!");
+			Reshuffle();
+		}
+		T drawnCard=drawPile[drawPile.Count-1];
+		drawPile.RemoveAt(drawPile.Count - 1);
+		return drawnCard;
 	}
 
 	public void DiscardCards(params T[] discarded)
@@ -63,5 +82,17 @@ public class Deck<T> where T:class
 			if (Random.value < 0.5f) AddToTop(card);
 			else AddToBottom(card);
 		}
+	}
+}
+
+public class CombatDeck : Deck<CombatCard>
+{
+	public void Populate(System.Type cardType)
+	{
+		Populate(cardType, 1);
+	}
+	public void Populate(System.Type cardType, int count)
+	{
+		Populate(CombatCard.GetMultipleCards(cardType, this, count));
 	}
 }

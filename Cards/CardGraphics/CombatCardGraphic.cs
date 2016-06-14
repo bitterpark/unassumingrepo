@@ -9,6 +9,8 @@ public class CombatCardGraphic : CardGraphic
 	public GameObject ammoCost;
 	public GameObject healthDamage;
 	public GameObject staminaDamage;
+	public Text cardTypeText;
+
 
 	public CombatCard assignedCard;
 
@@ -16,6 +18,8 @@ public class CombatCardGraphic : CardGraphic
 	{
 		base.UpdateBasicVisuals(newCard);
 		assignedCard = newCard;
+
+		cardTypeText.text = assignedCard.cardType.ToString().Replace('_',' ');
 
 		if (newCard.staminaCost > 0)
 		{
@@ -47,6 +51,6 @@ public class CombatCardGraphic : CardGraphic
 
 	public void CardClicked()
 	{
-		CardsScreen.main.PlayerCombatCardPlay(this);
+		CardsScreen.main.PlayerTurnProcess(this);
 	}
 }

@@ -74,6 +74,202 @@ public class MapManager : MonoBehaviour
 		regionsGridGroup.localPosition=result;
 	}
 
+	//NEW STUFF
+
+	Dictionary<Vector2, MapSlot> mapSlots;
+	float townSlotSideSize;
+	float townAreaSpriteSize;
+
+	MapRegion town;
+
+	List<MapNode> currentEncounterNodes = new List<MapNode>();
+
+	struct MapSlot
+	{
+		public MapSlot(Vector2 index, Vector2 coords)
+		{
+			slotIndex = index;
+			slotCoords = coords;
+			occupied = false;
+		}		
+		public MapSlot(Vector2 index,Vector2 coords, bool isOccupied)
+		{
+			slotIndex = index;
+			slotCoords = coords;
+			occupied = isOccupied;
+		}
+
+		public Vector2 slotIndex;
+		public Vector2 slotCoords;
+		public bool occupied;
+		public MapSlot SetOccupied(bool newValue)
+		{
+			MapSlot slot = new MapSlot(slotIndex,slotCoords,newValue);
+			return slot;
+		}
+
+	}
+
+	struct MapNode
+	{
+		public MapNode(MapSlot newSlot, MapRegion newRegion)
+		{
+			occupiedSlot = newSlot;
+			region = newRegion;
+		}
+		
+		public MapSlot occupiedSlot;
+		public MapRegion region;
+	}
+
+	public MapRegion GetTown() { return town;}
+
+	public void GamestartMapSetup()
+	{
+		//memberTokens = new Dictionary<PartyMember, MemberMapToken>();
+		mapSlots = GenerateMapSlots();
+
+		//Determine final size of scrollgroup
+		float mapFinalWidth = Screen.width;//borderOffset * 2 + Mathf.Abs(mapMaxX - mapMinX);
+		float mapFinalHeight = Screen.height; //borderOffset * 2 + Mathf.Abs(mapMaxY - mapMinY);
+		regionsGridGroup.GetComponent<RectTransform>().sizeDelta = new Vector2(mapFinalWidth, mapFinalHeight);
+
+		Vector2 townSlotIndex = new Vector2(1, 1);
+		CreateTown(townSlotIndex);
+
+		GenerateEncounters(3);		
+	}
+
+	Dictionary<Vector2, MapSlot> GenerateMapSlots()
+	{
+		int horTownSlots = 3;
+		int vertTownSlots = 3;
+
+		townSlotSideSize=Screen.height/vertTownSlots;
+
+		float borderOffset = 20f;
+
+		townAreaSpriteSize = 75f;
+
+		float gapBetweenTownSlots = 0f;
+
+		Dictionary<Vector2, MapSlot> townSlotCenters = new Dictionary<Vector2, MapSlot>();
+		for (int i = 0; i < vertTownSlots; i++)
+		{
+			for (int j = 0; j < horTownSlots; j++)
+			{
+				//Y coord must be inverted because in UI elements higher Y goes up and lower Y goes down
+				
+				Vector2 newTownUpperleftPos
+				= new Vector2(borderOffset + (townSlotSideSize + gapBetweenTownSlots) * j, -(borderOffset + (townSlotSideSize + gapBetweenTownSlots) * i));
+				MapSlot newSlot = new MapSlot(new Vector2(j, i), newTownUpperleftPos + new Vector2(townSlotSideSize * 0.5f, -townSlotSideSize * 0.5f));
+				townSlotCenters.Add(new Vector2(j, i), newSlot);//new Vector2(townSlotSideSize*j,townSlotSideSize*i));
+				//print ("Slot:"+j+"|"+i+":"+newTownUpperleftPos);
+			}
+		}
+		return townSlotCenters;
+	}
+
+	void DailyEncounterRefresh()
+	{
+		ClearEncounters();
+		GenerateEncounters(3);
+	}
+
+	void GenerateEncounters(int count)
+	{
+		List<Vector2> unoccupiedSlotIndeces = new List<Vector2>();
+		int createdNodesCount=0;
+		do
+		{
+			unoccupiedSlotIndeces.Clear();
+			foreach (Vector2 index in mapSlots.Keys)
+			{
+				if (!mapSlots[index].occupied)
+				{
+					unoccupiedSlotIndeces.Add(index);
+				}
+			}
+			if (unoccupiedSlotIndeces.Count>0)
+			{
+				Vector2 randomSlotIndex = unoccupiedSlotIndeces[Random.Range(0, unoccupiedSlotIndeces.Count)];
+				CreateEncounterNode(randomSlotIndex);
+				createdNodesCount++;
+			}
+		} while (unoccupiedSlotIndeces.Count > 0 && createdNodesCount < count);
+	}
+
+	void ClearEncounters()
+	{
+		foreach (MapNode node in new List<MapNode>(currentEncounterNodes))
+		{
+			DestroyMapNode(node);
+		}
+	}
+
+	void CreateEncounterNode(Vector2 coordsIndex)
+	{
+		if (!mapSlots.ContainsKey(coordsIndex)) throw new System.Exception("Encounter node slot not found!");
+		MapSlot usedSlot=mapSlots[coordsIndex];
+		mapSlots[coordsIndex] = mapSlots[coordsIndex].SetOccupied(true);
+		Vector2 slotCenterStartPoint = usedSlot.slotCoords;
+		Vector2 randomSlotOffset=Vector2.zero;
+
+		float offsetFromCenterMaxRadius = townSlotSideSize * 0.5f - townAreaSpriteSize;
+		List<float> offsetRadiusSteps = new List<float>();
+		offsetRadiusSteps.Add(offsetFromCenterMaxRadius);
+		offsetRadiusSteps.Add(offsetFromCenterMaxRadius * 0.75f);
+		offsetRadiusSteps.Add(offsetFromCenterMaxRadius * 0.5f);
+		offsetRadiusSteps.Add(offsetFromCenterMaxRadius * 0.3f);
+		offsetRadiusSteps.Add(0);
+
+		randomSlotOffset = Random.insideUnitCircle * (offsetRadiusSteps[Random.Range(0, offsetRadiusSteps.Count)]);
+		Vector2 finalCoords = slotCenterStartPoint + randomSlotOffset;
+
+		MapRegion newNodeObj = InstantiateMapNode(finalCoords);
+		newNodeObj.GenerateEncounter();
+		currentEncounterNodes.Add(new MapNode(usedSlot, newNodeObj));
+	}
+
+	void EndOfGameClearAll()
+	{
+		ClearEncounters();
+		ClearTown();
+	}
+
+	void CreateTown(Vector2 coordsIndex)
+	{
+		if (!mapSlots.ContainsKey(coordsIndex)) throw new System.Exception("Town slot not found!");
+		Vector2 coords = mapSlots[coordsIndex].slotCoords;
+		mapSlots[coordsIndex] = mapSlots[coordsIndex].SetOccupied(true);
+
+		town = InstantiateMapNode(coords);
+
+	}
+
+	void ClearTown()
+	{
+		mapSlots[new Vector2(1, 1)] = mapSlots[new Vector2(1, 1)].SetOccupied(false);
+		GameObject.Destroy(town.gameObject);
+		town = null;
+	}
+
+	MapRegion InstantiateMapNode(Vector2 coords)
+	{
+		MapRegion newNode = Instantiate(mapRegionPrefab, coords, Quaternion.identity) as MapRegion;
+		newNode.transform.SetParent(regionsGridGroup);
+		newNode.transform.localPosition = coords;
+		return newNode;
+	}
+
+	void DestroyMapNode(MapNode destroyedNode)
+	{
+		mapSlots[destroyedNode.occupiedSlot.slotIndex] = mapSlots[destroyedNode.occupiedSlot.slotIndex].SetOccupied(false);
+		currentEncounterNodes.Remove(destroyedNode);
+		GameObject.Destroy(destroyedNode.region.gameObject);
+	}
+
+	//NEW STUFF END
 	public void GenerateNewMap()
 	{
 		memberTokens=new Dictionary<PartyMember,MemberMapToken>();
@@ -93,8 +289,8 @@ public class MapManager : MonoBehaviour
 		//Map border boundaries
 		int horTownSlots=3;
 		int vertTownSlots=3;
-		
-		float borderOffset=20f;
+
+		float borderOffset = 20f;
 		
 		//float townMinX=40f;
 		//float townMinY=40f;
@@ -487,7 +683,7 @@ public class MapManager : MonoBehaviour
 		if (!tryingPartyMove)
 		{
 			//if (clickedRegion.localPartyMembers.Count>0) 
-			if (clickedRegion == mapRegions[0]) TownScreen.main.OpenTownScreen();
+			if (clickedRegion == town) TownScreen.main.OpenTownScreen();
 			else MapManager.main.scoutingHandler.StartDialog(clickedRegion);
 		}
 	}
@@ -630,11 +826,13 @@ public class MapManager : MonoBehaviour
 		main=this;
 		//GameManager.MapManagerStartDelegate+=GenerateNewMap;
 		//GameManager.GameStart+=GenerateNewMap;
-		GameManager.GameOver+=ClearMap;
+		GameManager.GameOver += EndOfGameClearAll;
+		PartyManager.ETimePassed += DailyEncounterRefresh;
 	}
 
 	void Update()
 	{
+		/*
 		if (!EncounterCanvasHandler.main.encounterOngoing)
 		{
 			//ZOOM OUT
@@ -653,6 +851,6 @@ public class MapManager : MonoBehaviour
 				//Refocus camera
 				FocusViewOnScreenPoint(Input.mousePosition);
 			}
-		}
+		}*/
 	}
 }

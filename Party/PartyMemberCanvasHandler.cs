@@ -128,19 +128,20 @@ public class PartyMemberCanvasHandler : MonoBehaviour {
 	void Update()
 	{
 		nameText.text=""+assignedMember.name;
+		/*
 		healthText.text=assignedMember.memberBodyParts.currentParts[PartyMember.BodyPartTypes.Vitals].health+"|"
 		+assignedMember.vitalsMaxHealth;
 		armsHealthText.text=assignedMember.memberBodyParts.currentParts[PartyMember.BodyPartTypes.Hands].health+"|"
 		+assignedMember.handsMaxHealth;
 		legsHealthText.text=assignedMember.memberBodyParts.currentParts[PartyMember.BodyPartTypes.Legs].health+"|"
 		+assignedMember.legsMaxHealth;
-		/*healthText.text="Health:"+assignedMember.memberBodyParts.currentParts[PartyMember.BodyPartTypes.Hands].health
-		+"|"+assignedMember.memberBodyParts.currentParts[PartyMember.BodyPartTypes.Legs].health
-		+"|"+assignedMember.memberBodyParts.currentParts[PartyMember.BodyPartTypes.Vitals].health;*///+assignedMember.health+"|"+assignedMember.maxHealth;
-		//staminaText.text="Stamina:"+assignedMember.stamina+"|"+assignedMember.currentMaxStamina;
+		*/
+		healthText.text =assignedMember.GetHealth().ToString();
+		staminaText.text=assignedMember.GetStartStamina().ToString();
+		/*
 		hungerText.text="Hunger:"+assignedMember.GetHunger()+"|100";
 		moraleText.text="Morale:"+assignedMember.morale+"|100";
-		fatigueText.text="Fatigue:"+assignedMember.GetFatigue()+"|"+PartyMember.maxFatigue;//
+		fatigueText.text="Fatigue:"+assignedMember.GetFatigue()+"|"+PartyMember.maxFatigue;*/
 		contractTimeText.text="Days left:"+assignedMember.hireDaysRemaining;
 	}
 }

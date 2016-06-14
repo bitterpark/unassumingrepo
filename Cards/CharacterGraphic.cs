@@ -4,7 +4,7 @@ using System.Collections;
 
 public class CharacterGraphic : MonoBehaviour {
 
-	public Text name;
+	public Text nameText;
 	public Text healthText;
 	public Text staminaText;
 	public Text ammoText;
@@ -12,23 +12,10 @@ public class CharacterGraphic : MonoBehaviour {
 
 	public Transform appliedCardsGroup;
 
-	public Character assignedCharacter;
+	Character assignedCharacter;
+
 
 	bool hasTurn = false;
-
-	public bool HasTurn()
-	{
-		return hasTurn;
-	}
-
-	public void GiveTurn()
-	{
-		hasTurn = true;
-	}
-	public void TurnDone() 
-	{ 
-		hasTurn = false; 
-	}
 
 	public int ammo = 0;
 	public int stamina = 0;
@@ -36,12 +23,26 @@ public class CharacterGraphic : MonoBehaviour {
 	public void AssignCharacter(Character newChar)
 	{
 		assignedCharacter = newChar;
-		name.text = newChar.GetName();
+		nameText.text = newChar.GetName();
 		healthText.text = newChar.GetHealth().ToString();
 		portrait.sprite = newChar.GetPortrait();
 		SetStamina(newChar.GetStartStamina());
-		SetAmmo(10);
+		SetAmmo(newChar.GetAmmo());
+	}
 
+	public Character GetCharacter()
+	{
+		return assignedCharacter;
+	}
+
+	public System.Type GetCharacterType()
+	{
+		return assignedCharacter.GetType();
+	}
+
+	public int GetHealth()
+	{
+		return assignedCharacter.GetHealth();
 	}
 
 	public void TakeHealthDamage(int damage)
@@ -60,6 +61,11 @@ public class CharacterGraphic : MonoBehaviour {
 		SetStamina(stamina + delta);
 	}
 
+	public void SetStartStamina()
+	{
+		SetStamina(assignedCharacter.GetStartStamina());
+	}
+
 	public void SetStamina(int newStamina)
 	{
 		stamina = newStamina;
@@ -69,11 +75,30 @@ public class CharacterGraphic : MonoBehaviour {
 
 	public void IncrementAmmo(int delta) { SetAmmo(ammo + delta); }
 
+	public int GetAmmo()
+	{
+		return ammo;
+	}
+
 	public void SetAmmo(int newAmmo)
 	{
 		ammo = newAmmo;
 		if (ammo < 0) ammo = 0;
 		ammoText.text = ammo.ToString();
+	}
+
+	public bool HasTurn()
+	{
+		return hasTurn;
+	}
+
+	public void GiveTurn()
+	{
+		hasTurn = true;
+	}
+	public void TurnDone()
+	{
+		hasTurn = false;
 	}
 
 	public void HandWidgetHoverStart() { CardsScreen.main.PeekCharacterHand(assignedCharacter); }

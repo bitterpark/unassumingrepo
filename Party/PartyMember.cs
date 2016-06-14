@@ -7,6 +7,7 @@ public interface Character
 	string GetName();
 	int GetHealth();
 	int GetStartStamina();
+	int GetAmmo();
 	Sprite GetPortrait();
 	void SetStamina(int newStamina); //Currently unused
 	void TakeDamage(int damage);
@@ -345,7 +346,7 @@ public class PartyMember: Character
 		return availableColors[lastUsedColorIndex];
 	}
 
-	public int health = 100;
+	
 		/*
 	{
 		get {return memberBodyParts.currentParts[BodyPartTypes.Vitals].health;}
@@ -686,7 +687,10 @@ public class PartyMember: Character
 	public Dictionary<PartyMember,Relationship> relationships=new Dictionary<PartyMember, Relationship>();
 	
 	//NEW STUFF!!!
-	Deck<CombatCard> combatDeck = new Deck<CombatCard>();
+	CombatDeck combatDeck = new CombatDeck();
+
+	int ammo = 10;
+	public int health = 100;
 
 	public PartyMember (MapRegion startingRegion)//Vector2 startingWorldCoords)
 	{
@@ -700,11 +704,18 @@ public class PartyMember: Character
 
 	void GeneratePartyMember(string memberName, MapRegion startingRegion)
 	{
-		combatDeck.Populate(CombatCard.GetMultipleCards(typeof(Smash),combatDeck,2));
-		combatDeck.Populate(CombatCard.GetMultipleCards(typeof(Knee), combatDeck, 2));
-		combatDeck.Populate(CombatCard.GetMultipleCards(typeof(Roundhouse), combatDeck, 1));
-		combatDeck.Populate(CombatCard.GetMultipleCards(typeof(Breather), combatDeck, 2));
-		combatDeck.Populate(CombatCard.GetMultipleCards(typeof(FullAuto), combatDeck, 1));
+		
+		combatDeck.Populate(typeof(Smash),2);//.Populate(CombatCard.GetMultipleCards(typeof(Smash),combatDeck,2));
+		combatDeck.Populate(typeof(Knee), 2);
+		combatDeck.Populate(typeof(Jab));
+		combatDeck.Populate(typeof(Roundhouse));
+		combatDeck.Populate(typeof(Breather));
+		combatDeck.Populate(typeof(FullAuto));
+		combatDeck.Populate(typeof(LastStand));
+		combatDeck.Populate(typeof(Hipfire));
+		combatDeck.Populate(typeof(Doubletap));
+		combatDeck.Populate(typeof(NoMercy));
+		combatDeck.Populate(typeof(DonQuixote));
 		
 		//Pick color out of ones left
 		//worldCoords=startingCoords;
@@ -1469,4 +1480,6 @@ public class PartyMember: Character
 	}
 
 	public Deck<CombatCard> GetCombatDeck() { return combatDeck; }
+
+	public int GetAmmo() { return ammo; }
 }

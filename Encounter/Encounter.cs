@@ -246,6 +246,107 @@ public class Encounter
 		}
 		return allEncounterRooms;
 	}
+
+	//NEW STUFF
+	List<System.Type> enemyTypes=new List<System.Type>();
+	List<EncounterCard> rooms=new List<EncounterCard>();
+	Deck<RewardCard> rewards = new Deck<RewardCard>();
+
+	EncounterCard lastRoom;
+	RewardCard[] missionEndRewards;
+
+	bool finished = false;
+
+	public Encounter(bool newKind)
+	{
+		rooms.Add(new Hallway());
+		rooms.Add(new Hallway());
+		rooms.Add(new Hallway());
+		rooms.Add(new Hallway());
+
+		lastRoom = new EngineRoom();
+		missionEndRewards = new RewardCard[2];
+		missionEndRewards[0] = new CashStash();
+		missionEndRewards[1] = new CashStash();
+
+		enemyTypes.Add(typeof(Stinger));
+		enemyTypes.Add(typeof(Skitter));
+		enemyTypes.Add(typeof(Bugzilla));
+		enemyTypes.Add(typeof(Puffer));
+
+		rewards.Populate(new CashStash(), new CashStash(), new AmmoStash(), new AmmoStash(), new AmmoStash(), new AmmoStash());
+		rewards.Shuffle();
+	}
+
+	public EncounterEnemy[] GenerateEnemies(int enemiesCount)
+	{
+		EncounterEnemy[] resultList = new EncounterEnemy[enemiesCount];
+		for (int i = 0; i < enemiesCount; i++)
+		{
+			resultList[i] = (EncounterEnemy)System.Activator.CreateInstance(enemyTypes[Random.Range(0,enemyTypes.Count)]);
+		}
+		return resultList;
+	}
+
+	public bool IsFinished()
+	{
+		return finished;
+	}
+
+	public EncounterCard[] GetRoomSelection(int selectCount)
+	{
+		if (rooms.Count > 0)
+		{
+			int modifiedCount = Mathf.Min(selectCount, rooms.Count);
+			EncounterCard[] roomsToSelectFrom = new EncounterCard[modifiedCount];
+			for (int i = 0; i < modifiedCount; i++)
+			{
+				roomsToSelectFrom[i] = rooms[0];
+				rooms.RemoveAt(0);
+			}
+			return roomsToSelectFrom;
+		}
+		else 
+		{
+			finished = true;
+			EncounterCard[] oneItemAr = new EncounterCard[1];
+			oneItemAr[0] = lastRoom;
+			return oneItemAr;
+		}
+	}
+
+	public RewardCard[] GetRewardCardSelection(int selectCount)
+	{
+		RewardCard[] rewardSelection=new RewardCard[selectCount];
+		for (int i = 0; i < selectCount; i++)
+		{
+			rewardSelection[i] = rewards.DrawCard();
+		}
+		return rewardSelection;
+	}
+	public void DiscardRewardCards(params RewardCard[] discarded)
+	{
+		rewards.DiscardCards(discarded);
+	}
+
+	public RewardCard[] GetMissionEndRewards()
+	{
+		return missionEndRewards;
+	}
+
+	public string GetScoutingDescription()
+	{
+		string result;
+		result="We've managed to locate another pristine alien ship, designation JXZ-795.";
+		result+="\nNot the biggest one we've ever seen, but should contain some very useful stuff.";
+		result+="\nSend in the mercs, and watch out for the infestation.";
+		return result;
+	}
+	public string GetTooltipDescription()
+	{
+		return "Spaceship run";
+	}
+
 	/*
 	void GenerateLootPlacementsInEncounter(List<List<EncounterRoom>> lootRoomsBySegment)
 	{
@@ -265,4 +366,9 @@ public class Encounter
 			}
 		}
 	}*/
+
+	//NEW STUFF
+
+	
+
 }

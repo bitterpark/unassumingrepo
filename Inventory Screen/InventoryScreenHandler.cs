@@ -20,12 +20,9 @@ public class InventoryScreenHandler : MonoBehaviour
 	
 	public Text skillpointCounterText;
 	
-	public CampCanvas campingCanvas;
 	public static InventoryScreenHandler mainISHandler;
 	public bool inventoryShown=false;
 
-	public Text campThreatText;
-	public Text campTemperatureText;
 
 	//PREFABS
 	public InventorySlot inventorySlotPrefab;
@@ -34,6 +31,7 @@ public class InventoryScreenHandler : MonoBehaviour
 	public MeleeSlot meleeSlotPrefab;
 	public RangedSlot rangedSlotPrefab;
 	public SlotItem slotItemPrefab;
+	public CombatCardGraphic cardPrefab;
 	
 	
 	//GROUPS
@@ -45,7 +43,7 @@ public class InventoryScreenHandler : MonoBehaviour
 	public Transform memberInventoryGroup;
 	public Transform traitGroup;
 	public Transform skillGroup;
-	public Transform relationsGroup;
+	public Transform deckGroup;
 	
 	/*
 	public void InventoryChangeHandler() 
@@ -146,7 +144,6 @@ public class InventoryScreenHandler : MonoBehaviour
 	public void CloseScreen()
 	{
 		selectedMember=null;
-		campingCanvas.CloseScreen();
 		GetComponent<Canvas>().enabled=false;
 		inventoryShown=false;
 		RecipeMakeButton.EItemMade -= RefreshInventoryItems;
@@ -180,10 +177,6 @@ public class InventoryScreenHandler : MonoBehaviour
 			rangedDamageText.text=rangedText;
 
 			//Update camp info
-			//Temperature
-			campTemperatureText.text="Temperature: "+MapRegion.GetTemperatureDescription(selectedMember.currentRegion.localTemperature);
-			//Threat
-			campThreatText.text="Camp security:"+selectedMember.currentRegion.GetCampSecurityDescription();
 
 			//Remove old weapons
 			Image oldMeleeSlot=meleeSlotPlacement.GetComponentInChildren<Image>();
@@ -300,23 +293,33 @@ public class InventoryScreenHandler : MonoBehaviour
 				if (memberTrait.GetType().BaseType==typeof(Trait)) newPerkImage.transform.SetParent(traitGroup,false);
 				else newPerkImage.transform.SetParent(skillGroup,false);
 			}
-			
-			//Refresh relations
-			foreach (Image oldRelImage in relationsGroup.GetComponentsInChildren<Image>())
-			{
-				GameObject.Destroy(oldRelImage.gameObject);
-			}	
-			foreach (Relationship memberRelation in selectedMember.relationships.Values)
-			{
-				RelationTextHandler newRelImage=Instantiate(relationPrefab);
-				newRelImage.AssignRelation(memberRelation);
-				newRelImage.transform.SetParent(relationsGroup,false);
-			}
-			if (!EncounterCanvasHandler.main.encounterOngoing) campingCanvas.RefreshSlots();
-			else campingCanvas.CloseScreen();
+
+			RefreshMercDeck();
 		}
 	}
-	
+
+	void RefreshMercDeck()
+	{
+		ClearMercDeck();
+		DisplayMercDeck();
+	}
+	void DisplayMercDeck()
+	{
+		foreach (CombatCard card in selectedMember.GetCombatDeck().GetDeckCards())
+		{
+			CombatCardGraphic newGraphic = Instantiate(cardPrefab);
+			newGraphic.AssignCard(card);
+			newGraphic.transform.SetParent(deckGroup);
+		}
+	}
+	void ClearMercDeck()
+	{
+		foreach (CombatCardGraphic graphic in deckGroup.GetComponentsInChildren<CombatCardGraphic>())
+		{
+			GameObject.Destroy(graphic.gameObject);
+		}
+	}
+
 	public void InventoryItemClicked(InventoryItem clickedItem,InventorySlot originSlot)
 	{
 		if (clickedItem.UseAction(selectedMember)) 
