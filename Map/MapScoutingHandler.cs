@@ -23,7 +23,10 @@ public class MapScoutingHandler : MonoBehaviour {
 	List<PartyMember> selectedForMission=new List<PartyMember>();
 	
 	MapRegion assignedRegion;
-	
+
+	public Transform rewardCardsGroup;
+	public RewardCardGraphic rewardPrefab;
+
 	void AssignRegion(MapRegion region)
 	{
 		assignedRegion=region;
@@ -59,6 +62,11 @@ public class MapScoutingHandler : MonoBehaviour {
 	void ShowPrepForEncounter()
 	{
 		descriptionText.text = assignedRegion.encounterInRegion.GetScoutingDescription();//+" infested with "+assignedRegion.regionalEncounter.enemyDescription;
+		if (assignedRegion.encounterInRegion.GetMissionEndRewards().Length > 0)
+		{
+			ShowRewardCards();
+		}
+		
 		confirmButton.gameObject.SetActive(true);
 		confirmButton.GetComponentInChildren<Text>().text="Enter ("+PartyMember.fatigueIncreasePerEncounter+" fatigue)";
 		foreach (PartyMember member in PartyManager.mainPartyManager.partyMembers)//assignedRegion.localPartyMembers)// 
@@ -71,6 +79,24 @@ public class MapScoutingHandler : MonoBehaviour {
 			selectionText.text="";
 		}
 	}
+
+	void ShowRewardCards()
+	{
+		foreach (RewardCard card in assignedRegion.encounterInRegion.GetMissionEndRewards())
+		{
+			RewardCardGraphic newGraphic = Instantiate(rewardPrefab);
+			newGraphic.AssignCard(card);
+			newGraphic.transform.SetParent(rewardCardsGroup, false);
+			newGraphic.GetComponent<Button>().interactable = false;
+		}
+	}
+
+	void ClearRewardCards()
+	{
+		foreach (RewardCardGraphic graphic in rewardCardsGroup.GetComponentsInChildren<RewardCardGraphic>())
+			GameObject.Destroy(graphic.gameObject);
+	}
+
 	void ShowPrepForEvent()
 	{
 		descriptionText.text=assignedRegion.regionalEvent.GetScoutingDescription();
@@ -137,6 +163,7 @@ public class MapScoutingHandler : MonoBehaviour {
 		scoutingDialogOngoing=false;
 		foreach (MissionSelectorHandler child in memberSelectorGroup.GetComponentsInChildren<MissionSelectorHandler>()) {GameObject.Destroy(child.gameObject);}
 		selectedForMission.Clear();
+		ClearRewardCards();
 		GetComponent<Canvas>().enabled=false;
 	}
 	

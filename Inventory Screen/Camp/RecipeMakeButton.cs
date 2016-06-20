@@ -36,7 +36,7 @@ public class RecipeMakeButton : MonoBehaviour,IPointerEnterHandler,IPointerExitH
 			//Run a check through local inventory and member personal inventory, to see if 
 			foreach (InventoryItem.LootItems ingredientKey in newRecipe.requiredIngredients.Keys)
 			{
-				foreach (InventoryItem localItem in MapManager.main.mapRegions[0].GetStashedItems())//InventoryScreenHandler.mainISHandler.selectedMember.currentRegion.GetStashedItems())
+				foreach (InventoryItem localItem in MapManager.main.GetTown().GetStashedItems())//InventoryScreenHandler.mainISHandler.selectedMember.currentRegion.GetStashedItems())
 				{
 					if (localItem.GetType()==InventoryItem.GetLootingItem(ingredientKey).GetType())
 					{

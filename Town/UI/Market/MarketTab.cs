@@ -17,8 +17,9 @@ public class MarketTab : MonoBehaviour,TownTab
 
 	public void OpenTab()
 	{
-		buyMenuWrapper.SetActive(true);
-		sellMenuWrapper.SetActive(true);
+		gameObject.SetActive(true);
+		//buyMenuWrapper.SetActive(true);
+		//sellMenuWrapper.SetActive(true);
 		transform.SetAsLastSibling();
 		RefreshAllItems();
 		MarketItem.ETransactionMade+=RefreshAllItems;
@@ -52,7 +53,7 @@ public class MarketTab : MonoBehaviour,TownTab
 	{
 		CleanupOldSellList();
 		
-		foreach (InventoryItem item in MapManager.main.mapRegions[0].GetStashedItems())
+		foreach (InventoryItem item in MapManager.main.GetTown().GetStashedItems())
 		{
 			MarketItem newItem = Instantiate(itemPrefab);
 			newItem.AssignItem(item,false);
@@ -71,7 +72,8 @@ public class MarketTab : MonoBehaviour,TownTab
 		CleanupOldBuyList();
 		CleanupOldSellList();
 		MarketItem.ETransactionMade -= RefreshAllItems;
-		buyMenuWrapper.SetActive(false);
-		sellMenuWrapper.SetActive(false);
+		gameObject.SetActive(false);
+		//buyMenuWrapper.SetActive(false);
+		//sellMenuWrapper.SetActive(false);
 	}
 }

@@ -11,6 +11,7 @@ public class TownScreen : MonoBehaviour {
 
 	public static TownScreen main;
 
+	public Button financeButton;
 	public Button mapButton;
 	public Button workshopsButton;
 	public Button mercenariesButton;
@@ -19,6 +20,7 @@ public class TownScreen : MonoBehaviour {
 
 	public Transform tabContentGroup;
 
+	public FinancesTab financesTab;
 	public WorkshopTab workshopTab;
 	public MercenariesTab mercenariesTab;
 	public BuildingsTab buildingsTab;
@@ -26,11 +28,13 @@ public class TownScreen : MonoBehaviour {
 
 	TownTab currentTab = null;
 
-	// Use this for initialization
 	void Start () 
 	{
 		main = this;
 
+		GameManager.GameOver += CloseTownScreen;
+
+		financeButton.onClick.AddListener(() => OpenFinancesTab());
 		buildingsButton.onClick.AddListener(() => { OpenBuildingsTab(); });
 		workshopsButton.onClick.AddListener(() => { OpenWorkshopsTab();});
 		marketButton.onClick.AddListener(() => { OpenMarketTab(); });
@@ -43,6 +47,19 @@ public class TownScreen : MonoBehaviour {
 	public void OpenTownScreen()
 	{
 		gameObject.SetActive(true);
+		OpenDefaultTab();
+	}
+
+	void OpenDefaultTab()
+	{
+		OpenFinancesTab();
+	}
+
+	void OpenFinancesTab()
+	{
+		CleanupCurrentTab();
+		currentTab = financesTab;
+		financesTab.OpenTab();
 	}
 
 	void OpenBuildingsTab()

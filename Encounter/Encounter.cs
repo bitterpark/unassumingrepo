@@ -248,21 +248,19 @@ public class Encounter
 	}
 
 	//NEW STUFF
-	List<System.Type> enemyTypes=new List<System.Type>();
-	List<EncounterCard> rooms=new List<EncounterCard>();
-	Deck<RewardCard> rewards = new Deck<RewardCard>();
+	protected List<System.Type> enemyTypes=new List<System.Type>();
+	protected List<EncounterCard> rooms=new List<EncounterCard>();
+	protected Deck<RewardCard> rewards = new Deck<RewardCard>();
 
-	EncounterCard lastRoom;
-	RewardCard[] missionEndRewards;
+	protected EncounterCard lastRoom;
+	protected RewardCard[] missionEndRewards;
 
-	bool finished = false;
+	protected bool finished = false;
 
 	public Encounter(bool newKind)
 	{
-		rooms.Add(new Hallway());
-		rooms.Add(new Hallway());
-		rooms.Add(new Hallway());
-		rooms.Add(new Hallway());
+		//rooms.Add(new Hallway());
+		//rooms.Add(new Hallway());
 
 		lastRoom = new EngineRoom();
 		missionEndRewards = new RewardCard[2];
@@ -273,8 +271,9 @@ public class Encounter
 		enemyTypes.Add(typeof(Skitter));
 		enemyTypes.Add(typeof(Bugzilla));
 		enemyTypes.Add(typeof(Puffer));
+		enemyTypes.Add(typeof(Hardshell));
 
-		rewards.Populate(new CashStash(), new CashStash(), new AmmoStash(), new AmmoStash(), new AmmoStash(), new AmmoStash());
+		rewards.AddCards(new CashStash(), new CashStash(), new AmmoStash(), new AmmoStash(), new AmmoStash(), new AmmoStash());
 		rewards.Shuffle();
 	}
 
@@ -334,7 +333,7 @@ public class Encounter
 		return missionEndRewards;
 	}
 
-	public string GetScoutingDescription()
+	public virtual string GetScoutingDescription()
 	{
 		string result;
 		result="We've managed to locate another pristine alien ship, designation JXZ-795.";
@@ -342,33 +341,52 @@ public class Encounter
 		result+="\nSend in the mercs, and watch out for the infestation.";
 		return result;
 	}
-	public string GetTooltipDescription()
+	public virtual string GetTooltipDescription()
 	{
 		return "Spaceship run";
 	}
-
-	/*
-	void GenerateLootPlacementsInEncounter(List<List<EncounterRoom>> lootRoomsBySegment)
-	{
-		//Generate loot placement
-		foreach (List<EncounterRoom> eligibleSegmentRooms in lootRoomsBySegment)
-		{
-			int requiredChestCount=Random.Range(normalChestCountMin,normalChestCountMax+1);
-			int currentChestCount=0;
-			while (currentChestCount<requiredChestCount && eligibleSegmentRooms.Count>0)
-			{
-
-				InventoryItem.LootMetatypes chestType=GetChestType(chestTypes);
-				EncounterRoom randomlySelectedRoom=eligibleSegmentRooms[Random.Range(0,eligibleSegmentRooms.Count)];
-				foreach (InventoryItem lootItem in InventoryItem.GenerateLootSet(chestType)) randomlySelectedRoom.AddLootItem(lootItem);
-				currentChestCount++;
-				eligibleSegmentRooms.Remove(randomlySelectedRoom);//
-			}
-		}
-	}*/
 
 	//NEW STUFF
 
 	
 
+}
+
+public class StoryMissionOne : Encounter
+{
+	public StoryMissionOne()
+	{
+		rooms.Add(new Hallway());
+		rooms.Add(new Hallway());
+		rooms.Add(new Hallway());
+		rooms.Add(new Hallway());
+
+		lastRoom = new EngineRoom();
+		missionEndRewards = new RewardCard[1];
+		missionEndRewards[0] = new AmmoStash();
+
+		enemyTypes.Add(typeof(Stinger));
+		enemyTypes.Add(typeof(Skitter));
+		enemyTypes.Add(typeof(Bugzilla));
+		enemyTypes.Add(typeof(Puffer));
+		enemyTypes.Add(typeof(Hardshell));
+
+		rewards.AddCards(new CashStash(), new CashStash(), new AmmoStash(), new AmmoStash(), new AmmoStash(), new AmmoStash());
+		rewards.Shuffle();
+	}
+
+	public override string GetTooltipDescription()
+	{
+		return "Fusion Generator";
+	}
+
+	public override string GetScoutingDescription()
+	{
+		string result;
+		result = "After some searching, scouting, bribing and threatening, we finally got a lead on a working Fusion Generator.";
+		result += "\nGibraltar, formerly a United Federation battlecruiser, now a pile of smashed metal.";
+		result += "\nThe wreck is huge, and the infestation there has grown pretty bad. Go in, take every functioning piece of tech,";
+		result += "\nAnd find that generator.";
+		return result;
+	}
 }

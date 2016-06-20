@@ -193,7 +193,7 @@ public class MapManager : MonoBehaviour
 			if (unoccupiedSlotIndeces.Count>0)
 			{
 				Vector2 randomSlotIndex = unoccupiedSlotIndeces[Random.Range(0, unoccupiedSlotIndeces.Count)];
-				CreateEncounterNode(randomSlotIndex);
+				GenerateRandomEncounterNode(randomSlotIndex);
 				createdNodesCount++;
 			}
 		} while (unoccupiedSlotIndeces.Count > 0 && createdNodesCount < count);
@@ -201,13 +201,38 @@ public class MapManager : MonoBehaviour
 
 	void ClearEncounters()
 	{
+		ClearEncounters(false);
+	}
+	void ClearEncounters(bool clearStoryNodes)
+	{
 		foreach (MapNode node in new List<MapNode>(currentEncounterNodes))
 		{
-			DestroyMapNode(node);
+			if (clearStoryNodes || node.region.regionalEncounter.IsFinished() 
+				|| node.region.regionalEncounter.GetType()==typeof(Encounter))
+				DestroyMapNode(node);
 		}
 	}
 
-	void CreateEncounterNode(Vector2 coordsIndex)
+	void GenerateRandomEncounterNode(Vector2 slotIndex)
+	{
+		MapRegion newEncounterNode=CreateEncounterNode(slotIndex);
+		newEncounterNode.AssignEncounter(new Encounter(true));
+	}
+
+	public void UnlockStoryEncounterOne()
+	{
+		foreach (Vector2 index in mapSlots.Keys)
+		{
+			if (!mapSlots[index].occupied)
+			{
+				MapRegion storyNode=CreateEncounterNode(index);
+				storyNode.AssignEncounter(new StoryMissionOne());
+				break;
+			}
+		}
+	}
+
+	MapRegion CreateEncounterNode(Vector2 coordsIndex)
 	{
 		if (!mapSlots.ContainsKey(coordsIndex)) throw new System.Exception("Encounter node slot not found!");
 		MapSlot usedSlot=mapSlots[coordsIndex];
@@ -227,13 +252,14 @@ public class MapManager : MonoBehaviour
 		Vector2 finalCoords = slotCenterStartPoint + randomSlotOffset;
 
 		MapRegion newNodeObj = InstantiateMapNode(finalCoords);
-		newNodeObj.GenerateEncounter();
+		//newNodeObj.GenerateEncounter();
 		currentEncounterNodes.Add(new MapNode(usedSlot, newNodeObj));
+		return newNodeObj;
 	}
 
 	void EndOfGameClearAll()
 	{
-		ClearEncounters();
+		ClearEncounters(true);
 		ClearTown();
 	}
 
@@ -253,6 +279,7 @@ public class MapManager : MonoBehaviour
 		GameObject.Destroy(town.gameObject);
 		town = null;
 	}
+
 
 	MapRegion InstantiateMapNode(Vector2 coords)
 	{

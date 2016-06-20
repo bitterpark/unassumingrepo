@@ -15,6 +15,7 @@ public class WorkshopTab : MonoBehaviour, TownTab {
 
 	public void OpenTab()
 	{
+		gameObject.SetActive(true);
 		transform.SetAsLastSibling();
 		RefreshAllItems();
 		RecipeMakeButton.EItemMade += RefreshAllItems;
@@ -32,7 +33,7 @@ public class WorkshopTab : MonoBehaviour, TownTab {
 		CleanupOldInventorySlots();
 
 		int slotCount = 48;
-		List<InventoryItem> activeList=MapManager.main.mapRegions[0].GetStashedItems();//PartyManager.mainPartyManager.GetPartyInventory();}
+		List<InventoryItem> activeList=MapManager.main.GetTown().GetStashedItems();//PartyManager.mainPartyManager.GetPartyInventory();}
 		//Use floor or inventory list
 		for (int i = 0; i < slotCount; i++)
 		{
@@ -83,5 +84,6 @@ public class WorkshopTab : MonoBehaviour, TownTab {
 		CleanupOldCraftingList();
 		RecipeMakeButton.EItemMade -= RefreshAllItems;
 		InventorySlot.EItemDropped -= RefreshAllItems;
+		gameObject.SetActive(false);
 	}
 }

@@ -30,21 +30,22 @@ public class MarketItem : MonoBehaviour, IPointerDownHandler,IPointerEnterHandle
 			{
 				TownManager.main.money -= MarketTab.genericItemCost;
 				TownManager.main.itemsOnSale.Remove(assignedItem);
-				MapManager.main.mapRegions[0].StashItem(assignedItem);
+				MapManager.main.GetTown().StashItem(assignedItem);
 				if (ETransactionMade != null) ETransactionMade();
 			}
 		}
 		else
 		{
 			TownManager.main.money += MarketTab.genericItemCost;
-			MapManager.main.mapRegions[0].TakeStashItem(assignedItem);
+			MapManager.main.GetTown().TakeStashItem(assignedItem);
 			if (ETransactionMade != null) ETransactionMade();
 		}
 	}
 
 	public void OnPointerEnter(PointerEventData eventData)
 	{
-		if (assignedItem != null) TooltipManager.main.CreateTooltip(assignedItem.GetMouseoverDescription(), this.transform);
+		if (assignedItem != null) TooltipManager.main.CreateItemTooltip(assignedItem, transform);
+		//TooltipManager.main.CreateTooltip(assignedItem.GetMouseoverDescription(), this.transform);
 	}
 
 	public void OnPointerExit(PointerEventData eventData)

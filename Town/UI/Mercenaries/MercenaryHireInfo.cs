@@ -6,7 +6,9 @@ using System.Collections;
 public class MercenaryHireInfo : MonoBehaviour {
 
 	public Image mercPortrait;
+	public Button mercPreviewButton;
 	public Text mercNameText;
+	public Text classNameText;
 	public Text hireCostText;
 	public TraitUIHandler traitPrefab;
 
@@ -26,9 +28,13 @@ public class MercenaryHireInfo : MonoBehaviour {
 		assignedMerc = merc;
 		mercPortrait.color = merc.color;
 		mercNameText.text = merc.name;
+		classNameText.text = merc.myClass.ToString();
 		hireCostText.text = hireCost+" $";
 
-		hireButton.onClick.AddListener(() => { HireButtonPressed();});
+		mercPreviewButton.onClick.AddListener(
+			()=> InventoryScreenHandler.mainISHandler.MapOrEncounterToggleSelectedMember(assignedMerc));
+
+		hireButton.onClick.AddListener(() =>HireButtonPressed());
 		hireButton.GetComponentInChildren<Text>().text="Hire ("+hireDuration+" days)";
 
 		//Delete old traits

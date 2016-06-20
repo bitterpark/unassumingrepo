@@ -6,6 +6,7 @@ public interface Character
 {
 	string GetName();
 	int GetHealth();
+	int GetStartArmor();
 	int GetStartStamina();
 	int GetAmmo();
 	Sprite GetPortrait();
@@ -672,7 +673,7 @@ public class PartyMember: Character
 		else
 		{
 			activatedSkill.learned=true;
-			activatedSkill.ActivatePerk(this);
+			activatedSkill.ActivateEffect(this);
 			foreach (Trait memberTrait in new List<Trait>(traits))
 			{
 				if (memberTrait.GetType().BaseType==typeof(Skill))
@@ -687,35 +688,84 @@ public class PartyMember: Character
 	public Dictionary<PartyMember,Relationship> relationships=new Dictionary<PartyMember, Relationship>();
 	
 	//NEW STUFF!!!
+	public enum MercClass {Soldier,Bandit,Gunman,Mercenary};
+	public MercClass myClass;
 	CombatDeck combatDeck = new CombatDeck();
 
 	int ammo = 10;
-	public int health = 100;
+	int health = 100;
 
-	public PartyMember (MapRegion startingRegion)//Vector2 startingWorldCoords)
+	static CombatDeck GetClassDeck(MercClass mercClass)
 	{
-		GeneratePartyMember(GenerateName(), startingRegion);
+		CombatDeck result = new CombatDeck();
+
+		if (mercClass == MercClass.Soldier)
+		{
+			result.AddCards(typeof(TakeCover),2);
+			result.AddCards(typeof(Reposition));
+			result.AddCards(typeof(Kick));
+			result.AddCards(typeof(Smash));
+			result.AddCards(typeof(Throw));
+			result.AddCards(typeof(Grenade));
+			result.AddCards(typeof(SecondWind));
+			result.AddCards(typeof(Doubletap));
+			result.AddCards(typeof(BurstFire));
+		}
+		if (mercClass == MercClass.Bandit)
+		{
+			result.AddCards(typeof(SuckerPunch), 2);
+			result.AddCards(typeof(Knee));
+			result.AddCards(typeof(Jab));
+			result.AddCards(typeof(Roundhouse));
+			result.AddCards(typeof(NoMercy),2);
+			result.AddCards(typeof(Hipfire));
+			result.AddCards(typeof(SprayNPray));
+			result.AddCards(typeof(Throw));
+		}
+		if (mercClass == MercClass.Gunman)
+		{
+			result.AddCards(typeof(Doubletap), 2);
+			result.AddCards(typeof(ScopeIn));
+			result.AddCards(typeof(BurstFire));
+			result.AddCards(typeof(Suppression));
+			result.AddCards(typeof(HighGround));
+			result.AddCards(typeof(Pistolwhip), 2);
+			result.AddCards(typeof(Sidearm));
+			result.AddCards(typeof(LessLethal));
+		}
+		if (mercClass==MercClass.Mercenary)
+		{
+			result.AddCards(typeof(BurstFire));
+			result.AddCards(typeof(Suppression));
+			result.AddCards(typeof(RunAndGun));
+			result.AddCards(typeof(Smash));
+			result.AddCards(typeof(Jab));
+			result.AddCards(typeof(Kick));
+			result.AddCards(typeof(SecondWind));
+			result.AddCards(typeof(LegIt));
+			result.AddCards(typeof(DonQuixote));
+			result.AddCards(typeof(SuicideCharge));
+		}
+		return result;
+	}
+
+	public PartyMember ()//Vector2 startingWorldCoords)
+	{
+		GeneratePartyMember(GenerateName());
 	}
 	
-	public PartyMember(string memberName,MapRegion startingRegion)//, params Perk[] assignedPerks)
+	public PartyMember(string memberName)//, params Perk[] assignedPerks)
 	{
-		GeneratePartyMember(memberName, startingRegion);
+		GeneratePartyMember(memberName);
 	}
 
-	void GeneratePartyMember(string memberName, MapRegion startingRegion)
+	void GeneratePartyMember(string memberName)
 	{
+		MapRegion startingRegion = MapManager.main.GetTown();
 		
-		combatDeck.Populate(typeof(Smash),2);//.Populate(CombatCard.GetMultipleCards(typeof(Smash),combatDeck,2));
-		combatDeck.Populate(typeof(Knee), 2);
-		combatDeck.Populate(typeof(Jab));
-		combatDeck.Populate(typeof(Roundhouse));
-		combatDeck.Populate(typeof(Breather));
-		combatDeck.Populate(typeof(FullAuto));
-		combatDeck.Populate(typeof(LastStand));
-		combatDeck.Populate(typeof(Hipfire));
-		combatDeck.Populate(typeof(Doubletap));
-		combatDeck.Populate(typeof(NoMercy));
-		combatDeck.Populate(typeof(DonQuixote));
+		var classtypes=System.Enum.GetValues(typeof(MercClass));
+		myClass = (MercClass)classtypes.GetValue(Random.Range(0,classtypes.Length));
+		combatDeck = GetClassDeck(myClass);
 		
 		//Pick color out of ones left
 		//worldCoords=startingCoords;
@@ -832,11 +882,11 @@ public class PartyMember: Character
 		isScout=false;
 		foreach (Trait myPerk in traits)
 		{
-			if (myPerk.GetType().BaseType==typeof(Trait)) myPerk.ActivatePerk(this);
+			if (myPerk.GetType().BaseType==typeof(Trait)) myPerk.ActivateEffect(this);
 			else
 			{
 				Skill mySkill=myPerk as Skill;
-				if (mySkill.learned) mySkill.ActivatePerk(this);
+				if (mySkill.learned) mySkill.ActivateEffect(this);
 			}
 		}
 		//make sure perks trigger before these to properly use modified values of maxHealth and maxStamina
@@ -1321,8 +1371,7 @@ public class PartyMember: Character
 		if (dmgTaken<0) dmgTaken=0; 
 		return memberBodyParts.HitRandomPart(dmgTaken);
 	}
-	//Currently used one
-	public void TakeDamage(int dmgTaken) { health -= dmgTaken; }
+	
 
 	public void TakeDamage(int dmgTaken, bool armorHelps)
 	{
@@ -1405,6 +1454,7 @@ public class PartyMember: Character
 		{
 			equippedItem.EquipEffect(this);
 			equippedItems.Add(equippedItem);
+			combatDeck.AddCards(equippedItem.addedCombatCards.ToArray());
 		}
 		else {throw new System.Exception("Trying t equip an item that's already equipped twice");}
 	}
@@ -1415,12 +1465,14 @@ public class PartyMember: Character
 		{
 			unequippedItem.UnequipEffect(this);
 			equippedItems.Remove(unequippedItem);
-			//PartyManager.mainPartyManager.GainItems(unequippedItem);
+			combatDeck.RemoveCards(unequippedItem.addedCombatCards.ToArray());
 		}
 	}
 	
 	public void EquipWeapon(Weapon newWeapon)
 	{
+		combatDeck.AddCards(newWeapon.addedCombatCards.ToArray());
+		
 		//check if melee
 		if (newWeapon.GetType().BaseType==typeof(MeleeWeapon))
 		{
@@ -1440,6 +1492,7 @@ public class PartyMember: Character
 	
 	public void UnequipWeapon(Weapon uneqippedWeapon)
 	{
+		combatDeck.RemoveCards(uneqippedWeapon.addedCombatCards.ToArray());
 		if (equippedMeleeWeapon==uneqippedWeapon) 
 		{
 			meleeHitchanceMod-=equippedMeleeWeapon.accuracyMod;
@@ -1464,6 +1517,28 @@ public class PartyMember: Character
 		return health;
 	}
 
+	//Currently used one
+	public void TakeDamage(int dmgTaken) 
+	{
+		IncrementHealth(-dmgTaken); 
+	}
+
+	public void IncrementHealth(int delta)
+	{
+		SetHealth(health + delta);
+	}
+
+	public void SetHealth(int newHealth)
+	{
+		health = newHealth;
+		if (health <= 0) DisposePartyMember();
+	}
+
+	public int GetStartArmor()
+	{
+		return 10;
+	}
+
 	public int GetStartStamina()
 	{
 		return stamina;
@@ -1480,6 +1555,10 @@ public class PartyMember: Character
 	}
 
 	public Deck<CombatCard> GetCombatDeck() { return combatDeck; }
+	public List<CombatCard> GetAllUsedCards() { return combatDeck.GetDeckCards();}
 
-	public int GetAmmo() { return ammo; }
+	public int GetAmmo() 
+	{ 
+		return ammo; 
+	}
 }

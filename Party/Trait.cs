@@ -5,11 +5,22 @@ using System.Collections.Generic;
 public abstract class Trait
 {
 	public string name;
-	public abstract void ActivatePerk(PartyMember member);
+	public virtual void ActivateEffect(PartyMember member)
+	{
+		if (addedCombatCards.Count > 0)
+			member.GetCombatDeck().AddCards(addedCombatCards.ToArray());
+	}
 	//public virtual void DeactivatePerk() {}
 	public abstract string GetMouseoverDescription();
 	public System.Type oppositePerk=null;
-	
+
+	protected List<CombatCard> addedCombatCards = new List<CombatCard>();
+
+	public List<CombatCard> GetAddedCombatCards()
+	{
+		return addedCombatCards;
+	}
+
 	public static List<Trait> GetTraitList()
 	{
 		List<Trait> allTraits=new List<Trait>();
@@ -39,7 +50,7 @@ public abstract class Trait
 		return allTraits;
 	}
 	//Skills
-	enum Skilltree {Scout,Fighter,Carrier}
+	enum Skilltree {Scout,Fighter,Carrier} //Soldier, Bandit, Gunman, Mercenary
 	static List<Trait> GetSkillTree(Skilltree treeType)
 	{
 		List<Trait> resultList=new List<Trait>();
@@ -162,8 +173,9 @@ public class Quiet:Skill
 	{
 		name="Quiet";
 	}
-	public override void ActivatePerk(PartyMember member)
+	public override void  ActivateEffect(PartyMember member)
 	{
+		base.ActivateEffect(member);
 		member.movingEnemySpawnProbIncrease*=probIncreaseMult;
 		//member.dodgeChance+=0.25f;
 		
@@ -177,8 +189,9 @@ public class Agile:Skill
 	{
 		name="Agile";
 	}
-	public override void ActivatePerk(PartyMember member)
+	public override void ActivateEffect(PartyMember member)
 	{
+		base.ActivateEffect(member);
 		member.barricadeVaultCost=0;//.barricadeAvoidanceEnabled=true;
 		//member.dodgeChance+=0.25f;
 		
@@ -193,7 +206,11 @@ public class Medic:Skill
 	{
 		name="Medic";
 	}
-	public override void ActivatePerk(PartyMember member) {member.isMedic=true;}
+	public override void ActivateEffect(PartyMember member) 
+	{
+		base.ActivateEffect(member);
+		member.isMedic=true;
+	}
 	public override string GetMouseoverDescription () {return "Has first aid training\n\nIncreases the effectiveness of medical supplies by half";}
 }
 //Currently unused
@@ -203,8 +220,9 @@ public class Quick:Skill
 	{
 		name="Quick";
 	}
-	public override void ActivatePerk(PartyMember member)
+	public override void ActivateEffect(PartyMember member)
 	{
+		base.ActivateEffect(member);
 		member.extraMoveEnabled=true;
 		//member.dodgeChance+=0.25f;
 		
@@ -220,8 +238,9 @@ public class Scout:Skill
 		name="Scout";
 		oppositePerk=typeof(Slow);
 	}
-	public override void ActivatePerk(PartyMember member)
+	public override void ActivateEffect(PartyMember member)
 	{
+		base.ActivateEffect(member);
 		member.currentFatigueMoveModifier-=moveCostReduction;//member.=0;//.barricadeAvoidanceEnabled=true;
 		//member.dodgeChance+=0.25f;
 		
@@ -251,7 +270,11 @@ public class Dodge:Skill
 	{
 		name="Avoidance";
 	}
-	public override void ActivatePerk(PartyMember member) {member.IncrementMaxDodgeChance(dodgeChanceDelta);}//member.meleeDamageMod+=meleeDamageChange;}
+	public override void ActivateEffect(PartyMember member) 
+	{
+		base.ActivateEffect(member);
+		member.IncrementMaxDodgeChance(dodgeChanceDelta);
+	}
 	public override string GetMouseoverDescription () {return "Ducks and weaves\n\n+"+(dodgeChanceDelta*100)+"% to dodge chance";}//+meleeDamageChange+" to melee damage";}
 }
 public class Technique:Skill
@@ -263,7 +286,11 @@ public class Technique:Skill
 		name="Precision";
 		oppositePerk=typeof(WeakArm);
 	}
-	public override void ActivatePerk(PartyMember member) {member.meleeHitchanceMod+=hitChanceDelta;}//member.meleeDamageMod+=meleeDamageChange;}
+	public override void ActivateEffect(PartyMember member) 
+	{
+		base.ActivateEffect(member);
+		member.meleeHitchanceMod+=hitChanceDelta;
+	}
 	public override string GetMouseoverDescription () {return "Fighting technique\n\n"+hitChanceDelta+" to melee hit chance";}//+meleeDamageChange+" to melee damage";}
 }
 //Currently unused
@@ -274,7 +301,7 @@ public class HitAndRun:Skill
 	{
 		name="Hit and Run";
 	}
-	public override void ActivatePerk(PartyMember member) {member.hitAndRunEnabled=true;}//member.meleeDamageMod+=meleeDamageChange;}
+	public override void ActivateEffect(PartyMember member) {member.hitAndRunEnabled=true;}//member.meleeDamageMod+=meleeDamageChange;}
 	public override string GetMouseoverDescription () {return "Fights dirty\n\nCan move after attacking";}//+meleeDamageChange+" to melee damage";}
 }
 
@@ -287,7 +314,11 @@ public class Deadeye: Skill
 		name="Deadeye";
 		oppositePerk=typeof(PoorShot);
 	}
-	public override void ActivatePerk(PartyMember member) {member.rangedHitchanceMod+=rangedHitchanceChange;}
+	public override void ActivateEffect(PartyMember member) 
+	{
+		base.ActivateEffect(member);
+		member.rangedHitchanceMod+=rangedHitchanceChange;
+	}
 	public override string GetMouseoverDescription () {return "Always hits the bullseye\n\n"+rangedHitchanceChange+" to ranged hit chance";}//+rangedDamageChange+" to ranged damage";}
 }
 
@@ -300,7 +331,11 @@ public class Carrier:Skill
 		name="Strong back";
 		oppositePerk=typeof(WeakBack);
 	}
-	public override void ActivatePerk(PartyMember member) {member.ChangeMaxCarryCapacity(inventorySizeChange);}
+	public override void ActivateEffect(PartyMember member) 
+	{
+		base.ActivateEffect(member);
+		member.ChangeMaxCarryCapacity(inventorySizeChange);
+	}
 	public override string GetMouseoverDescription () {return "A real packmule\n\n"+inventorySizeChange+" to carry capacity";}
 }
 
@@ -316,9 +351,9 @@ public class Tough:Skill
 		name="Tough";
 		oppositePerk=typeof(Scrawny);
 	}
-	public override void ActivatePerk(PartyMember member)
+	public override void ActivateEffect(PartyMember member)
 	{
-		//member.maxHealth=Mathf.Max(1,Mathf.RoundToInt(member.maxHealth*(1+healthMod)));
+		base.ActivateEffect(member);
 		member.handsMaxHealth=Mathf.RoundToInt(member.handsMaxHealth*healthMod);
 		member.legsMaxHealth=Mathf.RoundToInt(member.legsMaxHealth*healthMod);
 		member.vitalsMaxHealth=Mathf.RoundToInt(member.vitalsMaxHealth*healthMod);
@@ -336,7 +371,11 @@ public class Fit:Skill
 		oppositePerk=typeof(Slob);
 	}
 	//public override string GetName (){return name;}
-	public override void ActivatePerk(PartyMember member){member.baseMaxStamina+=staminaUpgrade;}
+	public override void ActivateEffect(PartyMember member)
+	{
+		base.ActivateEffect(member);
+		member.baseMaxStamina+=staminaUpgrade;
+	}
 	public override string GetMouseoverDescription (){return "Can run, jump and fight for extended periods of time\n\n+"+staminaUpgrade+" max stamina";}
 }
 
@@ -353,7 +392,7 @@ public class Slow:Trait
 		name="Slow";
 		oppositePerk=typeof(Scout);
 	}
-	public override void ActivatePerk(PartyMember member)
+	public override void ActivateEffect(PartyMember member)
 	{
 		member.currentFatigueMoveModifier+=moveCostIncrease;//member.=0;//.barricadeAvoidanceEnabled=true;
 		//member.dodgeChance+=0.25f;
@@ -372,7 +411,7 @@ public class Scrawny:Trait
 		oppositePerk=typeof(Tough);
 	}
 	//public override string GetName (){return name;}
-	public override void ActivatePerk(PartyMember member)
+	public override void ActivateEffect(PartyMember member)
 	{
 		member.handsMaxHealth=Mathf.RoundToInt(member.handsMaxHealth*healthMod);
 		member.legsMaxHealth=Mathf.RoundToInt(member.legsMaxHealth*healthMod);
@@ -392,7 +431,7 @@ public class Slob:Trait
 		oppositePerk=typeof(Fit);
 	}
 	//public override string GetName (){return name;}
-	public override void ActivatePerk(PartyMember member){member.baseMaxStamina-=staminaDowngrade;}
+	public override void ActivateEffect(PartyMember member){member.baseMaxStamina-=staminaDowngrade;}
 	public override string GetMouseoverDescription (){return "Can't keep up with the average\n\n-"+staminaDowngrade+" max stamina";}
 }
 
@@ -406,7 +445,7 @@ public class LeanEater:Trait
 		oppositePerk=typeof(BigEater);
 	}
 	//public override string GetName () {return name;}
-	public override void ActivatePerk(PartyMember member) {member.hungerIncreasePerHour-=hungerReduction;}
+	public override void ActivateEffect(PartyMember member) {member.hungerIncreasePerHour-=hungerReduction;}
 	public override string GetMouseoverDescription () {return "Used to going without food\n\n+"+hungerReduction+" hunger reduction";}
 }
 
@@ -420,7 +459,7 @@ public class BigEater:Trait
 		oppositePerk=typeof(LeanEater);
 	}
 	//public override string GetName () {return name;}
-	public override void ActivatePerk(PartyMember member) {member.hungerIncreasePerHour+=hungerIncrease;}
+	public override void ActivateEffect(PartyMember member) {member.hungerIncreasePerHour+=hungerIncrease;}
 	public override string GetMouseoverDescription () {return "Used to large, filling meals\n\n+"+hungerIncrease+" hunger increase";}
 }
 /*
@@ -484,7 +523,7 @@ public class Bloodthirsty: Trait
 		name="Bloodthirsty";
 		oppositePerk=typeof(Pacifist);
 	}
-	public override void ActivatePerk(PartyMember member) {member.moraleChangeFromKills=moraleFromKill;}
+	public override void ActivateEffect(PartyMember member) {member.moraleChangeFromKills=moraleFromKill;}
 	public override string GetMouseoverDescription () {return "Takes joy in violence\n\nKills increases morale";}
 }
 
@@ -496,7 +535,7 @@ public class Pacifist: Trait
 		name="Pacifist";
 		oppositePerk=typeof(Bloodthirsty);
 	}
-	public override void ActivatePerk(PartyMember member) {member.moraleChangeFromKills=moraleFromKill;}
+	public override void ActivateEffect(PartyMember member) {member.moraleChangeFromKills=moraleFromKill;}
 	public override string GetMouseoverDescription () {return "Dislikes killing\n\nKills lowers morale";}
 }
 
@@ -508,7 +547,7 @@ public class ReassuringPresence: Trait
 		name="Reassuring presence";
 		oppositePerk=typeof(Downer);
 	}
-	public override void ActivatePerk(PartyMember mainMember) 
+	public override void ActivateEffect(PartyMember mainMember) 
 	{
 		//foreach (PartyMember member in PartyManager.mainPartyManager.partyMembers)
 		//member.moraleRestorePerHour=(int)(member.moraleRestorePerHour*moraleRestoreMult);
@@ -525,7 +564,7 @@ public class Downer: Trait
 		name="Downer";
 		oppositePerk=typeof(ReassuringPresence);
 	}
-	public override void ActivatePerk(PartyMember mainMember) 
+	public override void ActivateEffect(PartyMember mainMember) 
 	{
 		//foreach (PartyMember member in PartyManager.mainPartyManager.partyMembers)
 		//member.moraleRestorePerHour=(int)(member.moraleDecayPerHour*moraleDecayMult);
@@ -542,7 +581,7 @@ public class PeoplePerson: Trait
 		name="People person";
 		oppositePerk=typeof(Antisocial);
 	}
-	public override void ActivatePerk(PartyMember member) {member.baseRelationshipChanceModifier+=friendChanceChange;}
+	public override void ActivateEffect(PartyMember member) {member.baseRelationshipChanceModifier+=friendChanceChange;}
 	public override string GetMouseoverDescription () {return "Easily makes friends\n\nMore likely to make friends";}
 }
 
@@ -554,7 +593,7 @@ public class Antisocial: Trait
 		name="Antisocial";
 		oppositePerk=typeof(PeoplePerson);
 	}
-	public override void ActivatePerk(PartyMember member) {member.baseRelationshipChanceModifier+=friendChanceChange;}
+	public override void ActivateEffect(PartyMember member) {member.baseRelationshipChanceModifier+=friendChanceChange;}
 	public override string GetMouseoverDescription () {return "Doesn't like people\n\nMore likely to make enemies";}
 }
 
@@ -568,7 +607,7 @@ public class SocialAnimal: Trait
 		name="Social Animal";
 		oppositePerk=typeof(Loner);
 	}
-	public override void ActivatePerk(PartyMember member) 
+	public override void ActivateEffect(PartyMember member) 
 	{
 		member.aloneMoraleMod=soloMoraleChange;
 		member.inTeamMoraleMod=teamMoraleChange;
@@ -586,7 +625,7 @@ public class Loner: Trait
 		name="Loner";
 		oppositePerk=typeof(SocialAnimal);
 	}
-	public override void ActivatePerk(PartyMember member) 
+	public override void ActivateEffect(PartyMember member) 
 	{
 		member.aloneMoraleMod=soloMoraleChange;
 		member.inTeamMoraleMod=teamMoraleChange;
@@ -602,7 +641,7 @@ public class Violent: Trait
 		name="Violent";
 		//oppositePerk=typeof(Pacifist);
 	}
-	public override void ActivatePerk(PartyMember member) 
+	public override void ActivateEffect(PartyMember member) 
 	{
 		member.isViolent=true;
 	}
@@ -615,7 +654,7 @@ public class Kleptomaniac: Trait
 	{
 		name="Kleptomaniac";
 	}
-	public override void ActivatePerk(PartyMember member) 
+	public override void ActivateEffect(PartyMember member) 
 	{
 		member.isKleptomaniac=true;
 	}
@@ -642,7 +681,7 @@ public class WeakArm: Trait
 		name="Weak arm";
 		oppositePerk=typeof(Technique);//Powerhouse);
 	}
-	public override void ActivatePerk(PartyMember member) {member.meleeHitchanceMod+=hitChanceDelta;}//member.meleeDamageMod+=meleeDamageChange;}
+	public override void ActivateEffect(PartyMember member) {member.meleeHitchanceMod+=hitChanceDelta;}//member.meleeDamageMod+=meleeDamageChange;}
 	public override string GetMouseoverDescription () {return "Hits like a pansy\n\n"+hitChanceDelta+" to melee hit chance";}//return "Hits like a pansy\n\n"+meleeDamageChange+" to melee damage";}
 }
 
@@ -655,7 +694,7 @@ public class PoorShot: Trait
 		name="Poor shot";
 		oppositePerk=typeof(Deadeye);
 	}
-	public override void ActivatePerk(PartyMember member) {member.rangedHitchanceMod+=rangedhitchanceChange;}
+	public override void ActivateEffect(PartyMember member) {member.rangedHitchanceMod+=rangedhitchanceChange;}
 	public override string GetMouseoverDescription () {return "Can't hit the broad side of a barn\n\n"+rangedhitchanceChange+" to ranged hit chance";}//+rangedDamageChange+" to ranged damage";}
 }
 /*
@@ -678,7 +717,7 @@ public class WeakBack: Trait
 		name="Weak back";
 		oppositePerk=typeof(Carrier);//StrongBack);
 	}
-	public override void ActivatePerk(PartyMember member) {member.ChangeMaxCarryCapacity(inventorySizeChange);}
+	public override void ActivateEffect(PartyMember member) {member.ChangeMaxCarryCapacity(inventorySizeChange);}
 	public override string GetMouseoverDescription () {return "Doesn't even lift\n\n"+inventorySizeChange+" to carry capacity";}
 }
 
@@ -689,14 +728,14 @@ public class Cook: Trait
 	{
 		name="Cook";
 	}
-	public override void ActivatePerk(PartyMember member) {member.isCook=true;}
+	public override void ActivateEffect(PartyMember member) {member.isCook=true;}
 	public override string GetMouseoverDescription () {return "Does wonders with random ingredients\n\nSlows party's hunger increase";}
 }
 
 public class LockExpert: Trait
 {
 	public LockExpert() {name="Lock expert";}
-	public override void ActivatePerk(PartyMember member) {member.isLockExpert=true;}
+	public override void ActivateEffect(PartyMember member) {member.isLockExpert=true;}
 	public override string GetMouseoverDescription () {return "Can pick any lock\n\nOpens locks faster";}
 }
 

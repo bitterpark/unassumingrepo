@@ -69,7 +69,28 @@ public class SlotItem : MonoBehaviour, IBeginDragHandler,IDragHandler,IEndDragHa
 	
 	public void StartMouseoverText()
 	{
-		if (assignedItem!=null) TooltipManager.main.CreateTooltip(assignedItem.GetMouseoverDescription(),this.transform);
+		if (assignedItem != null)
+		{
+			TooltipManager.main.CreateItemTooltip(assignedItem, transform);
+			/*
+			if (assignedItem.GetType() == typeof(InventoryItem))
+				TooltipManager.main.CreateTooltip(assignedItem.GetMouseoverDescription(), this.transform);
+			else
+			{
+				if (assignedItem.GetType().BaseType == typeof(EquippableItem))
+				{
+					EquippableItem item = assignedItem as EquippableItem;
+					TooltipManager.main.CreateTooltip(assignedItem.GetMouseoverDescription(), this.transform
+						, item.addedCombatCards.ToArray());
+				}
+				if (assignedItem.GetType().BaseType == typeof(Weapon))
+				{
+					Weapon item = assignedItem as Weapon;
+					TooltipManager.main.CreateTooltip(assignedItem.GetMouseoverDescription(), this.transform
+						, item.addedCombatCards.ToArray());
+				}
+			}*/
+		}
 	}
 	public void StopMouseoverText() {TooltipManager.main.StopAllTooltips();}//drawMouseoverText=false;}
 	

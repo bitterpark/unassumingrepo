@@ -189,6 +189,7 @@ public class PartyManager : MonoBehaviour
 		//partyVisibilityMod=0;
 		//foodSupply=0;//2;
 		daysLeft=campaignDays;
+		daysPassed = 0;
 		ammo=0;//500;//5;
 		gas=0;
 		
@@ -358,7 +359,6 @@ public class PartyManager : MonoBehaviour
 		removedMember.currentRegion.localPartyMembers.Remove(removedMember);
 		if (assignedTasks.ContainsKey(removedMember)) RemoveMemberTask(removedMember);
 		if (selectedMembers.Contains(removedMember)) selectedMembers.Remove(removedMember);
-		MapManager.main.RemoveMemberToken(removedMember);
 		PartyMemberCanvasHandler deletedHandler = partyMemberCanvases[removedMember];
 		partyMemberCanvases.Remove(removedMember);
 		GameObject.Destroy(deletedHandler.gameObject);

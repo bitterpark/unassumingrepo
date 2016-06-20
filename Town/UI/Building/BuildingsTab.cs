@@ -11,6 +11,7 @@ public class BuildingsTab : MonoBehaviour,TownTab {
 
 	public void OpenTab()
 	{
+		gameObject.SetActive(true);
 		transform.SetAsLastSibling();
 		RefreshBuildingList();
 		BuildingBuildButton.EBuildingBuilt += RefreshBuildingList;
@@ -40,5 +41,6 @@ public class BuildingsTab : MonoBehaviour,TownTab {
 	{
 		CleanupOldBuildingList();
 		BuildingBuildButton.EBuildingBuilt -= RefreshBuildingList;
+		gameObject.SetActive(false);
 	}
 }

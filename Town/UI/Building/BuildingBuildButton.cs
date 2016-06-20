@@ -10,13 +10,13 @@ public class BuildingBuildButton : MonoBehaviour, IPointerEnterHandler, IPointer
 	public delegate void BuildingBuiltDeleg();
 	public static event BuildingBuiltDeleg EBuildingBuilt;
 
-	TownBuilding assignedBuilding;
+	IBuildable assignedBuilding;
 
-	public void AssignBuilding(TownBuilding newBuilding)
+	public void AssignBuilding(IBuildable newBuilding)
 	{
 		assignedBuilding = newBuilding;
-		GetComponent<Image>().sprite = assignedBuilding.icon;
-		if (!newBuilding.built)
+		GetComponent<Image>().sprite = assignedBuilding.GetIcon();
+		if (!newBuilding.IsBuilt())
 		{
 			bool canBuild = false;
 
@@ -26,11 +26,12 @@ public class BuildingBuildButton : MonoBehaviour, IPointerEnterHandler, IPointer
 			//if (currentSelectedMember.CheckEnoughFatigue(totalBuildFatigueCost))
 			{
 				//Prep used item list and required item count dict
-				Dictionary<InventoryItem.LootItems, int> availableIngredients = new Dictionary<InventoryItem.LootItems, int>(assignedBuilding.requiredMaterials);
+				Dictionary<InventoryItem.LootItems, int> availableIngredients 
+					= new Dictionary<InventoryItem.LootItems, int>(assignedBuilding.GetMaterials());
 				//Run a check through local inventory and member personal inventory, to see if 
-				foreach (InventoryItem.LootItems ingredientKey in assignedBuilding.requiredMaterials.Keys)
+				foreach (InventoryItem.LootItems ingredientKey in assignedBuilding.GetMaterials().Keys)
 				{
-					foreach (InventoryItem localItem in MapManager.main.mapRegions[0].GetStashedItems())//InventoryScreenHandler.mainISHandler.selectedMember.currentRegion.GetStashedItems())
+					foreach (InventoryItem localItem in MapManager.main.GetTown().GetStashedItems())//InventoryScreenHandler.mainISHandler.selectedMember.currentRegion.GetStashedItems())
 					{
 						if (localItem.GetType() == InventoryItem.GetLootingItem(ingredientKey).GetType())
 						{
@@ -49,7 +50,7 @@ public class BuildingBuildButton : MonoBehaviour, IPointerEnterHandler, IPointer
 						break;
 					}
 				}
-				canBuild = (enoughIngredients && TownManager.main.money>=assignedBuilding.buildMoneyCost);
+				canBuild = (enoughIngredients && TownManager.main.money >= assignedBuilding.GetBuildCost());
 			}
 			//Refresh button
 			if (canBuild)
@@ -58,24 +59,33 @@ public class BuildingBuildButton : MonoBehaviour, IPointerEnterHandler, IPointer
 				//Add button effect
 				GetComponent<Button>().onClick.RemoveAllListeners();
 				GetComponent<Button>().onClick.AddListener(
-				() =>
-				{
-					//PartyMember creator=InventoryScreenHandler.mainISHandler.selectedMember;
-					//creator.ChangeFatigue(totalBuildFatigueCost);	
-					MapRegion centralRegion = MapManager.main.mapRegions[0];
-					foreach (InventoryItem usedLocalItem in usedLocalItems) centralRegion.TakeStashItem(usedLocalItem);//creator.currentRegion.TakeStashItem(usedLocalItem);
-					TownManager.main.money -= assignedBuilding.buildMoneyCost;
-					assignedBuilding.ActivateBuildEffect();
-					if (BuildingBuildButton.EBuildingBuilt != null) BuildingBuildButton.EBuildingBuilt();
-				});
-			} else GetComponent<Button>().interactable = false;
-		} else GetComponent<Button>().interactable = false;
+				() => ButtonClicked(usedLocalItems));
+			}
+			else GetComponent<Button>().interactable = false;
+		}
+		else
+		{
+			GetComponent<Button>().onClick.RemoveAllListeners();
+			GetComponent<Button>().interactable = true;
+		}
+	}
+
+	void ButtonClicked(List<InventoryItem> usedLocalItems)
+	{
+		//PartyMember creator=InventoryScreenHandler.mainISHandler.selectedMember;
+		//creator.ChangeFatigue(totalBuildFatigueCost);	
+		MapRegion centralRegion = MapManager.main.GetTown();
+		foreach (InventoryItem usedLocalItem in usedLocalItems) centralRegion.TakeStashItem(usedLocalItem);//creator.currentRegion.TakeStashItem(usedLocalItem);
+		TownManager.main.money -= assignedBuilding.GetBuildCost();
+		assignedBuilding.BuildingFinished();
+		if (BuildingBuildButton.EBuildingBuilt != null) 
+			BuildingBuildButton.EBuildingBuilt();
 	}
 
 	#region IPointerEnterHandler implementation
 	public void OnPointerEnter(PointerEventData eventData)
 	{
-		TooltipManager.main.CreateTooltip(assignedBuilding.description, this.transform);
+		TooltipManager.main.CreateTooltip(assignedBuilding.GetDescription(), this.transform);
 	}
 	#endregion
 

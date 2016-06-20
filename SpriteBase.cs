@@ -80,6 +80,10 @@ public class SpriteBase : MonoBehaviour {
 	public Sprite crosshair;
 	public Sprite fire;
 	public Sprite cover;
+	public Sprite arrow;
+	public Sprite lateralArrows;
+	public Sprite bullets;
+	public Sprite flamingBullet;
 
 	// Use this for initialization
 	void Start () 

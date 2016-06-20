@@ -421,7 +421,23 @@ public class MapRegion : MonoBehaviour
 			}
 		}
 	}
-	
+
+	public void AssignEncounter(Encounter newEncounter)
+	{
+		hasEncounter = true;
+
+		float threatRoll = Random.value;
+		if (threatRoll < 0.75f) ambientThreatNumber = 1;
+		if (threatRoll < 0.5f) ambientThreatNumber = 2;
+		if (threatRoll < 0.25f) ambientThreatNumber = 3;
+
+		//teamSizeText.text = regionalEncounter.minRequiredMembers + "-" + regionalEncounter.maxRequiredMembers;
+		encounterInRegion = newEncounter;
+
+		//remove this later
+		regionalEncounter = new Encounter();
+	}
+	//Currently unused
 	public void GenerateEncounter()
 	{
 		hasEncounter=true;
@@ -433,10 +449,6 @@ public class MapRegion : MonoBehaviour
 		if (threatRoll<0.25f) ambientThreatNumber=3;
 
 		teamSizeText.text=regionalEncounter.minRequiredMembers+"-"+regionalEncounter.maxRequiredMembers;
-		//if (threatLevel==ThreatLevels.Low) campSetupTimeRemaining+=2;
-		//if (threatLevel==ThreatLevels.Medium) campSetupTimeRemaining+=4;
-		//if (threatLevel==ThreatLevels.High) campSetupTimeRemaining+=6;
-		encounterInRegion = new Encounter(true);
 	}
 	
 	public void SetUpCamp(int manhoursInvested)
@@ -584,12 +596,20 @@ public class MapRegion : MonoBehaviour
 		if (hasEncounter)
 		{
 			areaDescription = encounterInRegion.GetTooltipDescription();
+			RewardCard[] missionRewards = encounterInRegion.GetMissionEndRewards();
+			if (missionRewards.Length > 0)
+				TooltipManager.main.CreateTooltip(areaDescription,this.transform, missionRewards);
+			else
+				TooltipManager.main.CreateTooltip(areaDescription, this.transform);
 		}
 		else
 		{
 			areaDescription = "Home, sweet home";
+			TooltipManager.main.CreateTooltip(areaDescription, this.transform);
 		}
-		TooltipManager.main.CreateTooltip(areaDescription, this.transform);
+		
+
+			
 	}
 
 	//ICON TOOLTIPS

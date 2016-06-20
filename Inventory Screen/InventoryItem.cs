@@ -884,8 +884,24 @@ public class Radio:InventoryItem
 
 public abstract class EquippableItem:InventoryItem
 {
+	public List<CombatCard> addedCombatCards = new List<CombatCard>();
+	
 	public abstract void EquipEffect(PartyMember member);
 	public abstract void UnequipEffect(PartyMember member);
+
+	public override string GetMouseoverDescription()
+	{
+		string desc="";
+		if (addedCombatCards.Count > 0)
+		{
+			desc += "\nAdds cards:";
+			foreach (CombatCard card in addedCombatCards)
+			{
+				desc += "\n-" + card.name;
+			}
+		}
+		return desc;
+	}
 	//public override bool UseAction(PartyMember member) {return false;}
 }
 
@@ -909,7 +925,9 @@ public class Bed:EquippableItem
 	
 	public override string GetMouseoverDescription ()
 	{
-		return itemName+"\nFully restores fatigue when resting outside of camps";
+		string desc = itemName + "\nFully restores fatigue when resting outside of camps";
+		desc += base.GetMouseoverDescription();
+		return desc;
 	}
 }
 
@@ -932,7 +950,9 @@ public class Flashlight: EquippableItem
 	
 	public override string GetMouseoverDescription ()
 	{
-		return itemName+"\nCurrently has no use";
+		string desc=itemName+"\nCurrently has no use";
+		desc += base.GetMouseoverDescription();
+		return desc;
 	}
 }
 
@@ -942,6 +962,7 @@ public class Backpack: EquippableItem
 	public Backpack()
 	{
 		itemName="Backpack";
+		addedCombatCards.Add(new Breather());
 	}
 	
 	public override Sprite GetItemSprite() {return SpriteBase.mainSpriteBase.backpackSprite;}
@@ -956,7 +977,9 @@ public class Backpack: EquippableItem
 	
 	public override string GetMouseoverDescription ()
 	{
-		return itemName+"\nIncreases carry capacity by "+(carryCapIncrease).ToString();
+		string desc=itemName+"\nIncreases carry capacity by "+(carryCapIncrease).ToString();
+		desc += base.GetMouseoverDescription();
+		return desc;
 	}
 }
 
@@ -980,7 +1003,9 @@ public class ArmorVest:EquippableItem
 	
 	public override string GetMouseoverDescription ()
 	{
-		return itemName+"\nReduces incoming physical damage by "+damageReduction;
+		string desc=itemName+"\nReduces incoming physical damage by "+damageReduction;
+		desc += base.GetMouseoverDescription();
+		return desc;
 	}
 }
 
@@ -1046,6 +1071,11 @@ public abstract class Weapon:InventoryItem
 		int actualDamage=Mathf.RoundToInt(baseDamage+modifier);//Mathf.Clamp(rawDamage,GetMinDamage(),GetMaxDamage());
 		return actualDamage;
 	}
+
+
+
+	public List<CombatCard> addedCombatCards = new List<CombatCard>();
+
 	public virtual void Unequip(PartyMember member)//virtual void Unequip (PartyMember member) {}
 	{
 		member.UnequipWeapon(this);
@@ -1057,7 +1087,20 @@ public abstract class RangedWeapon:Weapon
 	public abstract int GetAmmoUsePerShot();
 	public override string GetMouseoverDescription ()
 	{
-		return itemName+"\nDamage:"+baseDamage+"\nAccuracy modifier:"+accuracyMod+"\nAmmo per shot:"+GetAmmoUsePerShot()+"\n Weight:"+GetWeight();
+		string desc = itemName;
+		desc += "\nDamage:" + baseDamage;
+		desc += "\nAccuracy modifier:" + accuracyMod;
+		desc += "\nAmmo per shot:" + GetAmmoUsePerShot(); 
+		desc+="\n Weight:" + GetWeight();
+		if (addedCombatCards.Count>0)
+		{
+			desc+="\nAdds cards:";
+			foreach (CombatCard card in addedCombatCards)
+			{
+				desc +="\n-"+card.name;
+			}
+		}
+		return desc;
 	}
 	//public override bool UseAction (PartyMember member) {return false;}
 }
@@ -1138,6 +1181,9 @@ public class AssaultRifle:RangedWeapon
 		oneShotDamage=60;
 		accuracyMod=-0.1f;
 		baseDamage=oneShotDamage*ammoPerShot;
+
+		addedCombatCards.Add(new FullAuto());
+		addedCombatCards.Add(new Doubletap());
 	}
 	int oneShotDamage;
 	//int weaponMaxDamage=360;

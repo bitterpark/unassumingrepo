@@ -6,51 +6,59 @@ public class TooltipManager : MonoBehaviour
 {
 	public static TooltipManager main;
 	
-	public GameObject tooltipPrefab;
-	static GameObject activeTooltip=null;
+	public Tooltip tooltipPrefab;
+	static Tooltip activeTooltip=null;
 	float edgeOffsetSize=5f;
 	float tooltipWidth=80f;
 	
 	void Start() {main=this;}
-	
+
+	public void CreateItemTooltip(InventoryItem item, Transform parent)
+	{
+		if (item != null)
+		{
+			if (item.GetType().BaseType == typeof(InventoryItem))
+				TooltipManager.main.CreateTooltip(item.GetMouseoverDescription(), parent);
+			else
+			{
+				if (item.GetType().BaseType == typeof(EquippableItem))
+				{
+					EquippableItem castItem = item as EquippableItem;
+					main.CreateTooltip(item.GetMouseoverDescription(), parent
+						, castItem.addedCombatCards.ToArray());
+				}
+				if (item.GetType().BaseType.BaseType == typeof(Weapon))
+				{
+					Weapon castItem = item as Weapon;
+					CreateTooltip(item.GetMouseoverDescription(), parent
+						, castItem.addedCombatCards.ToArray());
+				}
+			}
+		}
+	}
+
+	public void CreateTooltip(string tooltipText, Transform tooltipParent, CombatCard[] displayCards)
+	{
+		StopAllTooltips();
+		activeTooltip = Instantiate(tooltipPrefab);
+		activeTooltip.AssignDisplayValues(tooltipText, tooltipParent, displayCards);
+	}
+	public void CreateTooltip(string tooltipText, Transform tooltipParent, RewardCard[] displayCards)
+	{
+		StopAllTooltips();
+		activeTooltip = Instantiate(tooltipPrefab);
+		activeTooltip.AssignDisplayValues(tooltipText, tooltipParent, displayCards);
+	}
+
 	public void CreateTooltip(string tooltipText, Transform tooltipParent)
 	{
 		StopAllTooltips();
 		activeTooltip=Instantiate(tooltipPrefab);
-		foreach (Text textComponent in activeTooltip.GetComponentsInChildren<Text>()) 
-		{
-			textComponent.text=tooltipText;
-			//CAUTION! - this width is not the actual width of the tooltip, the bg image is this + manually set margin!!!
-			tooltipWidth=textComponent.preferredWidth;
-		}
-		//activeTooltip.GetComponent<Text>().text=tooltipText;
-		//activeTooltip.GetComponentInChildren<Text>().text=tooltipText;
-		activeTooltip.transform.SetParent(tooltipParent,false);
-		//tooltipWidth=activeTooltip.GetComponent<RectTransform>().rect.width;
-		//print ("width is:"+activeTooltip.GetComponent<RectTransform>().rect.width);
-		RectTransform.Edge tooltipSide=RectTransform.Edge.Right;
-		
-		//print ("Object position:"+tooltipParent.position);
-		/*
-		print ("Object screen position:"+Camera.main.WorldToScreenPoint(tooltipParent.position-new Vector3(Screen.width*0.5f,Screen.height*0.5f,0)));
-		print ("Tooltip edge position:"+(Camera.main.WorldToScreenPoint(tooltipParent.position-new Vector3(Screen.width*0.5f,Screen.height*0.5f,0)).x
-		+tooltipParent.GetComponent<RectTransform>().rect.width
-		+tooltipWidth+edgeOffsetSize));
-		print ("parent width:"+tooltipParent.GetComponent<RectTransform>().rect.width);
-		print ("tooltip width and offset:"+(tooltipWidth+edgeOffsetSize));*/
-		//print ("Screen width:"+Screen.width);
-		if (Camera.main.WorldToScreenPoint(tooltipParent.position-new Vector3(Screen.width*0.5f,Screen.height*0.5f,0)).x
-		+tooltipParent.GetComponent<RectTransform>().rect.width+tooltipWidth+edgeOffsetSize>Screen.width) 
-		tooltipSide=RectTransform.Edge.Left;//.GetComponent<RectTransform>().rect.xMax+tooltipWidth+edgeOffsetSize>Screen.width)tooltipSide=RectTransform.Edge.Right;
-		activeTooltip.GetComponent<RectTransform>().SetInsetAndSizeFromParentEdge(tooltipSide,-(tooltipWidth+edgeOffsetSize),tooltipWidth);
-		//if (realScaling) activeTooltip.transform.localScale/=80;
-		activeTooltip.GetComponent<Canvas>().enabled=true;
-		activeTooltip.GetComponent<Canvas>().overrideSorting=true;
-		activeTooltip.GetComponent<Canvas>().sortingOrder=100;
+		activeTooltip.AssignDisplayValues(tooltipText,tooltipParent);
 	}	
 	
 	public void StopAllTooltips() 
 	{
-		if (activeTooltip!=null) GameObject.Destroy(activeTooltip);
+		if (activeTooltip!=null) GameObject.Destroy(activeTooltip.gameObject);
 	}
 }

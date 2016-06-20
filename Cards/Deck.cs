@@ -7,28 +7,49 @@ public class Deck<T> where T:class
 
 	List<T> drawPile=new List<T>();
 	List<T> discardPile=new List<T>();
+	List<T> allCards = new List<T>();
 
 	public List<T> GetDeckCards()
 	{
-		List<T> allCards = new List<T>();
-		allCards.AddRange(drawPile);
-		allCards.AddRange(discardPile);
+		//List<T> allCards = new List<T>();
+		//allCards.AddRange(drawPile);
+		//allCards.AddRange(discardPile);
 		return allCards;
 	}
 
-	public void Populate(params T[] cards)
+	public void AddCards(params T[] cards)
 	{
-		Populate(true, cards);
+		allCards.AddRange(cards);
+		PopulateDraw(cards);
 	}
 
-	public void Populate(bool shuffle, params T[] cards)
+	public void RemoveCards(T[] removedCards)
 	{
-		foreach (T card in cards) AddToTop(card);
+		foreach (T card in removedCards)
+		{
+			if (!allCards.Contains(card))
+				throw new System.Exception("Attempting to remove cards that are not in the deck!");
+			allCards.Remove(card);
+			drawPile.Remove(card);
+			discardPile.Remove(card);
+		}
+	}
+
+	protected void PopulateDraw(params T[] cards)
+	{
+		PopulateDraw(true, cards);
+	}
+
+	protected void PopulateDraw(bool shuffle, params T[] cards)
+	{
+		foreach (T card in cards) PutOnTopOfDrawpile(card);
 		if (shuffle) Shuffle();
 	}
 	//Top is considered index=n, bottom - index=0
-	public void AddToTop(T card) { drawPile.Add(card); }
-	public void AddToBottom(T card) { drawPile.Insert(0, card); }
+	public void PutOnTopOfDrawpile(T card) { drawPile.Add(card); }
+	public void PutAtBottomOfDrawpile(T card) { drawPile.Insert(0, card); }
+
+	
 
 	public List<T> DrawCards(int number)
 	{
@@ -36,7 +57,7 @@ public class Deck<T> where T:class
 
 		if (drawPile.Count < number)
 		{
-			if (drawPile.Count + discardPile.Count < number) throw new System.Exception("Trying to draw more cards than exist in the deck!");
+			if (allCards.Count < number) throw new System.Exception("Trying to draw more cards than exist in the deck!");
 			Reshuffle();
 		}
 
@@ -68,7 +89,7 @@ public class Deck<T> where T:class
 	{
 		DiscardCards(drawPile.ToArray());
 		drawPile.Clear();
-		Populate(discardPile.ToArray());
+		PopulateDraw(discardPile.ToArray());
 		discardPile.Clear();
 		Shuffle();
 	}
@@ -79,20 +100,25 @@ public class Deck<T> where T:class
 		drawPile.Clear();
 		foreach (T card in buffer)
 		{
-			if (Random.value < 0.5f) AddToTop(card);
-			else AddToBottom(card);
+			if (Random.value < 0.5f) PutOnTopOfDrawpile(card);
+			else PutAtBottomOfDrawpile(card);
 		}
 	}
 }
 
 public class CombatDeck : Deck<CombatCard>
-{
-	public void Populate(System.Type cardType)
+{	
+	public void AddCards(System.Type cardType)
 	{
-		Populate(cardType, 1);
+		AddCards(cardType, 1);
 	}
-	public void Populate(System.Type cardType, int count)
+	public void AddCards(System.Type cardType, int count)
 	{
-		Populate(CombatCard.GetMultipleCards(cardType, this, count));
+		CombatCard[] newCards = CombatCard.GetMultipleCards(cardType, count);
+		foreach (CombatCard card in newCards)
+		{
+			card.originDeck = this;
+		}
+		AddCards(newCards);
 	}
 }

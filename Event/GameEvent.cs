@@ -49,7 +49,7 @@ public class NewSurvivor:GameEvent
 		{
 			case"Accept them": 
 			{
-				PartyMember newGuy=new PartyMember(eventRegion);
+				PartyMember newGuy=new PartyMember();
 				PartyManager.mainPartyManager.AddNewPartyMember(newGuy);//.partyMembers.Add (newGuy);
 				break;
 			}
@@ -467,7 +467,7 @@ public class SurvivorRescue:GameEvent
 				//success
 				if (Random.value<0.5f)
 				{
-					PartyMember newGuy=new PartyMember(eventRegion);
+					PartyMember newGuy=new PartyMember();
 					PartyManager.mainPartyManager.AddNewPartyMember(newGuy);
 					PartyMember.BodyPartTypes damagedPart=newGuy.TakeRandomPartDamage(newMemberHealthPenalty,true);
 					eventResult="You charge the creature before it can deliver another blow to the distressed survivor. Taken by surprise, it quickly succumbs to your attacks.\nThe survivor is shaken, but alive.\n\n"+newGuy.name+" Joins your party."+"\n\n"+newGuy.name+" takes "+newMemberHealthPenalty+" "+damagedPart+" damage";
@@ -486,7 +486,7 @@ public class SurvivorRescue:GameEvent
 						eventResult+=member.name+" takes "+failPartyDamage+" "+partType+" damage\n";
 					}//member.health+=failPartyDamage;}
 					//important
-                    PartyMember newGuy = new PartyMember(eventRegion);
+                    PartyMember newGuy = new PartyMember();
                     eventResult +="\n\n"+newGuy.name + " joins your party\n";
 					PartyManager.mainPartyManager.AddNewPartyMember(newGuy);
 
@@ -542,7 +542,7 @@ public class SearchForSurvivor:GameEvent
 				if (Random.value<0.5f)
 				{
 					eventResult="The voice grows louder as you close in on the source, and eventually starts responding to your calls, quickly guiding you to another survivor\n\nA new survivor joins your party";
-					PartyMember newGuy=new PartyMember(eventRegion);
+					PartyMember newGuy=new PartyMember();
 					PartyManager.mainPartyManager.AddNewPartyMember(newGuy);
 				}
 				else
@@ -1224,7 +1224,7 @@ public class WoundedSurvivor:TradeEvent
         string eventResult=null;
 		if (choiceString=="Use "+requiredItemCount+" "+requiredItemType+" to help the survivor")
 		{
-			PartyMember newMember=new PartyMember(eventRegion);
+			PartyMember newMember=new PartyMember();
 			PartyManager.mainPartyManager.AddNewPartyMember(newMember);
 			newMember.TakeDamage(14,false,PartyMember.BodyPartTypes.Legs);
 

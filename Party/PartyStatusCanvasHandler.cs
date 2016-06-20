@@ -8,13 +8,15 @@ public class PartyStatusCanvasHandler : MonoBehaviour {
 	bool displayEnabled=false;
 
 	public Text moneyText;
+	public Text timeOfDayText;
+	public Text crewText;
 
 	public Text mapXText;
 	public Text mapYText;
 	public Text timeText;
 	public Text ammoText;
 	public Text fuelText;
-	public Text timeOfDayText;
+	
 	public Text temperatureText;
 	public Button assignmentButton;
 	public Button turnButton;
@@ -185,6 +187,8 @@ public class PartyStatusCanvasHandler : MonoBehaviour {
 			//mapXText.text="X:"+PartyManager.mainPartyManager.mapCoordX.ToString();
 			//mapYText.text="Y:"+PartyManager.mainPartyManager.mapCoordY.ToString();
 			moneyText.text = TownManager.main.money.ToString() + " $";
+			crewText.text = "Crew: "+TownManager.main.GetCrew();
+
 			timeText.text="Day:"+PartyManager.mainPartyManager.daysPassed;//PartyManager.mainPartyManager.dayTime.ToString()+":00";
 			ammoText.text="Ammo:"+PartyManager.mainPartyManager.ammo.ToString();
 			fuelText.text="Gas:"+PartyManager.mainPartyManager.gas.ToString();

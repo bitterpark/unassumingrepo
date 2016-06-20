@@ -43,24 +43,17 @@ public class TraitUIHandler : MonoBehaviour, IPointerEnterHandler, IPointerExitH
 	
 	//public void DrawMouseoverText() {TooltipManager.main.CreateTooltip(assignedPerk.GetMouseoverDescription(),transform);}
 	//public void StopMouseoverText() {TooltipManager.main.StopAllTooltips();}//drawMouseoverText=false;}
-	
-	/*
-	void OnGUI()
-	{
-		if (drawMouseoverText && assignedPerk!=null)
-		{
-			float height=60;
-			Vector3 myScreenPos=transform.position;//Camera.main.WorldToScreenPoint(transform.position);
-			Rect textRect=new Rect(myScreenPos.x+20,Screen.height-myScreenPos.y-height*0.5f,200,height);
-			GUI.Box(textRect,assignedPerk.GetMouseoverDescription());
-		}
-		//drawMouseoverText=false;
-	}*/
 
 	#region IPointerEnterHandler implementation
 	public void OnPointerEnter (PointerEventData eventData)
 	{
-		TooltipManager.main.CreateTooltip(assignedTrait.GetMouseoverDescription(),transform);
+		if (assignedTrait.GetAddedCombatCards().Count > 0)
+		{
+			CombatCard[] addedCards = assignedTrait.GetAddedCombatCards().ToArray();
+			TooltipManager.main.CreateTooltip(assignedTrait.GetMouseoverDescription(), transform, addedCards);
+		}
+		else 
+			TooltipManager.main.CreateTooltip(assignedTrait.GetMouseoverDescription(),transform);
 	}
 	#endregion
 

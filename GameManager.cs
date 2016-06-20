@@ -68,23 +68,13 @@ public class GameManager : MonoBehaviour {
 			StartNewGame();
 		}
 	}
-
-	/*
-	void OnGUI()
-	{
-		if (!gameStarted)
-		{
-			gameStarted=mainMenu.DrawMainMenu();
-			if (gameStarted) {StartNewGame();}
-		}
-	}*/
 	
 	void StartNewGame()
 	{
 		if (GameStart!=null) GameStart();
 	}
 	
-	public void EndCurrentGame(bool win)
+	public virtual void EndCurrentGame(bool win)
 	{
 		gameStarted=false;
 		if (GameOver!=null) {GameOver();}
@@ -101,8 +91,8 @@ public class GameManager : MonoBehaviour {
 		gameOver=true;
 		gameWin=win;
 		string endMessage;
-		if (gameWin) endMessage="You were rescued!";
-		else endMessage="Your party died";
+		if (gameWin) endMessage="You have finished the spaceship!";
+		else endMessage="Your crew abandoned you. Game over.";
 		PartyStatusCanvasHandler.main.NewNotification(endMessage);
 		//partyStatusCanvas.gameObject.SetActive(false);
 		//EndCurrentGame();
@@ -111,14 +101,4 @@ public class GameManager : MonoBehaviour {
 		gameWin=false;
 		yield break;
 	}
-	/*
-	void OnGUI()
-	{
-		if (gameOver)
-		{
-			string endMessage="Your party died";
-			if (gameWin) {endMessage="You were rescued!";}
-			GUI.Box(new Rect(Screen.width*0.5f-25f,Screen.height*0.5f-50f,120,40),endMessage);
-		}
-	}*/
 }

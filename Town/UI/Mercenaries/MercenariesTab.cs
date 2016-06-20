@@ -10,6 +10,7 @@ public class MercenariesTab : MonoBehaviour, TownTab {
 
 	public void OpenTab()
 	{
+		gameObject.SetActive(true);
 		transform.SetAsLastSibling();
 		RefreshMercList();
 	}
@@ -36,6 +37,7 @@ public class MercenariesTab : MonoBehaviour, TownTab {
 
 	public void CloseTab()
 	{
+		gameObject.SetActive(false);
 		CleanupOldMercList();
 	}
 }
