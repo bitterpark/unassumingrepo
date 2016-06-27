@@ -327,7 +327,7 @@ public abstract class InventoryItem
 	,Ammopack,Ammo,Firecracker
 	,Firewood,CampBarricade
 	,Flashlight,Radio,Bed,Backpack
-	,Scrap,Gunpowder
+	,Scrap,Gunpowder, ComputerParts, FusionModule
 	,SettableTrap
 	,AssaultRifle,Shotgun,NineM,Pipegun
 	,Pipe,Knife,Axe
@@ -372,6 +372,8 @@ public abstract class InventoryItem
 			//INGREDIENTS
 			case LootItems.Scrap:{lootedItem=new Scrap(); break;}
 			case LootItems.Gunpowder:{lootedItem=new Gunpowder(); break;}
+			case LootItems.ComputerParts: { lootedItem = new ComputerParts(); break;}
+			case LootItems.FusionModule: { lootedItem = new FusionCore(); break; }
 		}
 		return lootedItem;
 	}
@@ -490,7 +492,7 @@ public class Bullet:InventoryItem
 	}
 	
 	int ammoAmount=1;
-	public override Sprite GetItemSprite() {return SpriteBase.mainSpriteBase.bulletSprite;}
+	public override Sprite GetItemSprite() {return SpriteBase.mainSpriteBase.bullet;}
 	
 	public override bool UseAction(PartyMember member)
 	{
@@ -1182,7 +1184,7 @@ public class AssaultRifle:RangedWeapon
 		accuracyMod=-0.1f;
 		baseDamage=oneShotDamage*ammoPerShot;
 
-		addedCombatCards.Add(new FullAuto());
+		//addedCombatCards.Add(new FullAuto());
 		addedCombatCards.Add(new Doubletap());
 	}
 	int oneShotDamage;
@@ -1427,7 +1429,7 @@ public class Scrap:InventoryItem
 	
 	public override string GetMouseoverDescription ()
 	{
-		return itemName+"\nUsed for crafting";
+		return itemName+"\nFrom battlecruiser armor plates to rusty old nails, everything finds a use";
 	}
 }
 
@@ -1447,5 +1449,43 @@ public class Gunpowder:InventoryItem
 	public override string GetMouseoverDescription ()
 	{
 		return itemName+"\nUsed for crafting bullets";
+	}
+}
+
+public class ComputerParts : InventoryItem
+{
+	public ComputerParts()
+	{
+		itemName = "Computer Parts";
+	}
+	public override Sprite GetItemSprite() { return SpriteBase.mainSpriteBase.computerParts; }
+
+	public override bool UseAction(PartyMember member)
+	{
+		return false;
+	}
+
+	public override string GetMouseoverDescription()
+	{
+		return itemName + "\nComputing circuits for space travel and related tasks";
+	}
+}
+
+public class FusionCore : InventoryItem
+{
+	public FusionCore()
+	{
+		itemName = "Fusion Core";
+	}
+	public override Sprite GetItemSprite() { return SpriteBase.mainSpriteBase.lightning; }
+
+	public override bool UseAction(PartyMember member)
+	{
+		return false;
+	}
+
+	public override string GetMouseoverDescription()
+	{
+		return itemName + "\nThe central component of every Drive, engineered from alien technology that is still not fully understood.";
 	}
 }

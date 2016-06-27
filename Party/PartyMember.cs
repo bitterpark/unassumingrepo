@@ -11,11 +11,18 @@ public interface Character
 	int GetAmmo();
 	Sprite GetPortrait();
 	void SetStamina(int newStamina); //Currently unused
-	void TakeDamage(int damage);
+	void SetHealth(int newHealth);
+	void IncrementHealth(int delta);
 	Deck<CombatCard> GetCombatDeck();
 }
 
-public class PartyMember: Character
+public interface Mercenary : Character
+{
+	string GetClass();
+	Color GetColor();
+}
+
+public class PartyMember: Mercenary
 {
 	public enum BodyPartTypes {Vitals, Hands, Legs};
 	public class BodyParts
@@ -453,7 +460,9 @@ public class PartyMember: Character
 	public int staminaBarricadeBuildCost = 2;
 	public int staminaBarricadeBashCost = 2;
 	public int barricadeVaultCost=2;
-	
+
+	int startArmor = 0;
+
 	//HUNGER
 	int hunger
 	{
@@ -693,59 +702,102 @@ public class PartyMember: Character
 	CombatDeck combatDeck = new CombatDeck();
 
 	int ammo = 10;
-	int health = 100;
+	int healthMax = 100;
+	int health;
+
+	void SetClassStats(MercClass mercClass)
+	{
+		if (mercClass == MercClass.Soldier)
+		{
+			healthMax = 100;
+			startArmor = 0;
+			stamina = 8;
+			ammo = 6;
+		}
+		if (mercClass == MercClass.Bandit)
+		{
+			healthMax = 100;
+			startArmor = 0;
+			stamina = 14;
+			ammo = 3;
+		}
+		if (mercClass == MercClass.Gunman)
+		{
+			healthMax = 100;
+			startArmor = 0;
+			stamina = 4;
+			ammo = 10;
+		}
+		if (mercClass == MercClass.Mercenary)
+		{
+			healthMax = 100;
+			startArmor = 20;
+			stamina = 8;
+			ammo = 5;
+		}
+	}
 
 	static CombatDeck GetClassDeck(MercClass mercClass)
 	{
 		CombatDeck result = new CombatDeck();
 
+
+
 		if (mercClass == MercClass.Soldier)
 		{
-			result.AddCards(typeof(TakeCover),2);
-			result.AddCards(typeof(Reposition));
-			result.AddCards(typeof(Kick));
-			result.AddCards(typeof(Smash));
-			result.AddCards(typeof(Throw));
+			result.AddCards(typeof(Smokescreen));
+			result.AddCards(typeof(BoundingOverwatch));
 			result.AddCards(typeof(Grenade));
-			result.AddCards(typeof(SecondWind));
+			result.AddCards(typeof(PickOff));
+			result.AddCards(typeof(MarkTarget));
 			result.AddCards(typeof(Doubletap));
-			result.AddCards(typeof(BurstFire));
+			result.AddCards(typeof(Diversion));
+			result.AddCards(typeof(Smash),2);
+			result.AddCards(typeof(Jab));
+			result.AddCards(typeof(Camaraderie));
+			result.AddCards(typeof(Sacrifice));
 		}
 		if (mercClass == MercClass.Bandit)
 		{
 			result.AddCards(typeof(SuckerPunch), 2);
+			result.AddCards(typeof(Smash));
 			result.AddCards(typeof(Knee));
 			result.AddCards(typeof(Jab));
 			result.AddCards(typeof(Roundhouse));
-			result.AddCards(typeof(NoMercy),2);
-			result.AddCards(typeof(Hipfire));
+			result.AddCards(typeof(Kick));
+			result.AddCards(typeof(Execution),2);
 			result.AddCards(typeof(SprayNPray));
+			result.AddCards(typeof(Hipfire));
 			result.AddCards(typeof(Throw));
 		}
 		if (mercClass == MercClass.Gunman)
 		{
-			result.AddCards(typeof(Doubletap), 2);
-			result.AddCards(typeof(ScopeIn));
-			result.AddCards(typeof(BurstFire));
-			result.AddCards(typeof(Suppression));
-			result.AddCards(typeof(HighGround));
-			result.AddCards(typeof(Pistolwhip), 2);
+			result.AddCards(typeof(Pistolwhip));
+			result.AddCards(typeof(Jab));
 			result.AddCards(typeof(Sidearm));
-			result.AddCards(typeof(LessLethal));
+			result.AddCards(typeof(BurstFire));
+			result.AddCards(typeof(LimbShot),2);
+			result.AddCards(typeof(ScopeIn));
+			result.AddCards(typeof(Doubletap));
+			result.AddCards(typeof(DetonateAmmo));
+			result.AddCards(typeof(TrickMags));
+			result.AddCards(typeof(Tripmine));
+			result.AddCards(typeof(HollowPoint));
 		}
 		if (mercClass==MercClass.Mercenary)
 		{
-			result.AddCards(typeof(BurstFire));
-			result.AddCards(typeof(Suppression));
+			result.AddCards(typeof(TakeCover),2);
+			result.AddCards(typeof(Discretion));
+			result.AddCards(typeof(Gambit));
 			result.AddCards(typeof(RunAndGun));
-			result.AddCards(typeof(Smash));
-			result.AddCards(typeof(Jab));
-			result.AddCards(typeof(Kick));
-			result.AddCards(typeof(SecondWind));
-			result.AddCards(typeof(LegIt));
-			result.AddCards(typeof(DonQuixote));
+			result.AddCards(typeof(BurstFire));
+			result.AddCards(typeof(Overconfidence));
 			result.AddCards(typeof(SuicideCharge));
+			result.AddCards(typeof(Jab));
+			result.AddCards(typeof(Smash),2);
+			result.AddCards(typeof(LastStand));
 		}
+
 		return result;
 	}
 
@@ -766,7 +818,8 @@ public class PartyMember: Character
 		var classtypes=System.Enum.GetValues(typeof(MercClass));
 		myClass = (MercClass)classtypes.GetValue(Random.Range(0,classtypes.Length));
 		combatDeck = GetClassDeck(myClass);
-		
+		SetClassStats(myClass);
+
 		//Pick color out of ones left
 		//worldCoords=startingCoords;
 		currentRegion=startingRegion;
@@ -890,7 +943,7 @@ public class PartyMember: Character
 			}
 		}
 		//make sure perks trigger before these to properly use modified values of maxHealth and maxStamina
-		//health=maxHealth;
+		health = healthMax;
 		currentMaxStamina=baseMaxStamina;
 		stamina=currentMaxStamina;
 		morale=baseMorale;
@@ -1015,14 +1068,7 @@ public class PartyMember: Character
 		{hunger+=((newStaminaValue-stamina)*hungerIncreasePerStamPoint)*hoursPassed;}*/
 		
 		//REGEN/LOSE HEALTH
-		if (hunger<100)
-		{
-			float healthRegen=5f;//healthRegenPercentage;//-maxHealthRegenReductionFromHunger*hunger*0.01f;
-			memberBodyParts.currentParts[BodyPartTypes.Vitals].Heal(Mathf.RoundToInt(healthRegen));//memberBodyParts.currentParts[BodyPartTypes.Vitals].health*healthRegen));
-			memberBodyParts.currentParts[BodyPartTypes.Hands].Heal(Mathf.RoundToInt(healthRegen));//memberBodyParts.currentParts[BodyPartTypes.Hands].health*healthRegen));
-			memberBodyParts.currentParts[BodyPartTypes.Legs].Heal(Mathf.RoundToInt(healthRegen));//memberBodyParts.currentParts[BodyPartTypes.Legs].health*healthRegen));
-			//health+=Mathf.RoundToInt(health*healthRegen);
-		}
+		IncrementHealth(TownManager.main.GetDailyMercHealRate());
 		
 		//DO HUNGER INCREASE
 		/*
@@ -1518,10 +1564,11 @@ public class PartyMember: Character
 	}
 
 	//Currently used one
+	/*
 	public void TakeDamage(int dmgTaken) 
 	{
 		IncrementHealth(-dmgTaken); 
-	}
+	}*/
 
 	public void IncrementHealth(int delta)
 	{
@@ -1531,12 +1578,15 @@ public class PartyMember: Character
 	public void SetHealth(int newHealth)
 	{
 		health = newHealth;
-		if (health <= 0) DisposePartyMember();
+		if (health > healthMax) 
+			health = healthMax;
+		if (health <= 0) 
+			DisposePartyMember();
 	}
 
 	public int GetStartArmor()
 	{
-		return 10;
+		return startArmor;
 	}
 
 	public int GetStartStamina()
@@ -1552,6 +1602,16 @@ public class PartyMember: Character
 	public Sprite GetPortrait()
 	{
 		return SpriteBase.mainSpriteBase.mercPortrait;
+	}
+
+	public string GetClass()
+	{
+		return myClass.ToString();
+	}
+
+	public Color GetColor()
+	{
+		return color;
 	}
 
 	public Deck<CombatCard> GetCombatDeck() { return combatDeck; }

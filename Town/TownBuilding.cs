@@ -120,27 +120,119 @@ public abstract class TownBuilding : BuildableObject
 	}
 }
 
-
-
-public class Bar : TownBuilding
+public abstract class BuildingUpgrade : BuildableObject
 {
-	public Bar()
+	TownBuilding mainBuilding;
+
+	public BuildingUpgrade(TownBuilding myMainBuilding)
 	{
-		name = "Bar";
-		icon = SpriteBase.mainSpriteBase.barIcon;
-		requiredMaterials.Add(InventoryItem.LootItems.Scrap,3);
+		mainBuilding = myMainBuilding;
+	}
+
+	public bool MainBuildingIsActive()
+	{
+		return mainBuilding.BuildingIsActive();
+	}
+
+	public override void BuildingFinished()
+	{
+		base.BuildingFinished();
+		if (mainBuilding.BuildingIsActive()) EnableActiveEffect();
+	}
+
+	public sealed override void EnableActiveEffect()
+	{
+		if (built) 
+			EffectActivation();
+	}
+
+	protected abstract void EffectActivation();
+
+	public sealed override void DisableActiveEffect()
+	{
+		if (built) 
+			EffectDeactivation();
+	}
+	protected abstract void EffectDeactivation();
+}
+
+
+public class Habitation : TownBuilding
+{
+	int mercCountIncrease = 1;
+	
+	public Habitation()
+	{
+		name = "Habitation";
+		icon = SpriteBase.mainSpriteBase.rest;
+		requiredMaterials.Add(InventoryItem.LootItems.Scrap,2);
 		buildMoneyCost = 500;
 
-		description="Serves drinks";
+		description="Cabins, bathrooms and the mess hall, which currently houses the local dive. The mercs congregate here, so this is a great place to mobilize them.";
+		description += "\n\nIncreases the maximum number of hireable mercenaries by " + mercCountIncrease;
+		upgrades.Add(new Canteen(this));
+	}
 
-		upgrades.Add(new Padlocks(this));
+	public override void BuildingFinished()
+	{
+		base.BuildingFinished();
+	}
+
+	public override void EnableActiveEffect()
+	{
+		TownManager.main.IncrementHireableMercsPoolSize(mercCountIncrease);
+		base.EnableActiveEffect();
+	}
+	public override void DisableActiveEffect()
+	{
+		base.DisableActiveEffect();
+		TownManager.main.IncrementHireableMercsPoolSize(-mercCountIncrease);
+	}
+}
+
+public class Canteen : BuildingUpgrade
+{
+	int mercCountIncrease = 1;
+	public Canteen(TownBuilding myMainBuilding)
+		: base(myMainBuilding)
+	{
+		name = "Canteen";
+		icon = SpriteBase.mainSpriteBase.droplet;
+		requiredMaterials.Add(InventoryItem.LootItems.Scrap, 2);
+		buildMoneyCost = 100;
+
+		description = "Upgrade our canteen (and bar) with fancy, hi-tech habitation systems, such as plumbing and refrigeration.";
+		description += "\n\nIncreases the maximum number of hireable mercenaries by " + mercCountIncrease;
+	}
+
+	protected override void EffectActivation()
+	{
+		TownManager.main.IncrementHireableMercsPoolSize(mercCountIncrease);
+	}
+	protected override void EffectDeactivation()
+	{
+		TownManager.main.IncrementHireableMercsPoolSize(-mercCountIncrease);
+	}
+}
+
+public class CommCenter : TownBuilding
+{
+	public CommCenter()
+	{
+		name = "Comms Center";
+		icon = SpriteBase.mainSpriteBase.radio;
+		requiredMaterials.Add(InventoryItem.LootItems.Scrap, 1);
+		requiredMaterials.Add(InventoryItem.LootItems.ComputerParts, 1);
+		buildMoneyCost = 500;
+
+		description = "The heart of our operation, this is the only way to locate the parts necessary for rebuilding this scrapheap and steal them";
+		description += "\n\nReveals the location of the Fusion Module";
 	}
 
 	public override void BuildingFinished()
 	{
 		base.BuildingFinished();
 		MapManager.main.UnlockStoryEncounterOne();
-		//TownManager.main.BarBuilt();
 	}
 
 	public override void EnableActiveEffect()
@@ -153,53 +245,178 @@ public class Bar : TownBuilding
 	}
 }
 
-public abstract class BuildingUpgrade : BuildableObject
+public class Engines : TownBuilding
 {
-	TownBuilding mainBuilding;
-
-	public BuildingUpgrade(TownBuilding myMainBuilding)
+	public Engines()
 	{
-		mainBuilding = myMainBuilding;
+		name = "Engines";
+		icon = SpriteBase.mainSpriteBase.flamingBullet;
+		requiredMaterials.Add(InventoryItem.LootItems.Scrap, 1);
+		requiredMaterials.Add(InventoryItem.LootItems.ComputerParts, 1);
+		requiredMaterials.Add(InventoryItem.LootItems.FusionModule, 1);
+		buildMoneyCost = 500;
+
+		description = "Aside from all the fancy radiation shielding and life support, this is what truly separates a spaceship from any old pile of metal in the middle of nowhere. Once we build this, we can finally get off this planet.";
 	}
-	
+
 	public override void BuildingFinished()
 	{
 		base.BuildingFinished();
-		if (mainBuilding.BuildingIsActive()) EnableActiveEffect();
+		TownManager.main.EnginesBuilt();
 	}
 
-	sealed public override void EnableActiveEffect()
+	public override void EnableActiveEffect()
 	{
-		if (built) EffectActivation();
+		base.EnableActiveEffect();
 	}
-
-	protected abstract void EffectActivation();
-
-	sealed public override void DisableActiveEffect()
+	public override void DisableActiveEffect()
 	{
-		if (built) EffectDeactivation();
+		base.DisableActiveEffect();
 	}
-	protected abstract void EffectDeactivation();
 }
 
-public class Padlocks : BuildingUpgrade
+public class CargoBay : TownBuilding
 {
-	public Padlocks(TownBuilding myMainBuilding):base(myMainBuilding)
+	public CargoBay()
 	{
-		name = "Padlocks";
-		icon = SpriteBase.mainSpriteBase.padlockIcon;
+		name = "Cargo Bay";
+		icon = SpriteBase.mainSpriteBase.sack;
+		requiredMaterials.Add(InventoryItem.LootItems.Scrap, 1);
+		requiredMaterials.Add(InventoryItem.LootItems.ComputerParts, 1);
+		buildMoneyCost = 500;
+
+		description = "A part of the future ship, for now we can use the space and equipment to open a market terminal for passing truckers.";
+		description += "\n\nUnlocks the Market";
+
+		upgrades.Add(new Loader(this));
+	}
+
+	public override void BuildingFinished()
+	{
+		base.BuildingFinished();
+	}
+
+	public override void EnableActiveEffect()
+	{
+		base.EnableActiveEffect();
+		TownManager.main.UnlockMarket();
+	}
+	public override void DisableActiveEffect()
+	{
+		base.DisableActiveEffect();
+		TownManager.main.LockMarket();
+	}
+}
+
+public class Loader : BuildingUpgrade
+{
+	float marketPriceReduction = 0.2f;
+	public Loader(TownBuilding myMainBuilding)
+		: base(myMainBuilding)
+	{
+		name = "Loader";
+		icon = SpriteBase.mainSpriteBase.wrench;
 		requiredMaterials.Add(InventoryItem.LootItems.Scrap, 2);
 		buildMoneyCost = 100;
 
-		description = "Protect from thieves";
+		description = "Repairing the old cargo loader will allow us to offload cargo ourselves and save on teamster fees";
+		description +="\n\nReduces market purchasing prices by " + (marketPriceReduction * 100) + "%";
 	}
 
 	protected override void EffectActivation()
 	{
-
+		TownManager.main.IncrementMarketPriceMult(-marketPriceReduction);
 	}
 	protected override void EffectDeactivation()
 	{
+		TownManager.main.IncrementMarketPriceMult(marketPriceReduction);
+	}
+}
 
+public class SickBay : TownBuilding
+{
+	int baseDailyMercHealRate = 5;
+	
+	public SickBay()
+	{
+		name = "Sick Bay";
+		icon = SpriteBase.mainSpriteBase.medicalCross;
+		requiredMaterials.Add(InventoryItem.LootItems.Scrap, 1);
+		requiredMaterials.Add(InventoryItem.LootItems.ComputerParts, 2);
+		buildMoneyCost = 500;
+
+		description = "The ship requires a treatment center capable of dealing with spacefaring injuries and diseases. We can also use it to patch up our wounded mercs.";
+		description += "\n\nIncreases daily mercenary heal rate by "+baseDailyMercHealRate;
+
+		upgrades.Add(new HullRepair(this));
+		upgrades.Add(new AirFiltration(this));
+	}
+
+	public override void BuildingFinished()
+	{
+		base.BuildingFinished();
+	}
+
+	public override void EnableActiveEffect()
+	{
+		TownManager.main.SetDailyMercHealRate(baseDailyMercHealRate);
+		base.EnableActiveEffect();
+	}
+	public override void DisableActiveEffect()
+	{
+		base.DisableActiveEffect();
+		TownManager.main.SetDailyMercHealRate(0);
+	}
+}
+
+public class HullRepair : BuildingUpgrade
+{
+	int healRateIncrease = 5;
+	public HullRepair(TownBuilding myMainBuilding)
+		: base(myMainBuilding)
+	{
+		name = "Hull Repair";
+		icon = SpriteBase.mainSpriteBase.padlockIcon;
+		requiredMaterials.Add(InventoryItem.LootItems.Scrap, 1);
+		requiredMaterials.Add(InventoryItem.LootItems.ComputerParts, 1);
+		buildMoneyCost = 100;
+
+		description = "Restoring hull integrity will improve medical conditions, and also stop people from throwing garbage into the holes in walls.";
+		description += "\n\nIncreases daily mercenary heal rate by " + healRateIncrease;
+	}
+
+	protected override void EffectActivation()
+	{
+		TownManager.main.IncrementDailyMercHealRate(healRateIncrease);
+	}
+	protected override void EffectDeactivation()
+	{
+		TownManager.main.IncrementDailyMercHealRate(-healRateIncrease);
+	}
+}
+
+public class AirFiltration : BuildingUpgrade
+{
+	int healRateIncrease = 5;
+	public AirFiltration(TownBuilding myMainBuilding)
+		: base(myMainBuilding)
+	{
+		name = "Air Filtration";
+		icon = SpriteBase.mainSpriteBase.padlockIcon;
+		requiredMaterials.Add(InventoryItem.LootItems.Scrap, 1);
+		requiredMaterials.Add(InventoryItem.LootItems.ComputerParts, 1);
+		buildMoneyCost = 100;
+
+		description = "Our docs insist this is necessary for proper quarantine procedures, but I think they're just trying to get air conditioning.";
+		description += "\n\nIncreases daily mercenary heal rate by " + healRateIncrease;
+	}
+
+	protected override void EffectActivation()
+	{
+		TownManager.main.IncrementDailyMercHealRate(healRateIncrease);
+	}
+	protected override void EffectDeactivation()
+	{
+		TownManager.main.IncrementDailyMercHealRate(-healRateIncrease);
 	}
 }

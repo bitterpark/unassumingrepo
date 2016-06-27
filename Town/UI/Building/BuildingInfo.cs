@@ -42,6 +42,8 @@ public class BuildingInfo : MonoBehaviour {
 
 	void ShowIncompletedBuildingInfo()
 	{
+		upgradesGroup.gameObject.SetActive(false);
+		
 		if (assignedBuilding.GetCrewRequirement() <= TownManager.main.GetCrew())
 		{
 			crewRequirementText.color = Color.black;
@@ -74,6 +76,8 @@ public class BuildingInfo : MonoBehaviour {
 		}
 		crewRequirementText.color = textColor;
 		descriptionText.color = textColor;
+
+		upgradesGroup.gameObject.SetActive(true);
 
 		foreach (BuildingUpgrade upgrade in assignedBuilding.upgrades)
 		{

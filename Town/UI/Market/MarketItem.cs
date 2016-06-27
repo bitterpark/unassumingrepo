@@ -10,7 +10,8 @@ public class MarketItem : MonoBehaviour, IPointerDownHandler,IPointerEnterHandle
 	public static event TransactionDeleg ETransactionMade;
 
 	public Image itemIcon;
-	public Text cost;
+	public Text costText;
+	int cost;
 	bool buySlot;
 	InventoryItem assignedItem;
 
@@ -19,16 +20,20 @@ public class MarketItem : MonoBehaviour, IPointerDownHandler,IPointerEnterHandle
 		buySlot = buy;
 		assignedItem = item;
 		itemIcon.sprite = item.GetItemSprite();
-		cost.text = "$"+MarketTab.genericItemCost;
+		if (buy)
+			cost = Mathf.RoundToInt(MarketTab.genericItemCost * TownManager.main.GetMarketPriceMult());
+		else
+			cost = MarketTab.genericItemCost;
+		costText.text = "$" + cost;
 	}
 
 	public void OnPointerDown(PointerEventData eventData)
 	{
 		if (buySlot)
 		{
-			if (TownManager.main.money >= MarketTab.genericItemCost)
+			if (TownManager.main.money >= cost)
 			{
-				TownManager.main.money -= MarketTab.genericItemCost;
+				TownManager.main.money -= cost;
 				TownManager.main.itemsOnSale.Remove(assignedItem);
 				MapManager.main.GetTown().StashItem(assignedItem);
 				if (ETransactionMade != null) ETransactionMade();

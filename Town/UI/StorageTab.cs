@@ -3,43 +3,18 @@ using UnityEngine.UI;
 using System.Collections;
 using System.Collections.Generic;
 
-public class BuildingsTab : MonoBehaviour,TownTab {
+public class StorageTab : MonoBehaviour, TownTab {
 
 	public InventorySlot inventorySlotPrefab;
 	public SlotItem slotItemPrefab;
 	public Transform inventoryGroup;
 
-	public BuildingInfo buildingInfoPrefab;
-	public Transform buildingsGroup;
-
-
 	public void OpenTab()
 	{
 		gameObject.SetActive(true);
 		transform.SetAsLastSibling();
-		RefreshBuildingList();
 		RefreshInventoryItems();
-		BuildingBuildButton.EBuildingBuilt += RefreshBuildingList;
 		InventorySlot.EItemDropped += RefreshInventoryItems;
-	}
-
-	void RefreshBuildingList()
-	{
-		CleanupOldBuildingList();
-		foreach (TownBuilding building in TownManager.main.buildings)
-		{
-			BuildingInfo newBuildingInfo = Instantiate(buildingInfoPrefab);
-			newBuildingInfo.AssignBuilding(building);
-			newBuildingInfo.transform.SetParent(buildingsGroup,false);
-		}
-	}
-
-	void CleanupOldBuildingList()
-	{
-		foreach (BuildingInfo oldBuilding in buildingsGroup.GetComponentsInChildren<BuildingInfo>())//Button>())
-		{
-			GameObject.Destroy(oldBuilding.gameObject);
-		}
 	}
 
 	void RefreshInventoryItems()
@@ -72,13 +47,10 @@ public class BuildingsTab : MonoBehaviour,TownTab {
 		}
 	}
 
-
 	public void CloseTab()
 	{
 		CleanupOldInventorySlots();
-		CleanupOldBuildingList();
 		InventorySlot.EItemDropped -= RefreshInventoryItems;
-		BuildingBuildButton.EBuildingBuilt -= RefreshBuildingList;
 		gameObject.SetActive(false);
 	}
 }

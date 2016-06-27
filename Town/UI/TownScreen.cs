@@ -12,6 +12,7 @@ public class TownScreen : MonoBehaviour {
 	public static TownScreen main;
 
 	public Button financeButton;
+	public Button storageButton;
 	public Button mapButton;
 	public Button workshopsButton;
 	public Button mercenariesButton;
@@ -21,6 +22,7 @@ public class TownScreen : MonoBehaviour {
 	public Transform tabContentGroup;
 
 	public FinancesTab financesTab;
+	public StorageTab storageTab;
 	public WorkshopTab workshopTab;
 	public MercenariesTab mercenariesTab;
 	public BuildingsTab buildingsTab;
@@ -35,6 +37,7 @@ public class TownScreen : MonoBehaviour {
 		GameManager.GameOver += CloseTownScreen;
 
 		financeButton.onClick.AddListener(() => OpenFinancesTab());
+		storageButton.onClick.AddListener(() => OpenStorageTab());
 		buildingsButton.onClick.AddListener(() => { OpenBuildingsTab(); });
 		workshopsButton.onClick.AddListener(() => { OpenWorkshopsTab();});
 		marketButton.onClick.AddListener(() => { OpenMarketTab(); });
@@ -42,6 +45,16 @@ public class TownScreen : MonoBehaviour {
 		mapButton.onClick.AddListener(() => { ReturnToMap();});
 
 		gameObject.SetActive(false);
+	}
+
+	public void UnlockMarketTab()
+	{
+		marketButton.gameObject.SetActive(true);
+	}
+
+	public void LockMarketTab()
+	{
+		marketButton.gameObject.SetActive(false);
 	}
 
 	public void OpenTownScreen()
@@ -60,6 +73,13 @@ public class TownScreen : MonoBehaviour {
 		CleanupCurrentTab();
 		currentTab = financesTab;
 		financesTab.OpenTab();
+	}
+
+	void OpenStorageTab()
+	{
+		CleanupCurrentTab();
+		currentTab = storageTab;
+		storageTab.OpenTab();
 	}
 
 	void OpenBuildingsTab()

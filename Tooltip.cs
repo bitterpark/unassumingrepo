@@ -4,8 +4,13 @@ using System.Collections;
 
 public class Tooltip : MonoBehaviour 
 {
+	
 	public Text tooltipText;
+	public Text widthMeasuringText;
+	public Image contentWrapper;
 	public Transform cardsDisplayGroup;
+
+	const float maxTooltipWidth = 300;
 
 	const float edgeOffsetSize = 5f;
 	float tooltipWidth = 80f;
@@ -38,16 +43,23 @@ public class Tooltip : MonoBehaviour
 
 	public void AssignDisplayValues(string text, Transform tooltipParent)
 	{
+		
+		SetPositionAndSortOrder(tooltipParent,text);
 		AddText(text);
-		SetPositionAndSortOrder(tooltipParent);
 	}
 
-	void SetPositionAndSortOrder(Transform tooltipParent)
+	void SetPositionAndSortOrder(Transform tooltipParent, string text)
 	{
+		widthMeasuringText.text = text;
+		
 		transform.SetParent(tooltipParent, false);
 		RectTransform.Edge tooltipSide = RectTransform.Edge.Right;
 		Canvas.ForceUpdateCanvases();
-		tooltipWidth = GetComponent<VerticalLayoutGroup>().preferredWidth;
+		float cardsContentWidth = cardsDisplayGroup.GetComponent<GridLayoutGroup>().preferredWidth;
+		float textContentWidth=Mathf.Min(widthMeasuringText.GetComponent<RectTransform>().rect.width,maxTooltipWidth);
+		tooltipWidth=Mathf.Max(cardsContentWidth,textContentWidth);
+		contentWrapper.GetComponent<RectTransform>().SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal,tooltipWidth);
+
 		if (Camera.main.WorldToScreenPoint(tooltipParent.position - new Vector3(Screen.width * 0.5f, Screen.height * 0.5f, 0)).x
 		+ tooltipParent.GetComponent<RectTransform>().rect.width + tooltipWidth + edgeOffsetSize > Screen.width)
 			tooltipSide = RectTransform.Edge.Left;

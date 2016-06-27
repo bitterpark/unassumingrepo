@@ -4,9 +4,9 @@ using System.Collections;
 
 public class EncounterCardGraphic :CardGraphic 
 {
-	public EncounterCard assignedCard;
+	public RoomCard assignedCard;
 	
-	public void AssignCard(EncounterCard newCard)
+	public void AssignCard(RoomCard newCard)
 	{
 		base.UpdateBasicVisuals(newCard);
 		GetComponent<Button>().onClick.AddListener(() => CardClicked());

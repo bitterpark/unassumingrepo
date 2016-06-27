@@ -249,32 +249,112 @@ public class Encounter
 
 	//NEW STUFF
 	protected List<System.Type> enemyTypes=new List<System.Type>();
-	protected List<EncounterCard> rooms=new List<EncounterCard>();
+	protected List<RoomCard> rooms=new List<RoomCard>();
 	protected Deck<RewardCard> rewards = new Deck<RewardCard>();
 
-	protected EncounterCard lastRoom;
+	protected RoomCard lastRoom;
 	protected RewardCard[] missionEndRewards;
 
 	protected bool finished = false;
 
+	public enum EncounterTypes {Wreckage,Ruins};
+	protected EncounterTypes encounterType;
+
+	static List<System.Type> GetEnemyTypesForEncounterType(EncounterTypes typeArgument)
+	{
+		List<System.Type> enemyTypesList = new List<System.Type>();
+		if (typeArgument == EncounterTypes.Wreckage)
+		{
+			enemyTypesList.Add(typeof(Bugzilla));
+			enemyTypesList.Add(typeof(Skitter));
+			enemyTypesList.Add(typeof(Stinger));
+			enemyTypesList.Add(typeof(Hardshell));
+			enemyTypesList.Add(typeof(Puffer));
+		}
+		if (typeArgument == EncounterTypes.Ruins)
+		{
+			enemyTypesList.Add(typeof(ShockTrooper));
+			enemyTypesList.Add(typeof(FieldCommander));
+			enemyTypesList.Add(typeof(HeavyGunner));
+			enemyTypesList.Add(typeof(Marksman));
+		}
+
+		return enemyTypesList;
+	}
+
 	public Encounter(bool newKind)
 	{
-		//rooms.Add(new Hallway());
-		//rooms.Add(new Hallway());
+		if (Random.value < 0.5f)
+			encounterType = EncounterTypes.Wreckage;
+		else
+			encounterType = EncounterTypes.Ruins;
 
-		lastRoom = new EngineRoom();
-		missionEndRewards = new RewardCard[2];
-		missionEndRewards[0] = new CashStash();
-		missionEndRewards[1] = new CashStash();
+		GenerateEncounter();
+	}
 
-		enemyTypes.Add(typeof(Stinger));
-		enemyTypes.Add(typeof(Skitter));
-		enemyTypes.Add(typeof(Bugzilla));
-		enemyTypes.Add(typeof(Puffer));
-		enemyTypes.Add(typeof(Hardshell));
+	protected void GenerateEncounter()
+	{
+		GenerateRoomCards();
+		GenerateRewards();
+		GenerateEnemyTypes();
+	}
 
-		rewards.AddCards(new CashStash(), new CashStash(), new AmmoStash(), new AmmoStash(), new AmmoStash(), new AmmoStash());
+	void GenerateRoomCards()
+	{
+		List<System.Type> possibleRoomTypes = RoomCard.GetAllPossibleRoomCards(encounterType);
+		//Order is important
+		System.Type randomLastRoomType = possibleRoomTypes[Random.Range(0, possibleRoomTypes.Count)];
+		lastRoom = RoomCard.GetRoomCardByType(randomLastRoomType);
+
+		int requiredRoomsCount = Mathf.Min(3, possibleRoomTypes.Count);
+		for (int i = 0; i < requiredRoomsCount; i++)
+		{
+			System.Type randomRoomCardType = possibleRoomTypes[Random.Range(0, possibleRoomTypes.Count)];
+			rooms.Add(RoomCard.GetRoomCardByType(randomRoomCardType));
+			rooms.Add(RoomCard.GetRoomCardByType(randomRoomCardType));
+			possibleRoomTypes.Remove(randomRoomCardType);
+		}
+	}
+
+	protected virtual void GenerateRewards()
+	{
+		rewards.AddCards(new CashStash(), new AmmoStash(), new AmmoStash(), new ArmorStash(), new ArmorStash());
 		rewards.Shuffle();
+
+		float diceRoll = Random.value;
+
+		missionEndRewards = new RewardCard[2];
+		if (encounterType == EncounterTypes.Ruins)
+		{
+			if (diceRoll <= 1)
+			{
+				missionEndRewards[0] = new CashStash();
+				missionEndRewards[1] = new CashStash();
+			}
+			if (diceRoll < 0.5f)
+			{
+				missionEndRewards[0] = new CrewReward();
+				missionEndRewards[1] = new CrewReward();
+			}
+		}
+		if (encounterType == EncounterTypes.Wreckage)
+		{
+			if (diceRoll <= 1)
+			{
+				missionEndRewards[0] = new ScrapReward();
+				missionEndRewards[1] = new ScrapReward();
+			}
+			if (diceRoll < 0.5f)
+			{
+				missionEndRewards[0] = new ComputerPartsReward();
+				missionEndRewards[1] = new ComputerPartsReward();
+			}
+		}
+	}
+
+	void GenerateEnemyTypes()
+	{
+		enemyTypes = GetEnemyTypesForEncounterType(encounterType);
 	}
 
 	public EncounterEnemy[] GenerateEnemies(int enemiesCount)
@@ -292,23 +372,24 @@ public class Encounter
 		return finished;
 	}
 
-	public EncounterCard[] GetRoomSelection(int selectCount)
+	public RoomCard[] GetRoomSelection(int selectCount)
 	{
 		if (rooms.Count > 0)
 		{
 			int modifiedCount = Mathf.Min(selectCount, rooms.Count);
-			EncounterCard[] roomsToSelectFrom = new EncounterCard[modifiedCount];
+			RoomCard[] roomsToSelectFrom = new RoomCard[modifiedCount];
 			for (int i = 0; i < modifiedCount; i++)
 			{
-				roomsToSelectFrom[i] = rooms[0];
-				rooms.RemoveAt(0);
+				int randomRoomIndex = Random.Range(0,rooms.Count);
+				roomsToSelectFrom[i] = rooms[randomRoomIndex];
+				rooms.RemoveAt(randomRoomIndex);
 			}
 			return roomsToSelectFrom;
 		}
 		else 
 		{
 			finished = true;
-			EncounterCard[] oneItemAr = new EncounterCard[1];
+			RoomCard[] oneItemAr = new RoomCard[1];
 			oneItemAr[0] = lastRoom;
 			return oneItemAr;
 		}
@@ -335,20 +416,43 @@ public class Encounter
 
 	public virtual string GetScoutingDescription()
 	{
-		string result;
-		result="We've managed to locate another pristine alien ship, designation JXZ-795.";
-		result+="\nNot the biggest one we've ever seen, but should contain some very useful stuff.";
-		result+="\nSend in the mercs, and watch out for the infestation.";
+		string result=null;
+		if (encounterType == EncounterTypes.Wreckage)
+		{
+			result = "We've managed to locate another pristine alien ship, designation JXZ-795.";
+			result += "\nNot the biggest one we've ever seen, but should contain some very useful stuff.";
+			result += "\nSend in the mercs, and watch out for the infestation.";
+		}
+		if (encounterType == EncounterTypes.Ruins)
+		{
+			result = "An unidentified group of armed thugs has set up in some industrial ruins nearby.";
+			result += "\nThey're probably sent by the Corp to mess with the scavengers. Or sent by the Scavs to mess with corp outposts.";
+			result += "\nWhoever is pulling their strings clearly doesn't want to be associated with them, so they won't be too pissed";
+			result += "\nif we clear the place out and take all the hardware for ourselves.";
+		}
+
+		if (result == null)
+			throw new System.Exception("Could not get a scouting description for map node!");
 		return result;
 	}
 	public virtual string GetTooltipDescription()
 	{
-		return "Spaceship run";
+		string result = null;
+		if (encounterType == EncounterTypes.Wreckage)
+		{
+			result = "Wreckage";
+		}
+		if (encounterType == EncounterTypes.Ruins)
+		{
+			result = "Ruins";
+		}
+
+		if (result == null)
+			throw new System.Exception("Could not get a tooltip description for map node!");
+		return result;
 	}
 
-	//NEW STUFF
-
-	
+	//NEW STUFF END
 
 }
 
@@ -356,23 +460,15 @@ public class StoryMissionOne : Encounter
 {
 	public StoryMissionOne()
 	{
-		rooms.Add(new Hallway());
-		rooms.Add(new Hallway());
-		rooms.Add(new Hallway());
-		rooms.Add(new Hallway());
+		encounterType = EncounterTypes.Wreckage;
+		GenerateEncounter();
+	}
 
-		lastRoom = new EngineRoom();
-		missionEndRewards = new RewardCard[1];
-		missionEndRewards[0] = new AmmoStash();
-
-		enemyTypes.Add(typeof(Stinger));
-		enemyTypes.Add(typeof(Skitter));
-		enemyTypes.Add(typeof(Bugzilla));
-		enemyTypes.Add(typeof(Puffer));
-		enemyTypes.Add(typeof(Hardshell));
-
-		rewards.AddCards(new CashStash(), new CashStash(), new AmmoStash(), new AmmoStash(), new AmmoStash(), new AmmoStash());
-		rewards.Shuffle();
+	protected override void GenerateRewards()
+	{
+		base.GenerateRewards();
+		missionEndRewards=new RewardCard[1];
+		missionEndRewards[0] = new StoryRewardOne();
 	}
 
 	public override string GetTooltipDescription()

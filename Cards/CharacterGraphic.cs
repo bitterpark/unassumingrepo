@@ -21,6 +21,8 @@ public class CharacterGraphic : MonoBehaviour {
 	int stamina = 0;
 	int armor = 0;
 
+	public enum Resource {Health,Armor,Stamina,Ammo};
+
 	public void AssignCharacter(Character newChar)
 	{
 		assignedCharacter = newChar;
@@ -49,6 +51,7 @@ public class CharacterGraphic : MonoBehaviour {
 		return assignedCharacter.GetType();
 	}
 
+
 	public int GetHealth()
 	{
 		return assignedCharacter.GetHealth();
@@ -72,17 +75,27 @@ public class CharacterGraphic : MonoBehaviour {
 		}
 		if (totalDamage > 0)
 		{
-			TakeHealthDamage(totalDamage);
+			IncrementHealth(-totalDamage);
 		}
 	}
 
-	public void TakeHealthDamage(int damage)
+	public void IncrementCharacterResource(Resource resource, int delta)
 	{
-		assignedCharacter.TakeDamage(damage);
+		if (resource == Resource.Health)
+			IncrementHealth(delta);
+		if (resource == Resource.Stamina)
+			IncrementStamina(delta);
+		if (resource == Resource.Armor)
+			IncrementArmor(delta);
+		if (resource == Resource.Ammo)
+			IncrementAmmo(delta);
+	}
+
+	public void IncrementHealth(int delta)
+	{
+		assignedCharacter.IncrementHealth(delta);
 		if (assignedCharacter.GetHealth() <= 0)
-		{
 			CardsScreen.main.CharacterKilled(this);
-		}
 		else
 			healthText.text = assignedCharacter.GetHealth().ToString();
 	}

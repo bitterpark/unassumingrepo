@@ -13,39 +13,63 @@ public class TownManager : MonoBehaviour {
 	const int noMoneyCrewPenalty = 10;
 
 	List<PartyMember> mercenaryHireList = new List<PartyMember>();
-	const int requiredMercHireListSize = 5;
+	List<PartyMember> previousHiredMercsPool = new List<PartyMember>();
+	int hirableMercsPoolSize = 5;
 	public const int dailyPayPerCrew = 10;
-	
-	public void MercenaryHired(PartyMember hiredMerc) { mercenaryHireList.Remove(hiredMerc);}
-	public void MercenaryContractFinished(PartyMember finishedMerc) { mercenaryHireList.Add(finishedMerc); }
 
 	public List<TownBuilding> buildings;
 
 	public List<InventoryItem> itemsOnSale;
 
-	bool barBuilt;
+	bool enginesBuilt=false;
+	bool marketUnlocked=false;
+
+	int dailyMercHealRate = 0;
+
+	float marketPriceMult = 1;
 
 	public void NewGameState()
 	{
+		LockMarket();
+		dailyMercHealRate = 0;
+		enginesBuilt = false;
 		buildings = new List<TownBuilding>();
 		SetMoney(startingMoney);
 		SetCrew(startingCrew);
+		previousHiredMercsPool.Clear();
 		UpdateMercenaryHireList();
-		buildings.Add(new Bar());
-		buildings.Add(new Bar());
+		buildings.Add(new Habitation());
+		buildings.Add(new CommCenter());
+		buildings.Add(new CargoBay());
+		buildings.Add(new SickBay());
 
 		itemsOnSale = new List<InventoryItem>();
-		itemsOnSale.Add(new FoodBig());
 		itemsOnSale.Add(new Scrap());
 		itemsOnSale.Add(new Scrap());
-		itemsOnSale.Add(new Knife());
-		itemsOnSale.Add(new AssaultRifle());
-		itemsOnSale.Add(new Backpack());
+		itemsOnSale.Add(new Scrap());
+		itemsOnSale.Add(new Scrap());
+		itemsOnSale.Add(new Scrap());
+		itemsOnSale.Add(new Scrap());
+		itemsOnSale.Add(new ComputerParts());
+		itemsOnSale.Add(new ComputerParts());
+		itemsOnSale.Add(new ComputerParts());
+		itemsOnSale.Add(new ComputerParts());
+		itemsOnSale.Add(new ComputerParts());
+		itemsOnSale.Add(new ComputerParts());
 	}
 
 	public virtual void UpdateMercenaryHireList()
 	{
-		while (mercenaryHireList.Count < requiredMercHireListSize)
+		int previouslyHiredMercsCount = Random.Range(1, Mathf.Min(3,hirableMercsPoolSize));
+		for (int i = previouslyHiredMercsCount; i < previouslyHiredMercsCount; i++)
+		{
+			if (previousHiredMercsPool.Count == 0) break;
+			PartyMember randomlyPickedMerc=previousHiredMercsPool[Random.Range(0,previousHiredMercsPool.Count)];
+			mercenaryHireList.Add(randomlyPickedMerc);
+			previousHiredMercsPool.Remove(randomlyPickedMerc);
+		}
+		
+		while (mercenaryHireList.Count < hirableMercsPoolSize)
 		{
 			mercenaryHireList.Add(new PartyMember());
 		}
@@ -56,7 +80,20 @@ public class TownManager : MonoBehaviour {
 		return mercenaryHireList;
 	}
 
-	
+	public void MercenaryHired(PartyMember hiredMerc)
+	{
+		mercenaryHireList.Remove(hiredMerc);
+	}
+	public void MercenaryContractFinished(PartyMember finishedMerc)
+	{
+		previousHiredMercsPool.Add(finishedMerc);
+	}
+
+	public void IncrementHireableMercsPoolSize(int delta)
+	{
+		hirableMercsPoolSize += delta;	
+	}
+
 	public void IncrementCrew(int delta)
 	{
 		SetCrew(crew + delta);
@@ -101,7 +138,45 @@ public class TownManager : MonoBehaviour {
 		return crew * dailyPayPerCrew;
 	}
 
-	public void BarBuilt()
+	public void IncrementDailyMercHealRate(int delta)
+	{
+		SetDailyMercHealRate(dailyMercHealRate + delta);
+	}
+
+	public void SetDailyMercHealRate(int newHealRate)
+	{
+		dailyMercHealRate = newHealRate;
+		if (dailyMercHealRate < 0)
+			dailyMercHealRate = 0;
+	}
+
+	public int GetDailyMercHealRate()
+	{
+		return dailyMercHealRate;
+	}
+
+	public void IncrementMarketPriceMult(float delta)
+	{
+		marketPriceMult += delta;
+	}
+	public float GetMarketPriceMult()
+	{
+		return marketPriceMult;
+	}
+
+	public void UnlockMarket()
+	{
+		marketUnlocked = true;
+		TownScreen.main.UnlockMarketTab();
+	}
+
+	public void LockMarket()
+	{
+		marketUnlocked = false;
+		TownScreen.main.LockMarketTab();
+	}
+
+	public void EnginesBuilt()
 	{
 		//barBuilt=true;
 		if (WinBuildingsAreBuilt())
@@ -110,7 +185,7 @@ public class TownManager : MonoBehaviour {
 
 	bool WinBuildingsAreBuilt()
 	{
-		if (barBuilt) return true;
+		if (enginesBuilt) return true;
 		else return false;
 	}
 	

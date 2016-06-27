@@ -11,7 +11,6 @@ public class CombatCardGraphic : CardGraphic
 	public GameObject staminaDamage;
 	public Text cardTypeText;
 
-
 	public CombatCard assignedCard;
 
 	public void AssignCard(CombatCard newCard)
@@ -51,6 +50,6 @@ public class CombatCardGraphic : CardGraphic
 
 	public void CardClicked()
 	{
-		CardsScreen.main.PlayerTurnProcess(this);
+		CardsScreen.main.ClickCombatCard(this);
 	}
 }

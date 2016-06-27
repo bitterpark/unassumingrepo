@@ -13,9 +13,14 @@ public class InventoryScreenHandler : MonoBehaviour
 	public Image memberPortrait;
 	public Text memberNameText;
 	public Text classNameText;
+	//Deprecated
 	public Text meleeDamageText;
 	public Text rangedDamageText;
-	public Text armorValueText;
+
+	public Text healthValueText;
+	public Text startingArmorValueText;
+	public Text startingStaminaValueText;
+	public Text startingAmmoValueText;
 
 	public Button kickMemberButton;
 	public Button closeButton;
@@ -196,10 +201,16 @@ public class InventoryScreenHandler : MonoBehaviour
 
 	void RefreshLeftCornerText()
 	{
-		//Update armor value
-		armorValueText.text = "Armor:" + selectedMember.armorValue;
+		
+		healthValueText.text=selectedMember.GetHealth().ToString();
+		startingArmorValueText.text = selectedMember.GetStartArmor().ToString();
+		startingStaminaValueText.text = selectedMember.GetStartStamina().ToString();
+		startingAmmoValueText.text = selectedMember.GetAmmo().ToString();
+
+
 
 		//Update weapon damage
+		/*
 		string meleeText = "Melee:";
 		meleeText += selectedMember.GetMeleeDamageString();
 		meleeDamageText.text = meleeText;
@@ -207,6 +218,7 @@ public class InventoryScreenHandler : MonoBehaviour
 		string rangedText = "Ranged:";
 		rangedText += selectedMember.GetRangedDamage();
 		rangedDamageText.text = rangedText;
+		 */
 	}
 
 	void RefreshWeapons()

@@ -216,6 +216,9 @@ public class PartyManager : MonoBehaviour
 		startingRegion.StashItem(new Scrap());
 		startingRegion.StashItem(new Scrap());
 		startingRegion.StashItem(new Scrap());
+		startingRegion.StashItem(new ComputerParts());
+		startingRegion.StashItem(new ComputerParts());
+		startingRegion.StashItem(new ComputerParts());
 
 		startingRegion.StashItem(new Pipe());
 

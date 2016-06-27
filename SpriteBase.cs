@@ -17,7 +17,6 @@ public class SpriteBase : MonoBehaviour {
 	//Items
 	//Usable
 	public Sprite ammoBoxSprite;
-	public Sprite bulletSprite;
 	public Sprite medkitSprite;
 	public Sprite bandageSprite;
 	public Sprite perishableFoodSprite;
@@ -76,14 +75,35 @@ public class SpriteBase : MonoBehaviour {
 	public Sprite enemyPortrait;
 
 	public Sprite skull;
-	public Sprite venom;
+	public Sprite droplet;
 	public Sprite crosshair;
 	public Sprite fire;
 	public Sprite cover;
 	public Sprite arrow;
 	public Sprite lateralArrows;
+	public Sprite bullet;
 	public Sprite bullets;
 	public Sprite flamingBullet;
+	public Sprite snowflake;
+	public Sprite bomb;
+	public Sprite sack;
+	public Sprite wrench;
+	public Sprite roseOfWinds;
+	public Sprite computerParts;
+	public Sprite medicalCross;
+	public Sprite radio;
+	public Sprite meat;
+	public Sprite rest;
+	public Sprite lightning;
+	public Sprite lockIcon;
+	public Sprite cloud;
+	public Sprite key;
+	public Sprite compass;
+	public Sprite anchor;
+	public Sprite door;
+	public Sprite flag;
+	public Sprite armor;
+	public Sprite rock;
 
 	// Use this for initialization
 	void Start () 
