@@ -4,43 +4,75 @@ using System.Collections;
 
 public class FinancesTab : MonoBehaviour,TownTab
 {
+	public Text incomeAndExpensePrefab;
+
+	public Transform incomeGroup;
 	public Transform expensesGroup;
 
-	public Text expensePrefab;
-
-	public Text balanceText;
+	public Text currentBalanceText;
+	public Text expectedWeeklyBalanceText;
 
 	public void OpenTab()
 	{
 		gameObject.SetActive(true);
-		DisplayExpenses();
+		DisplayExpectedWeeklyBalance();
 	}
 
-	void DisplayExpenses()
+	void DisplayExpectedWeeklyBalance()
 	{
-		AddExpense("Crew: $"+TownManager.dailyPayPerCrew+"x"+TownManager.main.GetCrew()+" = -$"+TownManager.main.CalculateCrewExpenses());
-		balanceText.text = "Balance = $"+TownManager.main.GetDailyBalance();
+		currentBalanceText.text="Current balance = $"+TownManager.main.money;
+		
+		foreach (TownManager.FutureTransaction income in TownManager.main.GetFutureIncomes())
+			AddIncome(income.transactionText);
+		
+		foreach (TownManager.FutureTransaction expense in TownManager.main.GetFutureExpenses())
+			AddExpense(expense.transactionText);
+
+		expectedWeeklyBalanceText.text = "Expected weekly balance = $"+TownManager.main.GetExpectedWeeklyBalance();
+	}
+
+	void AddIncome(string incomeText)
+	{
+		AddLineToGroup(incomeText, incomeGroup);
+	}
+
+	void ClearIncome()
+	{
+		ClearLinesFromGroup(incomeGroup);
 	}
 
 	void AddExpense(string expenseText)
 	{
-		Text newExpenseText = Instantiate(expensePrefab);
-		newExpenseText.text = expenseText;
-		newExpenseText.transform.SetParent(expensesGroup, false);
+		AddLineToGroup(expenseText, expensesGroup);
 	}
-
 
 	void ClearExpenses()
 	{
-		foreach (Text textComponent in expensesGroup.GetComponentsInChildren<Text>())
+		ClearLinesFromGroup(expensesGroup);
+	}
+
+	void AddLineToGroup(string text, Transform group)
+	{
+		Text newLineText = Instantiate(incomeAndExpensePrefab);
+		newLineText.text = text;
+		newLineText.transform.SetParent(group, false);
+	}
+
+	void ClearLinesFromGroup(Transform group)
+	{
+		foreach (Text textComponent in group.GetComponentsInChildren<Text>())
 		{
-			if (textComponent.tag == "UI Clearable") GameObject.Destroy(textComponent.gameObject);
+			if (textComponent.tag == "UI Clearable") 
+				GameObject.Destroy(textComponent.gameObject);
 		}
 	}
+
+	
 
 	public void CloseTab()
 	{
 		ClearExpenses();
+		ClearIncome();
 		gameObject.SetActive(false);
 	}
 }

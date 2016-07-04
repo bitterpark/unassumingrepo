@@ -79,11 +79,12 @@ public class RecipeMakeButton : MonoBehaviour,IPointerEnterHandler,IPointerExitH
 			{
 				//PartyMember creator=InventoryScreenHandler.mainISHandler.selectedMember;
 				//creator.ChangeFatigue(totalBuildFatigueCost);	
-				MapRegion centralRegion = MapManager.main.mapRegions[0];
+				MapRegion centralRegion = MapManager.main.GetTown();
 				foreach (InventoryItem usedLocalItem in usedLocalItems) centralRegion.TakeStashItem(usedLocalItem);//creator.currentRegion.TakeStashItem(usedLocalItem);
 				//foreach(InventoryItem usedCarriedItem in usedCarriedItems) creator.RemoveCarriedItem(usedCarriedItem);
 				for(int i=0; i<newRecipe.resultItemCount; i++) centralRegion.StashItem(InventoryItem.GetLootingItem(madeItemType));
-				if (RecipeMakeButton.EItemMade != null) RecipeMakeButton.EItemMade();
+				if (RecipeMakeButton.EItemMade != null) 
+					RecipeMakeButton.EItemMade();
 			});
 		}
 		else GetComponent<Button>().interactable=false;
@@ -93,7 +94,7 @@ public class RecipeMakeButton : MonoBehaviour,IPointerEnterHandler,IPointerExitH
 	#region IPointerEnterHandler implementation
 	public void OnPointerEnter (PointerEventData eventData)
 	{
-		TooltipManager.main.CreateTooltip(InventoryItem.GetLootingItem(madeItemType).GetMouseoverDescription(),this.transform); 
+		TooltipManager.main.CreateItemTooltip(InventoryItem.GetLootingItem(madeItemType), transform);
 	}
 	#endregion
 

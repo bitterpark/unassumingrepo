@@ -8,7 +8,7 @@ public interface Character
 	int GetHealth();
 	int GetStartArmor();
 	int GetStartStamina();
-	int GetAmmo();
+	int GetStartAmmo();
 	Sprite GetPortrait();
 	void SetStamina(int newStamina); //Currently unused
 	void SetHealth(int newHealth);
@@ -418,17 +418,8 @@ public class PartyMember: Mercenary
 	}
 	
 	//STAMINA
-	public int stamina
-	{
-		get {return _stamina;}
-		set 
-		{
-			_stamina=value;
-			if (_stamina<0) {_stamina=0;}
-			if (_stamina>currentMaxStamina) {_stamina=currentMaxStamina;}
-			
-		}
-	}
+	public int stamina;
+
 	public int _stamina; 
 	public int baseMaxStamina;
 	public int currentMaxStamina
@@ -449,7 +440,6 @@ public class PartyMember: Mercenary
 		currentMaxStamina
 		=baseMaxStamina-Mathf.RoundToInt(maxStaminaReductionFromHunger*hunger*0.01f)-Mathf.RoundToInt(maxStaminaReductionFromFatigue*fatigue*0.01f);
 		*/
-		stamina=currentMaxStamina;
 	}
 	
 	public int staminaRegen=3;
@@ -711,29 +701,29 @@ public class PartyMember: Mercenary
 		{
 			healthMax = 100;
 			startArmor = 0;
-			stamina = 8;
-			ammo = 6;
+			stamina = 5;
+			ammo = 2;
 		}
 		if (mercClass == MercClass.Bandit)
 		{
 			healthMax = 100;
 			startArmor = 0;
-			stamina = 14;
-			ammo = 3;
+			stamina = 8;
+			ammo = 0;
 		}
 		if (mercClass == MercClass.Gunman)
 		{
 			healthMax = 100;
 			startArmor = 0;
-			stamina = 4;
-			ammo = 10;
+			stamina = 2;
+			ammo = 4;
 		}
 		if (mercClass == MercClass.Mercenary)
 		{
 			healthMax = 100;
-			startArmor = 20;
-			stamina = 8;
-			ammo = 5;
+			startArmor = 30;
+			stamina = 4;
+			ammo = 2;
 		}
 	}
 
@@ -745,57 +735,19 @@ public class PartyMember: Mercenary
 
 		if (mercClass == MercClass.Soldier)
 		{
-			result.AddCards(typeof(Smokescreen));
-			result.AddCards(typeof(BoundingOverwatch));
-			result.AddCards(typeof(Grenade));
-			result.AddCards(typeof(PickOff));
-			result.AddCards(typeof(MarkTarget));
-			result.AddCards(typeof(Doubletap));
-			result.AddCards(typeof(Diversion));
-			result.AddCards(typeof(Smash),2);
-			result.AddCards(typeof(Jab));
-			result.AddCards(typeof(Camaraderie));
-			result.AddCards(typeof(Sacrifice));
+			result = SoldierCards.GetClassCards();
 		}
 		if (mercClass == MercClass.Bandit)
 		{
-			result.AddCards(typeof(SuckerPunch), 2);
-			result.AddCards(typeof(Smash));
-			result.AddCards(typeof(Knee));
-			result.AddCards(typeof(Jab));
-			result.AddCards(typeof(Roundhouse));
-			result.AddCards(typeof(Kick));
-			result.AddCards(typeof(Execution),2);
-			result.AddCards(typeof(SprayNPray));
-			result.AddCards(typeof(Hipfire));
-			result.AddCards(typeof(Throw));
+			result = BanditCards.GetClassCards();
 		}
 		if (mercClass == MercClass.Gunman)
 		{
-			result.AddCards(typeof(Pistolwhip));
-			result.AddCards(typeof(Jab));
-			result.AddCards(typeof(Sidearm));
-			result.AddCards(typeof(BurstFire));
-			result.AddCards(typeof(LimbShot),2);
-			result.AddCards(typeof(ScopeIn));
-			result.AddCards(typeof(Doubletap));
-			result.AddCards(typeof(DetonateAmmo));
-			result.AddCards(typeof(TrickMags));
-			result.AddCards(typeof(Tripmine));
-			result.AddCards(typeof(HollowPoint));
+			result = GunmanCards.GetClassCards();
 		}
 		if (mercClass==MercClass.Mercenary)
 		{
-			result.AddCards(typeof(TakeCover),2);
-			result.AddCards(typeof(Discretion));
-			result.AddCards(typeof(Gambit));
-			result.AddCards(typeof(RunAndGun));
-			result.AddCards(typeof(BurstFire));
-			result.AddCards(typeof(Overconfidence));
-			result.AddCards(typeof(SuicideCharge));
-			result.AddCards(typeof(Jab));
-			result.AddCards(typeof(Smash),2);
-			result.AddCards(typeof(LastStand));
+			result = MercenaryCards.GetClassCards();
 		}
 
 		return result;
@@ -945,7 +897,7 @@ public class PartyMember: Mercenary
 		//make sure perks trigger before these to properly use modified values of maxHealth and maxStamina
 		health = healthMax;
 		currentMaxStamina=baseMaxStamina;
-		stamina=currentMaxStamina;
+		//stamina=currentMaxStamina;
 		morale=baseMorale;
 		UpdateCurrentCarryCapacity();
 		//maxHealth=vitalsMaxHealth;
@@ -988,8 +940,10 @@ public class PartyMember: Mercenary
 		foreach (InventoryItem item in carriedItems) {allItems.Add(item);}
 		foreach (InventoryItem item in equippedItems) {allItems.Add(item);}
 		//May want to clear the lists after this
-		if (equippedRangedWeapon!=null) allItems.Add(equippedRangedWeapon);
-		if (equippedMeleeWeapon!=null) allItems.Add(equippedMeleeWeapon); 
+		if (equippedRangedWeapon!=null) 
+			allItems.Add(equippedRangedWeapon);
+		if (equippedMeleeWeapon!=null) 
+			allItems.Add(equippedMeleeWeapon); 
 		//Drop in encounter
 		if (EncounterCanvasHandler.main.encounterOngoing)
 		{
@@ -1519,18 +1473,9 @@ public class PartyMember: Mercenary
 	{
 		combatDeck.AddCards(newWeapon.addedCombatCards.ToArray());
 		
-		//check if melee
-		if (newWeapon.GetType().BaseType==typeof(MeleeWeapon))
-		{
-			equippedMeleeWeapon=newWeapon as MeleeWeapon;
-			meleeHitchanceMod+=equippedMeleeWeapon.accuracyMod;
-		}
-		//check if ranged
-		if (newWeapon.GetType().BaseType==typeof(RangedWeapon))
-		{
-			equippedRangedWeapon=newWeapon as RangedWeapon;
-			rangedHitchanceMod+=equippedRangedWeapon.accuracyMod;
-		}
+		stamina += newWeapon.staminaBonus;
+		ammo += newWeapon.ammoBonus;
+
 		UpdateCurrentCarryCapacity();
 		//currentCarryCapacity=currentCarryCapacity-newWeapon.GetWeight();//Mathf.Max(0,currentCarryCapacity-newWeapon.GetWeight());
 		
@@ -1539,16 +1484,10 @@ public class PartyMember: Mercenary
 	public void UnequipWeapon(Weapon uneqippedWeapon)
 	{
 		combatDeck.RemoveCards(uneqippedWeapon.addedCombatCards.ToArray());
-		if (equippedMeleeWeapon==uneqippedWeapon) 
-		{
-			meleeHitchanceMod-=equippedMeleeWeapon.accuracyMod;
-			equippedMeleeWeapon=null;
-		}
-		if (equippedRangedWeapon==uneqippedWeapon) 
-		{
-			rangedHitchanceMod-=equippedRangedWeapon.accuracyMod;
-			equippedRangedWeapon=null;
-		}
+
+		stamina -= uneqippedWeapon.staminaBonus;
+		ammo -= uneqippedWeapon.ammoBonus;
+
 		UpdateCurrentCarryCapacity();
 		//currentCarryCapacity=Mathf.Min(maxCarryCapacity,currentCarryCapacity+uneqippedWeapon.GetWeight());
 	}
@@ -1617,7 +1556,7 @@ public class PartyMember: Mercenary
 	public Deck<CombatCard> GetCombatDeck() { return combatDeck; }
 	public List<CombatCard> GetAllUsedCards() { return combatDeck.GetDeckCards();}
 
-	public int GetAmmo() 
+	public int GetStartAmmo() 
 	{ 
 		return ammo; 
 	}

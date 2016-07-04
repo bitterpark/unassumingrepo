@@ -5,7 +5,7 @@ using UnityEngine.UI;
 
 public class CraftRecipe
 {
-	public string description;
+	public string description = "Build";
 	public Dictionary<InventoryItem.LootItems,int> requiredIngredients;
 	//public int requiredFatigue;
 	
@@ -13,25 +13,18 @@ public class CraftRecipe
 	public InventoryItem.LootItems resultItem;
 	public int resultItemCount=1;
 	
-	public static List<CraftRecipe> GetGenericRecipes(bool withToolbox)
+	public static List<CraftRecipe> GetGenericRecipes()
 	{
 		List<CraftRecipe> recipeList=new List<CraftRecipe>();
-		recipeList.Add(new JunkCookingRecipe());
-		recipeList.Add(new CampUpgradeRecipe());
-        recipeList.Add(new FirecrackerRecipe());
-		recipeList.Add(new TrapRecipe());
-		recipeList.Add(new BulletRecipe());
-		recipeList.Add(new MeleeWeaponRecipe());
-		recipeList.Add(new RangedWeaponRecipe());
 
-		if (withToolbox)
-		{
-			recipeList.Add(new FuelToScrap());
-			recipeList.Add(new PipegunToScrap());
-			recipeList.Add(new PipeToScrap());
-			recipeList.Add(new KnifeToScrap());
-			recipeList.Add(new AxeToScrap());
-		}
+		recipeList.Add(new NineMRecipe());
+		recipeList.Add(new AssaultRifleRecipe());
+		recipeList.Add(new ShotgunRecipe());
+
+		recipeList.Add(new PipeRecipe());
+		recipeList.Add(new AxeRecipe());
+		recipeList.Add(new KnifeRecipe());
+
 		return recipeList;
 	}
 	
@@ -45,167 +38,61 @@ public class CraftRecipe
 		SetResultItem(item,1);
 	}
 }
-/*
-public class FoodRecipe: CraftRecipe
-{
-	public FoodRecipe()
-	{
-		requiredFatigue=10;
-		description="Build bullets";
-		requiredIngredients=new Dictionary<InventoryItem.LootItems, int>();
-		requiredIngredients.Add(InventoryItem.LootItems.Junkfood,2);
-		resultItems.Add(InventoryItem.LootItems.Food);
-	}
-}*/
 
-public class BulletRecipe: CraftRecipe
+public class NineMRecipe : CraftRecipe
 {
-	public  BulletRecipe()
+	public NineMRecipe()
 	{
-		//requiredFatigue=2;
-		description="Make bullets";
 		requiredIngredients=new Dictionary<InventoryItem.LootItems, int>();
 		requiredIngredients.Add(InventoryItem.LootItems.Scrap,1);
-		requiredIngredients.Add(InventoryItem.LootItems.Gunpowder,1);
-		SetResultItem(InventoryItem.LootItems.Ammopack);
+		SetResultItem(InventoryItem.LootItems.NineM);
 	}
 }
 
-public class FirecrackerRecipe : CraftRecipe
+public class ShotgunRecipe : CraftRecipe
 {
-    public FirecrackerRecipe()
-    {
-        //requiredFatigue = 2;
-        description = "Make firecrackers";
-        requiredIngredients = new Dictionary<InventoryItem.LootItems, int>();
-        requiredIngredients.Add(InventoryItem.LootItems.Gunpowder, 1);
-        SetResultItem(InventoryItem.LootItems.Firecracker, 1);
-    }
-}
-
-public class TrapRecipe: CraftRecipe
-{
-	public  TrapRecipe()
+	public ShotgunRecipe()
 	{
-		//requiredFatigue=2;
-		description="Make traps";
-		requiredIngredients=new Dictionary<InventoryItem.LootItems, int>();
-		requiredIngredients.Add(InventoryItem.LootItems.Scrap,1);
-		SetResultItem(InventoryItem.LootItems.SettableTrap,2);
-		
+		requiredIngredients = new Dictionary<InventoryItem.LootItems, int>();
+		requiredIngredients.Add(InventoryItem.LootItems.Scrap, 1);
+		SetResultItem(InventoryItem.LootItems.Shotgun);
 	}
 }
 
-public class CampUpgradeRecipe: CraftRecipe
+public class AssaultRifleRecipe : CraftRecipe
 {
-	public  CampUpgradeRecipe()
+	public AssaultRifleRecipe()
 	{
-		//requiredFatigue=6;
-		description="Make camp barricade";
-		requiredIngredients=new Dictionary<InventoryItem.LootItems, int>();
-		requiredIngredients.Add(InventoryItem.LootItems.Scrap,3);
-		SetResultItem(InventoryItem.LootItems.CampBarricade);
-		
+		requiredIngredients = new Dictionary<InventoryItem.LootItems, int>();
+		requiredIngredients.Add(InventoryItem.LootItems.Scrap, 1);
+		SetResultItem(InventoryItem.LootItems.AssaultRifle);
 	}
 }
 
-public class MeleeWeaponRecipe: CraftRecipe
+public class PipeRecipe : CraftRecipe
 {
-	public MeleeWeaponRecipe()
+	public PipeRecipe()
 	{
-		//requiredFatigue=2;
-		description="Make pipe";
-		requiredIngredients=new Dictionary<InventoryItem.LootItems, int>();
-		requiredIngredients.Add(InventoryItem.LootItems.Scrap,1);
+		requiredIngredients = new Dictionary<InventoryItem.LootItems, int>();
+		requiredIngredients.Add(InventoryItem.LootItems.Scrap, 1);
 		SetResultItem(InventoryItem.LootItems.Pipe);
 	}
 }
-
-public class RangedWeaponRecipe: CraftRecipe
+public class AxeRecipe : CraftRecipe
 {
-	public RangedWeaponRecipe()
+	public AxeRecipe()
 	{
-		//requiredFatigue=2;
-		description="Make pipegun";
-		requiredIngredients=new Dictionary<InventoryItem.LootItems, int>();
-		requiredIngredients.Add(InventoryItem.LootItems.Scrap,1);
-		SetResultItem(InventoryItem.LootItems.Pipegun);
+		requiredIngredients = new Dictionary<InventoryItem.LootItems, int>();
+		requiredIngredients.Add(InventoryItem.LootItems.Scrap, 1);
+		SetResultItem(InventoryItem.LootItems.Axe);
 	}
 }
-
-public class JunkCookingRecipe: CraftRecipe
+public class KnifeRecipe : CraftRecipe
 {
-	public JunkCookingRecipe()
+	public KnifeRecipe()
 	{
-		//requiredFatigue=6;
-		description="Cook food";
-
-		requiredIngredients=new Dictionary<InventoryItem.LootItems, int>();
-		requiredIngredients.Add(InventoryItem.LootItems.Junkfood,2);
-		requiredIngredients.Add(InventoryItem.LootItems.Firewood,1);
-		SetResultItem(InventoryItem.LootItems.Cookedfood,2);
-	}
-}
-
-public class FuelToScrap :CraftRecipe
-{
-	public FuelToScrap()
-	{
-		//requiredFatigue=2;
-		description="Make scrap";
-
-		requiredIngredients=new Dictionary<InventoryItem.LootItems, int>();
-		requiredIngredients.Add(InventoryItem.LootItems.Firewood,1);
-		SetResultItem(InventoryItem.LootItems.Scrap,1);
-	}
-}
-
-public class PipegunToScrap :CraftRecipe
-{
-	public PipegunToScrap()
-	{
-		//requiredFatigue=2;
-		description="Make scrap";
-
-		requiredIngredients=new Dictionary<InventoryItem.LootItems, int>();
-		requiredIngredients.Add(InventoryItem.LootItems.Pipegun,1);
-		SetResultItem(InventoryItem.LootItems.Scrap,1);
-	}
-}
-
-public class PipeToScrap :CraftRecipe
-{
-	public PipeToScrap()
-	{
-		//requiredFatigue=2;
-		description="Make scrap";
-
-		requiredIngredients=new Dictionary<InventoryItem.LootItems, int>();
-		requiredIngredients.Add(InventoryItem.LootItems.Pipe,1);
-		SetResultItem(InventoryItem.LootItems.Scrap,1);
-	}
-}
-public class AxeToScrap :CraftRecipe
-{
-	public AxeToScrap()
-	{
-		//requiredFatigue=2;
-		description="Make scrap";
-
-		requiredIngredients=new Dictionary<InventoryItem.LootItems, int>();
-		requiredIngredients.Add(InventoryItem.LootItems.Axe,1);
-		SetResultItem(InventoryItem.LootItems.Scrap,1);
-	}
-}
-public class KnifeToScrap :CraftRecipe
-{
-	public KnifeToScrap()
-	{
-		//requiredFatigue=2;
-		description="Make scrap";
-
-		requiredIngredients=new Dictionary<InventoryItem.LootItems, int>();
-		requiredIngredients.Add(InventoryItem.LootItems.Knife,1);
-		SetResultItem(InventoryItem.LootItems.Scrap,1);
+		requiredIngredients = new Dictionary<InventoryItem.LootItems, int>();
+		requiredIngredients.Add(InventoryItem.LootItems.Scrap, 1);
+		SetResultItem(InventoryItem.LootItems.Knife);
 	}
 }

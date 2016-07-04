@@ -757,7 +757,7 @@ public abstract class EncounterEnemy: Character
 		if (stamina < 0) stamina = 0;
 	}
 
-	public int GetAmmo() { return ammo; }
+	public int GetStartAmmo() { return ammo; }
 
 	public Sprite GetPortrait()
 	{
@@ -1011,9 +1011,9 @@ public class Skitter : EncounterEnemy
 	public Skitter(): base()
 	{
 		name = "Skitter";
-		health = 75;
+		health = 80;
 
-		stamina = 15;
+		stamina = 8;
 
 		combatDeck.AddCards(typeof(Pinch),2);
 		combatDeck.AddCards(typeof(Latch), 2);
@@ -1030,22 +1030,21 @@ public class Pinch : MeleeCard
 		name = "Pinch";
 		description = "";
 		image=SpriteBase.mainSpriteBase.skull;
-		healthDamage = 30;
-		staminaCost = 4;
+		damage = 20;
+		staminaCost = 1;
 		targetType = TargetType.SelectEnemy;
 	}
 }
 
-public class Latch : Effect
+public class Latch : MeleeCard
 {
 	public Latch()
 		: base()
 	{
 		name = "Latch";
-		//description = "Restores " + staminaRestore + " stamina";
 		image = SpriteBase.mainSpriteBase.skull;
-		healthDamage = 10;
-		staminaCost = 2;
+		damage = 50;
+		staminaCost = 4;
 		targetType = TargetType.SelectEnemy;
 	}
 }
@@ -1058,8 +1057,8 @@ public class Bite : MeleeCard
 		name = "Bite";
 		//description = "Restores " + staminaRestore + " stamina";
 		image = SpriteBase.mainSpriteBase.skull;
-		healthDamage = 45;
-		staminaCost = 5;
+		damage = 40;
+		staminaCost = 3;
 		targetType = TargetType.SelectEnemy;
 	}
 }
@@ -1070,10 +1069,11 @@ public class Bugzilla : EncounterEnemy
 		: base()
 	{
 		name = "Bugzilla";
-		health = 110;
-		stamina = 8;
+		health = 120;
+		stamina = 6;
 
 		combatDeck.AddCards(typeof(Pinch),2);
+		combatDeck.AddCards(typeof(Stomp));
 		//combatDeck.AddCards(typeof(Posture),2);
 		combatDeck.AddCards(typeof(Charge), 2);
 		combatDeck.AddCards(typeof(Throwdown),2);
@@ -1089,8 +1089,8 @@ public class Stomp : MeleeCard
 		name = "Stomp";
 		description = "Targets the weakest enemy";
 		image = SpriteBase.mainSpriteBase.skull;
-		healthDamage = 20;
-		staminaCost = 2;
+		damage = 30;
+		staminaCost = 1;
 		targetType = TargetType.Weakest;
 	}
 }
@@ -1103,8 +1103,8 @@ public class Throwdown : MeleeCard
 		name = "Throwdown";
 		description = "Targets the strongest enemy";
 		image = SpriteBase.mainSpriteBase.skull;
-		healthDamage = 40;
-		staminaCost = 4;
+		damage = 40;
+		staminaCost = 2;
 		targetType = TargetType.Strongest;
 	}
 }
@@ -1117,8 +1117,8 @@ public class Charge : MeleeCard
 		name = "Charge";
 		//description = "Restores " + staminaRestore + " stamina";
 		image = SpriteBase.mainSpriteBase.skull;
-		healthDamage = 10;
-		staminaCost = 2;
+		damage = 50;
+		staminaCost = 4;
 		targetType = TargetType.SelectEnemy;
 	}
 
@@ -1131,14 +1131,14 @@ public class Stinger : EncounterEnemy
 	{
 		name = "Stinger";
 		health = 80;
-		stamina = 10;
+		stamina = 6;
 		ammo = 2;
 
-		combatDeck.AddCards(typeof(Sting),1);
+		combatDeck.AddCards(typeof(Sting));
 		//combatDeck.AddCards(typeof(Posture));
 		combatDeck.AddCards(typeof(Venom),2);
 		combatDeck.AddCards(typeof(Lunge),2);
-		combatDeck.AddCards(typeof(Regrow), 1);
+		combatDeck.AddCards(typeof(Regrow));
 	}
 }
 
@@ -1152,8 +1152,9 @@ public class Lunge : MeleeCard
 		name = "Lunge";
 		description = "Targets the weakest enemy";
 		image = SpriteBase.mainSpriteBase.skull;
-		healthDamage = 40;
-		staminaCost = 4;
+		damage = 40;
+		staminaCost = 1;
+		ammoCost = 1;
 		targetType = TargetType.Weakest;
 	}
 }
@@ -1166,16 +1167,10 @@ public class Venom : RangedCard
 		name = "Venom";
 		//description = "Restores " + staminaRestore + " stamina";
 		image = SpriteBase.mainSpriteBase.droplet;
-		healthDamage = 10;
-		staminaDamage = 3;
-		staminaCost = 5;
-		targetType = TargetType.SelectEnemy;
-	}
 
-	protected override void CardPlayEffects()
-	{
-		userCharGraphic.IncrementStamina(-staminaCost);
-		targetChars[0].TakeDamage(healthDamage,true);
+		staminaDamage = 3;
+		staminaCost = 3;
+		targetType = TargetType.SelectEnemy;
 	}
 }
 
@@ -1184,24 +1179,21 @@ public class Sting : RangedCard
 	public Sting()
 		: base()
 	{
+		damage = 20;
+		ammoCost = 2;
+		staminaCost = 1;
+		ignoresArmor = true;
+		targetType = TargetType.SelectEnemy;
+		
 		name = "Sting";
 		image = SpriteBase.mainSpriteBase.skull;
 		description = "Ignores armor";
-		healthDamage = 20;
-		ammoCost = 2;
-		targetType = TargetType.SelectEnemy;
-	}
-
-	protected override void CardPlayEffects()
-	{
-		userCharGraphic.IncrementStamina(-staminaCost);
-		targetChars[0].TakeDamage(healthDamage);
 	}
 }
 
-public class Regrow : Effect
+public class Regrow : EffectCard
 {
-	int ammoRestore = 2;
+	int ammoRestore = 4;
 	
 	public Regrow()
 		: base()
@@ -1210,7 +1202,7 @@ public class Regrow : Effect
 		image = SpriteBase.mainSpriteBase.skull;
 		description = "Restores " + ammoRestore+" ammo";
 		staminaCost = 4;
-		targetType = TargetType.SelectEnemy;
+		targetType = TargetType.None;
 	}
 
 	protected override void CardPlayEffects()
@@ -1226,8 +1218,8 @@ public class Puffer : EncounterEnemy
 		: base()
 	{
 		name = "Puffer";
-		health = 125;
-		stamina = 8; 
+		health = 120;
+		stamina = 4; 
 		ammo = 0;
 
 		combatDeck.AddCards(typeof(Pop), 2);
@@ -1235,9 +1227,9 @@ public class Puffer : EncounterEnemy
 	}
 }
 //Puffer cards
-public class Inflate : Effect
+public class Inflate : EffectCard
 {
-	int ammoGain = 1;
+	int ammoGain = 2;
 	public Inflate()
 		: base()
 	{
@@ -1245,7 +1237,7 @@ public class Inflate : Effect
 		description = "Gains " + ammoGain + " ammo";
 		image = SpriteBase.mainSpriteBase.restSprite;
 		//healthDamage = 5;
-		staminaCost = 5;
+		staminaCost = 2;
 		targetType = TargetType.None;
 	}
 
@@ -1256,21 +1248,18 @@ public class Inflate : Effect
 }
 public class Pop : RangedCard
 {
-	int selfDamage = 20;
 	public Pop()
 		: base()
 	{
-		name = "Pop";
-		description = "Targets all enemies, puffer loses " + selfDamage+" health";
-		image = SpriteBase.mainSpriteBase.fire;
-		ammoCost = 1;
-		healthDamage = 35;
+		ammoCost = 2;
+		removeHealthCost = 20;
+		damage = 20;
 		targetType = TargetType.AllEnemies;
-	}
-	protected override void CardPlayEffects()
-	{
-		base.CardPlayEffects();
-		userCharGraphic.TakeDamage(healthDamage,true);
+		
+		name = "Pop";
+		description = "Targets all enemies, puffer loses " + removeHealthCost + " health";
+		image = SpriteBase.mainSpriteBase.fire;
+		
 	}
 }
 
@@ -1282,8 +1271,7 @@ public class Hardshell : EncounterEnemy
 		name = "Hardshell";
 		health = 50;
 		armor = 80;
-		stamina = 10; 
-		ammo = 0;
+		stamina = 5; 
 
 		combatDeck.AddCards(typeof(Harden), 2);
 		combatDeck.AddCards(typeof(Latch), 2);
@@ -1291,16 +1279,16 @@ public class Hardshell : EncounterEnemy
 	}
 }
 
-public class Harden : Effect
+public class Harden : EffectCard
 {
-	int armorGain = 20;
+	int armorGain = 40;
 	public Harden()
 		: base()
 	{
 		name = "Harden";
 		description = "Gains " + armorGain + " armor";
 		image = SpriteBase.mainSpriteBase.cover;
-		staminaCost = 2;
+		staminaCost = 3;
 		targetType = TargetType.None;
 	}
 

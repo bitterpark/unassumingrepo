@@ -20,8 +20,8 @@ public class MercenaryHireInfo : MonoBehaviour {
 	public MercenariesTab parentMercTab;
 
 	PartyMember assignedMerc;
-	const int hireCost = 300;
-	const int hireDuration = 3;
+	int hireCost;
+	int hireDuration;
 
 	public void AssignMercenary(PartyMember merc)
 	{
@@ -29,6 +29,10 @@ public class MercenaryHireInfo : MonoBehaviour {
 		mercPortrait.color = merc.color;
 		mercNameText.text = merc.name;
 		classNameText.text = merc.myClass.ToString();
+
+		hireCost = TownManager.mercenaryHireCost;
+		hireDuration = TownManager.mercenaryHireDuration;
+
 		hireCostText.text = hireCost+" $";
 
 		mercPreviewButton.onClick.AddListener(

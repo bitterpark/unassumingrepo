@@ -36,9 +36,10 @@ public class CharacterGraphic : MonoBehaviour {
 		nameText.text = newChar.GetName();
 		healthText.text = newChar.GetHealth().ToString();
 		portrait.sprite = newChar.GetPortrait();
-		SetStamina(newChar.GetStartStamina());
-		SetAmmo(newChar.GetAmmo());
-		SetArmor(newChar.GetStartArmor());
+
+		SetStartStamina();
+		SetStartAmmo();
+		SetStartArmor();
 	}
 
 	public Character GetCharacter()
@@ -51,6 +52,11 @@ public class CharacterGraphic : MonoBehaviour {
 		return assignedCharacter.GetType();
 	}
 
+
+	public int GetEffectiveHitpoints()
+	{
+		return GetHealth() + GetArmor();
+	}
 
 	public int GetHealth()
 	{
@@ -77,6 +83,18 @@ public class CharacterGraphic : MonoBehaviour {
 		{
 			IncrementHealth(-totalDamage);
 		}
+	}
+
+	public void ResetCharacterResource(Resource resource)
+	{
+		if (resource == Resource.Health)
+			throw new System.Exception("Canno reset character health!");
+		if (resource == Resource.Stamina)
+			SetStartStamina();
+		if (resource == Resource.Armor)
+			SetStartArmor();
+		if (resource == Resource.Ammo)
+			SetStartAmmo();
 	}
 
 	public void IncrementCharacterResource(Resource resource, int delta)
@@ -144,6 +162,11 @@ public class CharacterGraphic : MonoBehaviour {
 		stamina = newStamina;
 		if (stamina < 0) stamina = 0;
 		staminaText.text = stamina.ToString();
+	}
+
+	public void SetStartAmmo()
+	{
+		SetAmmo(assignedCharacter.GetStartAmmo());
 	}
 
 	public void IncrementAmmo(int delta) { SetAmmo(ammo + delta); }

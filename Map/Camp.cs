@@ -17,7 +17,6 @@ public class Camp
 		GameManager.DebugPrint("Temperature set to:"+MapManager.mapTemperatureNumber);
 	}	*/
 
-	public Pot cookingImplement=new Pot();
 	public List<InventoryItem> beds=new List<InventoryItem>();
 	public int freeBeds=0;
 
@@ -68,15 +67,5 @@ public class Camp
 		return level;
 	}
 	public int threatLevelNumber=2;
-
-	public void EquipCookingImplement(Pot newImplement)
-	{
-		cookingImplement=newImplement;
-	}
-	
-	public void UnequipCurrentCookingImplement()
-	{
-		cookingImplement=null;
-	}
 }
 

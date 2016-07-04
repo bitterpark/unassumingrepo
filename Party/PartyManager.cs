@@ -196,31 +196,6 @@ public class PartyManager : MonoBehaviour
 		partyMembers=new List<PartyMember>();
 		selectedMembers=new List<PartyMember>();
 		assignedTasks=new Dictionary<PartyMember, AssignedTask>();
-		//selectors=new List<PartyMemberSelector>();
-		
-		//AddNewPartyMember(new PartyMember(startingRegion));
-		//AddNewPartyMember(new PartyMember(startingRegion));
-		
-		//startingRegion.SetCar(true);
-
-		//MapManager.main.TeleportToRegion(startingRegion);
-		startingRegion.StashItem(new FoodBig());
-		startingRegion.StashItem(new FoodBig());
-		startingRegion.StashItem(new FoodSmall());
-		startingRegion.StashItem(new FoodSmall());
-
-		startingRegion.StashItem(new Pills());
-		startingRegion.StashItem(new Pills());
-		startingRegion.StashItem(new Pills());
-
-		startingRegion.StashItem(new Scrap());
-		startingRegion.StashItem(new Scrap());
-		startingRegion.StashItem(new Scrap());
-		startingRegion.StashItem(new ComputerParts());
-		startingRegion.StashItem(new ComputerParts());
-		startingRegion.StashItem(new ComputerParts());
-
-		startingRegion.StashItem(new Pipe());
 
 		//Do this to setup proper background color
 		//PassTime(1);

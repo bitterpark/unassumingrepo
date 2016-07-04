@@ -13,39 +13,71 @@ public class CombatCardGraphic : CardGraphic
 
 	public CombatCard assignedCard;
 
+	public Color effectCardColor;
+	public Color rangedCardColor;
+	public Color meleeCardColor;
+
 	public void AssignCard(CombatCard newCard)
 	{
 		base.UpdateBasicVisuals(newCard);
 		assignedCard = newCard;
 
-		cardTypeText.text = assignedCard.cardType.ToString().Replace('_',' ');
-
-		if (newCard.staminaCost > 0)
-		{
-			staminaCost.SetActive(true);
-			staminaCost.GetComponentInChildren<Text>().text = newCard.staminaCost.ToString();
-		}
-		else staminaCost.SetActive(false);
-		if (newCard.ammoCost > 0)
-		{
-			ammoCost.SetActive(true);
-			ammoCost.GetComponentInChildren<Text>().text = newCard.ammoCost.ToString();
-		}
-		else ammoCost.SetActive(false);
-		if (newCard.healthDamage > 0)
-		{
-			healthDamage.SetActive(true);
-			healthDamage.GetComponentInChildren<Text>().text = newCard.healthDamage.ToString();
-		}
-		else healthDamage.SetActive(false);
-		if (newCard.staminaDamage > 0)
-		{
-			staminaDamage.SetActive(true);
-			staminaDamage.GetComponentInChildren<Text>().text = newCard.staminaDamage.ToString();
-		}
-		else staminaDamage.SetActive(false);
+		SetColor();
+		SetTypeText();
+		
+		ShowCosts();
+		ShowDamage();
 
 		GetComponent<Button>().onClick.AddListener(() => { CardClicked(); });
+	}
+
+	void SetColor()
+	{
+		if (assignedCard.GetType().BaseType == typeof(EffectCard))
+			GetComponent<Image>().color = effectCardColor;
+		if (assignedCard.GetType().BaseType == typeof(RangedCard))
+			GetComponent<Image>().color = rangedCardColor;
+		if (assignedCard.GetType().BaseType == typeof(MeleeCard))
+			GetComponent<Image>().color = meleeCardColor;
+	}
+
+	void SetTypeText()
+	{
+		cardTypeText.text = assignedCard.cardType.ToString().Replace('_', ' ');
+	}
+
+	void ShowCosts()
+	{
+		if (assignedCard.staminaCost > 0)
+		{
+			staminaCost.SetActive(true);
+			staminaCost.GetComponentInChildren<Text>().text = assignedCard.staminaCost.ToString();
+		}
+		else staminaCost.SetActive(false);
+
+		if (assignedCard.ammoCost > 0)
+		{
+			ammoCost.SetActive(true);
+			ammoCost.GetComponentInChildren<Text>().text = assignedCard.ammoCost.ToString();
+		}
+		else ammoCost.SetActive(false);
+	}
+
+	void ShowDamage()
+	{
+		if (assignedCard.damage > 0)
+		{
+			healthDamage.SetActive(true);
+			healthDamage.GetComponentInChildren<Text>().text = assignedCard.damage.ToString();
+		}
+		else healthDamage.SetActive(false);
+
+		if (assignedCard.staminaDamage > 0)
+		{
+			staminaDamage.SetActive(true);
+			staminaDamage.GetComponentInChildren<Text>().text = assignedCard.staminaDamage.ToString();
+		}
+		else staminaDamage.SetActive(false);
 	}
 
 	public void CardClicked()

@@ -29,7 +29,7 @@ public abstract class RewardCard : Card
 
 public class CashStash : RewardCard
 {
-	int cashReward = 250;
+	int cashReward = 325;
 	
 	public CashStash()
 	{
@@ -48,7 +48,7 @@ public class CashStash : RewardCard
 
 public class CashVault : RewardCard
 {
-	int cashReward = 500;
+	int cashReward = 650;
 
 	public CashVault()
 	{
@@ -62,33 +62,31 @@ public class CashVault : RewardCard
 	{
 		TownManager.main.money += cashReward;
 	}
-
 }
 
 public class AmmoStash : RewardCard
 {
-	int ammoReward = 5;
 	public AmmoStash()
 	{
 		name = "Ammo Stash";
 		image = SpriteBase.mainSpriteBase.ammoBoxSprite;
 		description = "Neatly stacked boxes full of powder bullets";
-		effectDescription="+"+ammoReward+" ammo for everyone";
+		effectDescription="Everyone gains full ammo";
 		//rewardItems.Add(new AmmoBox());
 	}
 	public override void PlayCard()
 	{
-		CardsScreen.main.IncrementAllMercsResource(CharacterGraphic.Resource.Ammo,ammoReward);
+		CardsScreen.main.ResetAllMercsResource(CharacterGraphic.Resource.Ammo);
 	}
 }
 
 public class ArmorStash : RewardCard
 {
-	int armorReward = 5;
+	int armorReward = 30;
 	public ArmorStash()
 	{
 		name = "Armor Stash";
-		image = SpriteBase.mainSpriteBase.cover;
+		image = SpriteBase.mainSpriteBase.armor;
 		description = "Piles of helmets and armor vests (+" + armorReward + " armor for everyone)";
 		effectDescription = "+" + armorReward + " armor for everyone";
 		//rewardItems.Add(new AmmoBox());
@@ -118,6 +116,7 @@ public class ScrapReward : RewardCard
 		image = SpriteBase.mainSpriteBase.wrench;
 		description = "A pile of salvageable metal";
 		rewardItems.Add(new Scrap());
+		rewardItems.Add(new Scrap());
 	}
 }
 
@@ -126,7 +125,7 @@ public class ComputerPartsReward : RewardCard
 	public ComputerPartsReward()
 	{
 		name = "Computers";
-		image = SpriteBase.mainSpriteBase.wrench;
+		image = SpriteBase.mainSpriteBase.computerParts;
 		description = "Circuits lined with hundreds of thousands of transistors";
 		rewardItems.Add(new ComputerParts());
 	}
@@ -139,7 +138,7 @@ public class CrewReward : RewardCard
 	public CrewReward()
 	{
 		name = "Crew";
-		image = SpriteBase.mainSpriteBase.wrench;
+		image = SpriteBase.mainSpriteBase.mercPortrait;
 		description = "People capable and/or crazy enough to join us";
 		effectDescription = "Increase crew by " + crewIncrease;
 	}
@@ -150,13 +149,37 @@ public class CrewReward : RewardCard
 	}
 }
 
+public class IncomeReward : RewardCard
+{
+	//int cashReward = 1300;
+
+	public IncomeReward()
+	{
+		name = "Fake Cash";
+		description = "Middling quality";
+		image = SpriteBase.mainSpriteBase.money;
+		//effectDescription = "+$" + cashReward;
+		rewardItems.Add(new FakeMoney());
+	}
+	/*
+	public override void PlayCard()
+	{
+		TownManager.main.money += cashReward;
+	}*/
+}
+
 public abstract class CombatCard: Card
 {
-	public int healthDamage=0;
+	public int damage=0;
 	public int staminaDamage=0;
+	public int unarmoredBonusDamage = 0;
 
 	public int ammoCost=0;
 	public int staminaCost=0;
+	public int removeHealthCost = 0;
+	public int takeDamageCost = 0;
+
+	public bool ignoresArmor = false;
 
 	public enum TargetType { None, SelectEnemy, SelectFriendly,Weakest,Strongest,Random,AllEnemies,AllFriendlies};
 	public TargetType targetType=TargetType.None;
@@ -179,15 +202,30 @@ public abstract class CombatCard: Card
 
 	protected virtual void CardPlayEffects()
 	{
-		userCharGraphic.IncrementAmmo(-ammoCost);
-		userCharGraphic.IncrementStamina(-staminaCost);
+		ApplyPlayCosts();
 		if (targetType != TargetType.None)
 		{
-			foreach (CharacterGraphic targetCharGraphic in targetChars)
-			{
-				targetCharGraphic.TakeDamage(healthDamage);
-				targetCharGraphic.IncrementStamina(-staminaDamage);
-			}
+			DamageTargets();
+		}
+	}
+
+	protected virtual void ApplyPlayCosts()
+	{
+		userCharGraphic.IncrementAmmo(-ammoCost);
+		userCharGraphic.IncrementStamina(-staminaCost);
+		userCharGraphic.TakeDamage(takeDamageCost);
+		userCharGraphic.TakeDamage(removeHealthCost, true);
+	}
+
+	protected virtual void DamageTargets()
+	{
+		foreach (CharacterGraphic targetCharGraphic in targetChars)
+		{
+			int totalDamage = damage;
+			if (targetCharGraphic.GetArmor() <= 0)
+				totalDamage += unarmoredBonusDamage;
+			targetCharGraphic.TakeDamage(totalDamage, ignoresArmor);
+			targetCharGraphic.IncrementStamina(-staminaDamage);
 		}
 	}
 
@@ -251,13 +289,45 @@ public class MeleeCard : CombatCard
 	}
 }
 
-public class Effect : CombatCard
+public class EffectCard : CombatCard
 {
-	public Effect()
+	protected int userStaminaGain = 0;
+	protected int userAmmoGain = 0;
+	protected int userArmorGain = 0;
+
+	protected int targetStaminaGain = 0;
+	protected int targetAmmoGain = 0;
+	protected int targetArmorGain = 0;
+
+	
+	public EffectCard()
 		: base()
 	{
 		cardType=CardType.Effect;
 	}
+
+	protected override void CardPlayEffects()
+	{
+		base.ApplyPlayCosts();
+		ApplyEffects();
+	}
+
+	protected virtual void ApplyEffects()
+	{
+		userCharGraphic.IncrementStamina(userStaminaGain);
+		userCharGraphic.IncrementAmmo(userAmmoGain);
+		userCharGraphic.IncrementArmor(userArmorGain);
+		if (targetType != TargetType.None)
+		{
+			foreach (CharacterGraphic targetChar in targetChars)
+			{
+				targetChar.IncrementStamina(targetStaminaGain);
+				targetChar.IncrementAmmo(targetAmmoGain);
+				targetChar.IncrementArmor(targetArmorGain);
+			}
+		}
+	}
+
 }
 
 

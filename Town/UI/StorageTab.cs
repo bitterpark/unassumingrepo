@@ -15,6 +15,7 @@ public class StorageTab : MonoBehaviour, TownTab {
 		transform.SetAsLastSibling();
 		RefreshInventoryItems();
 		InventorySlot.EItemDropped += RefreshInventoryItems;
+		InventorySlot.EItemUsed += RefreshInventoryItems;
 	}
 
 	void RefreshInventoryItems()
@@ -51,6 +52,7 @@ public class StorageTab : MonoBehaviour, TownTab {
 	{
 		CleanupOldInventorySlots();
 		InventorySlot.EItemDropped -= RefreshInventoryItems;
+		InventorySlot.EItemUsed -= RefreshInventoryItems;
 		gameObject.SetActive(false);
 	}
 }

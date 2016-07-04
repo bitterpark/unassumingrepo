@@ -63,18 +63,6 @@ public class MapRegion : MonoBehaviour
 		}
 	}
 	
-	public Sprite undiscoveredLocSprite;
-	public Sprite emptyLocSprite;
-	public Sprite encounterSprite;
-	public Sprite policeStationSprite;
-	public Sprite storeSprite;
-	public Sprite warehouseSprite;
-	public Sprite apartmentSprite;
-	public Sprite hospitalSprite;
-	public Sprite radioStationSprite;
-	
-	public Sprite hordeSprite;
-	
 	//public GameObject campTokenPrefab;
 	public Image regionGraphic;
 	public Image stashToken;
@@ -83,7 +71,11 @@ public class MapRegion : MonoBehaviour
 	public Image threatToken;
 	public Text teamSizeText;
 	public Image teamSizeBg;
-	
+
+	public Sprite ruinsSprite;
+	public Sprite wreckSprite;
+	public Sprite townSprite;
+
 	//public delegate void InventoryChangeDeleg ();
 	//public static event InventoryChangeDeleg ERegionInventoryChanged;
 
@@ -350,61 +342,14 @@ public class MapRegion : MonoBehaviour
 	
 	void UpdateVisuals()
 	{
-		if (!_discovered)
-		{
-			regionGraphic.sprite=undiscoveredLocSprite;
-			teamSizeBg.gameObject.SetActive(false);
-		}
+		if (encounterInRegion == null)
+			regionGraphic.sprite = townSprite;
 		else
 		{
-			/*
-			if (hasHorde && visible)
-			{
-				regionGraphic.sprite=hordeSprite;
-			}*/
-			//else
-			{
-				if (scouted)
-				{
-					if (hasEncounter)
-					{
-						teamSizeBg.gameObject.SetActive(true);
-						threatToken.enabled=true;
-						SetThreatTokenState(ambientThreatNumber);
-						switch (regionalEncounter.encounterAreaType)
-						{
-							case Encounter.AreaTypes.Hospital: {regionGraphic.sprite=hospitalSprite; break;}
-							case Encounter.AreaTypes.Apartment: {regionGraphic.sprite=apartmentSprite; break;}
-							case Encounter.AreaTypes.Store: {regionGraphic.sprite=storeSprite; break;}
-							case Encounter.AreaTypes.Warehouse:{regionGraphic.sprite=warehouseSprite; break;}
-							case Encounter.AreaTypes.Police: {regionGraphic.sprite=policeStationSprite; break;}
-							case Encounter.AreaTypes.Endgame: {regionGraphic.sprite=radioStationSprite; break;}
-						}
-					}
-					else
-					{
-						//If region has no encounter, assume it has an event
-						if (regionalEvent!=null)
-						regionGraphic.sprite=regionalEvent.GetRegionSprite();
-					}
-				}
-				else
-				{
-					regionGraphic.sprite=encounterSprite;
-				}
-			}
-			
-			//if (isHive) regionGraphic.color=Color.red;
-			if (visible)
-			{
-				//if (hasHorde) {regionGraphic.color=Color.red;} 
-				//else {regionGraphic.color=Color.white;}
-				regionGraphic.color=Color.gray;
-			}
-			else
-			{
-				regionGraphic.color=Color.white;
-			}
+			if (encounterInRegion.encounterType==Encounter.EncounterTypes.Ruins)
+				regionGraphic.sprite = ruinsSprite;
+			if (encounterInRegion.encounterType == Encounter.EncounterTypes.Wreckage)
+				regionGraphic.sprite = wreckSprite;
 		}
 	}
 

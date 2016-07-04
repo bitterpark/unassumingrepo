@@ -143,7 +143,6 @@ public class Encounter
 		//Dictionary<Vector2,List<EncounterRoom>> segmentRoomsEligibleForEnemyPlacement=new Dictionary<Vector2,List<EncounterRoom>>();
 		encounterMap.Clear();
 		TurnPrefabToEncounterMap(prefabMap,nonSegmentRooms);
-		AddLootToEncounterRooms(new List<EncounterRoom>(encounterMap.Values));
 		AddBarricadesToEncounterRooms(new List<EncounterRoom>(encounterMap.Values));
 		AddSpawnersToEncounterRooms(new List<EncounterRoom>(encounterMap.Values));
 	}
@@ -207,23 +206,6 @@ public class Encounter
 		return potentialSpawnerRooms;
 	}
 
-
-	void AddLootToEncounterRooms(List<EncounterRoom> allEncounterRooms)
-	{
-		List<EncounterRoom> roomsEligibleForLoot=FindRoomsEligibleForLoot(allEncounterRooms);
-		List<EncounterRoom> roomsEligibleForLockedLoot=FindRoomsEligibleForLockedLoot(allEncounterRooms);
-		allEncounterRooms=RemoveAllPrefabLootFlags(allEncounterRooms);
-
-		foreach (EncounterRoom room in roomsEligibleForLoot) room.GenerateUnlockedRoomLoot();
-		int lockedLootRooms=0;
-		foreach (EncounterRoom room in roomsEligibleForLockedLoot)
-		{
-			room.GenerateRoomLockedLoot();
-			lockedLootRooms++;
-			if (lockedLootRooms==maxRequiredMembers) break;
-		}
-	}
-
 	List<EncounterRoom> FindRoomsEligibleForLoot(List<EncounterRoom> allEncounterRooms)
 	{
 		return allEncounterRooms;
@@ -256,9 +238,10 @@ public class Encounter
 	protected RewardCard[] missionEndRewards;
 
 	protected bool finished = false;
+	int roomsToGo = 2;
 
 	public enum EncounterTypes {Wreckage,Ruins};
-	protected EncounterTypes encounterType;
+	public EncounterTypes encounterType;
 
 	static List<System.Type> GetEnemyTypesForEncounterType(EncounterTypes typeArgument)
 	{
@@ -318,7 +301,7 @@ public class Encounter
 
 	protected virtual void GenerateRewards()
 	{
-		rewards.AddCards(new CashStash(), new AmmoStash(), new AmmoStash(), new ArmorStash(), new ArmorStash());
+		rewards.AddCards(new CashStash(),new CashVault(), new AmmoStash(), new AmmoStash(), new AmmoStash(), new ArmorStash(), new ArmorStash(), new ArmorStash());
 		rewards.Shuffle();
 
 		float diceRoll = Random.value;
@@ -328,8 +311,8 @@ public class Encounter
 		{
 			if (diceRoll <= 1)
 			{
-				missionEndRewards[0] = new CashStash();
-				missionEndRewards[1] = new CashStash();
+				missionEndRewards[0] = new IncomeReward();
+				missionEndRewards[1] = new IncomeReward();
 			}
 			if (diceRoll < 0.5f)
 			{
@@ -374,7 +357,7 @@ public class Encounter
 
 	public RoomCard[] GetRoomSelection(int selectCount)
 	{
-		if (rooms.Count > 0)
+		if (rooms.Count > 0 && roomsToGo>0)
 		{
 			int modifiedCount = Mathf.Min(selectCount, rooms.Count);
 			RoomCard[] roomsToSelectFrom = new RoomCard[modifiedCount];
@@ -384,6 +367,7 @@ public class Encounter
 				roomsToSelectFrom[i] = rooms[randomRoomIndex];
 				rooms.RemoveAt(randomRoomIndex);
 			}
+			roomsToGo--;
 			return roomsToSelectFrom;
 		}
 		else 
@@ -400,7 +384,11 @@ public class Encounter
 		RewardCard[] rewardSelection=new RewardCard[selectCount];
 		for (int i = 0; i < selectCount; i++)
 		{
-			rewardSelection[i] = rewards.DrawCard();
+			RewardCard card;
+			if (rewards.DrawCard(out card))
+				rewardSelection[i] = card;
+			else
+				throw new System.Exception("Could not find a reward card to draw from reward deck!");
 		}
 		return rewardSelection;
 	}

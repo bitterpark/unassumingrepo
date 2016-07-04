@@ -311,13 +311,11 @@ public class GameEventManager : MonoBehaviour
 		scavengingEvents.Add(new EventChance(new CarFindEvent(),0.11f));
 		scavengingEvents.Add (new EventChance(new CacheInAnomaly(),0.036f));
 		//scavengingEvents.Add( new EventChance(new NewSurvivor(),0.04f));
-		scavengingEvents.Add( new EventChance(new MedicalCache(),0.036f));
 		scavengingEvents.Add (new EventChance(new SurvivorRescue(),0.036f));
 		//scavengingEvents.Add(new EventChance(new SearchForSurvivor(),0.04f));
 
 		moraleEvents.Clear();
 		//moraleEvents.Add (new EventChance(new LowMoraleSpiral(),0.2f));
-		moraleEvents.Add(new EventChance(new LowMoraleSteal(),0.4f));
 		moraleEvents.Add (new EventChance(new LowMoraleFight(),0.25f));
 		//moraleEvents.Add (new EventChance(new LowMoraleEnmity(),0.10f));
 		moraleEvents.Add (new EventChance(new LowMoraleQuit(),0.15f));
@@ -336,9 +334,6 @@ public class GameEventManager : MonoBehaviour
 
 		possiblePersistentEvents.ClearList();
 		possiblePersistentEvents.Add(new WoundedSurvivor(),2);
-		possiblePersistentEvents.Add(new ScrapTrade(),1);
-		possiblePersistentEvents.Add(new ScrapTrade(), 1);
-		possiblePersistentEvents.Add(new ScrapTrade(), 1);
 	}
 
 	void Start()

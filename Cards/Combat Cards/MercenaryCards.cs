@@ -1,108 +1,104 @@
 ﻿using UnityEngine;
 using System.Collections;
 
-public class Gambit : Effect
+public class MercenaryCards
 {
-	int armorGain = 25;
-	int healthLoss = 10;
+	public static CombatDeck GetClassCards()
+	{
+		CombatDeck result = new CombatDeck();
+
+		result.AddCards(typeof(TakeCover), 2);
+		result.AddCards(typeof(Discretion));
+		result.AddCards(typeof(Gambit));
+		result.AddCards(typeof(RunAndGun));
+		result.AddCards(typeof(Hipfire));
+		result.AddCards(typeof(Overconfidence));
+		result.AddCards(typeof(SuicideCharge));
+		result.AddCards(typeof(Jab));
+		result.AddCards(typeof(Smash));
+		result.AddCards(typeof(LastStand),2);
+
+		return result;
+	}
+}
+
+public class Gambit : EffectCard
+{
 	public Gambit()
 		: base()
 	{
-		name = "Gambit";
-		description = "High stakes (gain " + armorGain + " armor, lose " + healthLoss + " health)";
-		image = SpriteBase.mainSpriteBase.lateralArrows;
 		targetType = TargetType.None;
 		staminaCost = 1;
-	}
-
-	protected override void CardPlayEffects()
-	{
-		base.CardPlayEffects();
-		userCharGraphic.IncrementArmor(armorGain);
-		userCharGraphic.TakeDamage(healthLoss, true);
+		userArmorGain = 35;
+		removeHealthCost = 10;
+		
+		name = "Gambit";
+		description = "High stakes (gain " + userArmorGain + " armor, lose " + removeHealthCost + " health)";
+		image = SpriteBase.mainSpriteBase.lateralArrows;
+		
 	}
 }
 
-public class TakeCover : Effect
+public class TakeCover : EffectCard
 {
-	int armorGain = 30;
 	public TakeCover()
 		: base()
 	{
-		name = "Take Cover";
-		description = "Hit the deck (gain " + armorGain + " armor)";
-		image = SpriteBase.mainSpriteBase.cover;
 		targetType = TargetType.None;
-		staminaCost = 3;
-	}
-
-	protected override void CardPlayEffects()
-	{
-		base.CardPlayEffects();
-		userCharGraphic.IncrementArmor(armorGain);
+		staminaCost = 2;
+		userArmorGain = 45;
+		
+		name = "Take Cover";
+		description = "Hit the deck (gain " + userArmorGain + " armor)";
+		image = SpriteBase.mainSpriteBase.cover;
 	}
 }
 
-public class Discretion : Effect
+public class Discretion : EffectCard
 {
-	int armorGain = 60;
 	public Discretion()
 		: base()
 	{
-		name = "";
-		description = "Better part of valor (gain " + armorGain + " armor)";
-		image = SpriteBase.mainSpriteBase.cover;
 		targetType = TargetType.None;
-		staminaCost = 6;
-	}
-
-	protected override void CardPlayEffects()
-	{
-		base.CardPlayEffects();
-		userCharGraphic.IncrementArmor(armorGain);
+		staminaCost = 4;
+		userArmorGain = 75;
+		
+		name = "Discretion";
+		description = "Better part of valor (gain " + userArmorGain + " armor)";
+		image = SpriteBase.mainSpriteBase.cover;
+		
 	}
 }
 
-public class LastStand : Effect
+public class LastStand : EffectCard
 {
-	int staminaRestore = 4;
-	int damagePenalty = 20;
 	public LastStand()
 		: base()
 	{
-		name = "Last Stand";
-		description = "Restore " + staminaRestore + " stamina, take " + damagePenalty + " damage";
-		image = SpriteBase.mainSpriteBase.restSprite;
 		targetType = TargetType.None;
-	}
-
-	protected override void CardPlayEffects()
-	{
-		userCharGraphic.IncrementStamina(staminaRestore);
-		userCharGraphic.TakeDamage(damagePenalty);
+		takeDamageCost = 40;
+		userStaminaGain = 3;
+		
+		name = "Last Stand";
+		description = "Restore " + userStaminaGain + " stamina, take " + takeDamageCost + " damage";
+		image = SpriteBase.mainSpriteBase.restSprite;
 	}
 }
 
 public class RunAndGun : MeleeCard
 {
-	int takeDamageCost = 10;
 	public RunAndGun()
 		: base()
 	{
+		damage = 60;
+		ammoCost = 1;
+		staminaCost = 2;
+		takeDamageCost=10;
+		targetType = TargetType.SelectEnemy;
+		
 		name = "Run And Gun";
 		description = "Bread and butter (Take " + takeDamageCost + " damage)";
 		image = SpriteBase.mainSpriteBase.lateralArrows;
-
-		healthDamage = 40;
-		ammoCost = 1;
-		staminaCost = 3;
-		targetType = TargetType.SelectEnemy;
-	}
-
-	protected override void CardPlayEffects()
-	{
-		userCharGraphic.TakeDamage(takeDamageCost);
-		base.CardPlayEffects();
 	}
 }
 
@@ -112,49 +108,33 @@ public class RunAndGun : MeleeCard
 //Second Wind
 
 public class Overconfidence : MeleeCard
-{
-	int takeDamageCost = 10;
-	
+{	
 	public Overconfidence()
 		: base()
 	{
+		targetType = TargetType.Strongest;
+		staminaCost = 2;
+		takeDamageCost = 10;
+		damage = 40;
+
 		name = "Overconfidence";
 		description = "You can't die twice (targets strongest enemy, mercenary takes "+takeDamageCost+" damage)";
 		image = SpriteBase.mainSpriteBase.skull;
-		targetType = TargetType.Strongest;
-
-		staminaCost = 3;
-		healthDamage = 40;
-	}
-
-	protected override void CardPlayEffects()
-	{
-		userCharGraphic.TakeDamage(takeDamageCost);
-		base.CardPlayEffects();
+		
 	}
 }
 public class SuicideCharge : MeleeCard
 {
-	int damageTakenCost = 10;
 	public SuicideCharge()
 		: base()
 	{
-		name = "Suicide Charge";
-		description = "Take " + damageTakenCost + " damage. Targets all enemies.";
-		image = SpriteBase.mainSpriteBase.skull;
-
-		healthDamage = 25;
-		staminaCost = 5;
+		damage = 40;
+		staminaCost = 4;
+		takeDamageCost = 20;
 		targetType = TargetType.AllEnemies;
-	}
-
-	protected override void CardPlayEffects()
-	{
-		userCharGraphic.IncrementStamina(-staminaCost);
-		userCharGraphic.TakeDamage(damageTakenCost);
-		foreach (CharacterGraphic targetChar in targetChars)
-		{
-			targetChar.TakeDamage(healthDamage);
-		}
+		
+		name = "Suicide Charge";
+		description = "Take " + takeDamageCost + " damage. Targets all enemies.";
+		image = SpriteBase.mainSpriteBase.skull;
 	}
 }

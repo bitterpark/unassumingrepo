@@ -1,27 +1,47 @@
 ﻿using UnityEngine;
 using System.Collections;
 
+public class BanditCards
+{
+	public static CombatDeck GetClassCards()
+	{
+		CombatDeck result = new CombatDeck();
+
+		result.AddCards(typeof(SuckerPunch),2);
+		result.AddCards(typeof(LightsOut));
+		result.AddCards(typeof(Jab));
+		result.AddCards(typeof(Roundhouse));
+		result.AddCards(typeof(Kick), 2);
+		result.AddCards(typeof(Execution), 2);
+		result.AddCards(typeof(Sidearm));
+		result.AddCards(typeof(Throw),2);
+
+		return result;
+	}
+
+}
+
 public class SuckerPunch : MeleeCard
 {
 	public SuckerPunch()
 	{
 		name = "Sucker Punch";
-		description = "Won't know what hit them";
+		description = "Won't know what him 'em";
 		image = SpriteBase.mainSpriteBase.brokenArmsSprite;
 		targetType = TargetType.SelectEnemy;
 
-		staminaCost = 2;
-		healthDamage = 10;
+		staminaCost = 3;
+		damage = 40;
 	}
 }
 
-public class Knee : MeleeCard
+public class LightsOut : MeleeCard
 {
-	public Knee()
+	public LightsOut()
 		: base()
 	{
-		name = "Knee";
-		description = "Knock the wind out";
+		name = "Lights Out";
+		description = "Like a truck";
 		image = SpriteBase.mainSpriteBase.brokenLegsSprite;
 		targetType = TargetType.SelectEnemy;
 
@@ -41,8 +61,8 @@ public class Roundhouse : MeleeCard
 		image = SpriteBase.mainSpriteBase.brokenLegsSprite;
 		targetType = TargetType.SelectEnemy;
 
-		staminaCost = 6;
-		healthDamage = 60;
+		staminaCost = 5;
+		damage = 60;
 	}
 }
 
@@ -56,11 +76,11 @@ public class Execution : MeleeCard
 		image = SpriteBase.mainSpriteBase.skull;
 		targetType = TargetType.Weakest;
 
-		staminaCost = 4;
-		healthDamage = 40;
+		staminaCost = 2;
+		damage = 40;
 	}
 }
-
+//UNused
 public class SprayNPray : RangedCard
 {
 	public SprayNPray()
@@ -71,7 +91,7 @@ public class SprayNPray : RangedCard
 		targetType = TargetType.Random;
 
 		ammoCost = 2;
-		healthDamage = 30;
+		damage = 30;
 	}
 }
 
@@ -84,14 +104,9 @@ public class Kick : MeleeCard
 		description = "Guard break (ignores armor)";
 		image = SpriteBase.mainSpriteBase.brokenLegsSprite;
 		targetType = TargetType.SelectEnemy;
+		ignoresArmor = true;
 
-		staminaCost = 5;
-		healthDamage = 25;
-	}
-
-	protected override void CardPlayEffects()
-	{
-		userCharGraphic.IncrementStamina(-staminaCost);
-		targetChars[0].TakeDamage(healthDamage, false);
+		staminaCost = 4;
+		damage = 30;
 	}
 }

@@ -7,10 +7,10 @@ public class Marksman : EncounterEnemy
 	public Marksman()
 	{
 		name = "Marksman";
-		health = 40;
+		health = 60;
 		armor = 30;
-		stamina = 3;
-		ammo = 9;
+		stamina = 2;
+		ammo = 5;
 
 		combatDeck.AddCards(typeof(Eliminate),2);
 		combatDeck.AddCards(typeof(WeakspotShot));
@@ -28,7 +28,7 @@ public class Marksman : EncounterEnemy
 			description = "Targets weakest enemy";
 			image = SpriteBase.mainSpriteBase.skull;
 
-			healthDamage = 20;
+			damage = 30;
 			ammoCost = 2;
 			targetType = TargetType.Weakest;
 		}
@@ -43,44 +43,46 @@ public class Marksman : EncounterEnemy
 			description = "Ignores armor";
 			image = SpriteBase.mainSpriteBase.cover;
 
-			healthDamage = 45;
-			ammoCost = 5;
-			staminaCost = 2;
+			damage = 20;
+			ammoCost = 1;
+			staminaCost = 1;
 			targetType = TargetType.SelectEnemy;
 		}
 	}
 
-	public class ChangePosition : Effect
+	public class ChangePosition : EffectCard
 	{
-		int armorGain = 20;
-		
 		public ChangePosition():base()
 		{
-			name = "Change Position";
-			description = "Gain "+armorGain+" armor";
-			image = SpriteBase.mainSpriteBase.lateralArrows;
-
 			staminaCost = 2;
+			userArmorGain = 30;
 			targetType = TargetType.None;
+			
+			name = "Change Position";
+			description = "Gain " + userArmorGain + " armor";
+			image = SpriteBase.mainSpriteBase.lateralArrows;
 		}
 	}
 
-	public class BoobyTrap : Effect
+	public class BoobyTrap : EffectCard
 	{
+		int trapDamage;
+
 		public BoobyTrap()
 			: base()
 		{
+			targetType = TargetType.None;
+			ammoCost = 1;
+			trapDamage = 20;
+			
 			name = "Booby Trap";
 			description = "Places a Booby Trap in the room";
 			image = SpriteBase.mainSpriteBase.bomb;
-			targetType = TargetType.None;
-			ammoCost = 2;
 		}
 
-		protected override void CardPlayEffects()
+		protected override void ApplyEffects()
 		{
-			base.CardPlayEffects();
-			CardsScreen.main.PlaceRoomCard(new TripmineEnemy());
+			CardsScreen.main.PlaceRoomCard(new TripmineEnemy(trapDamage));
 		}
 	}
 }
@@ -90,10 +92,10 @@ public class HeavyGunner : EncounterEnemy
 	public HeavyGunner()
 	{
 		name = "Heavy Gunner";
-		health = 60;
+		health = 70;
 		armor = 30;
 		stamina = 4;
-		ammo = 6;
+		ammo = 3;
 
 		combatDeck.AddCards(typeof(FullAuto),2);
 		combatDeck.AddCards(typeof(Suppression));
@@ -110,8 +112,8 @@ public class HeavyGunner : EncounterEnemy
 			description = "Targets all enemies";
 			image = SpriteBase.mainSpriteBase.bullets;
 
-			healthDamage = 15;
-			ammoCost = 2;
+			damage = 20;
+			ammoCost = 1;
 			staminaCost = 2;
 			targetType = TargetType.AllEnemies;
 		}
@@ -126,10 +128,9 @@ public class HeavyGunner : EncounterEnemy
 			description = "Targets all enemies";
 			image = SpriteBase.mainSpriteBase.bullets;
 
-			healthDamage = 5;
-			staminaDamage = 2;
-			staminaCost = 2;
-			ammoCost = 3;
+			staminaDamage = 1;
+			staminaCost = 3;
+			ammoCost = 1;
 			targetType = TargetType.AllEnemies;
 		}
 	}
@@ -143,10 +144,10 @@ public class HeavyGunner : EncounterEnemy
 			//description = "Targets all enemies";
 			image = SpriteBase.mainSpriteBase.bullets;
 
-			healthDamage = 5;
-			staminaDamage = 4;
+			damage = 5;
+			staminaDamage = 3;
 			staminaCost = 2;
-			ammoCost = 2;
+			ammoCost = 1;
 			targetType = TargetType.SelectEnemy;
 		}
 	}
@@ -157,10 +158,10 @@ public class ShockTrooper : EncounterEnemy
 	public ShockTrooper()
 	{
 		name = "Shock Trooper";
-		health = 70;
-		armor = 30;
-		stamina = 9;
-		ammo = 3;
+		health = 80;
+		armor = 20;
+		stamina = 5;
+		ammo = 2;
 
 		combatDeck.AddCards(typeof(CoverToCover));
 		combatDeck.AddCards(typeof(Flanking),2);
@@ -169,25 +170,18 @@ public class ShockTrooper : EncounterEnemy
 		combatDeck.AddCards(typeof(Blindfire));
 	}
 
-	public class CoverToCover : Effect
+	public class CoverToCover : EffectCard
 	{
-		int armorGain = 20;
-
 		public CoverToCover()
 			: base()
 		{
-			name = "Cover-to-Cover";
-			description = "Gain "+armorGain+" armor";
-			image = SpriteBase.mainSpriteBase.cover;
-
-			staminaCost = 2;
+			staminaCost = 3;
+			userArmorGain = 50;
 			targetType = TargetType.None;
-		}
-
-		protected override void CardPlayEffects()
-		{
-			base.CardPlayEffects();
-			userCharGraphic.IncrementArmor(armorGain);
+			
+			name = "Cover-to-Cover";
+			description = "Gain " + userArmorGain + " armor";
+			image = SpriteBase.mainSpriteBase.cover;
 		}
 	}
 
@@ -196,11 +190,11 @@ public class ShockTrooper : EncounterEnemy
 		public Blindfire()
 			: base() //x2
 		{
-			name = "Blindfire";
+			name = "Blind Fire";
 			image = SpriteBase.mainSpriteBase.bullets;
 
-			healthDamage = 10;
-			ammoCost = 2;
+			damage = 20;
+			ammoCost = 1;
 			targetType = TargetType.SelectEnemy;
 		}
 	}
@@ -210,21 +204,15 @@ public class ShockTrooper : EncounterEnemy
 		public Flanking()
 			: base()
 		{
+			staminaCost = 2;
+			ammoCost = 1;
+			damage = 20;
+			ignoresArmor = true;
+			targetType = TargetType.SelectEnemy;
+			
 			name = "Flanking";
 			description = "Ignores armor";
 			image = SpriteBase.mainSpriteBase.lateralArrows;
-
-			staminaCost = 4;
-			ammoCost = 1;
-			healthDamage = 25;
-			targetType = TargetType.SelectEnemy;
-		}
-
-		protected override void CardPlayEffects()
-		{
-			userCharGraphic.IncrementStamina(-staminaCost);
-			userCharGraphic.IncrementAmmo(-ammoCost);
-			targetChars[0].TakeDamage(healthDamage,true);
 		}
 	}
 
@@ -233,11 +221,12 @@ public class ShockTrooper : EncounterEnemy
 		public Blitz():base()
 		{
 			name = "Blitz";
+			description = "Targets the strongest enemy";
 			image = SpriteBase.mainSpriteBase.brokenArmsSprite;
 
-			staminaCost = 5;
-			healthDamage = 45;
-			targetType = TargetType.SelectEnemy;
+			staminaCost = 3;
+			damage = 50;
+			targetType = TargetType.Strongest;
 		}
 	}
 
@@ -253,8 +242,8 @@ public class CQC : MeleeCard
 		//description = "Targets all enemies";
 		image = SpriteBase.mainSpriteBase.brokenArmsSprite;
 
-		healthDamage = 20;
-		staminaCost = 3;
+		damage = 30;
+		staminaCost = 2;
 		targetType = TargetType.SelectEnemy;
 	}
 }
@@ -267,7 +256,7 @@ public class FieldCommander : EncounterEnemy
 		health = 40;
 		armor = 40;
 		stamina = 6;
-		ammo = 6;
+		ammo = 2;
 
 		combatDeck.AddCards(typeof(Rally));
 		combatDeck.AddCards(typeof(Resupply));
@@ -277,7 +266,7 @@ public class FieldCommander : EncounterEnemy
 		combatDeck.AddCards(typeof(CQC),2);
 	}
 
-	public class Rally:Effect
+	public class Rally:EffectCard
 	{
 		int friendliesStaminaGain = 2;
 
@@ -288,7 +277,7 @@ public class FieldCommander : EncounterEnemy
 			description = "Allies gain " + friendliesStaminaGain + " stamina";
 			image = SpriteBase.mainSpriteBase.cover;
 
-			staminaCost = 4;
+			staminaCost = 5;
 			targetType = TargetType.AllFriendlies;
 		}
 
@@ -303,28 +292,18 @@ public class FieldCommander : EncounterEnemy
 		}
 	}
 
-	public class Resupply : Effect
+	public class Resupply : EffectCard
 	{
-		int friendliesAmmoGain = 2;
-
 		public Resupply()
 			: base()
 		{
-			name = "Resupply";
-			description = "Character and all allies gain " + friendliesAmmoGain + " ammo";
-			image = SpriteBase.mainSpriteBase.cover;
-
-			staminaCost = 4;
+			staminaCost = 5;
+			targetAmmoGain = 2;
 			targetType = TargetType.AllFriendlies;
-		}
-
-		protected override void CardPlayEffects()
-		{
-			base.CardPlayEffects();
-			foreach (CharacterGraphic graphic in targetChars)
-			{
-				graphic.IncrementAmmo(friendliesAmmoGain);
-			}
+			
+			name = "Resupply";
+			description = "Character and all allies gain " + targetAmmoGain + " ammo";
+			image = SpriteBase.mainSpriteBase.ammoBoxSprite;
 		}
 	}
 
@@ -338,14 +317,14 @@ public class FieldCommander : EncounterEnemy
 			image = SpriteBase.mainSpriteBase.crosshair;
 			targetType = TargetType.Strongest;
 
-			ammoCost = 2;
-			healthDamage = 20;
+			ammoCost = 1;
+			damage = 20;
 		}
 	}
 
 	public class Flashbang : RangedCard
 	{
-		int noCoverStaminaDamageBonus = 2;
+		int noCoverStaminaDamageBonus = 1;
 		
 		public Flashbang()
 		: base()
@@ -355,7 +334,8 @@ public class FieldCommander : EncounterEnemy
 			image = SpriteBase.mainSpriteBase.lightning;
 			targetType = TargetType.AllEnemies;
 
-			ammoCost = 4;
+			ammoCost = 2;
+			staminaCost = 1;
 			staminaDamage=1;
 		}
 

@@ -70,16 +70,8 @@ public class CampCanvas : MonoBehaviour {
 			{
 				sumLocalInventory.AddRange(member.carriedItems);
 			}
-			foreach (InventoryItem item in sumLocalInventory)
-			{
-				if (item.GetType()==typeof(Toolbox)) 
-				{
-					partyHasTools=true;
-					break;
-				}
-			}
 
-			availableRecipes=CraftRecipe.GetGenericRecipes(partyHasTools);
+			availableRecipes=CraftRecipe.GetGenericRecipes();
 			GetComponent<Canvas>().enabled=true;
 
 			assignedCamp=InventoryScreenHandler.mainISHandler.selectedMember.currentRegion.campInRegion;

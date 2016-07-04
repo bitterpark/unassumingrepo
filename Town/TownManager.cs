@@ -12,10 +12,12 @@ public class TownManager : MonoBehaviour {
 	int crew;
 	const int noMoneyCrewPenalty = 10;
 
+	public const int mercenaryHireCost = 100;
+	public const int mercenaryHireDuration = daysPerGameWeek;
 	List<PartyMember> mercenaryHireList = new List<PartyMember>();
-	List<PartyMember> previousHiredMercsPool = new List<PartyMember>();
-	int hirableMercsPoolSize = 5;
-	public const int dailyPayPerCrew = 10;
+	List<PartyMember> previouslyHiredMercPool = new List<PartyMember>();
+	int hirableMercsPoolSize = 6;
+	public const int weeklyPayPerCrew = 90;
 
 	public List<TownBuilding> buildings;
 
@@ -23,50 +25,78 @@ public class TownManager : MonoBehaviour {
 
 	bool enginesBuilt=false;
 	bool marketUnlocked=false;
+	bool workshopsUnlocked = false;
 
 	int dailyMercHealRate = 0;
 
 	float marketPriceMult = 1;
 
+	public const int daysPerGameWeek = 3;
+
+	List<FutureTransaction> expenseTransactions;
+	List<FutureTransaction> incomeTransactions;
+
+	public struct FutureTransaction
+	{
+		public int moneyDelta;
+		public string transactionText;
+		
+		public FutureTransaction(int delta, string text)
+		{
+			moneyDelta = delta;
+			transactionText = text;
+		}
+	}
+
 	public void NewGameState()
 	{
 		LockMarket();
+		LockWorkshops();
+
+		incomeTransactions = new List<FutureTransaction>();
+		expenseTransactions = new List<FutureTransaction>();
+
 		dailyMercHealRate = 0;
 		enginesBuilt = false;
+
 		buildings = new List<TownBuilding>();
-		SetMoney(startingMoney);
-		SetCrew(startingCrew);
-		previousHiredMercsPool.Clear();
-		UpdateMercenaryHireList();
-		buildings.Add(new Habitation());
+		buildings.Add(new EngineeringBay());
 		buildings.Add(new CommCenter());
 		buildings.Add(new CargoBay());
 		buildings.Add(new SickBay());
+		buildings.Add(new Engines());
+
+		SetMoney(startingMoney);
+		SetCrew(startingCrew);
+		previouslyHiredMercPool.Clear();
+		UpdateMercenaryHireList();
 
 		itemsOnSale = new List<InventoryItem>();
-		itemsOnSale.Add(new Scrap());
-		itemsOnSale.Add(new Scrap());
-		itemsOnSale.Add(new Scrap());
-		itemsOnSale.Add(new Scrap());
-		itemsOnSale.Add(new Scrap());
-		itemsOnSale.Add(new Scrap());
+		itemsOnSale.Add(new Pipe());
+		itemsOnSale.Add(new Axe());
+		itemsOnSale.Add(new Knife());
+		itemsOnSale.Add(new AssaultRifle());
+		itemsOnSale.Add(new NineM());
+		itemsOnSale.Add(new Shotgun());
 		itemsOnSale.Add(new ComputerParts());
-		itemsOnSale.Add(new ComputerParts());
-		itemsOnSale.Add(new ComputerParts());
-		itemsOnSale.Add(new ComputerParts());
-		itemsOnSale.Add(new ComputerParts());
-		itemsOnSale.Add(new ComputerParts());
+
+		MapManager.main.GetTown().StashItem(new Scrap());
+		MapManager.main.GetTown().StashItem(new FakeMoney());
 	}
 
 	public virtual void UpdateMercenaryHireList()
 	{
-		int previouslyHiredMercsCount = Random.Range(1, Mathf.Min(3,hirableMercsPoolSize));
-		for (int i = previouslyHiredMercsCount; i < previouslyHiredMercsCount; i++)
+		mercenaryHireList.Clear();
+		int returningMercsCount = Random.Range(1, Mathf.Min(3,hirableMercsPoolSize));
+		for (int i = 0; i < returningMercsCount; i++)
 		{
-			if (previousHiredMercsPool.Count == 0) break;
-			PartyMember randomlyPickedMerc=previousHiredMercsPool[Random.Range(0,previousHiredMercsPool.Count)];
+			//print("");
+			if (previouslyHiredMercPool.Count == 0) 
+				break;
+			
+			PartyMember randomlyPickedMerc=previouslyHiredMercPool[Random.Range(0,previouslyHiredMercPool.Count)];
 			mercenaryHireList.Add(randomlyPickedMerc);
-			previousHiredMercsPool.Remove(randomlyPickedMerc);
+			//previouslyHiredMercPool.Remove(randomlyPickedMerc);
 		}
 		
 		while (mercenaryHireList.Count < hirableMercsPoolSize)
@@ -83,10 +113,11 @@ public class TownManager : MonoBehaviour {
 	public void MercenaryHired(PartyMember hiredMerc)
 	{
 		mercenaryHireList.Remove(hiredMerc);
+		previouslyHiredMercPool.Remove(hiredMerc);
 	}
 	public void MercenaryContractFinished(PartyMember finishedMerc)
 	{
-		previousHiredMercsPool.Add(finishedMerc);
+		previouslyHiredMercPool.Add(finishedMerc);
 	}
 
 	public void IncrementHireableMercsPoolSize(int delta)
@@ -94,19 +125,25 @@ public class TownManager : MonoBehaviour {
 		hirableMercsPoolSize += delta;	
 	}
 
+	public int GetCrew() { return crew; }
+
 	public void IncrementCrew(int delta)
 	{
 		SetCrew(crew + delta);
 	}
+
 	public void SetCrew(int newCrewCount)
 	{
 		crew = newCrewCount;
 		if (crew <= 0)
 			GameManager.main.EndCurrentGame(false);
 		else
+		{
 			BuildingsCrewUpdate();
+			CalculateCrewExpenses();
+		}
 	}
-	public int GetCrew() { return crew; }
+	
 
 	public virtual void BuildingsCrewUpdate()
 	{
@@ -116,26 +153,74 @@ public class TownManager : MonoBehaviour {
 		}
 	}
 
+	public void AddFutureExpense(int expenseMagnitude, string text)
+	{
+		string financeLine = text + " = -$" + expenseMagnitude;
+		expenseTransactions.Add(new FutureTransaction(-expenseMagnitude, financeLine));
+	}
+	public List<FutureTransaction> GetFutureExpenses()
+	{
+		return expenseTransactions;
+	}
+
+	public void AddFutureIncome(int incomeMagnitude, string text)
+	{
+		string financeLine = text + " = $" + incomeMagnitude;
+		incomeTransactions.Add(new FutureTransaction(incomeMagnitude, financeLine));
+	}
+	public List<FutureTransaction> GetFutureIncomes()
+	{
+		return incomeTransactions;
+	}
+
+
 	public void SetMoney(int newMoneyBalance)
 	{
 		money = newMoneyBalance;
 	}
 
-	public void DailyCashBalanceChange()
+	public void CheckForEndOfWeek()
 	{
+		//Make sure this only happens weekly
+		if (PartyManager.mainPartyManager.daysPassed % (daysPerGameWeek+1) == 0)
+		{
+			DoEndOfWeekChanges();
+		}
+	}
+
+	void DoEndOfWeekChanges()
+	{
+		print("End of week mercenary list update!");
+		UpdateMercenaryHireList();
+		
+		money = GetExpectedWeeklyBalance();
+		expenseTransactions.Clear();
+		incomeTransactions.Clear();
+
 		if (money < 0)
 			IncrementCrew(-noMoneyCrewPenalty);
-		money = GetDailyBalance();
+		CalculateCrewExpenses();
 	}
 
-	public int GetDailyBalance()
+	public int GetExpectedWeeklyBalance()
 	{
-		return money - CalculateCrewExpenses();
+		int finalBalance=money;
+
+		foreach (FutureTransaction expense in expenseTransactions)
+			finalBalance += expense.moneyDelta;
+		
+		foreach (FutureTransaction income in incomeTransactions)
+			finalBalance += income.moneyDelta;
+			
+		return finalBalance;
 	}
 
-	public int CalculateCrewExpenses()
+	void CalculateCrewExpenses()
 	{
-		return crew * dailyPayPerCrew;
+		expenseTransactions.Clear();
+		int nextWeeksCrewExpenses = crew * weeklyPayPerCrew;
+		string crewExpensesText = "Crew: $" + weeklyPayPerCrew + "x" + crew;
+		AddFutureExpense(nextWeeksCrewExpenses, crewExpensesText);
 	}
 
 	public void IncrementDailyMercHealRate(int delta)
@@ -162,6 +247,17 @@ public class TownManager : MonoBehaviour {
 	public float GetMarketPriceMult()
 	{
 		return marketPriceMult;
+	}
+
+	public void UnlockWorkshops()
+	{
+		workshopsUnlocked = true;
+		TownScreen.main.UnlockWorkshopsTab();
+	}
+	public void LockWorkshops()
+	{
+		workshopsUnlocked = false;
+		TownScreen.main.LockWorkshopsTab();
 	}
 
 	public void UnlockMarket()
@@ -194,6 +290,6 @@ public class TownManager : MonoBehaviour {
 	void Start () 
 	{
 		main = this;
-		PartyManager.ETimePassed += DailyCashBalanceChange;
+		PartyManager.ETimePassedEnd += CheckForEndOfWeek;
 	}
 }

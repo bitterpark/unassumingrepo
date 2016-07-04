@@ -104,6 +104,11 @@ public class SpriteBase : MonoBehaviour {
 	public Sprite flag;
 	public Sprite armor;
 	public Sprite rock;
+	public Sprite buckshot;
+	public Sprite pipe;
+	public Sprite knife;
+	public Sprite axe;
+	public Sprite money;
 
 	// Use this for initialization
 	void Start () 

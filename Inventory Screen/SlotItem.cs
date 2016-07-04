@@ -72,39 +72,9 @@ public class SlotItem : MonoBehaviour, IBeginDragHandler,IDragHandler,IEndDragHa
 		if (assignedItem != null)
 		{
 			TooltipManager.main.CreateItemTooltip(assignedItem, transform);
-			/*
-			if (assignedItem.GetType() == typeof(InventoryItem))
-				TooltipManager.main.CreateTooltip(assignedItem.GetMouseoverDescription(), this.transform);
-			else
-			{
-				if (assignedItem.GetType().BaseType == typeof(EquippableItem))
-				{
-					EquippableItem item = assignedItem as EquippableItem;
-					TooltipManager.main.CreateTooltip(assignedItem.GetMouseoverDescription(), this.transform
-						, item.addedCombatCards.ToArray());
-				}
-				if (assignedItem.GetType().BaseType == typeof(Weapon))
-				{
-					Weapon item = assignedItem as Weapon;
-					TooltipManager.main.CreateTooltip(assignedItem.GetMouseoverDescription(), this.transform
-						, item.addedCombatCards.ToArray());
-				}
-			}*/
 		}
 	}
 	public void StopMouseoverText() {TooltipManager.main.StopAllTooltips();}//drawMouseoverText=false;}
-	
-	/*
-	void OnGUI()
-	{
-		if (drawMouseoverText && assignedItem!=null)
-		{
-			float height=60;
-			Vector3 myScreenPos=transform.position;//Camera.main.WorldToScreenPoint(transform.position);
-			Rect textRect=new Rect(myScreenPos.x+20,Screen.height-myScreenPos.y-height*0.5f,200,height);
-			GUI.Box(textRect,assignedItem.GetMouseoverDescription());
-		}
-	}*/
 	
 	#region IDropHandler implementation
 	public void OnDrop (PointerEventData eventData)
@@ -119,7 +89,12 @@ public class SlotItem : MonoBehaviour, IBeginDragHandler,IDragHandler,IEndDragHa
 
 	public void OnPointerClick(PointerEventData eventData)
 	{
-		if (eventData.button==PointerEventData.InputButton.Right && InventoryScreenHandler.mainISHandler.inventoryShown) currentSlot.RclickAction();
+		//if (eventData.button == PointerEventData.InputButton.Right && InventoryScreenHandler.mainISHandler.inventoryShown)
+			//currentSlot.RclickAction();
+		if (eventData.button == PointerEventData.InputButton.Left)
+		{
+			currentSlot.LclickAction();
+		}
 	}
 
 	#endregion

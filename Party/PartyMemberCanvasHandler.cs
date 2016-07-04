@@ -7,15 +7,15 @@ public class PartyMemberCanvasHandler : MonoBehaviour {
 
 	PartyMember assignedMember;
 	public Text nameText;
+	public Text classText;
+
 	public Text healthText;
-	public Text armsHealthText;
-	public Text legsHealthText;
+	public Text armorText;
 	public Text staminaText;
-	public Text hungerText;
-	public Text moraleText;
-	public Text fatigueText;
+	public Text ammoText;
+
 	public Text contractTimeText;
-	public Button memberSelector;
+	public Button memberInventoryOpenButton;
 	public Button assignmentButton;
 	Dictionary<MemberStatusEffect,StatusEffectImageHandler> statusEffectTokens=new Dictionary<MemberStatusEffect, StatusEffectImageHandler>();
 	public StatusEffectImageHandler tokenPrefab;
@@ -36,20 +36,6 @@ public class PartyMemberCanvasHandler : MonoBehaviour {
 		GameObject.Destroy(removedToken.gameObject);
 	}
 	
-	public void ShowHungerTooltip()
-	{
-		TooltipManager.main.CreateTooltip("Starvation prevents natural healing and reduces morale",hungerText.transform.parent);
-	}
-	
-	public void ShowFatigueTooltip()
-	{
-		//TooltipManager.main.CreateTooltip("Reduces max stamina",fatigueText.transform.parent);
-	}
-	
-	public void ShowMoraleTooltip()
-	{
-		TooltipManager.main.CreateTooltip("Can be spent when fatigue is high",moraleText.transform.parent);
-	}
 	
 	public void DisableTooltip()
 	{
@@ -121,27 +107,20 @@ public class PartyMemberCanvasHandler : MonoBehaviour {
 	
 	void Start() 
 	{
-		memberSelector.GetComponent<Image>().color=assignedMember.color;
-		memberSelector.onClick.AddListener(()=>InventoryScreenHandler.mainISHandler.MapOrEncounterToggleSelectedMember(assignedMember));
+		memberInventoryOpenButton.GetComponent<Image>().color=assignedMember.color;
+		memberInventoryOpenButton.onClick.AddListener(()=>InventoryScreenHandler.mainISHandler.MapOrEncounterToggleSelectedMember(assignedMember));
 	}//PartyScreenManager.mainPSManager.MemberClicked(assignedMember));}
 	
 	void Update()
 	{
 		nameText.text=""+assignedMember.name;
-		/*
-		healthText.text=assignedMember.memberBodyParts.currentParts[PartyMember.BodyPartTypes.Vitals].health+"|"
-		+assignedMember.vitalsMaxHealth;
-		armsHealthText.text=assignedMember.memberBodyParts.currentParts[PartyMember.BodyPartTypes.Hands].health+"|"
-		+assignedMember.handsMaxHealth;
-		legsHealthText.text=assignedMember.memberBodyParts.currentParts[PartyMember.BodyPartTypes.Legs].health+"|"
-		+assignedMember.legsMaxHealth;
-		*/
+		classText.text = assignedMember.GetClass().ToString();
+
 		healthText.text =assignedMember.GetHealth().ToString();
 		staminaText.text=assignedMember.GetStartStamina().ToString();
-		/*
-		hungerText.text="Hunger:"+assignedMember.GetHunger()+"|100";
-		moraleText.text="Morale:"+assignedMember.morale+"|100";
-		fatigueText.text="Fatigue:"+assignedMember.GetFatigue()+"|"+PartyMember.maxFatigue;*/
+		armorText.text = assignedMember.GetStartArmor().ToString();
+		ammoText.text = assignedMember.GetStartAmmo().ToString();
+
 		contractTimeText.text="Days left:"+assignedMember.hireDaysRemaining;
 	}
 }

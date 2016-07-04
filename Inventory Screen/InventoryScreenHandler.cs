@@ -111,6 +111,7 @@ public class InventoryScreenHandler : MonoBehaviour
 		RefreshInventoryItems();
 		RecipeMakeButton.EItemMade += RefreshInventoryItems;
 		InventorySlot.EItemDropped += RefreshInventoryItems;
+		InventorySlot.EItemUsed += RefreshInventoryItems;
 	}
 	/*
 	void InventoryCloseEncounterEffect()
@@ -167,6 +168,7 @@ public class InventoryScreenHandler : MonoBehaviour
 		inventoryShown=false;
 		RecipeMakeButton.EItemMade -= RefreshInventoryItems;
 		InventorySlot.EItemDropped -= RefreshInventoryItems;
+		InventorySlot.EItemUsed -= RefreshInventoryItems;
 	}
 	
 	public void RefreshInventoryItems()
@@ -205,7 +207,7 @@ public class InventoryScreenHandler : MonoBehaviour
 		healthValueText.text=selectedMember.GetHealth().ToString();
 		startingArmorValueText.text = selectedMember.GetStartArmor().ToString();
 		startingStaminaValueText.text = selectedMember.GetStartStamina().ToString();
-		startingAmmoValueText.text = selectedMember.GetAmmo().ToString();
+		startingAmmoValueText.text = selectedMember.GetStartAmmo().ToString();
 
 
 
@@ -291,7 +293,7 @@ public class InventoryScreenHandler : MonoBehaviour
 				SlotItem newItem = Instantiate(slotItemPrefab);
 				newItem.AssignItem(selectedMember.carriedItems[i]);
 				newSlot.AssignItem(newItem);
-				newItem.GetComponent<Button>().onClick.AddListener(() => InventoryItemClicked(newItem.assignedItem, newItem.currentSlot));
+				//newItem.GetComponent<Button>().onClick.AddListener(() => InventoryItemClicked(newItem.assignedItem, newItem.currentSlot));
 			}
 		}
 	}
@@ -322,7 +324,7 @@ public class InventoryScreenHandler : MonoBehaviour
 				SlotItem newItem = Instantiate(slotItemPrefab);
 				newItem.AssignItem(activeList[i]);
 				newSlot.AssignItem(newItem);
-				newItem.GetComponent<Button>().onClick.AddListener(() => InventoryItemClicked(newItem.assignedItem, newItem.currentSlot));
+				//newItem.GetComponent<Button>().onClick.AddListener(() => InventoryItemClicked(newItem.assignedItem, newItem.currentSlot));
 			}
 		}
 	}
@@ -373,7 +375,7 @@ public class InventoryScreenHandler : MonoBehaviour
 			GameObject.Destroy(graphic.gameObject);
 		}
 	}
-
+	/*
 	public void InventoryItemClicked(InventoryItem clickedItem,InventorySlot originSlot)
 	{
 		if (clickedItem.UseAction(selectedMember)) 
@@ -381,13 +383,7 @@ public class InventoryScreenHandler : MonoBehaviour
 			//if item came from common inventory/encounter floor
 			if (originSlot.GetType()==typeof(InventorySlot))
 			{
-				EncounterCanvasHandler encounterHandler=EncounterCanvasHandler.main;
-				if (encounterHandler.encounterOngoing) 
-				{
-					//EncounterCanvasHandler.main.displayedRoom.RemoveFloorItem(clickedItem);
-					encounterHandler.roomButtons[encounterHandler.memberCoords[selectedMember]].PickUpFloorItem(clickedItem);
-				}
-				else selectedMember.currentRegion.TakeStashItem(clickedItem);
+				selectedMember.currentRegion.TakeStashItem(clickedItem);
 				//{PartyManager.mainPartyManager.RemoveItems(clickedItem);}
 				
 			}
@@ -399,7 +395,7 @@ public class InventoryScreenHandler : MonoBehaviour
 			}
 			RefreshInventoryItems();
 		} 
-	}
+	}*/
 
 	public void KickMemberPressed()
 	{

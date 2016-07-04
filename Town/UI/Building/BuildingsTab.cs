@@ -21,6 +21,7 @@ public class BuildingsTab : MonoBehaviour,TownTab {
 		RefreshInventoryItems();
 		BuildingBuildButton.EBuildingBuilt += RefreshBuildingList;
 		InventorySlot.EItemDropped += RefreshInventoryItems;
+		InventorySlot.EItemUsed += RefreshInventoryItems;
 	}
 
 	void RefreshBuildingList()
@@ -78,6 +79,7 @@ public class BuildingsTab : MonoBehaviour,TownTab {
 		CleanupOldInventorySlots();
 		CleanupOldBuildingList();
 		InventorySlot.EItemDropped -= RefreshInventoryItems;
+		InventorySlot.EItemUsed -= RefreshInventoryItems;
 		BuildingBuildButton.EBuildingBuilt -= RefreshBuildingList;
 		gameObject.SetActive(false);
 	}

@@ -1,28 +1,60 @@
 ﻿using UnityEngine;
 using System.Collections;
 
-public class Smokescreen : Effect
+public class SoldierCards
 {
-	int armorBonus = 30;
-	public Smokescreen()
-		: base()
+	public static CombatDeck GetClassCards()
 	{
-		name = "Smokescreen";
-		description = "The user and all friendly characters gain "+armorBonus+" armor";
-		image = SpriteBase.mainSpriteBase.cover;
-		targetType = TargetType.AllFriendlies;
-		ammoCost = 3;
-	}
+		CombatDeck result = new CombatDeck();
 
-	protected override void CardPlayEffects()
-	{
-		base.CardPlayEffects();
-		foreach (CharacterGraphic friendly in targetChars)
-			friendly.IncrementArmor(armorBonus);
+		result.AddCards(typeof(Smokescreen));
+		result.AddCards(typeof(BoundingOverwatch));
+		result.AddCards(typeof(Grenade));
+		result.AddCards(typeof(PickOff));
+		result.AddCards(typeof(MarkTarget));
+		result.AddCards(typeof(Defillade),2);
+		result.AddCards(typeof(Diversion));
+		result.AddCards(typeof(Smash));
+		result.AddCards(typeof(Jab));
+		result.AddCards(typeof(Camaraderie));
+		result.AddCards(typeof(Sacrifice));
+
+		return result;
 	}
 }
 
-public class BoundingOverwatch : Effect
+public class Smokescreen : EffectCard
+{
+	public Smokescreen()
+		: base()
+	{
+		targetType = TargetType.AllFriendlies;
+		ammoCost = 2;
+		targetArmorGain = 30;
+		
+		name = "Smokescreen";
+		description = "The user and all friendly characters gain " + targetArmorGain + " armor";
+		image = SpriteBase.mainSpriteBase.cover;
+		
+	}
+}
+
+public class Defillade : EffectCard
+{
+	public Defillade()
+		: base()
+	{
+		targetType = TargetType.None;
+		staminaCost = 1;
+		userArmorGain = 30;
+		
+		name = "Defillade";
+		description = "Gain " + userArmorGain + " armor";
+		image = SpriteBase.mainSpriteBase.rock;
+	}
+}
+
+public class BoundingOverwatch : EffectCard
 {
 	public class Overwatch : RoomStipulationCard
 	{
@@ -31,13 +63,13 @@ public class BoundingOverwatch : Effect
 		public Overwatch()
 		{
 			name = "Overwatch";
-			image = SpriteBase.mainSpriteBase.bomb;
+			image = SpriteBase.mainSpriteBase.crosshair;
 			description = "When any enemy character plays a ranged attack, they lose " + damage + " health and this card is removed";
 		}
 
 		public override void ActivateCard()
 		{
-			MeleeCard.EMeleeCardPlayed += Trigger;
+			RangedCard.ERangedCardPlayed += Trigger;
 		}
 		void Trigger(CharacterGraphic cardPlayer)
 		{
@@ -50,7 +82,7 @@ public class BoundingOverwatch : Effect
 		}
 		public override void DeactivateCard()
 		{
-			MeleeCard.EMeleeCardPlayed -= Trigger;
+			RangedCard.ERangedCardPlayed -= Trigger;
 		}
 	}
 	
@@ -62,60 +94,44 @@ public class BoundingOverwatch : Effect
 		image = SpriteBase.mainSpriteBase.crosshair;
 		targetType = TargetType.None;
 
-		ammoCost = 1;
 		staminaCost = 2;
 	}
 
-	protected override void CardPlayEffects()
+	protected override void ApplyEffects()
 	{
-		base.CardPlayEffects();
 		CardsScreen.main.PlaceRoomCard(new Overwatch());
 	}
 }
 
-public class Camaraderie : Effect
+public class Camaraderie : EffectCard
 {
-	int friendlyCharStaminaGain = 4;
-
 	public Camaraderie()
 		: base()
 	{
+		targetType = TargetType.SelectFriendly;
+		staminaCost = 3;
+		targetStaminaGain = 3;
+		
 		name = "Camaraderie";
-		description = "A selected friendly character gains " + friendlyCharStaminaGain + " stamina";
+		description = "A selected friendly character gains " + targetStaminaGain + " stamina";
 		image = SpriteBase.mainSpriteBase.brokenArmsSprite;
-		targetType = TargetType.AllEnemies;
-
-		staminaCost = 4;
-	}
-
-	protected override void CardPlayEffects()
-	{
-		base.CardPlayEffects();
-		targetChars[0].IncrementStamina(friendlyCharStaminaGain);
 	}
 }
 
-public class Sacrifice : Effect
+public class Sacrifice : EffectCard
 {
-	int friendlyCharArmorGain = 30;
-	int selfDamage = 10;
-
 	public Sacrifice()
 		: base()
 	{
-		name = "Sacrifice";
-		description = "Take " + selfDamage +" damage, a selected friendly character gains " + friendlyCharArmorGain + " armor";
-		image = SpriteBase.mainSpriteBase.brokenArmsSprite;
 		targetType = TargetType.SelectFriendly;
-
 		staminaCost = 1;
-	}
-
-	protected override void CardPlayEffects()
-	{
-		base.CardPlayEffects();
-		userCharGraphic.TakeDamage(selfDamage);
-		targetChars[0].IncrementArmor(friendlyCharArmorGain);
+		takeDamageCost = 10;
+		targetArmorGain = 30;
+		
+		name = "Sacrifice";
+		description = "Take " + takeDamageCost + " damage, a selected friendly character gains " + targetArmorGain + " armor";
+		image = SpriteBase.mainSpriteBase.brokenArmsSprite;
+		
 	}
 }
 
@@ -129,8 +145,8 @@ public class Grenade : RangedCard
 		image = SpriteBase.mainSpriteBase.fire;
 		targetType = TargetType.AllEnemies;
 
-		ammoCost = 3;
-		healthDamage = 30;
+		ammoCost = 2;
+		damage = 20;
 	}
 }
 
@@ -145,7 +161,7 @@ public class PickOff : RangedCard
 		targetType = TargetType.Weakest;
 
 		ammoCost = 1;
-		healthDamage = 20;
+		damage = 40;
 	}
 }
 
@@ -160,13 +176,13 @@ public class MarkTarget : RangedCard
 		targetType = TargetType.Strongest;
 
 		ammoCost = 1;
-		healthDamage = 20;
+		damage = 40;
 	}
 }
 
 public class Diversion : MeleeCard
 {
-	int damagePenalty = 20;
+	int damagePenalty = 10;
 	
 	public Diversion()
 		: base()
@@ -176,7 +192,7 @@ public class Diversion : MeleeCard
 		image = SpriteBase.mainSpriteBase.brokenLegsSprite;
 		targetType = TargetType.AllEnemies;
 
-		staminaCost = 5;
+		staminaCost = 4;
 		staminaDamage= 3;
 	}
 

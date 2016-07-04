@@ -20,6 +20,7 @@ public class WorkshopTab : MonoBehaviour, TownTab {
 		RefreshAllItems();
 		RecipeMakeButton.EItemMade += RefreshAllItems;
 		InventorySlot.EItemDropped += RefreshAllItems;
+		InventorySlot.EItemUsed += RefreshAllItems;
 	}
 
 	void RefreshAllItems()
@@ -55,7 +56,7 @@ public class WorkshopTab : MonoBehaviour, TownTab {
 	{
 		CleanupOldCraftingList();
 		//Refresh crafting recipes
-		availableRecipes = CraftRecipe.GetGenericRecipes(false);
+		availableRecipes = CraftRecipe.GetGenericRecipes();
 		foreach (CraftRecipe recipe in availableRecipes)
 		{
 			RecipeGroup newRecipeDisplay = Instantiate(recipePrefab);
@@ -84,6 +85,7 @@ public class WorkshopTab : MonoBehaviour, TownTab {
 		CleanupOldCraftingList();
 		RecipeMakeButton.EItemMade -= RefreshAllItems;
 		InventorySlot.EItemDropped -= RefreshAllItems;
+		InventorySlot.EItemUsed -= RefreshAllItems;
 		gameObject.SetActive(false);
 	}
 }

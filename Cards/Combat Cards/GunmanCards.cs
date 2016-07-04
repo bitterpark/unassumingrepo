@@ -1,28 +1,64 @@
 ﻿using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
 
-public class TrickMags : Effect
+public class GunmanCards
 {
-	int ammoGain = 2;
-	public TrickMags()
-		: base()
+	public static CombatDeck GetClassCards()
 	{
-		name = "Trick Mags";
-		description = "Gain " + ammoGain + " ammo";
-		image = SpriteBase.mainSpriteBase.bullets;
-		targetType = TargetType.None;
-		staminaCost = 4;
+		CombatDeck result = new CombatDeck();
+
+		result.AddCards(typeof(Pistolwhip));
+		result.AddCards(typeof(Jab));
+		result.AddCards(typeof(Sidearm), 2);
+		result.AddCards(typeof(BurstFire));
+		result.AddCards(typeof(FullAuto));
+		result.AddCards(typeof(LimbShot), 2);
+		result.AddCards(typeof(ScopeIn));
+		result.AddCards(typeof(DetonateAmmo));
+		result.AddCards(typeof(Tripmine));
+		result.AddCards(typeof(HollowPoint));
+
+		return result;
 	}
 
-	protected override void CardPlayEffects()
+}
+
+public class FullAuto : RangedCard
+{
+	public FullAuto()
+		: base()
 	{
-		base.CardPlayEffects();
-		userCharGraphic.IncrementAmmo(ammoGain);
+		name = "Full Auto";
+		description = "Say hello";
+		image = SpriteBase.mainSpriteBase.skull;
+
+		damage = 80;
+		ammoCost = 3;
+		staminaCost = 1;
+		targetType = TargetType.SelectEnemy;
 	}
 }
 
-public class Tripmine : Effect
+public class TrickMags : EffectCard
 {
+	public TrickMags()
+		: base()
+	{
+		targetType = TargetType.None;
+		staminaCost = 4;
+		userAmmoGain = 2;
+		
+		name = "Trick Mags";
+		description = "Gain " + userAmmoGain + " ammo";
+		image = SpriteBase.mainSpriteBase.bullets;
+		
+	}
+}
+
+public class Tripmine : EffectCard
+{
+	int mineDamage;
 	public Tripmine()
 		: base()
 	{
@@ -30,40 +66,29 @@ public class Tripmine : Effect
 		description = "Places a Trip Mine in the room";
 		image = SpriteBase.mainSpriteBase.bomb;
 		targetType = TargetType.None;
-		ammoCost = 2;
+		ammoCost = 1;
+		mineDamage = 30;
 	}
 
-	protected override void CardPlayEffects()
+	protected override void ApplyEffects()
 	{
-		base.CardPlayEffects();
-		CardsScreen.main.PlaceRoomCard(new TripmineFriendly());
+		CardsScreen.main.PlaceRoomCard(new TripmineFriendly(mineDamage));
 	}
 }
 
-public class HollowPoint : MeleeCard
-{
-	int bonusDamage = 15;
-	
+public class HollowPoint : RangedCard
+{	
 	public HollowPoint()
 		: base()
 	{
-		name = "Hollow Point";
-		description = "If target has no armor, deal "+bonusDamage+" extra damage";
-		image = SpriteBase.mainSpriteBase.crosshair;
-
-		healthDamage = 5;
+		damage = 10;
+		unarmoredBonusDamage = 30;
 		ammoCost = 1;
 		targetType = TargetType.SelectEnemy;
-	}
-
-	protected override void CardPlayEffects()
-	{
-		userCharGraphic.IncrementAmmo(-ammoCost);
-		int totalDamage = healthDamage;
-		if (targetChars[0].GetArmor() == 0)
-			totalDamage += bonusDamage;
-
-		targetChars[0].TakeDamage(totalDamage);
+		
+		name = "Hollow Point";
+		description = "If target has no armor, deal " + unarmoredBonusDamage + " extra damage";
+		image = SpriteBase.mainSpriteBase.crosshair;
 	}
 }
 
@@ -77,11 +102,11 @@ public class Pistolwhip : MeleeCard
 		image = SpriteBase.mainSpriteBase.nineMSprite;
 		targetType = TargetType.SelectEnemy;
 
-		staminaCost = 3;
-		healthDamage = 10;
+		staminaCost = 2;
+		damage = 20;
 	}
 }
-
+//Unused
 public class Doubletap : RangedCard
 {
 	public Doubletap()
@@ -91,7 +116,7 @@ public class Doubletap : RangedCard
 		description = "Always";
 		image = SpriteBase.mainSpriteBase.bullet;
 
-		healthDamage = 10;
+		damage = 30;
 		ammoCost = 1;
 		targetType = TargetType.SelectEnemy;
 	}
@@ -106,14 +131,11 @@ public class ScopeIn : RangedCard
 		description = "Whites of their eyes (ignores armor)";
 		image = SpriteBase.mainSpriteBase.crosshair;
 
-		healthDamage = 40;
-		ammoCost = 3;
+		damage = 30;
+		ammoCost = 1;
+		staminaCost = 1;
+		ignoresArmor = true;
 		targetType = TargetType.SelectEnemy;
-	}
-
-	protected override void CardPlayEffects()
-	{
-		targetChars[0].TakeDamage(healthDamage, true);
 	}
 }
 
@@ -126,16 +148,15 @@ public class LimbShot : RangedCard
 		description = "Let them suffer";
 		image = SpriteBase.mainSpriteBase.brokenArmsSprite;
 
-		healthDamage = 5;
-		staminaDamage = 3;
-		ammoCost = 2;
+		staminaDamage = 2;
+		staminaCost = 2;
 		targetType = TargetType.SelectEnemy;
 	}
 }
 
 public class DetonateAmmo : RangedCard
 {
-	int bonusDamage= 10;
+	int bonusDamage= 20;
 
 	public DetonateAmmo()
 		: base()
@@ -144,18 +165,17 @@ public class DetonateAmmo : RangedCard
 		description = "If target has ammo, remove ammo and deal extra "+bonusDamage+" damage";
 		image = SpriteBase.mainSpriteBase.flamingBullet;
 
-		healthDamage = 10;
+		damage = 10;
 		ammoCost = 2;
 		targetType = TargetType.SelectEnemy;
 	}
 
-	protected override void CardPlayEffects()
+	protected override void DamageTargets()
 	{
-		int totalDamage = healthDamage;
+		int totalDamage = damage;
 		if (targetChars[0].GetAmmo() > 0)
 			totalDamage += bonusDamage;
 		targetChars[0].SetAmmo(0);
 		targetChars[0].TakeDamage(totalDamage);
-		base.CardPlayEffects();
 	}
 }

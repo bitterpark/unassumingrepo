@@ -136,24 +136,6 @@ public class EncounterRoom
 	
 	public EncounterRoom(Encounter parent) {parentEncounter=parent;}
 
-	public void GenerateUnlockedRoomLoot()
-	{
-		InventoryItem.LootMetatypes lootType=default(InventoryItem.LootMetatypes);
-		parentEncounter.chestTypes.RollProbability(out lootType);
-		lootInRoom.Clear();
-		lootInRoom.AddRange(InventoryItem.GenerateUnlockedRoomLoot(lootType));
-		hasLoot=true;
-	}
-
-	public void GenerateRoomLockedLoot()
-	{
-		InventoryItem.LootMetatypes lootType=default(InventoryItem.LootMetatypes);
-		parentEncounter.chestTypes.RollProbability(out lootType);
-		lootInRoom.Clear();
-		lootInRoom.AddRange(InventoryItem.GenerateLockedRoomLoot(lootType));
-		hasLoot=true;
-		lootIsLocked=true;
-	}
 
 	//LOOT/ITEM METHODS
 	public void AddFloorItem(InventoryItem item)

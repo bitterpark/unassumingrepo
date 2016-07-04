@@ -24,6 +24,8 @@ public class MapScoutingHandler : MonoBehaviour {
 	
 	MapRegion assignedRegion;
 
+	const int maxMercsPerMission = 4;
+
 	public Transform rewardCardsGroup;
 	public RewardCardGraphic rewardPrefab;
 
@@ -68,7 +70,7 @@ public class MapScoutingHandler : MonoBehaviour {
 		}
 		
 		confirmButton.gameObject.SetActive(true);
-		confirmButton.GetComponentInChildren<Text>().text="Enter ("+PartyMember.fatigueIncreasePerEncounter+" fatigue)";
+		confirmButton.GetComponentInChildren<Text>().text="Enter";
 		foreach (PartyMember member in PartyManager.mainPartyManager.partyMembers)//assignedRegion.localPartyMembers)// 
 		{
 			MissionSelectorHandler newSelector=Instantiate (memberSelectorPrefab) as MissionSelectorHandler;
@@ -125,8 +127,11 @@ public class MapScoutingHandler : MonoBehaviour {
 						//else scoutMoreButton.GetComponent<Button>().interactable=false;
 					}
 					//Prevent from entering encounter when no party members are selected*/
-					if (selectedForMission.Count>0) confirmButton.interactable=true;
-					else confirmButton.interactable=false;
+					if (selectedForMission.Count>0) 
+						confirmButton.interactable=true;
+					else 
+						confirmButton.interactable=false;
+					selectCountText.text = selectedForMission.Count+"/"+maxMercsPerMission;
 				}
 				else
 				{
@@ -172,7 +177,7 @@ public class MapScoutingHandler : MonoBehaviour {
 		PartyMember member=handler.assignedMember;
 		AssignedTaskTypes emptyOutVar;
 		if (!selectedForMission.Contains(member)
-		//&& selectedForMission.Count<assignedRegion.regionalEncounter.maxAllowedMembers
+		&& selectedForMission.Count<maxMercsPerMission
 		&& handler.assignedMember.CheckEnoughFatigue(PartyMember.fatigueIncreasePerEncounter)
 		&& !PartyManager.mainPartyManager.GetAssignedTask(member, out emptyOutVar))//EncounterCanvasHandler.encounterMaxPlayerCount) 
 		{

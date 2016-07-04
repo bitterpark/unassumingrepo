@@ -334,11 +334,7 @@ public class CacheInAnomaly:GameEvent
 					if (Random.value<0.6f)
 					{
 						eventResult=member.name+" volunteers to try and move across. The roofs are moist and slippery, and "+member.name+" loses balance several times, but manages to recover and safely reaches the supplies. Throwing the bags over,"+member.name+" carefully makes it back across, covered in sweat but unharmed\n\nFood, Ammo\n\n"+fatiguePenalty+" fatigue for "+member.name;
-						eventRegion.StashItem(new FoodSmall());
-						eventRegion.StashItem(new FoodSmall());
-						eventRegion.StashItem(new FoodBig());
-						eventRegion.StashItem(new FoodBig());
-						eventRegion.StashItem(new AmmoBox());
+
 						//PartyManager.mainPartyManager.GainItems(new FoodSmall());
 						//PartyManager.mainPartyManager.GainItems(new FoodBig());
 						//PartyManager.mainPartyManager.GainItems(new FoodBig());
@@ -364,73 +360,6 @@ public class CacheInAnomaly:GameEvent
 	}
 
 	public CacheInAnomaly()
-	{
-		repeatable=false;
-	}
-}
-
-public class MedicalCache:GameEvent
-{	
-	string eventDescription="";
-	
-	public override string GetDescription(MapRegion eventRegion, List<PartyMember> movedMembers) 
-	{
-		eventDescription="Wandering down a street, you spot a notice glued to one of the lampposts. It calls for evacuation and lists the address of the nearest emergency service post.\n They are probably gone by now, but they may have left some supplies behind. You can spend time to try and find the address, or ignore it and move on";
-		//GameManager.DebugPrint("Region coords is:"+eventRegion.GetCoords());
-		return eventDescription;
-	}
-	public override List<EventChoice> GetChoices(MapRegion eventRegion, List<PartyMember> movedMembers)
-	{
-		List<EventChoice> choicesList=new List<EventChoice>();
-		choicesList.Add(new EventChoice("Try to find the address"));
-		choicesList.Add(new EventChoice("Ignore it"));
-		return choicesList;
-	}
-	
-	public override string DoChoice (string choiceString, MapRegion eventRegion, List<PartyMember> movedMembers)
-	{
-		string eventResult=null;
-		int fatigueChangeSuccess=2;
-		int fatigueChangeFailure=2;
-		
-		switch (choiceString)
-		{
-		case"Try to find the address": 
-			{
-				//success
-				if (Random.value<0.5f)
-				{
-					eventResult="After an hour of wandering through deserted streets and alleyways, you find the remains of the emeregency camp in an emptied out parking lot.\nIt looks like they left in a hurry: a few tents stand abandoned amid discarded cellophane bags and other refuse.\nSearching the tents, you discover forgotten medical supplies\n\n"+fatigueChangeSuccess+" fatigue to everyone\n\n 2 medkits  2 bandages gained";
-					eventRegion.StashItem(new Medkit());
-					eventRegion.StashItem(new Medkit());
-					eventRegion.StashItem(new Bandages());
-					eventRegion.StashItem(new Pills());
-					eventRegion.StashItem(new Pills());
-					foreach (PartyMember member in movedMembers)
-					{
-						member.ChangeFatigue(fatigueChangeSuccess);
-					}
-				}
-				else
-				{
-					eventResult="You search the winding streets and alleyways.\n The layout of this area seems strangely twisted, the street signs hard to find.\nAfter runnning into several dead ends and a few passageways inexplicably blocked by random debris, you find yourself looping back to where you started and give the search up.\n\n"+fatigueChangeFailure+" fatigue to everyone";
-					foreach (PartyMember member in movedMembers)
-					{
-						member.ChangeFatigue(fatigueChangeFailure);
-					}
-				}
-				break;
-			}
-		case"Ignore it":
-			{
-				eventResult="Even if you can locate the emergency post, there's no guarantee anything useful is still there, so you decide to ignore it.";
-				break;
-			}
-		}
-		return eventResult;
-	}
-
-	public MedicalCache()
 	{
 		repeatable=false;
 	}
@@ -596,59 +525,6 @@ public class LowMoraleSpiral:GameEvent
 		return conditionsAreMet;
 	}
 }*/
-
-public class LowMoraleSteal:GameEvent
-{	
-	string eventDescription="";
-	int moraleThreshold=35;
-	InventoryItem stolenItem=null;
-	PartyMember inventoryMember=null;
-
-	public override string GetDescription(MapRegion eventRegion, List<PartyMember> movedMembers) 
-	{
-		eventDescription="Something seems wrong during asset review";
-		eventDescription+="\nSome items are missing. Stolen?";
-		eventDescription+="\n\n-"+stolenItem.itemName+" is gone";
-
-		//If an inventory member was found - take the item from that member's inventory, otherwise - take it from local region
-		if (inventoryMember!=null) inventoryMember.carriedItems.Remove(stolenItem);
-		else eventRegion.TakeStashItem(stolenItem);
-
-		return eventDescription;
-	}
-	
-	public override bool PreconditionsMet (MapRegion eventRegion, List<PartyMember> movedMembers)
-	{
-		bool thiefMemberFound=false;
-		foreach (PartyMember member in movedMembers)
-		{
-			if (stolenItem==null)
-			{
-				foreach (InventoryItem item in member.carriedItems)
-				{
-					if (item.GetType()==typeof(FoodBig) | item.GetType()==typeof(FoodSmall) | item.GetType()==typeof(FoodCooked))
-					{
-						stolenItem=item;
-						inventoryMember=member;
-						break;
-					}
-				}
-			}
-			if (member.morale<=moraleThreshold && member.isKleptomaniac) thiefMemberFound=true;
-		}
-		if (thiefMemberFound && stolenItem==null)
-		{
-			foreach (InventoryItem item in eventRegion.GetStashedItems())
-			{
-				if (item.GetType()==typeof(FoodBig) | item.GetType()==typeof(FoodSmall) | item.GetType()==typeof(FoodCooked))
-				{
-					stolenItem=item;
-				}
-			}
-		}
-		return (thiefMemberFound && stolenItem!=null);
-	}
-}
 
 public class LowMoraleFight:GameEvent
 {	
@@ -928,16 +804,6 @@ public class GasolineEvent:PersistentEvent
 				eventResult=presentMember.name+" sets to work, dragging out tools and twisting off locks.";
 	            eventResult+="\nThe sounds of metal on metal ring out trough the eerie silence. The work is dirty";
 	            eventResult+="\nand moments tense, but only the cold wind stirs the nearby ruins.";
-	            List<InventoryItem> scavengedItems=InventoryItem.GenerateMapSalvageLoot(InventoryItem.LootMetatypes.Salvage);
-	            eventResult+="\n\n"+fatigueRequirement+" fatigue for "+presentMember.name+"\n"+gasCanisterCount+" gas canisters";
-
-	            presentMember.ChangeFatigue(fatigueRequirement);
-	            for (int i=0; i<gasCanisterCount; i++)
-	            {
-	                eventRegion.StashItem(new Gasoline());
-	            }
-	            eventCompleted=true;
-				eventRegion.visible=true;
 	            break;
 	        }
         }
@@ -999,161 +865,6 @@ public abstract class TradeEvent:PersistentEvent
     	return (requiredCount==0);
     }
 }
-public class ScrapTrade:TradeEvent
-{
-	string eventDescription="";
-	int fuelRewardCount=4;
-	int foodRewardCount=4;
-
-	public ScrapTrade()
-    {
-		rewardItems=new Dictionary<InventoryItem, int>();
-    	float randomRoll=Random.value;
-    	if (randomRoll>0.5f)
-    	{
-	        requiredItemType=typeof(Scrap);
-	        requiredItemCount=3;
-			rewardItems.Add(new Firewood(),fuelRewardCount);
-		}
-		else
-		{
-			requiredItemType=typeof(Pills);
-	        requiredItemCount=3;
-			rewardItems.Add(new FoodSmall(),foodRewardCount);
-		}
-		repeatable=false;
-    }
-
-	string GetResultDescription(System.Type requiredItem)
-	{
-		string eventResult="";
-
-		if (requiredItem==typeof(Scrap))
-		{
-			eventResult="A tense-looking survivor hurriedly brings several handfuls of firewood out of the hideout.";
-	        eventResult+="\nThe whole time, you can't shake the feeling of being watched from within.";
-	        eventResult+="\nHe shakes your hand and briefly thanks you before running back, locking the door behind him.";
-			
-			eventResult+="\n\n"+fuelRewardCount+" firewood";
-		}
-		if (requiredItem==typeof(Pills))
-		{
-			eventResult="A tense-looking survivor hurriedly brings several handfuls of food out of the hideout.";
-	        eventResult+="\nThe whole time, you can't shake the feeling of being watched from within.";
-	        eventResult+="\nHe shakes your hand and briefly thanks you before running back, locking the door behind him.";
-
-			eventResult+="\n\n"+foodRewardCount+" Junk Food";
-		}
-		return eventResult;
-	}
-
-    
-
-    public override Sprite GetRegionSprite(){return SpriteBase.mainSpriteBase.gasStationSprite;}
-
-    public override string GetTooltipDescription()
-	{
-		string ttDescription="Trade";
-		if (!eventCompleted)
-		{
-			ttDescription+="\n\nSurvivors here will trade you";
-			foreach (InventoryItem item in rewardItems.Keys)
-			{
-				ttDescription+=" "+rewardItems[item]+" "+item.itemName;
-			}
-			ttDescription+="\n for "+requiredItemCount+" "+requiredItemType;
-		}
-		else ttDescription+="\n\nThe survivors are gone from this hideout";
-		return ttDescription;
-	}
-
-    public override string GetScoutingDescription()
-	{
-		string scoutingDescription="";
-		if (!eventCompleted)
-		{
-			scoutingDescription="Survivors holed up here offer to trade you";
-            foreach (InventoryItem item in rewardItems.Keys)
-            {
-                scoutingDescription += " " + rewardItems[item] + " " + item.itemName;
-            }
-            scoutingDescription += " for " + requiredItemCount + " " + requiredItemType;
-			scoutingDescription+="\n";
-			
-		}
-		else scoutingDescription="The hideout is trashed and empty. It looks like the survivors left, or got chased off.\nYou wonder what became of them.";
-		return scoutingDescription;
-	}
-
-    public override string GetDescription(MapRegion eventRegion, List<PartyMember> movedMembers) 
-    {
-        string noticingPartyMemberName=movedMembers[Random.Range(0,movedMembers.Count)].name;
-        eventDescription="You find a barred-up apartment building that seems to have been converted into a safehouse.";
-        eventDescription+="\nThe door is securely locked, but muffled voices are heard inside when you knock.";
-        eventDescription+="\nFinally, just when you get ready to leave, a hoarse voice calls out to you and offers a trade.";
-
-		eventDescription+="\n\n"+requiredItemCount+" "+requiredItemType+" for";
-		eventDescription+="\n";
-		foreach (InventoryItem item in rewardItems.Keys)
-		{
-			eventDescription+=" "+rewardItems[item]+" "+item.itemName;
-		}
-        //eventDescription="The buildings in this block seem almost normal, save for the cold blue lights"; 
-        //eventDescription+="\nflickering on and off in some of the windows. You can't make out anything inside";
-        //eventDescription+="\nYour party sets to work searching for supplies.";
-
-        
-        return eventDescription;
-    }
-    public override List<EventChoice> GetChoices(MapRegion eventRegion, List<PartyMember> movedMembers)
-    {
-        List<EventChoice> choicesList=new List<EventChoice>();
-
-        choicesList.Add(new EventChoice("Trade "+requiredItemCount+" "+requiredItemType
-        ,!TryFindRequiredItems(requiredItemType,requiredItemCount,eventRegion,movedMembers,out foundMemberItems,out foundAreaItems)));
-		choicesList.Add(new EventChoice("Leave"));
-        return choicesList;
-    }
-    
-    public override string DoChoice (string choiceString,MapRegion eventRegion, List<PartyMember> movedMembers)
-    {
-        string eventResult=null;
-
-			if (choiceString=="Trade "+requiredItemCount+" "+requiredItemType)
-			{
-				eventResult=GetResultDescription(requiredItemType);
-
-	            foreach (PartyMember member in foundMemberItems.Keys)
-	            {
-	            	foreach (InventoryItem item in foundMemberItems[member])
-	            	{
-	            		member.RemoveCarriedItem(item);
-	            	}
-	            }
-	            foreach (InventoryItem item in foundAreaItems)
-	            {
-	            	eventRegion.TakeStashItem(item);
-	            }
-	            foreach (InventoryItem item in rewardItems.Keys)
-	            {
-				for (int i=0; i<rewardItems[item]; i++) 
-					{
-						InventoryItem newRewardItem=System.Activator.CreateInstance(item.GetType()) as InventoryItem;
-						eventRegion.StashItem(newRewardItem);
-					}
-	            }
-	            eventCompleted=true;
-	            eventRegion.visible=true;
-	        }
-
-		if (choiceString=="Leave") 
-		{
-			eventResult="You politely decline the trade and quickly leave.";
-			return eventResult;
-		}
-        return eventResult;
-    }
-}
 
 public class WoundedSurvivor:TradeEvent
 {
@@ -1161,7 +872,7 @@ public class WoundedSurvivor:TradeEvent
 
 	public WoundedSurvivor()
     {
-		requiredItemType=typeof(Medkit);
+		//requiredItemType=typeof(Medkit);
         requiredItemCount=2;
         rewardItems=new Dictionary<InventoryItem, int>();
         repeatable=false;
@@ -1472,7 +1183,7 @@ public class CleanupEvent:GameEvent
 	    	//Find traps
 	        foreach (InventoryItem item in member.carriedItems)
 	        {
-				if (item.GetType()==typeof(SettableTrap)) usedMemberTraps.Add(item,member);
+				//if (item.GetType()==typeof(SettableTrap)) usedMemberTraps.Add(item,member);
 				if (usedMemberTraps.Count+usedLocationTraps.Count==requiredTrapsCount) 
 	            {
 					trapsGreyedOut=false;
@@ -1488,7 +1199,7 @@ public class CleanupEvent:GameEvent
 			//Try to find enough traps in region inventory
 	        foreach(InventoryItem item in eventRegion.GetStashedItems())
 	        {
-				if (item.GetType()==typeof(SettableTrap)) usedLocationTraps.Add(item);
+				//if (item.GetType()==typeof(SettableTrap)) usedLocationTraps.Add(item);
 				if (usedLocationTraps.Count==requiredTrapsCount)
 				{
 					trapsGreyedOut=false;
@@ -1783,16 +1494,6 @@ public class ScavengeEventOne:GameEvent
             {
                 eventResult="Safer-looking ruins are inspected, rubble cleared and plywood pried off, as you loot";
                 eventResult+="\namid distant echoes of otherworldly sounds.\nA safe search yields a modest bounty";
-                List<InventoryItem> scavengedItems=InventoryItem.GenerateMapSalvageLoot(InventoryItem.LootMetatypes.Salvage);
-                eventResult+="\n\n";
-                bool firstAdded=true;
-                foreach (InventoryItem item in scavengedItems)
-                {
-                    if (!firstAdded) eventResult+=", ";
-                    eventResult+=item.itemName;
-                    eventRegion.StashItem(item);
-                    firstAdded=false;
-                }
                 break;
             }
         }

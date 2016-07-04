@@ -57,6 +57,16 @@ public class TownScreen : MonoBehaviour {
 		marketButton.gameObject.SetActive(false);
 	}
 
+	public void UnlockWorkshopsTab()
+	{
+		workshopsButton.gameObject.SetActive(true);
+	}
+
+	public void LockWorkshopsTab()
+	{
+		workshopsButton.gameObject.SetActive(false);
+	}
+
 	public void OpenTownScreen()
 	{
 		gameObject.SetActive(true);

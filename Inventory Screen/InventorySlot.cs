@@ -6,6 +6,8 @@ public class InventorySlot : MonoBehaviour, IDropHandler
 {
 	public delegate void ItemDroppedDeleg();
 	public static event ItemDroppedDeleg EItemDropped;
+	public delegate void ItemUsedDeleg();
+	public static event ItemUsedDeleg EItemUsed;
 	
 	protected SlotItem filledItem;
 		
@@ -77,7 +79,8 @@ public class InventorySlot : MonoBehaviour, IDropHandler
 			if (oldItem!=null) {oldSlot.ItemSwapped(oldItem);}
 			//Update armor/damage/other stats on inventory screen
 			//InventoryScreenHandler.mainISHandler.RefreshInventoryItems();
-			if (EItemDropped != null) EItemDropped();
+			if (EItemDropped != null) 
+				EItemDropped();
 		}
 	}
 	
@@ -98,6 +101,19 @@ public class InventorySlot : MonoBehaviour, IDropHandler
 		}
 		//InventoryScreenHandler.mainISHandler.RefreshInventoryItems();
 		
+	}
+
+	public virtual void LclickAction()
+	{
+		if (GetType() == typeof(InventorySlot))
+		{
+			if (filledItem.assignedItem.UseAction())
+			{
+				EmptySlot();
+				if (EItemUsed != null)
+					EItemUsed();
+			}
+		}
 	}
 
 	//Only works for inheriting classes, does nothing for this class
@@ -136,17 +152,7 @@ public class InventorySlot : MonoBehaviour, IDropHandler
 	{
 		if (filledItem!=null)
 		{
-			if (EncounterCanvasHandler.main.encounterOngoing)
-			{
-				/*
-				EncounterRoom affectedRoom=EncounterCanvasHandler.main.currentEncounter
-					.encounterMap[EncounterCanvasHandler.main.memberCoords[InventoryScreenHandler.mainISHandler.selectedMember]];
-				affectedRoom.RemoveFloorItem(filledItem.assignedItem);*/
-				RoomButtonHandler affectedRoom=EncounterCanvasHandler.main
-				.roomButtons[EncounterCanvasHandler.main.memberCoords[InventoryScreenHandler.mainISHandler.selectedMember]];
-				affectedRoom.PickUpFloorItem(filledItem.assignedItem);
-			}
-			else InventoryScreenHandler.mainISHandler.selectedMember.currentRegion.TakeStashItem(filledItem.assignedItem);
+			MapManager.main.GetTown().TakeStashItem(filledItem.assignedItem);
 			//{PartyManager.mainPartyManager.RemoveItems(filledItem.assignedItem);}
 		}
 		filledItem=null;

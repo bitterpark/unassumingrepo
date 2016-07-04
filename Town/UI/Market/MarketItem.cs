@@ -20,11 +20,18 @@ public class MarketItem : MonoBehaviour, IPointerDownHandler,IPointerEnterHandle
 		buySlot = buy;
 		assignedItem = item;
 		itemIcon.sprite = item.GetItemSprite();
-		if (buy)
-			cost = Mathf.RoundToInt(MarketTab.genericItemCost * TownManager.main.GetMarketPriceMult());
-		else
-			cost = MarketTab.genericItemCost;
+
+		SetCost();
+
 		costText.text = "$" + cost;
+	}
+
+	void SetCost()
+	{
+		if (buySlot)
+			cost = Mathf.RoundToInt(assignedItem.itemCost * TownManager.main.GetMarketPriceMult());
+		else
+			cost = Mathf.RoundToInt(assignedItem.itemCost * 0.5f);
 	}
 
 	public void OnPointerDown(PointerEventData eventData)

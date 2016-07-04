@@ -7,9 +7,10 @@ public abstract class InventoryItem
 	//public static int foundAmmoCount=10;
 	
 	public string itemName;
+	public int itemCost=100;
 	
 	public abstract Sprite GetItemSprite();
-	public virtual bool UseAction(PartyMember member) {return false;}
+	public virtual bool UseAction() {return false;}
 	public abstract string GetMouseoverDescription();
 	
 	public virtual int GetWeight() {return 1;}
@@ -97,227 +98,6 @@ public abstract class InventoryItem
 		return metatypeDesc;
 	}
 
-	public static List<InventoryItem> GenerateLockedRoomLoot(LootMetatypes metaType)
-	{
-		float randomRoll=Random.value;
-		List<InventoryItem> setItems=new List<InventoryItem>();
-		ProbabilityList<InventoryItem[]> itemsList=new ProbabilityList<InventoryItem[]>();
-		switch(metaType)
-		{
-			case LootMetatypes.FoodItems:
-			{
-				itemsList.AddProbability(new InventoryItem[]{new FoodSmall(),new FoodSmall()},0.2f);
-                itemsList.AddProbability(new InventoryItem[] {new FoodSmall(), new Coffee() }, 0.2f);
-                itemsList.AddProbability(new InventoryItem[]{new FoodSmall(), new Alcohol() }, 0.2f);
-				itemsList.AddProbability(new InventoryItem[]{new FoodBig(),new Coffee()},0.2f);
-                itemsList.AddProbability(new InventoryItem[]{new FoodSmall(), new FoodSmall(), new FoodSmall()}, 0.2f);
-				InventoryItem[] result=null;
-				itemsList.RollProbability(out result);
-				return new List<InventoryItem>(result);
-				break;
-			}
-			case LootMetatypes.Medical:
-			{
-				itemsList.AddProbability(new InventoryItem[]{new Medkit(),new Bandages()},0.25f);
-				itemsList.AddProbability(new InventoryItem[]{new Bandages(),new Pills()},0.25f);
-				itemsList.AddProbability(new InventoryItem[]{new Medkit(),new Pills()},0.25f);
-				itemsList.AddProbability(new InventoryItem[]{new Medkit(),new Medkit()},0.25f);
-				InventoryItem[] result=null;
-				itemsList.RollProbability(out result);
-				return new List<InventoryItem>(result);
-				break;
-			}
-			case LootMetatypes.Melee:
-			{
-				itemsList.AddProbability(new InventoryItem[]{new Knife()},0.7f);
-				itemsList.AddProbability(new InventoryItem[]{new Axe()},0.3f);
-				InventoryItem[] result=null;
-				itemsList.RollProbability(out result);
-				return new List<InventoryItem>(result);
-				break;
-			}
-			case LootMetatypes.Guns:
-			{
-				itemsList.AddProbability(new InventoryItem[]{new AmmoBox()},0.4f);
-                itemsList.AddProbability(new InventoryItem[] {new Gunpowder(),new Gunpowder()}, 0.25f);
-				itemsList.AddProbability(new InventoryItem[]{new NineM()},0.15f);
-				itemsList.AddProbability(new InventoryItem[]{new AssaultRifle()},0.1f);
-				itemsList.AddProbability(new InventoryItem[]{new Shotgun()},0.1f);
-				InventoryItem[] result=null;
-				itemsList.RollProbability(out result);
-				return new List<InventoryItem>(result);
-				break;
-			}
-			case LootMetatypes.Equipment:
-			{
-				itemsList.AddProbability(new InventoryItem[]{new SettableTrap(),new SettableTrap()},0.2f);
-				itemsList.AddProbability(new InventoryItem[]{new Bed()},0.3f);
-				itemsList.AddProbability(new InventoryItem[]{new Toolbox()},0.25f);
-				itemsList.AddProbability(new InventoryItem[]{new Backpack()},0.25f);
-				InventoryItem[] result=null;
-				itemsList.RollProbability(out result);
-				return new List<InventoryItem>(result);
-				break;
-			}
-			case LootMetatypes.Gear:
-			{
-				itemsList.AddProbability(new InventoryItem[]{new AmmoBox()},0.4f);
-				itemsList.AddProbability(new InventoryItem[]{new ArmorVest()},0.3f);
-				itemsList.AddProbability(new InventoryItem[]{new Backpack()},0.3f);
-				InventoryItem[] result=null;
-				itemsList.RollProbability(out result);
-				return new List<InventoryItem>(result);
-				break;
-			}
-
-			case LootMetatypes.ApartmentSalvage:
-			{
-				itemsList.AddProbability(new InventoryItem[]{new Firewood()},0.2f);
-				itemsList.AddProbability(new InventoryItem[]{new Firewood(),new Firewood()},0.6f);
-				itemsList.AddProbability(new InventoryItem[]{new Firewood(),new Firewood(), new Firewood()},0.2f);
-				InventoryItem[] result=null;
-				itemsList.RollProbability(out result);
-				return new List<InventoryItem>(result);
-				break;
-			}
-			case LootMetatypes.WarehouseSalvage:
-			{
-				itemsList.AddProbability(new InventoryItem[]{new Scrap()},0.2f);
-				itemsList.AddProbability(new InventoryItem[]{new Scrap(),new Scrap()},0.6f);
-				itemsList.AddProbability(new InventoryItem[]{new Scrap(),new Scrap(), new Scrap()},0.2f);
-				InventoryItem[] result=null;
-				itemsList.RollProbability(out result);
-				return new List<InventoryItem>(result);
-				break;
-			}
-		}
-		return setItems;
-	}	
-
-	public static List<InventoryItem> GenerateUnlockedRoomLoot(LootMetatypes metaType)
-	{
-		float randomRoll=Random.value;
-		List<InventoryItem> setItems=new List<InventoryItem>(); // - unused
-		ProbabilityList<InventoryItem[]> itemsList=new ProbabilityList<InventoryItem[]>();
-		switch(metaType)
-		{
-			case LootMetatypes.FoodItems:
-			{
-				itemsList.AddProbability(new InventoryItem[0],0.66f);
-                itemsList.AddProbability(new InventoryItem[] { new FoodBig() }, 0.08f);
-                itemsList.AddProbability(new InventoryItem[] { new FoodSmall() }, 0.08f);
-                itemsList.AddProbability(new InventoryItem[] { new Alcohol() }, 0.09f);
-                itemsList.AddProbability(new InventoryItem[] { new Coffee() }, 0.09f);
-				InventoryItem[] result=null;
-				itemsList.RollProbability(out result);
-				return new List<InventoryItem>(result);
-				break;
-			}
-			case LootMetatypes.Medical:
-			{
-				itemsList.AddProbability(new InventoryItem[0],0.67f);
-				itemsList.AddProbability(new InventoryItem[]{new Bandages()},0.11f);
-				itemsList.AddProbability(new InventoryItem[]{new Pills()},0.11f);
-                itemsList.AddProbability(new InventoryItem[]{new Medkit() }, 0.11f);
-				InventoryItem[] result=null;
-				itemsList.RollProbability(out result);
-				return new List<InventoryItem>(result);
-				break;
-			}
-			case LootMetatypes.Melee:
-			{
-				itemsList.AddProbability(new InventoryItem[0],0.68f);
-				itemsList.AddProbability(new InventoryItem[]{new Knife()},0.16f);
-				itemsList.AddProbability(new InventoryItem[]{new Axe()},0.16f);
-				InventoryItem[] result=null;
-				itemsList.RollProbability(out result);
-				return new List<InventoryItem>(result);
-				break;
-			}
-			case LootMetatypes.Guns:
-			{
-				itemsList.AddProbability(new InventoryItem[0],0.67f);
-                itemsList.AddProbability(new InventoryItem[]{new Gunpowder(),new Gunpowder()}, 0.11f);
-				itemsList.AddProbability(new InventoryItem[]{new NineM()},0.11f);
-				itemsList.AddProbability(new InventoryItem[]{new AmmoBox()},0.11f);
-				InventoryItem[] result=null;
-				itemsList.RollProbability(out result);
-				return new List<InventoryItem>(result);
-				break;
-			}
-			case LootMetatypes.Equipment:
-			{
-				itemsList.AddProbability(new InventoryItem[0],0.67f);
-				itemsList.AddProbability(new InventoryItem[]{new Backpack()},0.11f);
-				itemsList.AddProbability(new InventoryItem[]{new Bed()},0.11f);
-				itemsList.AddProbability(new InventoryItem[]{new Toolbox()},0.11f);
-				InventoryItem[] result=null;
-				itemsList.RollProbability(out result);
-				return new List<InventoryItem>(result);
-				break;
-			}
-			case LootMetatypes.Gear:
-			{
-				itemsList.AddProbability(new InventoryItem[0],0.68f);
-				itemsList.AddProbability(new InventoryItem[]{new Backpack()},0.08f);
-				itemsList.AddProbability(new InventoryItem[]{new AmmoBox()},0.08f);
-				itemsList.AddProbability(new InventoryItem[]{new ArmorVest()},0.08f);
-                itemsList.AddProbability(new InventoryItem[]{new Gunpowder(),new Gunpowder()}, 0.08f);
-				InventoryItem[] result=null;
-				itemsList.RollProbability(out result);
-				return new List<InventoryItem>(result);
-				break;
-			}
-
-			case LootMetatypes.ApartmentSalvage:
-			{
-				itemsList.AddProbability(new InventoryItem[0],0.68f);
-				itemsList.AddProbability(new InventoryItem[]{new Firewood()},0.16f);
-				itemsList.AddProbability(new InventoryItem[]{new Firewood(),new Firewood()},0.16f);
-				InventoryItem[] result=null;
-				itemsList.RollProbability(out result);
-				return new List<InventoryItem>(result);
-				break;
-			}
-			case LootMetatypes.WarehouseSalvage:
-			{
-				itemsList.AddProbability(new InventoryItem[0],0.68f);
-				itemsList.AddProbability(new InventoryItem[]{new Scrap()},0.16f);
-				itemsList.AddProbability(new InventoryItem[]{new Scrap(),new Scrap()},0.16f);
-				InventoryItem[] result=null;
-				itemsList.RollProbability(out result);
-				return new List<InventoryItem>(result);
-				break;
-			}
-		}
-		return null;
-	}
-
-	public static List<InventoryItem> GenerateMapSalvageLoot(LootMetatypes metaType)
-	{
-		float randomRoll=Random.value;
-		List<InventoryItem> setItems=new List<InventoryItem>();
-		ProbabilityList<InventoryItem[]> itemsList=new ProbabilityList<InventoryItem[]>();
-		switch(metaType)
-		{
-			case LootMetatypes.Salvage:
-			{
-				itemsList.AddProbability(new InventoryItem[]{new Scrap()},0.2f);
-				itemsList.AddProbability(new InventoryItem[]{new Scrap(),new Gunpowder()},0.1f);
-                itemsList.AddProbability(new InventoryItem[] { new Gunpowder(), new Gunpowder() }, 0.1f);
-				itemsList.AddProbability(new InventoryItem[]{new FoodSmall()},0.1f);
-				itemsList.AddProbability(new InventoryItem[]{new Medkit()},0.1f);
-				itemsList.AddProbability(new InventoryItem[]{new Bandages()},0.1f);
-				itemsList.AddProbability(new InventoryItem[]{new Pills()},0.1f);
-				itemsList.AddProbability(new InventoryItem[]{new Firewood()},0.2f);
-				InventoryItem[] result=null;
-				itemsList.RollProbability(out result);
-				return new List<InventoryItem>(result);
-				break;
-			}
-		}
-		return setItems;
-	}
 
 	//Deprecated (un-deprecated as of right now) (used for crafting)
 	public enum LootItems 
@@ -337,22 +117,6 @@ public abstract class InventoryItem
 		InventoryItem lootedItem=null;
 		switch (itemType)
 		{
-			//AMMO
-			case LootItems.Ammopack:{lootedItem=new AmmoBox(); break;}
-			case LootItems.Ammo:{lootedItem=new Bullet(); break;}
-            case LootItems.Firecracker: { lootedItem = new Firecracker(); break;}
-			//FOOD
-			case LootItems.Food:{lootedItem=new FoodBig(); break;}
-			case LootItems.Junkfood: {lootedItem=new FoodSmall(); break;}
-			case LootItems.Cookedfood: {lootedItem=new FoodCooked(); break;}
-			//case LootItems.PerishableFood: {lootedItem=new PerishableFood(PartyManager.mainPartyManager.timePassed); break;}
-			//MEDS
-			case LootItems.Medkits:{lootedItem=new Medkit(); break;}
-			case LootItems.Pills:{lootedItem=new Pills(); break;}
-			case LootItems.Bandages:{lootedItem=new Bandages(); break;}
-			//EQUIPMENT
-			case LootItems.Flashlight:{lootedItem=new Flashlight(); break;}
-			case LootItems.ArmorVest:{lootedItem=new ArmorVest(); break;}
 			//MELEE WEAPONS
 			case LootItems.Pipe:{lootedItem=new Pipe(); break;}
 			case LootItems.Knife:{lootedItem=new Knife(); break;}
@@ -363,12 +127,6 @@ public abstract class InventoryItem
 			case LootItems.AssaultRifle:{lootedItem=new AssaultRifle(); break;}
 			case LootItems.Pipegun:{lootedItem=new Pipegun(); break;}
 			//MISC
-			case LootItems.Radio:{lootedItem=new Radio(); break;}
-			case LootItems.SettableTrap: {lootedItem=new SettableTrap(); break;}
-			case LootItems.Gas:{lootedItem=new Gasoline(); break;}
-			//CAMP ITEMS
-			case LootItems.CampBarricade:{lootedItem=new CampBarricade(); break;}
-			case LootItems.Firewood:{lootedItem=new Firewood(); break;}
 			//INGREDIENTS
 			case LootItems.Scrap:{lootedItem=new Scrap(); break;}
 			case LootItems.Gunpowder:{lootedItem=new Gunpowder(); break;}
@@ -379,510 +137,6 @@ public abstract class InventoryItem
 	}
 }
 
-public class CampBarricade: InventoryItem
-{
-	public CampBarricade()
-	{
-		itemName="Camp barricade";
-	}
-
-	public override Sprite GetItemSprite() {return SpriteBase.mainSpriteBase.campBarricadeSprite;}
-	
-	public override bool UseAction(PartyMember member)
-	{
-		if (member.currentRegion.hasCamp)
-		{
-			return member.currentRegion.TryDecreaseCampThreatLevel(-1);
-		}
-		return false;
-	}
-	public override string GetMouseoverDescription ()
-	{
-		return itemName+"\nUse at a camp to fortify, reducing the chance of attacks during rest";
-	}
-}
-
-public class Firewood: InventoryItem
-{
-	public Firewood()
-	{
-		itemName="Firewood";
-	}
-
-	public override Sprite GetItemSprite() {return SpriteBase.mainSpriteBase.fuelSprite;}
-	
-	public override bool UseAction(PartyMember member)
-	{
-	/*
-		if (member.currentRegion.hasCamp)
-		{
-			if (member.currentRegion.GetTemperature()!=MapRegion.TemperatureRating.Okay)
-			{
-				member.currentRegion.TryRaiseTemperature(1);
-				return true;
-			}
-		}*/
-
-		return member.currentRegion.TryRaiseTemperature(1);
-	}
-	public override string GetMouseoverDescription ()
-	{
-		return itemName+"\nBurn to improve local temperature";
-	}
-}
-
-public class SettableTrap: InventoryItem
-{
-	//System.Type myTrapType=typeof(Trap);
-	int legDamage=180;
-	
-	public SettableTrap (){itemName="Trap";}
-	
-	public override Sprite GetItemSprite() {return SpriteBase.mainSpriteBase.settableTrapSprite;}
-	
-	public override string GetMouseoverDescription ()
-	{
-		return itemName+"\nSets a floor trap that targets enemy legs";
-	}
-	
-	public override bool UseAction(PartyMember member)
-	{
-		bool trapSet=false;
-		EncounterCanvasHandler encounterHandler=EncounterCanvasHandler.main;
-		if (encounterHandler.encounterOngoing)
-		{
-			RoomButtonHandler trappedRoomButton=encounterHandler.roomButtons[encounterHandler.memberCoords[member]];
-			if (trappedRoomButton.assignedRoom.trapInRoom==null)
-			{
-				encounterHandler.roomButtons[encounterHandler.memberCoords[member]]
-				.SetTrap(new Trap(trappedRoomButton.assignedRoom,legDamage),true);
-				trapSet=true;
-			}
-		}
-		return trapSet;
-	}
-}
-
-public class AmmoBox:InventoryItem
-{
-	public AmmoBox()
-	{
-		itemName="Ammo box";
-	}
-	
-	int ammoAmount=12;
-	public override Sprite GetItemSprite() {return SpriteBase.mainSpriteBase.ammoBoxSprite;}
-	
-	public override bool UseAction(PartyMember member)
-	{
-		PartyManager.mainPartyManager.ammo+=ammoAmount;
-		return true;
-	}
-	public override string GetMouseoverDescription ()
-	{
-		return itemName+"\nAdds "+ammoAmount+" ammo";
-	}
-}
-
-public class Bullet:InventoryItem
-{
-	public Bullet()
-	{
-		itemName="Bullet";
-	}
-	
-	int ammoAmount=1;
-	public override Sprite GetItemSprite() {return SpriteBase.mainSpriteBase.bullet;}
-	
-	public override bool UseAction(PartyMember member)
-	{
-		PartyManager.mainPartyManager.ammo+=ammoAmount;
-		return true;
-	}
-	public override string GetMouseoverDescription ()
-	{
-		return itemName+"\nAdds "+ammoAmount+" ammo";
-	}
-}
-
-public class Pills:InventoryItem
-{
-	public Pills()
-	{
-		itemName="Pills";
-	}
-
-	//float healPercentage=0.35f;
-	public override Sprite GetItemSprite() {return SpriteBase.mainSpriteBase.pillsSprite;}
-	
-	public override bool UseAction(PartyMember member)
-	{
-		bool healingPerformed=false;
-		
-		//do cold
-		List<Cold> colds=new List<Cold>();
-		foreach (MemberStatusEffect effect in member.activeStatusEffects)
-		{
-			if (effect.GetType()==typeof(Cold)) {colds.Add(effect as Cold);}
-		}
-		if (colds.Count>0) {healingPerformed=true;}
-		//treat all found colds
-		foreach (Cold cold in colds) {cold.CureCold();}//PartyManager.mainPartyManager.RemovePartyMemberStatusEffect(member,laceration);}
-		//Spend medkit if it did anything
-		//if (healingPerformed) PartyManager.mainPartyManager.RemoveItems(this);
-		return healingPerformed;
-	}
-	//Currently only works if tooltip is viewed from inventory screen
-	public override string GetMouseoverDescription ()
-	{
-		//int healAmount=Mathf.FloorToInt(InventoryScreenHandler.mainISHandler.selectedMember.maxHealth*healPercentage);
-		return itemName+"\nUse to cure cold";
-	}
-}
-
-public class Medkit:InventoryItem
-{
-	public Medkit()
-	{
-		itemName="Medkit";
-	}
-	
-	int healAmount=20;
-	//float healPercentage=0.35f;
-	public override Sprite GetItemSprite() {return SpriteBase.mainSpriteBase.medkitSprite;}
-	
-	public override bool UseAction(PartyMember member)
-	{
-		bool healingPerformed=false;
-		//int healAmount=Mathf.FloorToInt(member.maxHealth*healPercentage);
-		//do health
-		if (member.Heal(healAmount)){healingPerformed=true;}
-		
-		//do bleeding
-		//find all bleeding lacerations
-		List<Bleed> lacerations=new List<Bleed>();
-		foreach (MemberStatusEffect effect in member.activeStatusEffects)
-		{
-			if (effect.GetType()==typeof(Bleed)) {lacerations.Add(effect as Bleed);}
-		}
-		if (lacerations.Count>0) {healingPerformed=true;}
-		//treat all found lacerations
-		foreach (Bleed laceration in lacerations) {laceration.CureBleed();}//PartyManager.mainPartyManager.RemovePartyMemberStatusEffect(member,laceration);}
-		//Spend medkit if it did anything
-		//if (healingPerformed) PartyManager.mainPartyManager.RemoveItems(this);
-		return healingPerformed;
-	}
-	//Currently only works if tooltip is viewed from inventory screen
-	public override string GetMouseoverDescription()
-	{
-		int totalHealAmount = healAmount;
-		if (EncounterCanvasHandler.main.encounterOngoing)
-		{
-			foreach (PartyMember member in EncounterCanvasHandler.main.encounterMembers)
-			{
-				if (member.isMedic) { totalHealAmount = Mathf.RoundToInt(totalHealAmount * Medic.healMultiplier); break; }
-			}
-		}
-		else
-		{
-			//if healing is done outside of encounter
-			foreach (PartyMember member in InventoryScreenHandler.mainISHandler.selectedMember.currentRegion.localPartyMembers)
-			{
-				if (member.isMedic) { totalHealAmount = Mathf.RoundToInt(totalHealAmount * Medic.healMultiplier); break; }
-			}
-		}
-		return itemName + "\nUse to heal " + totalHealAmount + " of hp for each body part\nCures bleed";
-	}
-}
-
-public class Bandages: InventoryItem
-{
-	public Bandages() 
-	{
-		itemName="Bandages";
-	}
-	
-	int healAmount=5;
-	public override Sprite GetItemSprite() {return SpriteBase.mainSpriteBase.bandageSprite;}
-	
-	public override bool UseAction(PartyMember member)
-	{
-		bool healingPerformed=false;
-		//do health
-		if (member.Heal(healAmount)) { healingPerformed = true; }
-		//do bleeding
-		//find all bleeding lacerations
-		List<Bleed> lacerations=new List<Bleed>();
-		foreach (MemberStatusEffect effect in member.activeStatusEffects)
-		{
-			if (effect.GetType()==typeof(Bleed)) {lacerations.Add(effect as Bleed);}
-		}
-		if (lacerations.Count>0) {healingPerformed=true;}
-		//treat all found lacerations
-		foreach (Bleed laceration in lacerations) {laceration.CureBleed();}//PartyManager.mainPartyManager.RemovePartyMemberStatusEffect(member,laceration);}
-		//Spend medkit if it did anything
-		//if (healingPerformed) PartyManager.mainPartyManager.RemoveItems(this);
-		return healingPerformed;
-	}
-	public override string GetMouseoverDescription ()
-	{
-		int totalHealAmount = healAmount;
-		if (EncounterCanvasHandler.main.encounterOngoing)
-		{
-			foreach (PartyMember member in EncounterCanvasHandler.main.encounterMembers)
-			{
-				if (member.isMedic) { totalHealAmount = Mathf.RoundToInt(totalHealAmount * Medic.healMultiplier); break; }
-			}
-		}
-		else
-		{
-			//if healing is done outside of encounter
-			foreach (PartyMember member in InventoryScreenHandler.mainISHandler.selectedMember.currentRegion.localPartyMembers)
-			{
-				if (member.isMedic) { totalHealAmount = Mathf.RoundToInt(totalHealAmount * Medic.healMultiplier); break; }
-			}
-		}
-		return itemName + "\nUse to heal " + totalHealAmount + " of hp for each body part\nCures bleed";
-	}
-	
-}
-
-public class FoodBig:InventoryItem
-{
-	public FoodBig()
-	{
-		itemName="Canned food";
-	}
-	
-	int nutritionAmount=50;
-	public override Sprite GetItemSprite() {return SpriteBase.mainSpriteBase.foodSpriteBig;}
-	
-	public override bool UseAction(PartyMember member)
-	{
-		bool use=false;
-		if (member.Eat(nutritionAmount))//PartyManager.mainPartyManager.FeedPartyMember(member,100))
-		{
-			//PartyManager.mainPartyManager.partyInventory.Remove(this);
-			//PartyManager.mainPartyManager.RemoveItems(this);
-			use=true;
-		}
-		return use;
-	}
-	
-	public override string GetMouseoverDescription ()
-	{
-		return itemName+"\nRestores "+nutritionAmount+" hunger";
-	}
-}
-
-public class FoodSmall:InventoryItem
-{
-	public FoodSmall()
-	{
-		itemName="Junk food";
-	}
-	
-	int nutritionAmount=25;
-	public override Sprite GetItemSprite() {return SpriteBase.mainSpriteBase.foodSpriteSmall;}
-	
-	public override bool UseAction(PartyMember member)
-	{
-		bool use=false;
-		if (member.Eat(nutritionAmount))//PartyManager.mainPartyManager.FeedPartyMember(member,100))
-		{
-			//PartyManager.mainPartyManager.partyInventory.Remove(this);
-			//PartyManager.mainPartyManager.RemoveItems(this);
-			use=true;
-		}
-		return use;
-	}
-	
-	public override string GetMouseoverDescription ()
-	{
-		return itemName+"\nRestores "+nutritionAmount+" hunger";
-	}
-}
-
-public class FoodCooked:InventoryItem
-{
-	public FoodCooked()
-	{
-		itemName="Cooked meal";
-	}
-	
-	int nutritionAmount=50;
-	public override Sprite GetItemSprite() {return SpriteBase.mainSpriteBase.foodSpriteCooked;}
-	
-	public override bool UseAction(PartyMember member)
-	{
-		bool use=false;
-		if (member.Eat(nutritionAmount))//PartyManager.mainPartyManager.FeedPartyMember(member,100))
-		{
-			//PartyManager.mainPartyManager.partyInventory.Remove(this);
-			//PartyManager.mainPartyManager.RemoveItems(this);
-			use=true;
-		}
-		return use;
-	}
-	
-	public override string GetMouseoverDescription ()
-	{
-		return itemName+"\nRestores "+nutritionAmount+" hunger";
-	}
-}
-
-public class Alcohol : InventoryItem
-{
-    public Alcohol()
-	{
-		itemName="Alcohol";
-	}
-	
-	int moraleRestore=40;
-	public override Sprite GetItemSprite() {return SpriteBase.mainSpriteBase.alcohol;}
-	
-	public override bool UseAction(PartyMember usingMember)
-	{
-        if (!EncounterCanvasHandler.main.encounterOngoing)
-        {
-            usingMember.currentRegion.TryRaiseTemperature(1);
-            foreach (PartyMember member in usingMember.currentRegion.localPartyMembers) member.morale += moraleRestore;
-            return true;
-        }
-        return false;
-	}
-	
-	public override string GetMouseoverDescription ()
-	{
-		return itemName+"\nWarms everyone in the area and restores "+moraleRestore+" morale";
-	}
-
-}
-
-public abstract class EncounterItem : InventoryItem
-{
-    public override bool UseAction(PartyMember member)
-    {
-        if (EncounterCanvasHandler.main.encounterOngoing) return true;
-        else return false;
-    }
-}
-
-public class Firecracker : EncounterItem
-{
-    public override Sprite GetItemSprite() { return SpriteBase.mainSpriteBase.firecracker; }
-    
-    public Firecracker()
-    {
-        itemName="Firecracker";
-    }
-
-    float spawnChanceReduction = 0.2f;
-
-    public override bool UseAction(PartyMember member)
-    {
-        if (base.UseAction(member))
-        {
-            EncounterCanvasHandler.main.SetCurrentSpawnThreat(EncounterCanvasHandler.main.currentSpawnThreat-spawnChanceReduction);
-            return true;
-        }
-        return false;
-    }
-
-    public override string GetMouseoverDescription()
-    {
-        return itemName + "\nWhen indoors, reduces threat by " + (spawnChanceReduction*100) + "%";
-    }
-}
-
-public class Coffee : EncounterItem
-{
-     public override Sprite GetItemSprite() { return SpriteBase.mainSpriteBase.coffee; }
-    
-    public Coffee()
-    {
-        itemName="Coffee";
-    }
-
-    public override bool UseAction(PartyMember member)
-    {
-        if (base.UseAction(member))
-        {
-            member.RefreshMaxStamina();
-            return true;
-        }
-        return false;
-    }
-
-    public override string GetMouseoverDescription()
-    {
-        return itemName + "\nRestores stamina to full";
-    }
-}
-/*
-public class PerishableFood:InventoryItem
-{
-	int nutritionAmount=100;
-	int expireTime=5;
-	int healthPentalty=10;
-	int pickupHour;
-	
-	public PerishableFood()
-	{
-		pickupHour=PartyManager.mainPartyManager.timePassed;
-	}
-	
-	public PerishableFood (int pickupTime)
-	{
-		pickupHour=pickupTime;
-	}
-	
-	public override Sprite GetItemSprite() {return SpriteBase.mainSpriteBase.perishableFoodSprite;}
-	
-	public override bool UseAction(PartyMember member)
-	{
-		bool use=false;
-		if (member.Eat(nutritionAmount))//PartyManager.mainPartyManager.FeedPartyMember(member,100))
-		{
-			//IF more time has passed since pickup than expiry date allows - apply penalty
-			if (PartyManager.mainPartyManager.timePassed-pickupHour>=expireTime) {member.health-=healthPentalty;}
-			use=true;
-		}
-		return use;
-	}
-	
-	public override string GetMouseoverDescription ()
-	{
-		string desc="Perishable food\nRemoves all hunger";
-		int timeToExpiry=expireTime-(PartyManager.mainPartyManager.timePassed-pickupHour);
-		if (timeToExpiry>0) {desc+="\nExpires in:"+timeToExpiry+"hours";}
-		else {desc+="\nExpired";}
-		
-		return desc;//"Perishable food\nRemoves all hunger";
-	}
-
-}
-*/
-public class Radio:InventoryItem
-{
-	public Radio()
-	{
-		itemName="Radio";
-	}
-	
-	public override Sprite GetItemSprite() {return SpriteBase.mainSpriteBase.radioSprite;}
-	
-	public override bool UseAction(PartyMember member)
-	{
-		GameManager.main.EndCurrentGame(true);
-		return false;
-	}
-	
-	public override string GetMouseoverDescription ()
-	{
-		return itemName+"\nSummons a rescue";
-	}
-}
 
 public abstract class EquippableItem:InventoryItem
 {
@@ -907,151 +161,6 @@ public abstract class EquippableItem:InventoryItem
 	//public override bool UseAction(PartyMember member) {return false;}
 }
 
-public class Bed:EquippableItem
-{
-	public Bed()
-	{
-		itemName="Bedroll";
-	}
-	
-	public override Sprite GetItemSprite() {return SpriteBase.mainSpriteBase.bedSprite;}
-	
-	public override void EquipEffect (PartyMember member)
-	{
-		member.hasBedroll=true;
-	}
-	public override void UnequipEffect (PartyMember member)
-	{
-		member.hasBedroll=false;
-	}
-	
-	public override string GetMouseoverDescription ()
-	{
-		string desc = itemName + "\nFully restores fatigue when resting outside of camps";
-		desc += base.GetMouseoverDescription();
-		return desc;
-	}
-}
-
-public class Flashlight: EquippableItem
-{
-	public Flashlight()
-	{
-		itemName="Flashlight";
-	}
-	
-	public override Sprite GetItemSprite() {return SpriteBase.mainSpriteBase.flashlightSprite;}
-	public override void EquipEffect (PartyMember member)
-	{
-		member.hasLight=true;
-	}
-	public override void UnequipEffect (PartyMember member)
-	{
-		member.hasLight=false;
-	}
-	
-	public override string GetMouseoverDescription ()
-	{
-		string desc=itemName+"\nCurrently has no use";
-		desc += base.GetMouseoverDescription();
-		return desc;
-	}
-}
-
-public class Backpack: EquippableItem
-{
-	int carryCapIncrease=1;
-	public Backpack()
-	{
-		itemName="Backpack";
-		addedCombatCards.Add(new Breather());
-	}
-	
-	public override Sprite GetItemSprite() {return SpriteBase.mainSpriteBase.backpackSprite;}
-	public override void EquipEffect (PartyMember member)
-	{
-		member.ChangeMaxCarryCapacity(carryCapIncrease);
-	}
-	public override void UnequipEffect (PartyMember member)
-	{
-		member.ChangeMaxCarryCapacity(-carryCapIncrease);
-	}
-	
-	public override string GetMouseoverDescription ()
-	{
-		string desc=itemName+"\nIncreases carry capacity by "+(carryCapIncrease).ToString();
-		desc += base.GetMouseoverDescription();
-		return desc;
-	}
-}
-
-public class ArmorVest:EquippableItem
-{
-	public ArmorVest()
-	{
-		itemName="Armor vest";
-	}
-	
-	int damageReduction=3;
-	public override Sprite GetItemSprite() {return SpriteBase.mainSpriteBase.armorvestSprite;}
-	public override void EquipEffect (PartyMember member)
-	{
-		member.armorValue+=damageReduction;
-	}
-	public override void UnequipEffect (PartyMember member)
-	{
-		member.armorValue-=damageReduction;
-	}
-	
-	public override string GetMouseoverDescription ()
-	{
-		string desc=itemName+"\nReduces incoming physical damage by "+damageReduction;
-		desc += base.GetMouseoverDescription();
-		return desc;
-	}
-}
-
-public abstract class Tool:InventoryItem
-{
-	//public virtual List<CraftRecipe> GetEnabledRecipes() {return null;}
-	/*
-	public Tool()
-	{
-		itemName="Tools";
-	}
-	
-	int damageReduction=3;
-	public override Sprite GetItemSprite() {return SpriteBase.mainSpriteBase.armorvestSprite;}
-	public override void EquipEffect (PartyMember member)
-	{
-		member.armorValue+=damageReduction;
-	}
-	public override void UnequipEffect (PartyMember member)
-	{
-		member.armorValue-=damageReduction;
-	}
-	
-	public override string GetMouseoverDescription ()
-	{
-		return itemName+"\nEnables turning fuel into scrap";
-	}*/
-}
-
-public class Toolbox:Tool
-{
-	public Toolbox()
-	{
-		itemName="Toolbox";
-	}
-
-	public override Sprite GetItemSprite() {return SpriteBase.mainSpriteBase.toolsSprite;}
-	
-	public override string GetMouseoverDescription ()
-	{
-		return itemName+"\nAllows refining items into scrap";
-	}
-}
-
 public abstract class Weapon:InventoryItem
 {	
 	//damage for display on mouseover text
@@ -1074,6 +183,8 @@ public abstract class Weapon:InventoryItem
 		return actualDamage;
 	}
 
+	public int ammoBonus=0;
+	public int staminaBonus=0;
 
 
 	public List<CombatCard> addedCombatCards = new List<CombatCard>();
@@ -1082,28 +193,26 @@ public abstract class Weapon:InventoryItem
 	{
 		member.UnequipWeapon(this);
 	}
+
+	public override string GetMouseoverDescription()
+	{
+ 		string desc = itemName;
+		if (staminaBonus>0)
+			desc += "\nStamina bonus:" + staminaBonus;
+		if (ammoBonus>0)
+			desc += "\nAmmo bonus:" + ammoBonus;
+
+		if (addedCombatCards.Count>0)
+		{
+			desc+="\nAdds cards:";
+		}
+		return desc;
+	}
 }
 
 public abstract class RangedWeapon:Weapon
 {
 	public abstract int GetAmmoUsePerShot();
-	public override string GetMouseoverDescription ()
-	{
-		string desc = itemName;
-		desc += "\nDamage:" + baseDamage;
-		desc += "\nAccuracy modifier:" + accuracyMod;
-		desc += "\nAmmo per shot:" + GetAmmoUsePerShot(); 
-		desc+="\n Weight:" + GetWeight();
-		if (addedCombatCards.Count>0)
-		{
-			desc+="\nAdds cards:";
-			foreach (CombatCard card in addedCombatCards)
-			{
-				desc +="\n-"+card.name;
-			}
-		}
-		return desc;
-	}
 	//public override bool UseAction (PartyMember member) {return false;}
 }
 
@@ -1114,6 +223,14 @@ public class NineM:RangedWeapon
 		itemName="9mm Pistol";
 		baseDamage=45;
 		accuracyMod=0.1f;
+
+		itemCost = 250;
+
+		ammoBonus = 2;
+		addedCombatCards = new List<CombatCard>();
+		addedCombatCards.Add(new Sidearm());
+		addedCombatCards.Add(new Sidearm());
+		addedCombatCards.Add(new Hipfire());
 	}
 
 	//string name="9mm Pistol";
@@ -1145,8 +262,63 @@ public class Shotgun:RangedWeapon
 		oneShotDamage=45;
 		accuracyMod=0;
 		baseDamage=oneShotDamage*ammoPerShot;
+
+		itemCost = 250;
+
+		ammoBonus = 2;
+		addedCombatCards = new List<CombatCard>();
+		addedCombatCards.Add(new Buckshot());
+		addedCombatCards.Add(new Spread());
+		addedCombatCards.Add(new PointBlank());
 	}
+
+	public class Spread : MeleeCard
+	{
+		public Spread()
+			: base()
+		{
+			name = "Spread";
+			description = "Targets all enemies";
+			image = SpriteBase.mainSpriteBase.buckshot;
+
+			damage = 40;
+			ammoCost = 3;
+			targetType = TargetType.AllEnemies;
+		}
+	}
+
+	public class PointBlank : MeleeCard
+	{
+		public PointBlank()
+			: base()
+		{
+			name = "Point Blank";
+			description = "";
+			image = SpriteBase.mainSpriteBase.buckshot;
+
+			damage = 30;
+			ammoCost = 1;
+			targetType = TargetType.SelectEnemy;
+		}
+	}
+
+	public class Buckshot : RangedCard
+	{
+		public Buckshot()
+		: base()
+		{
+			damage = 20;
+			unarmoredBonusDamage = 40;
+			ammoCost = 2;
+			targetType = TargetType.SelectEnemy;
+			
+			name = "Buckshot";
+			description = "If target has no armor, deal " + unarmoredBonusDamage + " extra damage";
+			image = SpriteBase.mainSpriteBase.buckshot;
 	
+		}
+	}
+
 	//int weaponMaxDamage=200;
 	//int weaponMinDamage=160;
 	//int oneShotMinDamage=80;
@@ -1184,9 +356,38 @@ public class AssaultRifle:RangedWeapon
 		accuracyMod=-0.1f;
 		baseDamage=oneShotDamage*ammoPerShot;
 
-		//addedCombatCards.Add(new FullAuto());
-		addedCombatCards.Add(new Doubletap());
+		itemCost = 250;
+
+		ammoBonus = 2;
+		addedCombatCards = new List<CombatCard>();
+		addedCombatCards.Add(new ScopeIn());
+		addedCombatCards.Add(new FullAuto());
+		addedCombatCards.Add(new FullMetalJacket());
 	}
+
+	public class FullMetalJacket : RangedCard
+	{
+		public FullMetalJacket()
+		: base()
+		{
+			name = "FMJ";
+			description = "Ignores armor";
+			image = SpriteBase.mainSpriteBase.buckshot;
+
+			damage = 50;
+			ammoCost = 2;
+			staminaCost = 1;
+			targetType = TargetType.SelectEnemy;
+		}
+
+		protected override void CardPlayEffects()
+		{
+			userCharGraphic.IncrementAmmo(-ammoCost);
+
+			targetChars[0].TakeDamage(damage,true);
+		}
+	}
+
 	int oneShotDamage;
 	//int weaponMaxDamage=360;
 	//int weaponMinDamage=330;
@@ -1252,10 +453,6 @@ public class Pipegun:RangedWeapon
 public abstract class MeleeWeapon:Weapon
 {
 	public abstract int GetStaminaUse();
-	public override string GetMouseoverDescription ()
-	{
-		return itemName+"\nDamage:"+baseDamage+"\nAccuracy modifier:"+accuracyMod+"\nStamina per hit:"+GetStaminaUse()+"\n Weight:"+GetWeight();
-	}
 	public int GetDamage (float moraleModifier, int additionModifier)
 	{
 		//float missingStaminaMod=Mathf.Min(1f,Mathf.Max((float)EncounterCanvasHandler.main.selectedMember.stamina,0.5f)/(float)GetStaminaUse());
@@ -1284,8 +481,46 @@ public class Pipe:MeleeWeapon
 		itemName="Pipe";
 		baseDamage=90;
 		accuracyMod=0;
+
+		itemCost = 250;
+
+		staminaBonus = 3;
+		addedCombatCards = new List<CombatCard>();
+		addedCombatCards.Add(new Crush());
+		addedCombatCards.Add(new Bump());
+		addedCombatCards.Add(new Bump());
 	}
-	
+
+	public class Crush : MeleeCard
+	{
+		public Crush()
+		: base()
+		{
+			damage = 20;
+			unarmoredBonusDamage = 20;
+			staminaCost = 2;
+			targetType = TargetType.SelectEnemy;
+			
+			name = "Crush";
+			description = "If target has no armor, deal " + unarmoredBonusDamage + " extra damage";
+			image = SpriteBase.mainSpriteBase.pipe;
+		}
+	}
+
+	public class Bump : MeleeCard
+	{
+
+		public Bump()
+			: base()
+		{
+			name = "Bump";
+			image = SpriteBase.mainSpriteBase.pipe;
+
+			damage = 10;
+			targetType = TargetType.SelectEnemy;
+		}
+	}
+
 	//public int weaponMaxDamage=110;
 	//public int weaponMinDamage=70;
 	int staminaUse=2;
@@ -1297,7 +532,7 @@ public class Pipe:MeleeWeapon
 	
 	public override Sprite GetItemSprite ()
 	{
-		return SpriteBase.mainSpriteBase.pipeSprite;
+		return SpriteBase.mainSpriteBase.pipe;
 	}
 	/*
 	public override string GetMouseoverDescription ()
@@ -1314,8 +549,32 @@ public class Knife:MeleeWeapon
 		baseDamage=45;
 		accuracyMod=0.2f;
 		weight=0;
+
+		itemCost = 250;
+
+		staminaBonus = 3;
+		addedCombatCards = new List<CombatCard>();
+		addedCombatCards.Add(new Stab());
+		addedCombatCards.Add(new Stab());
+		addedCombatCards.Add(new Throw());
 	}
-	
+
+	public class Stab : MeleeCard
+	{
+		public Stab()
+			: base()
+		{
+			damage = 20;
+			staminaCost = 3;
+			ignoresArmor = true;
+			targetType = TargetType.SelectEnemy;
+			
+			name = "Stab";
+			description = "Ignores armor";
+			image = SpriteBase.mainSpriteBase.knife;
+		}
+	}
+
 	//public int weaponMaxDamage=50;
 	//public int weaponMinDamage=10;
 	
@@ -1327,7 +586,7 @@ public class Knife:MeleeWeapon
 	
 	public override Sprite GetItemSprite ()
 	{
-		return SpriteBase.mainSpriteBase.knifeSprite;
+		return SpriteBase.mainSpriteBase.knife;
 	}
 	/*
 	public override string GetMouseoverDescription ()
@@ -1343,8 +602,52 @@ public class Axe:MeleeWeapon
 		itemName="Axe";
 		baseDamage=180;
 		accuracyMod=-0.15f;
+
+		itemCost = 250;
+
+		staminaBonus = 3;
+		addedCombatCards = new List<CombatCard>();
+		addedCombatCards.Add(new Cleave());
+		addedCombatCards.Add(new Chop());
+		addedCombatCards.Add(new Chop());
 	}
-	
+
+	public class Cleave : MeleeCard
+	{
+		public Cleave()
+			: base()
+		{
+			name = "Cleave";
+			description = "Targets all enemies";
+			image = SpriteBase.mainSpriteBase.axe;
+
+			damage = 40;
+			staminaCost = 6;
+			targetType = TargetType.AllEnemies;
+		}
+
+		protected override void CardPlayEffects()
+		{
+			userCharGraphic.IncrementStamina(-staminaCost);
+			targetChars[0].TakeDamage(damage, true);
+		}
+	}
+
+	public class Chop : MeleeCard
+	{
+		public Chop()
+			: base()
+		{
+			name = "Chop";
+			description = "";
+			image = SpriteBase.mainSpriteBase.axe;
+
+			damage = 60;
+			staminaCost = 5;
+			targetType = TargetType.SelectEnemy;
+		}
+	}
+
 	//public int weaponMaxDamage=200;
 	//public int weaponMinDamage=160;
 	//int weakDamage=3;
@@ -1366,63 +669,21 @@ public class Axe:MeleeWeapon
 	
 	public override Sprite GetItemSprite ()
 	{
-		return SpriteBase.mainSpriteBase.axeSprite;
+		return SpriteBase.mainSpriteBase.axe;
 	}
 }
 
-
-
-public class Pot:InventoryItem
-{
-	public Pot()
-	{
-		itemName="Cooking pot";
-	}
-	
-	int nutritionAmount=50;
-	public override Sprite GetItemSprite() {return SpriteBase.mainSpriteBase.perishableFoodSprite;}
-	
-	public override bool UseAction(PartyMember member)
-	{
-		return false;
-	}
-	
-	public override string GetMouseoverDescription ()
-	{
-		return itemName+"\nRestores "+nutritionAmount+" hunger";
-	}
-}
-
-public class Gasoline:InventoryItem
-{
-	int volume=1;
-	public Gasoline()
-	{
-		itemName="Gasoline";
-	}
-	public override Sprite GetItemSprite() {return SpriteBase.mainSpriteBase.gasolineSprite;}
-	
-	public override bool UseAction(PartyMember member)
-	{
-		PartyManager.mainPartyManager.gas+=1;
-		return true;
-	}
-	
-	public override string GetMouseoverDescription ()
-	{
-		return itemName+"\nUse to add "+volume+" Gas";
-	}
-}
 
 public class Scrap:InventoryItem
 {
 	public Scrap()
 	{
 		itemName="Scrap";
+		itemCost = 400;
 	}
 	public override Sprite GetItemSprite() {return SpriteBase.mainSpriteBase.scrapSprite;}
 	
-	public override bool UseAction(PartyMember member)
+	public override bool UseAction()
 	{
 		return false;
 	}
@@ -1441,7 +702,7 @@ public class Gunpowder:InventoryItem
 	}
 	public override Sprite GetItemSprite() {return SpriteBase.mainSpriteBase.gunpowderSprite;}
 	
-	public override bool UseAction(PartyMember member)
+	public override bool UseAction()
 	{
 		return false;
 	}
@@ -1457,10 +718,11 @@ public class ComputerParts : InventoryItem
 	public ComputerParts()
 	{
 		itemName = "Computer Parts";
+		itemCost = 500;
 	}
 	public override Sprite GetItemSprite() { return SpriteBase.mainSpriteBase.computerParts; }
 
-	public override bool UseAction(PartyMember member)
+	public override bool UseAction()
 	{
 		return false;
 	}
@@ -1479,7 +741,7 @@ public class FusionCore : InventoryItem
 	}
 	public override Sprite GetItemSprite() { return SpriteBase.mainSpriteBase.lightning; }
 
-	public override bool UseAction(PartyMember member)
+	public override bool UseAction()
 	{
 		return false;
 	}
@@ -1487,5 +749,29 @@ public class FusionCore : InventoryItem
 	public override string GetMouseoverDescription()
 	{
 		return itemName + "\nThe central component of every Drive, engineered from alien technology that is still not fully understood.";
+	}
+}
+
+public class FakeMoney : InventoryItem
+{
+	int incomeValue = 1300;
+	public FakeMoney()
+	{
+		itemName = "Fake Money";
+		itemCost = 500;
+	}
+	public override Sprite GetItemSprite() { return SpriteBase.mainSpriteBase.money; }
+
+	public override bool UseAction()
+	{
+		TownManager.main.AddFutureIncome(incomeValue,"Fake money");
+		return true;
+	}
+
+	public override string GetMouseoverDescription()
+	{
+		string desc = itemName + "\nStacks of counterfeit banknotes and chits. It will take some time to find enough suckers to offload all this.";
+		desc += "\nUse: Gain " + incomeValue+" income";
+		return desc;
 	}
 }

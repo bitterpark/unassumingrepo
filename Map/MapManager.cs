@@ -207,9 +207,12 @@ public class MapManager : MonoBehaviour
 	{
 		foreach (MapNode node in new List<MapNode>(currentEncounterNodes))
 		{
-			if (clearStoryNodes || node.region.regionalEncounter.IsFinished() 
-				|| node.region.regionalEncounter.GetType()==typeof(Encounter))
+			if (clearStoryNodes
+				|| node.region.encounterInRegion.IsFinished()
+				|| node.region.encounterInRegion.GetType() != typeof(StoryMissionOne))
+			{
 				DestroyMapNode(node);
+			}
 		}
 	}
 

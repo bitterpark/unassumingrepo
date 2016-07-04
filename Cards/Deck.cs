@@ -55,29 +55,29 @@ public class Deck<T> where T:class
 	{
 		List<T> drawnCards = new List<T>();
 
-		if (drawPile.Count < number)
-		{
-			if (allCards.Count < number) throw new System.Exception("Trying to draw more cards than exist in the deck!");
-			Reshuffle();
-		}
-
 		for (int i = 0; i < number; i++)
 		{
-			drawnCards.Add(DrawCard());
+			T card;
+			if (DrawCard(out card))
+				drawnCards.Add(card);
 		}
 		return drawnCards;
 	}
 
-	public T DrawCard()
+	public bool DrawCard(out T drawnCard)
 	{
 		if (drawPile.Count < 1)
 		{
-			if (drawPile.Count + discardPile.Count < 1) throw new System.Exception("Trying to draw more cards than exist in the deck!");
+			if (drawPile.Count + discardPile.Count < 1)
+			{
+				drawnCard = null;
+				return false;
+			}
 			Reshuffle();
 		}
-		T drawnCard=drawPile[drawPile.Count-1];
+		drawnCard=drawPile[drawPile.Count-1];
 		drawPile.RemoveAt(drawPile.Count - 1);
-		return drawnCard;
+		return true;
 	}
 
 	public void DiscardCards(params T[] discarded)

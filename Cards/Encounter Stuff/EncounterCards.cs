@@ -64,13 +64,17 @@ public abstract class RoomStipulationCard : Card
 //Used by enemies
 public class TripmineEnemy : RoomStipulationCard
 {
-	int damage = 30;
+	int damage;
 
-	public TripmineEnemy()
+	public TripmineEnemy(int assignedDamage)
 	{
 		name = "Booby Trap";
 		image = SpriteBase.mainSpriteBase.bomb;
+
+		damage = assignedDamage;
 		description = "When any friendly character plays a melee attack, they take " + damage + " damage and this card is removed";
+		
+		
 	}
 
 	public override void ActivateCard()
@@ -95,10 +99,11 @@ public class TripmineEnemy : RoomStipulationCard
 //Used by friendly mercs
 public class TripmineFriendly : RoomStipulationCard
 {
-	int damage = 30;
+	int damage;
 
-	public TripmineFriendly()
+	public TripmineFriendly(int assignedDamage)
 	{
+		damage = assignedDamage;
 		name = "Trip Mine";
 		image = SpriteBase.mainSpriteBase.bomb;
 		description = "When any enemy character plays a melee attack, they take " + damage + " damage and this card is removed";
@@ -142,7 +147,7 @@ public class EngineRoom : RoomCard
 		{
 			name = "Radiation";
 			image = SpriteBase.mainSpriteBase.skull;
-			description = "Everyone loses " + damagePerTurn + " health per turn";
+			description = "Everyone loses " + damagePerTurn + " health per round";
 		}
 
 		public override void ActivateCard()
@@ -173,7 +178,7 @@ public class CoolantRoom : RoomCard
 
 	public class Freeze : RoomStipulationCard
 	{
-		int staminaReduction = 5;
+		int staminaReduction = 4;
 
 		public Freeze()
 		{
@@ -247,7 +252,7 @@ public class LowerDecks : RoomCard
 
 	public class VolatileGas : RoomStipulationCard
 	{
-		int damageToEveryone = 15;
+		int damageToEveryone = 20;
 
 		public VolatileGas()
 		{
@@ -324,12 +329,14 @@ public class Backdoor : RoomCard
 
 public class GuardPost : RoomCard
 {
+	int mineDamage = 30;
+	
 	public GuardPost()
 	{
 		name = "Guard Post";
 		image = SpriteBase.mainSpriteBase.flag;
 		description = "Complete with booby traps";
-		possibleRoomCards.Add(new TripmineEnemy());
+		possibleRoomCards.Add(new TripmineEnemy(mineDamage));
 	}
 }
 
@@ -381,7 +388,7 @@ public class Armory : RoomCard
 
 	public class ExplosiveBarrel : RoomStipulationCard
 	{
-		int damageToOpposingTeam = 15;
+		int damageToOpposingTeam = 20;
 
 		public ExplosiveBarrel()
 		{
