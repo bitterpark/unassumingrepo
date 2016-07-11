@@ -7,13 +7,13 @@ public interface Character
 	string GetName();
 	int GetHealth();
 	int GetStartArmor();
-	int GetStartStamina();
+	int GetMaxStamina();
 	int GetStartAmmo();
 	Sprite GetPortrait();
 	void SetStamina(int newStamina); //Currently unused
 	void SetHealth(int newHealth);
 	void IncrementHealth(int delta);
-	Deck<CombatCard> GetCombatDeck();
+	CombatDeck GetCombatDeck();
 }
 
 public interface Mercenary : Character
@@ -699,29 +699,29 @@ public class PartyMember: Mercenary
 	{
 		if (mercClass == MercClass.Soldier)
 		{
-			healthMax = 100;
-			startArmor = 0;
+			healthMax = 60;
+			startArmor = 40;
 			stamina = 5;
 			ammo = 2;
 		}
 		if (mercClass == MercClass.Bandit)
 		{
-			healthMax = 100;
-			startArmor = 0;
+			healthMax = 60;
+			startArmor = 40;
 			stamina = 8;
 			ammo = 0;
 		}
 		if (mercClass == MercClass.Gunman)
 		{
-			healthMax = 100;
-			startArmor = 0;
+			healthMax = 60;
+			startArmor = 40;
 			stamina = 2;
 			ammo = 4;
 		}
 		if (mercClass == MercClass.Mercenary)
 		{
-			healthMax = 100;
-			startArmor = 30;
+			healthMax = 60;
+			startArmor = 70;
 			stamina = 4;
 			ammo = 2;
 		}
@@ -730,8 +730,6 @@ public class PartyMember: Mercenary
 	static CombatDeck GetClassDeck(MercClass mercClass)
 	{
 		CombatDeck result = new CombatDeck();
-
-
 
 		if (mercClass == MercClass.Soldier)
 		{
@@ -749,6 +747,8 @@ public class PartyMember: Mercenary
 		{
 			result = MercenaryCards.GetClassCards();
 		}
+		//result = new CombatDeck();
+		//result.AddCards(typeof(SemperFi),4);
 
 		return result;
 	}
@@ -1100,11 +1100,13 @@ public class PartyMember: Mercenary
 		}*/
 		//Resting fatigue restore
 		int fatigueRestoreAmount = fatigueRestoreWait;
-		if (currentRegion.hasCamp || hasBedroll) fatigueRestoreAmount = fatigueRestoreSleep;
+		if (currentRegion.hasCamp || hasBedroll) 
+			fatigueRestoreAmount = fatigueRestoreSleep;
 		ChangeFatigue(-fatigueRestoreAmount);
 
 		hireDaysRemaining--;
-		if (hireDaysRemaining < 0) PartyManager.mainPartyManager.RemovePartyMember(this,false);
+		if (hireDaysRemaining < 1) 
+			PartyManager.mainPartyManager.RemovePartyMember(this,false);
 		//DO RELATIONSHIPS
 		//RollRelationships();
 	}
@@ -1456,7 +1458,7 @@ public class PartyMember: Mercenary
 			equippedItems.Add(equippedItem);
 			combatDeck.AddCards(equippedItem.addedCombatCards.ToArray());
 		}
-		else {throw new System.Exception("Trying t equip an item that's already equipped twice");}
+		else {throw new System.Exception("Trying to equip an item that's already equipped twice");}
 	}
 	
 	public void UnequipItem(EquippableItem unequippedItem)
@@ -1471,6 +1473,11 @@ public class PartyMember: Mercenary
 	
 	public void EquipWeapon(Weapon newWeapon)
 	{
+		if (newWeapon.GetType().BaseType == typeof(MeleeWeapon))
+			equippedMeleeWeapon = newWeapon as MeleeWeapon;
+		if (newWeapon.GetType().BaseType == typeof(RangedWeapon))
+			equippedRangedWeapon = newWeapon as RangedWeapon;
+		
 		combatDeck.AddCards(newWeapon.addedCombatCards.ToArray());
 		
 		stamina += newWeapon.staminaBonus;
@@ -1483,6 +1490,11 @@ public class PartyMember: Mercenary
 	
 	public void UnequipWeapon(Weapon uneqippedWeapon)
 	{
+		if (equippedMeleeWeapon == uneqippedWeapon)
+			equippedMeleeWeapon = null;
+		if (equippedRangedWeapon == uneqippedWeapon)
+			equippedRangedWeapon = null;
+		
 		combatDeck.RemoveCards(uneqippedWeapon.addedCombatCards.ToArray());
 
 		stamina -= uneqippedWeapon.staminaBonus;
@@ -1528,7 +1540,7 @@ public class PartyMember: Mercenary
 		return startArmor;
 	}
 
-	public int GetStartStamina()
+	public int GetMaxStamina()
 	{
 		return stamina;
 	}
@@ -1553,7 +1565,7 @@ public class PartyMember: Mercenary
 		return color;
 	}
 
-	public Deck<CombatCard> GetCombatDeck() { return combatDeck; }
+	public CombatDeck GetCombatDeck() { return combatDeck; }
 	public List<CombatCard> GetAllUsedCards() { return combatDeck.GetDeckCards();}
 
 	public int GetStartAmmo() 

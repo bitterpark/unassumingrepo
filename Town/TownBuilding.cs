@@ -366,7 +366,7 @@ public class CargoBay : TownBuilding
 
 public class SickBay : TownBuilding
 {
-	int baseDailyMercHealRate = 20;
+	int baseDailyMercHealRate = 10;
 	
 	public SickBay()
 	{
@@ -401,7 +401,7 @@ public class SickBay : TownBuilding
 
 	public class HullRepair : BuildingUpgrade
 	{
-		int healRateIncrease = 10;
+		int healRateIncrease = 5;
 		public HullRepair(TownBuilding myMainBuilding)
 			: base(myMainBuilding)
 		{
@@ -426,7 +426,7 @@ public class SickBay : TownBuilding
 
 	public class AirFiltration : BuildingUpgrade
 	{
-		int healRateIncrease = 10;
+		int healRateIncrease = 5;
 		public AirFiltration(TownBuilding myMainBuilding)
 			: base(myMainBuilding)
 		{

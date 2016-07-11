@@ -746,7 +746,7 @@ public abstract class EncounterEnemy: Character
 		return armor;
 	}
 
-	public int GetStartStamina()
+	public int GetMaxStamina()
 	{
 		return stamina;
 	}
@@ -764,7 +764,7 @@ public abstract class EncounterEnemy: Character
 		return SpriteBase.mainSpriteBase.enemyPortrait;
 	}
 
-	public Deck<CombatCard> GetCombatDeck()
+	public CombatDeck GetCombatDeck()
 	{
 		return combatDeck;
 	}
@@ -1013,55 +1013,72 @@ public class Skitter : EncounterEnemy
 		name = "Skitter";
 		health = 80;
 
-		stamina = 8;
+		stamina = 6;
 
-		combatDeck.AddCards(typeof(Pinch),2);
-		combatDeck.AddCards(typeof(Latch), 2);
+		combatDeck.AddCards(typeof(Tear));
+		combatDeck.AddCards(typeof(Slash),2);
+		combatDeck.AddCards(typeof(Latch));
 		combatDeck.AddCards(typeof(Bite), 2);
+	}
+
+	public class Bite : MeleeCard
+	{
+		public Bite()
+			: base()
+		{
+			name = "Bite";
+			description = "Targets the weakest enemy";
+			image = SpriteBase.mainSpriteBase.skull;
+			damage = 30;
+			staminaCost = 1;
+			targetType = TargetType.Weakest;
+		}
+	}
+
+	public class Slash : MeleeCard
+	{
+		public Slash()
+			: base()
+		{
+			name = "Slash";
+			description = "Targets the strongest enemy";
+			image = SpriteBase.mainSpriteBase.skull;
+			damage = 30;
+			staminaCost = 1;
+			targetType = TargetType.Strongest;
+		}
+	}
+
+	public class Latch : MeleeCard
+	{
+		public Latch()
+			: base()
+		{
+			name = "Latch";
+			image = SpriteBase.mainSpriteBase.skull;
+			damage = 40;
+			staminaCost = 3;
+			targetType = TargetType.SelectEnemy;
+		}
+	}
+
+	public class Tear : MeleeCard
+	{
+		public Tear()
+			: base()
+		{
+			name = "Tear";
+			description = "Targets the strongest enemy";
+			image = SpriteBase.mainSpriteBase.skull;
+			damage = 50;
+			staminaCost = 3;
+			targetType = TargetType.Strongest;
+		}
 	}
 }
 
 //Skitter cards
-public class Pinch : MeleeCard
-{
-	public Pinch()
-		: base()
-	{
-		name = "Pinch";
-		description = "";
-		image=SpriteBase.mainSpriteBase.skull;
-		damage = 20;
-		staminaCost = 1;
-		targetType = TargetType.SelectEnemy;
-	}
-}
 
-public class Latch : MeleeCard
-{
-	public Latch()
-		: base()
-	{
-		name = "Latch";
-		image = SpriteBase.mainSpriteBase.skull;
-		damage = 50;
-		staminaCost = 4;
-		targetType = TargetType.SelectEnemy;
-	}
-}
-
-public class Bite : MeleeCard
-{
-	public Bite()
-		: base()
-	{
-		name = "Bite";
-		//description = "Restores " + staminaRestore + " stamina";
-		image = SpriteBase.mainSpriteBase.skull;
-		damage = 40;
-		staminaCost = 3;
-		targetType = TargetType.SelectEnemy;
-	}
-}
 
 public class Bugzilla : EncounterEnemy
 {
@@ -1069,60 +1086,75 @@ public class Bugzilla : EncounterEnemy
 		: base()
 	{
 		name = "Bugzilla";
-		health = 120;
-		stamina = 6;
+		health = 140;
+		stamina = 3;
 
-		combatDeck.AddCards(typeof(Pinch),2);
-		combatDeck.AddCards(typeof(Stomp));
+		combatDeck.AddCards(typeof(Throwdown), 2);
+		combatDeck.AddCards(typeof(Pummel));
+		combatDeck.AddCards(typeof(Dominate),2);
 		//combatDeck.AddCards(typeof(Posture),2);
-		combatDeck.AddCards(typeof(Charge), 2);
-		combatDeck.AddCards(typeof(Throwdown),2);
+		combatDeck.AddCards(typeof(Charge));
+		
+	}
+
+	public class Throwdown : MeleeCard
+	{
+		public Throwdown()
+			: base()
+		{
+			name = "Throwdown";
+			description = "Targets the strongest enemy";
+			image = SpriteBase.mainSpriteBase.skull;
+			damage = 30;
+			staminaCost = 1;
+			targetType = TargetType.Strongest;
+		}
+	}
+
+	public class Pummel : MeleeCard
+	{
+		public Pummel()
+			: base()
+		{
+			name = "Pummel";
+			image = SpriteBase.mainSpriteBase.skull;
+			damage = 20;
+			staminaCost = 1;
+			targetType = TargetType.SelectEnemy;
+		}
+	}
+
+	public class Dominate : MeleeCard
+	{
+		public Dominate()
+			: base()
+		{
+			name = "Dominate";
+			description = "Targets the strongest enemy";
+			image = SpriteBase.mainSpriteBase.skull;
+			damage = 40;
+			staminaCost = 2;
+			targetType = TargetType.Strongest;
+		}
+	}
+
+	public class Charge : MeleeCard
+	{
+		public Charge()
+			: base()
+		{
+			name = "Charge";
+			description = "Targets all enemies";
+			image = SpriteBase.mainSpriteBase.skull;
+			damage = 10;
+			staminaCost = 3;
+			targetType = TargetType.AllEnemies;
+		}
 	}
 }
 
 //Bugzilla cards
-public class Stomp : MeleeCard
-{
-	public Stomp()
-		: base()
-	{
-		name = "Stomp";
-		description = "Targets the weakest enemy";
-		image = SpriteBase.mainSpriteBase.skull;
-		damage = 30;
-		staminaCost = 1;
-		targetType = TargetType.Weakest;
-	}
-}
 
-public class Throwdown : MeleeCard
-{
-	public Throwdown()
-		: base()
-	{
-		name = "Throwdown";
-		description = "Targets the strongest enemy";
-		image = SpriteBase.mainSpriteBase.skull;
-		damage = 40;
-		staminaCost = 2;
-		targetType = TargetType.Strongest;
-	}
-}
-
-public class Charge : MeleeCard
-{
-	public Charge()
-		: base()
-	{
-		name = "Charge";
-		//description = "Restores " + staminaRestore + " stamina";
-		image = SpriteBase.mainSpriteBase.skull;
-		damage = 50;
-		staminaCost = 4;
-		targetType = TargetType.SelectEnemy;
-	}
-
-}
 
 public class Stinger : EncounterEnemy
 {
@@ -1131,86 +1163,97 @@ public class Stinger : EncounterEnemy
 	{
 		name = "Stinger";
 		health = 80;
-		stamina = 6;
+		stamina = 4;
 		ammo = 2;
 
 		combatDeck.AddCards(typeof(Sting));
 		//combatDeck.AddCards(typeof(Posture));
 		combatDeck.AddCards(typeof(Venom),2);
 		combatDeck.AddCards(typeof(Lunge),2);
+		combatDeck.AddCards(typeof(Corner));
 		combatDeck.AddCards(typeof(Regrow));
+	}
+
+	public class Lunge : MeleeCard
+	{
+		public Lunge()
+			: base()
+		{
+			name = "Lunge";
+			description = "Targets the weakest enemy";
+			image = SpriteBase.mainSpriteBase.skull;
+			damage = 30;
+			staminaCost = 1;
+			targetType = TargetType.Weakest;
+		}
+	}
+
+	public class Corner : MeleeCard
+	{
+		public Corner()
+			: base()
+		{
+			name = "Corner";
+			description = "Targets the weakest enemy";
+			image = SpriteBase.mainSpriteBase.skull;
+			damage = 40;
+			staminaCost = 2;
+			targetType = TargetType.Weakest;
+		}
+	}
+
+	public class Sting : RangedCard
+	{
+		public Sting()
+			: base()
+		{
+			damage = 20;
+			ammoCost = 2;
+			staminaCost = 1;
+			ignoresArmor = true;
+			targetType = TargetType.SelectEnemy;
+
+			name = "Sting";
+			image = SpriteBase.mainSpriteBase.skull;
+			description = "Ignores armor";
+		}
+	}
+
+	public class Venom : RangedCard
+	{
+		public Venom()
+			: base()
+		{
+			name = "Venom";
+			//description = "Restores " + staminaRestore + " stamina";
+			image = SpriteBase.mainSpriteBase.droplet;
+
+			staminaDamage = 3;
+			staminaCost = 2;
+			ammoCost = 1;
+			targetType = TargetType.SelectEnemy;
+		}
+	}
+
+	public class Regrow : EffectCard
+	{
+		public Regrow()
+			: base()
+		{
+			staminaCost = 2;
+			userAmmoGain = 2;
+			targetType = TargetType.None;
+			
+			name = "Regrow";
+			image = SpriteBase.mainSpriteBase.skull;
+			description = "Restores " + userAmmoGain + " ammo";
+		}
 	}
 }
 
 //Stinger cards
 
-public class Lunge : MeleeCard
-{
-	public Lunge()
-		: base()
-	{
-		name = "Lunge";
-		description = "Targets the weakest enemy";
-		image = SpriteBase.mainSpriteBase.skull;
-		damage = 40;
-		staminaCost = 1;
-		ammoCost = 1;
-		targetType = TargetType.Weakest;
-	}
-}
 
-public class Venom : RangedCard
-{
-	public Venom()
-		: base()
-	{
-		name = "Venom";
-		//description = "Restores " + staminaRestore + " stamina";
-		image = SpriteBase.mainSpriteBase.droplet;
-
-		staminaDamage = 3;
-		staminaCost = 3;
-		targetType = TargetType.SelectEnemy;
-	}
-}
-
-public class Sting : RangedCard
-{
-	public Sting()
-		: base()
-	{
-		damage = 20;
-		ammoCost = 2;
-		staminaCost = 1;
-		ignoresArmor = true;
-		targetType = TargetType.SelectEnemy;
-		
-		name = "Sting";
-		image = SpriteBase.mainSpriteBase.skull;
-		description = "Ignores armor";
-	}
-}
-
-public class Regrow : EffectCard
-{
-	int ammoRestore = 4;
-	
-	public Regrow()
-		: base()
-	{
-		name = "Regrow";
-		image = SpriteBase.mainSpriteBase.skull;
-		description = "Restores " + ammoRestore+" ammo";
-		staminaCost = 4;
-		targetType = TargetType.None;
-	}
-
-	protected override void CardPlayEffects()
-	{
-		userCharGraphic.IncrementStamina(-staminaCost);
-		userCharGraphic.IncrementAmmo(ammoRestore);
-	}
-}
 
 public class Puffer : EncounterEnemy
 {
@@ -1229,21 +1272,18 @@ public class Puffer : EncounterEnemy
 //Puffer cards
 public class Inflate : EffectCard
 {
-	int ammoGain = 2;
 	public Inflate()
 		: base()
 	{
+		staminaCost = 3;
+		userAmmoGain = 2;
+		targetType = TargetType.None;
+		
 		name = "Inflate";
-		description = "Gains " + ammoGain + " ammo";
+		description = "Gains " + userAmmoGain + " ammo";
 		image = SpriteBase.mainSpriteBase.restSprite;
 		//healthDamage = 5;
-		staminaCost = 2;
-		targetType = TargetType.None;
-	}
-
-	protected override void CardPlayEffects()
-	{
-		userCharGraphic.IncrementAmmo(ammoGain);
+		
 	}
 }
 public class Pop : RangedCard
@@ -1269,31 +1309,54 @@ public class Hardshell : EncounterEnemy
 		: base()
 	{
 		name = "Hardshell";
-		health = 50;
-		armor = 80;
-		stamina = 5; 
+		health = 80;
+		armor = 40;
+		stamina = 4; 
 
 		combatDeck.AddCards(typeof(Harden), 2);
-		combatDeck.AddCards(typeof(Latch), 2);
+		combatDeck.AddCards(typeof(Snap), 2);
 		combatDeck.AddCards(typeof(Pinch),2);
 	}
-}
 
-public class Harden : EffectCard
-{
-	int armorGain = 40;
-	public Harden()
-		: base()
+	public class Harden : EffectCard
 	{
-		name = "Harden";
-		description = "Gains " + armorGain + " armor";
-		image = SpriteBase.mainSpriteBase.cover;
-		staminaCost = 3;
-		targetType = TargetType.None;
+		public Harden()
+			: base()
+		{
+			staminaCost = 2;
+			userArmorGain = 40;
+			targetType = TargetType.None;
+			
+			name = "Harden";
+			description = "Gains " + userArmorGain + " armor";
+			image = SpriteBase.mainSpriteBase.cover;
+			
+		}
 	}
 
-	protected override void CardPlayEffects()
+	public class Pinch : MeleeCard
 	{
-		userCharGraphic.IncrementArmor(armorGain);
+		public Pinch()
+			: base()
+		{
+			name = "Pinch";
+			image = SpriteBase.mainSpriteBase.skull;
+			damage = 20;
+			staminaCost = 1;
+			targetType = TargetType.SelectEnemy;
+		}
+	}
+	public class Snap : MeleeCard
+	{
+		public Snap()
+			: base()
+		{
+			name = "Snap";
+			image = SpriteBase.mainSpriteBase.skull;
+			damage = 30;
+			staminaCost = 2;
+			targetType = TargetType.SelectEnemy;
+		}
 	}
 }
+

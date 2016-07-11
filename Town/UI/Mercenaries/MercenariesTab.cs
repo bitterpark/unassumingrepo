@@ -23,7 +23,7 @@ public class MercenariesTab : MonoBehaviour, TownTab {
 		foreach (PartyMember merc in availableMercs)
 		{
 			MercenaryHireInfo newMercInfo = Instantiate(mercInfoPrefab);
-			newMercInfo.transform.SetParent(mercGroup);
+			newMercInfo.transform.SetParent(mercGroup,false);
 			newMercInfo.AssignMercenary(merc);
 			newMercInfo.parentMercTab = this;
 		}

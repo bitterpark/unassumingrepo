@@ -108,7 +108,7 @@ public class PartyMemberCanvasHandler : MonoBehaviour {
 	void Start() 
 	{
 		memberInventoryOpenButton.GetComponent<Image>().color=assignedMember.color;
-		memberInventoryOpenButton.onClick.AddListener(()=>InventoryScreenHandler.mainISHandler.MapOrEncounterToggleSelectedMember(assignedMember));
+		memberInventoryOpenButton.onClick.AddListener(()=>InventoryScreenHandler.mainISHandler.ToggleSelectedMember(assignedMember));
 	}//PartyScreenManager.mainPSManager.MemberClicked(assignedMember));}
 	
 	void Update()
@@ -117,7 +117,7 @@ public class PartyMemberCanvasHandler : MonoBehaviour {
 		classText.text = assignedMember.GetClass().ToString();
 
 		healthText.text =assignedMember.GetHealth().ToString();
-		staminaText.text=assignedMember.GetStartStamina().ToString();
+		staminaText.text=assignedMember.GetMaxStamina().ToString();
 		armorText.text = assignedMember.GetStartArmor().ToString();
 		ammoText.text = assignedMember.GetStartAmmo().ToString();
 

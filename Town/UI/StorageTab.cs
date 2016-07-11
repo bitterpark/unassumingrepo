@@ -22,7 +22,7 @@ public class StorageTab : MonoBehaviour, TownTab {
 	{
 		CleanupOldInventorySlots();
 
-		int slotCount = 48;
+		int slotCount = 40;
 		List<InventoryItem> activeList = MapManager.main.GetTown().GetStashedItems();//PartyManager.mainPartyManager.GetPartyInventory();}
 		//Use floor or inventory list
 		for (int i = 0; i < slotCount; i++)

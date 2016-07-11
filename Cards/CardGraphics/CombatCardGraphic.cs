@@ -80,8 +80,22 @@ public class CombatCardGraphic : CardGraphic
 		else staminaDamage.SetActive(false);
 	}
 
+	public void ShowStipulationCardTooltip()
+	{
+		if (GetComponent<Button>().IsInteractable())
+		{
+			if (assignedCard.addedStipulationCard != null)
+				TooltipManager.main.CreateTooltip("", transform, assignedCard.addedStipulationCard);
+		}
+	}
+	public void StopShowingStipulationCardTooltip()
+	{
+		TooltipManager.main.StopAllTooltips();
+	}
+
 	public void CardClicked()
 	{
-		CardsScreen.main.ClickCombatCard(this);
+		if (GetComponent<Button>().IsInteractable())
+			CardsScreen.main.ClickCombatCard(this);
 	}
 }

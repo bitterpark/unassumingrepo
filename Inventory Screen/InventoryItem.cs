@@ -372,7 +372,7 @@ public class AssaultRifle:RangedWeapon
 		{
 			name = "FMJ";
 			description = "Ignores armor";
-			image = SpriteBase.mainSpriteBase.buckshot;
+			image = SpriteBase.mainSpriteBase.bullet;
 
 			damage = 50;
 			ammoCost = 2;

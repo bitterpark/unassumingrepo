@@ -134,6 +134,8 @@ public class PartyManager : MonoBehaviour
 	public static event TimePassedDeleg ETimePassed;
 	public delegate void TimePassedEndDeleg();
 	public static event TimePassedEndDeleg ETimePassedEnd;
+	public delegate void NewWeekStartDeleg();
+	public static event NewWeekStartDeleg ENewWeekStart;
 	
 	Dictionary<PartyMember,AssignedTask> assignedTasks;
 	public bool GetAssignedTask(PartyMember member, out AssignedTaskTypes type)
@@ -242,13 +244,19 @@ public class PartyManager : MonoBehaviour
 			foreach (PartyMember member in partyMembers) member.skillpoints+=1;
 		}*/
 		daysPassed++;
-		string timePassageText="Day"+daysPassed;
+		
+		bool startNewWeek = (daysPassed % (TownManager.daysPerGameWeek) == 0);
+
 		if (daysLeft>0)
 		{
+			string timePassageText = "\nDay" + daysPassed;
+			if (startNewWeek)
+				timePassageText += "\n\nNew Week";
 			PartyStatusCanvasHandler.main.NewNotification(timePassageText);
 			//dayTime=(int)Mathf.Repeat(dayTime+hoursPassed,24);
 			//foreach (PartyMember member in partyMembers) {member.hunger+=10*hoursPassed;}
-			if (ETimePassed!=null) {ETimePassed();}
+			if (ETimePassed!=null) 
+				ETimePassed();
 			
 			//InventoryScreenHandler.mainISHandler.RefreshInventoryItems();
 
@@ -293,7 +301,12 @@ public class PartyManager : MonoBehaviour
 			//This may cause issues on gameover
 			PartyStatusCanvasHandler.main.RefreshAssignmentButtons(selectedMembers);
 			//InventoryScreenHandler.mainISHandler.RefreshInventoryItems();
-			if (ETimePassedEnd!=null) ETimePassedEnd();
+			if (ETimePassedEnd!=null) 
+				ETimePassedEnd();
+			if (startNewWeek)
+				if (ENewWeekStart != null)
+					ENewWeekStart();
+				
 		}
 		else
 		{

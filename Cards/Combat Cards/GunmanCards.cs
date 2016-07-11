@@ -67,12 +67,8 @@ public class Tripmine : EffectCard
 		image = SpriteBase.mainSpriteBase.bomb;
 		targetType = TargetType.None;
 		ammoCost = 1;
-		mineDamage = 30;
-	}
-
-	protected override void ApplyEffects()
-	{
-		CardsScreen.main.PlaceRoomCard(new TripmineFriendly(mineDamage));
+		mineDamage = 40;
+		addedStipulationCard = new TripmineFriendly(mineDamage);
 	}
 }
 

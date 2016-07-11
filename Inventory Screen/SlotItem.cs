@@ -35,8 +35,7 @@ public class SlotItem : MonoBehaviour, IBeginDragHandler,IDragHandler,IEndDragHa
 			itemBeingDragged=this;
 			//makes sure OnDrop fires correctly for all objects
 			GetComponent<CanvasGroup>().blocksRaycasts=false;
-			transform.SetParent(PartyStatusCanvasHandler.main.transform);
-			//print ("drag start");
+			transform.SetParent(transform.GetComponentInParent<Canvas>().transform,false);//PartyStatusCanvasHandler.main.transform);
 		}
 	}
 	#endregion
@@ -47,18 +46,20 @@ public class SlotItem : MonoBehaviour, IBeginDragHandler,IDragHandler,IEndDragHa
 	{
 		if (draggable)
 		{
-			transform.position=Input.mousePosition;
+			Vector3 mousePositionInWorldCoords=Camera.main.ScreenToWorldPoint(Input.mousePosition);
+			Vector3 newItemPosition=new Vector3(mousePositionInWorldCoords.x,mousePositionInWorldCoords.y,transform.position.z);
+			transform.position = newItemPosition;
 		}
 	}
 	#endregion
 
 	#region IEndDragHandler implementation
-
+	
 	public void OnEndDrag (PointerEventData eventData)
 	{
+		
 		if (draggable)
 		{
-			//print ("drag end");
 			GetComponent<CanvasGroup>().blocksRaycasts=true;
 			transform.SetParent(currentSlot.transform,false);
 			transform.position=transform.parent.position;
@@ -74,7 +75,10 @@ public class SlotItem : MonoBehaviour, IBeginDragHandler,IDragHandler,IEndDragHa
 			TooltipManager.main.CreateItemTooltip(assignedItem, transform);
 		}
 	}
-	public void StopMouseoverText() {TooltipManager.main.StopAllTooltips();}//drawMouseoverText=false;}
+	public void StopMouseoverText() 
+	{
+		TooltipManager.main.StopAllTooltips();
+	}
 	
 	#region IDropHandler implementation
 	public void OnDrop (PointerEventData eventData)

@@ -8,7 +8,7 @@ public class SoldierCards
 		CombatDeck result = new CombatDeck();
 
 		result.AddCards(typeof(Smokescreen));
-		result.AddCards(typeof(BoundingOverwatch));
+		result.AddCards(typeof(SemperFi));
 		result.AddCards(typeof(Grenade));
 		result.AddCards(typeof(PickOff));
 		result.AddCards(typeof(MarkTarget));
@@ -54,6 +54,52 @@ public class Defillade : EffectCard
 	}
 }
 
+public class SemperFi : EffectCard
+{
+	public class ComeAtMe : CharacterStipulationCard
+	{
+		public ComeAtMe()
+		{
+			name = "Come At Me";
+			image = SpriteBase.mainSpriteBase.crosshair;
+			description = "For one turn, all melee attacks played by enemies will only target this character";
+		}
+
+		public override void ActivateCard(CharacterGraphic user)
+		{
+			characterGraphic = user;
+			CardsScreen.main.SetNewMeleeTargetMerc(characterGraphic);
+			CardsScreen.ENewMeleeTargetMercSet += RemoveCard;
+			characterGraphic.ECharacterTurnStarted += RemoveCard;
+
+		}
+		void RemoveCard()
+		{
+			characterGraphic.RemoveCharacterCard(this);
+		}
+
+		public override void DeactivateCard()
+		{
+			CardsScreen.main.ClearMeleeTargetMerc();
+			CardsScreen.ENewMeleeTargetMercSet -= RemoveCard;
+			characterGraphic.ECharacterTurnStarted -= RemoveCard;
+		}
+	}
+
+	public SemperFi()
+		: base()
+	{
+		targetType = TargetType.None;
+		addedStipulationCard=new ComeAtMe();
+		staminaCost = 2;
+		
+		name = "Semper Fi";
+		description = "Place a Come At Me card to the character";
+		image = SpriteBase.mainSpriteBase.cover;
+		
+	}
+}
+
 public class BoundingOverwatch : EffectCard
 {
 	public class Overwatch : RoomStipulationCard
@@ -89,17 +135,14 @@ public class BoundingOverwatch : EffectCard
 	public BoundingOverwatch()
 		: base()
 	{
+		targetType = TargetType.None;
+		addedStipulationCard=new Overwatch();
+		staminaCost = 2;
+		
 		name = "Bounding Overwatch";
 		description = "Places an Overwatch in the room";
 		image = SpriteBase.mainSpriteBase.crosshair;
-		targetType = TargetType.None;
-
-		staminaCost = 2;
-	}
-
-	protected override void ApplyEffects()
-	{
-		CardsScreen.main.PlaceRoomCard(new Overwatch());
+		
 	}
 }
 

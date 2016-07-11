@@ -8,9 +8,9 @@ public class Marksman : EncounterEnemy
 	{
 		name = "Marksman";
 		health = 60;
-		armor = 30;
-		stamina = 2;
-		ammo = 5;
+		armor = 20;
+		stamina = 3;
+		ammo = 3;
 
 		combatDeck.AddCards(typeof(Eliminate),2);
 		combatDeck.AddCards(typeof(WeakspotShot));
@@ -78,11 +78,7 @@ public class Marksman : EncounterEnemy
 			name = "Booby Trap";
 			description = "Places a Booby Trap in the room";
 			image = SpriteBase.mainSpriteBase.bomb;
-		}
-
-		protected override void ApplyEffects()
-		{
-			CardsScreen.main.PlaceRoomCard(new TripmineEnemy(trapDamage));
+			addedStipulationCard=new TripmineEnemy(trapDamage);
 		}
 	}
 }
@@ -94,21 +90,21 @@ public class HeavyGunner : EncounterEnemy
 		name = "Heavy Gunner";
 		health = 70;
 		armor = 30;
-		stamina = 4;
+		stamina = 2;
 		ammo = 3;
 
-		combatDeck.AddCards(typeof(FullAuto),2);
+		combatDeck.AddCards(typeof(Machinegun), 2);
 		combatDeck.AddCards(typeof(Suppression));
 		combatDeck.AddCards(typeof(PinDown));
 		combatDeck.AddCards(typeof(CQC), 2);
 	}
 
-	public class FullAuto : RangedCard
+	public class Machinegun : RangedCard
 	{
-		public FullAuto()
+		public Machinegun()
 			: base()
 		{
-			name = "Full Auto";
+			name = "Machinegun";
 			description = "Targets all enemies";
 			image = SpriteBase.mainSpriteBase.bullets;
 
@@ -129,7 +125,7 @@ public class HeavyGunner : EncounterEnemy
 			image = SpriteBase.mainSpriteBase.bullets;
 
 			staminaDamage = 1;
-			staminaCost = 3;
+			staminaCost = 2;
 			ammoCost = 1;
 			targetType = TargetType.AllEnemies;
 		}
@@ -158,9 +154,9 @@ public class ShockTrooper : EncounterEnemy
 	public ShockTrooper()
 	{
 		name = "Shock Trooper";
-		health = 80;
+		health = 60;
 		armor = 20;
-		stamina = 5;
+		stamina = 4;
 		ammo = 2;
 
 		combatDeck.AddCards(typeof(CoverToCover));
@@ -175,8 +171,8 @@ public class ShockTrooper : EncounterEnemy
 		public CoverToCover()
 			: base()
 		{
-			staminaCost = 3;
-			userArmorGain = 50;
+			staminaCost = 2;
+			userArmorGain = 40;
 			targetType = TargetType.None;
 			
 			name = "Cover-to-Cover";
@@ -239,12 +235,12 @@ public class CQC : MeleeCard
 		: base()
 	{
 		name = "CQC";
-		//description = "Targets all enemies";
+		description = "Targets the strongest enemy";
 		image = SpriteBase.mainSpriteBase.brokenArmsSprite;
 
 		damage = 30;
-		staminaCost = 2;
-		targetType = TargetType.SelectEnemy;
+		staminaCost = 1;
+		targetType = TargetType.Strongest;
 	}
 }
 
@@ -255,7 +251,7 @@ public class FieldCommander : EncounterEnemy
 		name = "Field Commander";
 		health = 40;
 		armor = 40;
-		stamina = 6;
+		stamina = 4;
 		ammo = 2;
 
 		combatDeck.AddCards(typeof(Rally));
@@ -277,7 +273,7 @@ public class FieldCommander : EncounterEnemy
 			description = "Allies gain " + friendliesStaminaGain + " stamina";
 			image = SpriteBase.mainSpriteBase.cover;
 
-			staminaCost = 5;
+			staminaCost = 4;
 			targetType = TargetType.AllFriendlies;
 		}
 
@@ -297,8 +293,8 @@ public class FieldCommander : EncounterEnemy
 		public Resupply()
 			: base()
 		{
-			staminaCost = 5;
-			targetAmmoGain = 2;
+			staminaCost = 3;
+			targetAmmoGain = 1;
 			targetType = TargetType.AllFriendlies;
 			
 			name = "Resupply";

@@ -181,6 +181,8 @@ public abstract class CombatCard: Card
 
 	public bool ignoresArmor = false;
 
+	public StipulationCard addedStipulationCard = null;
+
 	public enum TargetType { None, SelectEnemy, SelectFriendly,Weakest,Strongest,Random,AllEnemies,AllFriendlies};
 	public TargetType targetType=TargetType.None;
 
@@ -196,17 +198,16 @@ public abstract class CombatCard: Card
 	public void PlayCard()
 	{
 		CardPlayEvents();
-		CardPlayEffects();
+		if (userCharGraphic.GetHealth()>0)
+			CardPlayEffects();
 		ClearTargetsAfterPlay();
 	}
 
 	protected virtual void CardPlayEffects()
 	{
 		ApplyPlayCosts();
-		if (targetType != TargetType.None)
-		{
-			DamageTargets();
-		}
+		TryAddStipulationCards();
+		ApplyEffects();
 	}
 
 	protected virtual void ApplyPlayCosts()
@@ -215,6 +216,14 @@ public abstract class CombatCard: Card
 		userCharGraphic.IncrementStamina(-staminaCost);
 		userCharGraphic.TakeDamage(takeDamageCost);
 		userCharGraphic.TakeDamage(removeHealthCost, true);
+	}
+
+	protected virtual void ApplyEffects()
+	{
+		if (targetType != TargetType.None)
+		{
+			DamageTargets();
+		}
 	}
 
 	protected virtual void DamageTargets()
@@ -226,6 +235,23 @@ public abstract class CombatCard: Card
 				totalDamage += unarmoredBonusDamage;
 			targetCharGraphic.TakeDamage(totalDamage, ignoresArmor);
 			targetCharGraphic.IncrementStamina(-staminaDamage);
+		}
+	}
+
+	protected void TryAddStipulationCards()
+	{
+		if (addedStipulationCard != null)
+		{
+			if (addedStipulationCard.GetType().BaseType == typeof(RoomStipulationCard))
+			{
+				RoomStipulationCard card = addedStipulationCard as RoomStipulationCard;
+				CardsScreen.main.PlaceRoomCard(card);
+			}
+			if (addedStipulationCard.GetType().BaseType == typeof(CharacterStipulationCard))
+			{
+				CharacterStipulationCard card = addedStipulationCard as CharacterStipulationCard;
+				userCharGraphic.PlaceCharacterCard(card);
+			}
 		}
 	}
 
@@ -306,13 +332,7 @@ public class EffectCard : CombatCard
 		cardType=CardType.Effect;
 	}
 
-	protected override void CardPlayEffects()
-	{
-		base.ApplyPlayCosts();
-		ApplyEffects();
-	}
-
-	protected virtual void ApplyEffects()
+	protected override void ApplyEffects()
 	{
 		userCharGraphic.IncrementStamina(userStaminaGain);
 		userCharGraphic.IncrementAmmo(userAmmoGain);

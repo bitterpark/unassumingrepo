@@ -58,13 +58,7 @@ public class InventoryScreenHandler : MonoBehaviour
 		if (GetComponent<Canvas>().enabled==true) {RefreshInventoryItems();}
 	}*/
 
-	public void MapOrEncounterToggleSelectedMember(PartyMember newMember)
-	{
-		if (EncounterCanvasHandler.main.encounterOngoing) EncounterCanvasHandler.main.ToggleMemberInventory(newMember);
-		else MapToggleNewSelectedMember(newMember);
-	}
-
-	void MapToggleNewSelectedMember(PartyMember newMember)
+	public void ToggleSelectedMember(PartyMember newMember)
 	{
 		if (selectedMember!=newMember)
 		{
@@ -72,32 +66,30 @@ public class InventoryScreenHandler : MonoBehaviour
 			EncounterCanvasHandler encounterManager=EncounterCanvasHandler.main;
 			if (!GameEventManager.mainEventManager.drawingEvent)
 			{
-				if (!encounterManager.encounterOngoing) 
-				{
-					OpenScreen(newMember);
-					if (PartyManager.mainPartyManager.partyMembers.Count>1 
-						&& PartyManager.mainPartyManager.partyMembers.Contains(newMember))
-						kickMemberButton.gameObject.SetActive(true);
-					else 
-						kickMemberButton.gameObject.SetActive(false);
-				}
-				else throw new System.Exception("Trying to do MapToggleNewSelectedMember from encounter!");
+				OpenScreen(newMember);
+				if (PartyManager.mainPartyManager.partyMembers.Contains(newMember) && !CardsScreen.missionOngoing)
+					kickMemberButton.gameObject.SetActive(true);
+				else 
+					kickMemberButton.gameObject.SetActive(false);
 			}
 		} 
-		else CloseScreen();
+		else 
+			CloseScreen();
 	}
 
 	public void EncounterToggleNewSelectedMember(PartyMember newMember)
 	{
-		if (selectedMember!=newMember) OpenScreen(newMember);
-		else CloseScreen();
+		if (selectedMember!=newMember) 
+			OpenScreen(newMember);
+		else 
+			CloseScreen();
 	}
 
 
 	void OpenScreen(PartyMember newMember)
 	{
 		selectedMember=newMember;
-		if (PartyManager.mainPartyManager.partyMembers.Contains(selectedMember) && !CardsScreen.main.ShowingEncounter())
+		if (PartyManager.mainPartyManager.partyMembers.Contains(selectedMember) && !CardsScreen.missionOngoing)
 			interactive = true;
 		else
 			interactive = false;
@@ -206,7 +198,7 @@ public class InventoryScreenHandler : MonoBehaviour
 		
 		healthValueText.text=selectedMember.GetHealth().ToString();
 		startingArmorValueText.text = selectedMember.GetStartArmor().ToString();
-		startingStaminaValueText.text = selectedMember.GetStartStamina().ToString();
+		startingStaminaValueText.text = selectedMember.GetMaxStamina().ToString();
 		startingAmmoValueText.text = selectedMember.GetStartAmmo().ToString();
 
 
@@ -228,8 +220,11 @@ public class InventoryScreenHandler : MonoBehaviour
 		//Remove old weapons
 		Image oldMeleeSlot = meleeSlotPlacement.GetComponentInChildren<Image>();
 		Image oldRangedSlot = rangedSlotPlacement.GetComponentInChildren<Image>();
-		if (oldMeleeSlot != null) GameObject.Destroy(oldMeleeSlot.gameObject);
-		if (oldRangedSlot != null) GameObject.Destroy(oldRangedSlot.gameObject);
+		
+		if (oldMeleeSlot != null) 
+			GameObject.Destroy(oldMeleeSlot.gameObject);
+		if (oldRangedSlot != null) 
+			GameObject.Destroy(oldRangedSlot.gameObject);
 
 		//Refresh melee slot
 		MeleeSlot newMeleeSlot = Instantiate(meleeSlotPrefab);
@@ -305,7 +300,7 @@ public class InventoryScreenHandler : MonoBehaviour
 		{
 			GameObject.Destroy(oldItemSlot.gameObject);
 		}
-		int slotCount = 48;
+		int slotCount = 40;
 		List<InventoryItem> activeList;
 		//select the right list for in-encounter and out-of-encounter
 		if (EncounterCanvasHandler.main.encounterOngoing)
@@ -365,7 +360,7 @@ public class InventoryScreenHandler : MonoBehaviour
 		{
 			CombatCardGraphic newGraphic = Instantiate(cardPrefab);
 			newGraphic.AssignCard(card);
-			newGraphic.transform.SetParent(deckGroup);
+			newGraphic.transform.SetParent(deckGroup,false);
 		}
 	}
 	void ClearMercDeck()
@@ -421,6 +416,7 @@ public class InventoryScreenHandler : MonoBehaviour
 	
 	void Update()
 	{	
+		/*
 		if (Input.GetKeyDown(KeyCode.I))
 		{
 			if (GameManager.main.gameStarted && EncounterCanvasHandler.main.GetComponent<CanvasGroup>().interactable 
@@ -434,8 +430,8 @@ public class InventoryScreenHandler : MonoBehaviour
 				else 
 				{
 					//IF ON WORLD MAP
-					if (PartyManager.mainPartyManager.selectedMembers.Count>0) MapToggleNewSelectedMember(PartyManager.mainPartyManager.selectedMembers[0]);
-					else MapToggleNewSelectedMember(PartyManager.mainPartyManager.partyMembers[0]);
+					if (PartyManager.mainPartyManager.selectedMembers.Count>0) ToggleSelectedMember(PartyManager.mainPartyManager.selectedMembers[0]);
+					else ToggleSelectedMember(PartyManager.mainPartyManager.partyMembers[0]);
 				}
 			}
 		}
@@ -451,30 +447,14 @@ public class InventoryScreenHandler : MonoBehaviour
 				}
 				else 
 				{
-					//IF ON WORLD MAP
-					/*
-					if (PartyManager.mainPartyManager.selectedMembers.Count>0) 
-					{
-						int selectedIndex=PartyManager.mainPartyManager.selectedMembers.IndexOf(selectedMember);
-						int nextIndex=(int)Mathf.Repeat(selectedIndex+1,PartyManager.mainPartyManager.selectedMembers.Count);
-						if (selectedIndex!=nextIndex) AssignSelectedMember(PartyManager.mainPartyManager.selectedMembers[nextIndex]);
-					}
-
-					else*/
 					{
 						int selectedIndex=PartyManager.mainPartyManager.partyMembers.IndexOf(selectedMember);
 						int  nextIndex=(int)Mathf.Repeat(selectedIndex+1,PartyManager.mainPartyManager.partyMembers.Count);
-						if (selectedIndex!=nextIndex) MapToggleNewSelectedMember(PartyManager.mainPartyManager.partyMembers[nextIndex]);
+						if (selectedIndex!=nextIndex) ToggleSelectedMember(PartyManager.mainPartyManager.partyMembers[nextIndex]);
 					}
 				}
 			}
 		}
-		/*
-		if (Input.GetKeyDown(KeyCode.T))
-		{
-			int fucktest=0;
-			fucktest=(int)Mathf.Repeat(fucktest+1,1);
-			print ("Final fucktest="+fucktest.ToString());
-		}*/
+		 * */
 	}
 }

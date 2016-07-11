@@ -1,8 +1,13 @@
 ﻿using UnityEngine;
 using UnityEngine.UI;
 using System.Collections;
+using System.Collections.Generic;
 
 public class CharacterGraphic : MonoBehaviour {
+
+	public FloatingText floatingTextPrefab;
+	public VisualCardGraphic visualCardPrefab;
+	public CombatCardGraphic combatCardPrefab;
 
 	public Text nameText;
 	public Text healthText;
@@ -12,6 +17,9 @@ public class CharacterGraphic : MonoBehaviour {
 	public Image portrait;
 
 	public Transform appliedCardsGroup;
+	public Transform characterHandGroup;
+
+	bool floatingTextIsOut = false;
 
 	Character assignedCharacter;
 
@@ -21,7 +29,15 @@ public class CharacterGraphic : MonoBehaviour {
 	int stamina = 0;
 	int armor = 0;
 
+	public CombatDeck characterDeck;
+	public List<CombatCard> characterHand = new List<CombatCard>();
+
+	public List<CharacterStipulationCard> activeStipulationCards = new List<CharacterStipulationCard>();
+
 	public enum Resource {Health,Armor,Stamina,Ammo};
+
+	public delegate void TurnStartDeleg();
+	public event TurnStartDeleg ECharacterTurnStarted;
 
 	public void AssignCharacter(Character newChar)
 	{
@@ -31,7 +47,7 @@ public class CharacterGraphic : MonoBehaviour {
 		if (newChar.GetType()==typeof(PartyMember))
 		{
 			portrait.GetComponent<Button>().onClick.AddListener(
-				()=>InventoryScreenHandler.mainISHandler.MapOrEncounterToggleSelectedMember(assignedCharacter as PartyMember));
+				()=>InventoryScreenHandler.mainISHandler.ToggleSelectedMember(assignedCharacter as PartyMember));
 		}
 		nameText.text = newChar.GetName();
 		healthText.text = newChar.GetHealth().ToString();
@@ -40,6 +56,59 @@ public class CharacterGraphic : MonoBehaviour {
 		SetStartStamina();
 		SetStartAmmo();
 		SetStartArmor();
+
+		characterDeck = assignedCharacter.GetCombatDeck();
+		characterHand.AddRange(characterDeck.DrawCards(CardsScreen.startingHandSize));
+	}
+
+	public void DrawCardsToHand()
+	{
+		DrawCardsToHand(CardsScreen.startingHandSize);
+	}
+	public void DrawCardsToHand(int count)
+	{
+		characterHand.AddRange(characterDeck.DrawCards(count));
+	}
+
+	public void DiscardCurrentHand()
+	{
+		characterDeck.DiscardCards(characterHand.ToArray());
+		characterHand.Clear();
+	}
+
+	public virtual void DisplayHand(bool interactable)
+	{
+		foreach (CombatCard card in characterHand)
+		{
+			CombatCardGraphic newCardGraphic = Instantiate(combatCardPrefab);
+			newCardGraphic.AssignCard(card);
+			newCardGraphic.transform.SetParent(characterHandGroup, false);
+			newCardGraphic.GetComponent<Button>().interactable = interactable;
+		}
+	}
+
+	public void SetHandInteractivity(bool interactable)
+	{
+		foreach (CombatCardGraphic card in characterHandGroup.GetComponentsInChildren<CombatCardGraphic>())
+		{
+			card.GetComponent<Button>().interactable=interactable;
+		}
+	}
+
+	public void ClearDisplayedHand()
+	{
+		foreach (CombatCardGraphic card in characterHandGroup.GetComponentsInChildren<CombatCardGraphic>())
+		{
+			GameObject.Destroy(card.gameObject);
+		}
+	}
+
+	public List<CombatCardGraphic> GetHandGraphics()
+	{
+		List<CombatCardGraphic> graphics = new List<CombatCardGraphic>();
+		foreach (CombatCardGraphic graphic in characterHandGroup.GetComponentsInChildren<CombatCardGraphic>())
+			graphics.Add(graphic);
+		return graphics;
 	}
 
 	public Character GetCharacter()
@@ -70,18 +139,21 @@ public class CharacterGraphic : MonoBehaviour {
 
 	public void TakeDamage(int damage, bool ignoreArmor)
 	{
-		int totalDamage = damage;
+		int damageToHealth = damage;
 		if (!ignoreArmor)
 		{
 			if (armor > 0)
 			{
-				totalDamage -= armor;
-				IncrementArmor(-damage);
+				damageToHealth = damage - armor;
+				if (damageToHealth < 0)
+					damageToHealth = 0;
+				int damageToArmor = damage - damageToHealth;
+				IncrementArmor(-damageToArmor);
 			}
 		}
-		if (totalDamage > 0)
+		if (damageToHealth > 0)
 		{
-			IncrementHealth(-totalDamage);
+			IncrementHealth(-damageToHealth);
 		}
 	}
 
@@ -112,10 +184,8 @@ public class CharacterGraphic : MonoBehaviour {
 	public void IncrementHealth(int delta)
 	{
 		assignedCharacter.IncrementHealth(delta);
-		if (assignedCharacter.GetHealth() <= 0)
-			CardsScreen.main.CharacterKilled(this);
-		else
-			healthText.text = assignedCharacter.GetHealth().ToString();
+		StartCoroutine("AddFloatingTextToQueue", new FloatingTextInfo(delta, Resource.Health));
+		healthText.text = assignedCharacter.GetHealth().ToString();
 	}
 
 	public int GetArmor()
@@ -125,6 +195,7 @@ public class CharacterGraphic : MonoBehaviour {
 
 	public void IncrementArmor(int delta)
 	{
+		StartCoroutine("AddFloatingTextToQueue", new FloatingTextInfo(delta, Resource.Armor));
 		SetArmor(armor + delta);
 	}
 
@@ -148,19 +219,21 @@ public class CharacterGraphic : MonoBehaviour {
 
 	public void IncrementStamina(int delta)
 	{
-		//assignedCharacter.SetStamina(assignedCharacter.GetStartStamina() + delta);
+		StartCoroutine("AddFloatingTextToQueue", new FloatingTextInfo(delta, Resource.Stamina));
 		SetStamina(stamina + delta);
 	}
 
 	public void SetStartStamina()
 	{
-		SetStamina(assignedCharacter.GetStartStamina());
+		SetStamina(assignedCharacter.GetMaxStamina());
 	}
 
 	public void SetStamina(int newStamina)
 	{
 		stamina = newStamina;
 		if (stamina < 0) stamina = 0;
+		if (stamina > assignedCharacter.GetMaxStamina())
+			SetStartStamina();
 		staminaText.text = stamina.ToString();
 	}
 
@@ -169,7 +242,11 @@ public class CharacterGraphic : MonoBehaviour {
 		SetAmmo(assignedCharacter.GetStartAmmo());
 	}
 
-	public void IncrementAmmo(int delta) { SetAmmo(ammo + delta); }
+	public void IncrementAmmo(int delta) 
+	{
+		StartCoroutine("AddFloatingTextToQueue",new FloatingTextInfo(delta,Resource.Ammo));
+		SetAmmo(ammo + delta); 
+	}
 
 	public int GetAmmo()
 	{
@@ -183,9 +260,62 @@ public class CharacterGraphic : MonoBehaviour {
 		ammoText.text = ammo.ToString();
 	}
 
+
+	public void DoCleanupAfterCharacterDeath()
+	{
+		RemoveAllCharacterCards();
+	}
+
+
+	public void PlaceCharacterCard(CharacterStipulationCard playedCard)
+	{
+		VisualCardGraphic cardGraphic = Instantiate(visualCardPrefab);
+		cardGraphic.AssignCard(playedCard);
+		cardGraphic.transform.SetParent(appliedCardsGroup, false);
+		cardGraphic.transform.SetAsFirstSibling();
+		playedCard.ActivateCard(this);
+		activeStipulationCards.Add(playedCard);
+	}
+
+	public void RemoveCharacterCard(CharacterStipulationCard removedCard)
+	{
+		removedCard.DeactivateCard();
+		foreach (VisualCardGraphic graphic in appliedCardsGroup.GetComponentsInChildren<VisualCardGraphic>())
+		{
+			if (graphic.assignedCard == removedCard)
+			{
+				GameObject.Destroy(graphic.gameObject);
+				break;
+			}
+		}
+		activeStipulationCards.Remove(removedCard);
+	}
+
+	public void RemoveAllCharacterCards()
+	{
+		foreach (CharacterStipulationCard card in new List<CharacterStipulationCard>(activeStipulationCards))
+		{
+			RemoveCharacterCard(card);
+		}
+	}
+
 	public bool HasTurn()
 	{
 		return hasTurn;
+	}
+
+	public virtual void StartedTurn()
+	{
+		DoTurnEventAndDrawCards();
+		DisplayHand(false);
+	}
+
+	protected void DoTurnEventAndDrawCards()
+	{
+		if (ECharacterTurnStarted != null)
+			ECharacterTurnStarted();
+		DiscardCurrentHand();
+		DrawCardsToHand();
 	}
 
 	public void GiveTurn()
@@ -197,8 +327,60 @@ public class CharacterGraphic : MonoBehaviour {
 		hasTurn = false;
 	}
 
-	public void HandWidgetHoverStart() { CardsScreen.main.PeekCharacterHand(assignedCharacter); }
+	struct FloatingTextInfo
+	{
+		public int value;
+		public Resource resource;
 
-	public void HandWidgetHoverEnd() { CardsScreen.main.StopPeekingCharacterHand();}
+		public FloatingTextInfo(int newValue, Resource newResource)
+		{
+			value = newValue;
+			resource = newResource;
+		}
+	}
+
+	IEnumerator AddFloatingTextToQueue(FloatingTextInfo info)
+	{
+		float readyTextTimeout = 0.4f;
+		
+		if (floatingTextIsOut)
+			yield return new WaitForSeconds(readyTextTimeout);
+
+		CreateFloatingText(info.value,info.resource);
+
+		floatingTextIsOut = true;
+		yield return new WaitForSeconds(readyTextTimeout);
+		floatingTextIsOut = false;
+		yield break;
+	}
+
+	void CreateFloatingText(int value, Resource resourceType)
+	{
+		if (value != 0)
+		{
+			FloatingText newText = Instantiate(floatingTextPrefab);
+			Transform textStartpoint = null;
+			if (resourceType == Resource.Health)
+				textStartpoint = healthText.transform;
+			if (resourceType == Resource.Armor)
+				textStartpoint = armorText.transform;
+			if (resourceType == Resource.Stamina)
+				textStartpoint = staminaText.transform;
+			if (resourceType == Resource.Ammo)
+				textStartpoint = ammoText.transform;
+
+			newText.AssignFloatingText(value, textStartpoint, resourceType);
+		}
+	}
+
+	public void HandWidgetHoverStart() 
+	{ 
+		CardsScreen.main.PeekCharacterHand(this); 
+	}
+
+	public void HandWidgetHoverEnd() 
+	{ 
+		CardsScreen.main.StopPeekingCharacterHand(this);
+	}
 
 }

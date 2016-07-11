@@ -3,7 +3,8 @@ using UnityEngine.UI;
 using System.Collections;
 
 
-public class MercenaryHireInfo : MonoBehaviour {
+public class MercenaryHireInfo : MonoBehaviour 
+{
 
 	public Image mercPortrait;
 	public Button mercPreviewButton;
@@ -36,7 +37,7 @@ public class MercenaryHireInfo : MonoBehaviour {
 		hireCostText.text = hireCost+" $";
 
 		mercPreviewButton.onClick.AddListener(
-			()=> InventoryScreenHandler.mainISHandler.MapOrEncounterToggleSelectedMember(assignedMerc));
+			()=> InventoryScreenHandler.mainISHandler.ToggleSelectedMember(assignedMerc));
 
 		hireButton.onClick.AddListener(() =>HireButtonPressed());
 		hireButton.GetComponentInChildren<Text>().text="Hire ("+hireDuration+" days)";

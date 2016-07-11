@@ -90,3 +90,16 @@ public class Sidearm : RangedCard
 		damage = 10;
 	}
 }
+
+public class SetupDefence : EffectCard
+{
+	public SetupDefence()
+	{
+		name = "Setup Defence";
+		description = "Adds a Melee Defence to user";
+		image = SpriteBase.mainSpriteBase.brokenArmsSprite;
+		targetType = TargetType.None;
+		staminaCost = 1;
+		addedStipulationCard = new MeleeDefence();
+	}
+}

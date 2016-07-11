@@ -11,7 +11,10 @@ public class TooltipManager : MonoBehaviour
 	float edgeOffsetSize=5f;
 	float tooltipWidth=80f;
 	
-	void Start() {main=this;}
+	void Start() 
+	{
+		main=this;
+	}
 
 	public void CreateItemTooltip(InventoryItem item, Transform parent)
 	{
@@ -41,13 +44,20 @@ public class TooltipManager : MonoBehaviour
 	{
 		StopAllTooltips();
 		activeTooltip = Instantiate(tooltipPrefab);
-		activeTooltip.AssignDisplayValues(tooltipText, tooltipParent, displayCards);
+		activeTooltip.DisplayValuesAndCombatCards(tooltipText, tooltipParent, displayCards);
 	}
 	public void CreateTooltip(string tooltipText, Transform tooltipParent, RewardCard[] displayCards)
 	{
 		StopAllTooltips();
 		activeTooltip = Instantiate(tooltipPrefab);
-		activeTooltip.AssignDisplayValues(tooltipText, tooltipParent, displayCards);
+		activeTooltip.DisplayValuesAndRewardCards(tooltipText, tooltipParent, displayCards);
+	}
+
+	public void CreateTooltip(string tooltipText, Transform tooltipParent, params Card[] displayCards)
+	{
+		StopAllTooltips();
+		activeTooltip = Instantiate(tooltipPrefab);
+		activeTooltip.DisplayValuesAndVisualCards(tooltipText, tooltipParent, displayCards);
 	}
 
 	public void CreateTooltip(string tooltipText, Transform tooltipParent)
@@ -59,6 +69,7 @@ public class TooltipManager : MonoBehaviour
 	
 	public void StopAllTooltips() 
 	{
-		if (activeTooltip!=null) GameObject.Destroy(activeTooltip.gameObject);
+		if (activeTooltip!=null) 
+			GameObject.Destroy(activeTooltip.gameObject);
 	}
 }

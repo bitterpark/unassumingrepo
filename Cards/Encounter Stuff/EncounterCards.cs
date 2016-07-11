@@ -54,7 +54,52 @@ public abstract class RoomCard : Card
 	}
 }
 
-public abstract class RoomStipulationCard : Card
+public abstract class StipulationCard : Card
+{
+	
+}
+
+public abstract class CharacterStipulationCard : StipulationCard
+{
+	public abstract void ActivateCard(CharacterGraphic user);
+	public abstract void DeactivateCard();
+
+	public CharacterGraphic characterGraphic;
+}
+
+public class MeleeDefence :CharacterStipulationCard
+{
+	int damage=20;
+
+	public MeleeDefence()
+	{
+		name = "Melee Defence";
+		image = SpriteBase.mainSpriteBase.brokenArmsSprite;
+
+		description = "When a melee attack is played, the attacker takes "+damage+" damage";
+	}
+
+	public override void ActivateCard(CharacterGraphic user)
+	{
+		characterGraphic = user;
+		MeleeCard.EMeleeCardPlayed += Detonate;
+	}
+	void Detonate(CharacterGraphic cardPlayer)
+	{
+		if (cardPlayer.GetType() != typeof(MercGraphic))
+		{
+			//characterGraphic.RemoveCharacterCard(this);
+			cardPlayer.TakeDamage(damage);
+		}
+
+	}
+	public override void DeactivateCard()
+	{
+		MeleeCard.EMeleeCardPlayed -= Detonate;
+	}
+}
+
+public abstract class RoomStipulationCard : StipulationCard
 {
 	public abstract void ActivateCard();
 	public abstract void DeactivateCard();

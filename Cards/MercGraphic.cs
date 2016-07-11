@@ -12,5 +12,12 @@ public class MercGraphic : CharacterGraphic
 		portrait.color = newChar.GetColor();
 		classText.text = newChar.GetClass();
 	}
+
+
+	public override void StartedTurn()
+	{
+		DoTurnEventAndDrawCards();
+		DisplayHand(true);
+	}
 	
 }

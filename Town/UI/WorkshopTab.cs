@@ -60,7 +60,7 @@ public class WorkshopTab : MonoBehaviour, TownTab {
 		foreach (CraftRecipe recipe in availableRecipes)
 		{
 			RecipeGroup newRecipeDisplay = Instantiate(recipePrefab);
-			newRecipeDisplay.transform.SetParent(recipeGroup);
+			newRecipeDisplay.transform.SetParent(recipeGroup,false);
 			newRecipeDisplay.AssignRecipe(recipe);
 		}
 	}

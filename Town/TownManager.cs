@@ -80,8 +80,12 @@ public class TownManager : MonoBehaviour {
 		itemsOnSale.Add(new Shotgun());
 		itemsOnSale.Add(new ComputerParts());
 
-		MapManager.main.GetTown().StashItem(new Scrap());
-		MapManager.main.GetTown().StashItem(new FakeMoney());
+		MapManager.main.GetTown().StashItem(new AssaultRifle());
+		MapManager.main.GetTown().StashItem(new AssaultRifle());
+		MapManager.main.GetTown().StashItem(new AssaultRifle());
+		MapManager.main.GetTown().StashItem(new Axe());
+		MapManager.main.GetTown().StashItem(new Axe());
+		MapManager.main.GetTown().StashItem(new Axe());
 	}
 
 	public virtual void UpdateMercenaryHireList()
@@ -179,18 +183,8 @@ public class TownManager : MonoBehaviour {
 		money = newMoneyBalance;
 	}
 
-	public void CheckForEndOfWeek()
-	{
-		//Make sure this only happens weekly
-		if (PartyManager.mainPartyManager.daysPassed % (daysPerGameWeek+1) == 0)
-		{
-			DoEndOfWeekChanges();
-		}
-	}
-
 	void DoEndOfWeekChanges()
 	{
-		print("End of week mercenary list update!");
 		UpdateMercenaryHireList();
 		
 		money = GetExpectedWeeklyBalance();
@@ -290,6 +284,6 @@ public class TownManager : MonoBehaviour {
 	void Start () 
 	{
 		main = this;
-		PartyManager.ETimePassedEnd += CheckForEndOfWeek;
+		PartyManager.ENewWeekStart += DoEndOfWeekChanges;
 	}
 }

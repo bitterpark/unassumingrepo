@@ -17,7 +17,7 @@ public class Deck<T> where T:class
 		return allCards;
 	}
 
-	public void AddCards(params T[] cards)
+	public virtual void AddCards(params T[] cards)
 	{
 		allCards.AddRange(cards);
 		PopulateDraw(cards);
@@ -42,12 +42,20 @@ public class Deck<T> where T:class
 
 	protected void PopulateDraw(bool shuffle, params T[] cards)
 	{
-		foreach (T card in cards) PutOnTopOfDrawpile(card);
-		if (shuffle) Shuffle();
+		foreach (T card in cards) 
+			PutOnTopOfDrawpile(card);
+		if (shuffle) 
+			Shuffle();
 	}
 	//Top is considered index=n, bottom - index=0
-	public void PutOnTopOfDrawpile(T card) { drawPile.Add(card); }
-	public void PutAtBottomOfDrawpile(T card) { drawPile.Insert(0, card); }
+	public void PutOnTopOfDrawpile(T card) 
+	{ 
+		drawPile.Add(card); 
+	}
+	public void PutAtBottomOfDrawpile(T card) 
+	{ 
+		drawPile.Insert(0, card); 
+	}
 
 	
 
@@ -107,7 +115,14 @@ public class Deck<T> where T:class
 }
 
 public class CombatDeck : Deck<CombatCard>
-{	
+{
+	public override void AddCards(params CombatCard[] cards)
+	{
+		foreach (CombatCard card in cards)
+			card.originDeck = this;
+		base.AddCards(cards);
+	}
+	
 	public void AddCards(System.Type cardType)
 	{
 		AddCards(cardType, 1);
