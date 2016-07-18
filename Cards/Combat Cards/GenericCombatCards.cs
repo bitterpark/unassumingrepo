@@ -3,8 +3,7 @@ using System.Collections;
 
 public class Smash : MeleeCard
 {
-	public Smash()
-		: base()
+	protected override void ExtenderConstructor()
 	{
 		name = "Smash";
 		description = "When in doubt - punch things";
@@ -18,8 +17,7 @@ public class Smash : MeleeCard
 
 public class Jab : MeleeCard
 {
-	public Jab()
-		: base()
+	protected override void ExtenderConstructor()
 	{
 		name = "Jab";
 		description = "Left hand is enough";
@@ -35,8 +33,7 @@ public class Jab : MeleeCard
 
 public class Hipfire : RangedCard
 {
-	public Hipfire()
-		: base()
+	protected override void ExtenderConstructor()
 	{
 		name = "Hipfire";
 		description = "Aiming is for nerds";
@@ -50,8 +47,7 @@ public class Hipfire : RangedCard
 
 public class Throw : RangedCard
 {
-	public Throw()
-		: base()
+	protected override void ExtenderConstructor()
 	{
 		name = "Throw";
 		description = "Everything is fair";
@@ -65,8 +61,7 @@ public class Throw : RangedCard
 
 public class BurstFire : RangedCard
 {
-	public BurstFire()
-		: base()
+	protected override void ExtenderConstructor()
 	{
 		name = "Burst Fire";
 		description = "Walk the shots";
@@ -80,8 +75,7 @@ public class BurstFire : RangedCard
 
 public class Sidearm : RangedCard
 {
-	public Sidearm()
-		: base() //x2
+	protected override void ExtenderConstructor()
 	{
 		name = "Sidearm";
 		description = "Trick gun";
@@ -93,7 +87,7 @@ public class Sidearm : RangedCard
 
 public class SetupDefence : EffectCard
 {
-	public SetupDefence()
+	protected override void ExtenderConstructor()
 	{
 		name = "Setup Defence";
 		description = "Adds a Melee Defence to user";
@@ -101,5 +95,42 @@ public class SetupDefence : EffectCard
 		targetType = TargetType.None;
 		staminaCost = 1;
 		addedStipulationCard = new MeleeDefence();
+	}
+
+	public class MeleeDefence : CharacterStipulationCard
+	{
+		int damage = 20;
+
+		public MeleeDefence()
+		{
+			//SetLastsForRounds(1);
+			
+			name = "Melee Defence";
+			image = SpriteBase.mainSpriteBase.brokenArmsSprite;
+
+			description = "When a melee attack is played, the attacker takes " + damage + " damage";
+
+			addedCombatCards.Add(new Jab());
+			addedCombatCards.Add(new Jab());
+			addedCombatCards.Add(new Jab());
+		}
+
+		protected override void ExtenderSpecificActivation()
+		{
+			MeleeCard.EMeleeCardPlayed += Detonate;
+		}
+		void Detonate(CharacterGraphic cardPlayer, MeleeCard playedCard)
+		{
+			if (cardPlayer.GetType() != typeof(MercGraphic))
+			{
+				//characterGraphic.RemoveCharacterCard(this);
+				cardPlayer.TakeDamage(damage);
+			}
+
+		}
+		protected override void ExtenderSpecificDeactivation()
+		{
+			MeleeCard.EMeleeCardPlayed -= Detonate;
+		}
 	}
 }

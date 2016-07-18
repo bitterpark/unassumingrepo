@@ -20,288 +20,12 @@ public interface Mercenary : Character
 {
 	string GetClass();
 	Color GetColor();
+	List<PrepCard> GetWeaponPrepCards();
+	List<PrepCard> GetClassPrepCards();
 }
 
 public class PartyMember: Mercenary
 {
-	public enum BodyPartTypes {Vitals, Hands, Legs};
-	public class BodyParts
-	{
-		PartyMember assignedMember;
-		
-		ProbabilityList<MemberBodyPart> partHitChances;
-		public float GetPartHitChance(BodyPartTypes type)
-		{
-			if (partHitChances.probabilities.ContainsKey(currentParts[type])) return partHitChances.probabilities[currentParts[type]];
-			else return 0;
-		}
-		//Dictionary<Parts,int> partsHealth=new Dictionary<Parts, int>();
-		public Dictionary<BodyPartTypes,MemberBodyPart> currentParts=new Dictionary<BodyPartTypes,MemberBodyPart>();
-		//float totalHitProbability;
-		
-		//Probability distribution within the overall hitchance range
-		const float vitalsHitChance=0.2f;
-		const float handsHitChance=0.4f;
-		const float legsHitChance=0.4f;
-		
-		float GetPartTypeHitChance(BodyPartTypes type)
-		{
-			float hitChance=0;
-			switch(type)
-			{
-				case BodyPartTypes.Hands: {hitChance=handsHitChance; break;}
-				case BodyPartTypes.Legs: {hitChance=legsHitChance; break;}
-				case BodyPartTypes.Vitals: {hitChance=vitalsHitChance; break;}
-			}	
-			return hitChance;
-		}
-		public int GetPartHealth(BodyPartTypes type)
-		{
-			return currentParts[type].health;
-		}
-		
-		public BodyParts(PartyMember member, int handsMaxHealth, int legsMaxHealth, int vitalsMaxHealth)
-		{
-			assignedMember=member;
-			
-			currentParts.Add(BodyPartTypes.Hands,new MemberBodyPart(assignedMember,BodyPartTypes.Hands,handsMaxHealth));
-			currentParts.Add(BodyPartTypes.Legs,new MemberBodyPart(assignedMember,BodyPartTypes.Legs,legsMaxHealth));
-			currentParts.Add(BodyPartTypes.Vitals,new MemberBodyPart(assignedMember,BodyPartTypes.Vitals,vitalsMaxHealth));
-			CalculateHitChances();
-		}
-
-		public void ChangePartMaxHealth(int newHealth, BodyPartTypes part)
-		{
-			int healthChangeDelta=newHealth-currentParts[part].maxHealth;
-			currentParts[part].maxHealth=newHealth;
-			if (healthChangeDelta>0) currentParts[part].Heal(healthChangeDelta);
-			else currentParts[part].DamagePart(healthChangeDelta);
-		}
-
-		public ProbabilityList<MemberBodyPart> GetDodgelessHitchances()
-		{
-			float totalHitProbability=1;
-
-			ProbabilityList<MemberBodyPart> dodgeLessHitChances=new ProbabilityList<MemberBodyPart>();
-			
-			float missingHitChanceFromBrokenParts=0;
-			foreach (MemberBodyPart part in currentParts.Values)
-			{
-				if (part.broken) missingHitChanceFromBrokenParts+=totalHitProbability*GetPartTypeHitChance(part.partType);
-			}
-			System.Action<MemberBodyPart> partHitChanceCalculation=(MemberBodyPart part)=>
-			{
-				if (!part.broken) 
-				{
-					float adjustedHitChance=totalHitProbability*GetPartTypeHitChance(part.partType);
-					if (missingHitChanceFromBrokenParts>0)
-					{
-						//Increase for body parts that get broken
-						float addedHitChance=missingHitChanceFromBrokenParts*(adjustedHitChance/(totalHitProbability-missingHitChanceFromBrokenParts));
-						adjustedHitChance+=addedHitChance;
-						//missingHitChanceFromBrokenParts-=addedHitChance;
-					}
-					dodgeLessHitChances.AddProbability(currentParts[part.partType],adjustedHitChance);
-				}
-			};
-			foreach (MemberBodyPart part in currentParts.Values)
-			{
-				partHitChanceCalculation.Invoke(part);
-			}
-			return dodgeLessHitChances;
-		}
-
-		public void CalculateHitChances()
-		{
-			float totalHitProbability=1-assignedMember.currentDodgeChance;
-			
-			partHitChances=new ProbabilityList<MemberBodyPart>();
-			
-			float missingHitChanceFromBrokenParts=0;
-			foreach (MemberBodyPart part in currentParts.Values)
-			{
-				if (part.broken) missingHitChanceFromBrokenParts+=totalHitProbability*GetPartTypeHitChance(part.partType);
-			}
-			System.Action<MemberBodyPart> partHitChanceCalculation=(MemberBodyPart part)=>
-			{
-				if (!part.broken) 
-				{
-					float adjustedHitChance=totalHitProbability*GetPartTypeHitChance(part.partType);
-					if (missingHitChanceFromBrokenParts>0)
-					{
-						//Increase for body parts that get broken
-						float addedHitChance=missingHitChanceFromBrokenParts*(adjustedHitChance/(totalHitProbability-missingHitChanceFromBrokenParts));
-						adjustedHitChance+=addedHitChance;
-						//missingHitChanceFromBrokenParts-=addedHitChance;
-					}
-					partHitChances.AddProbability(currentParts[part.partType],adjustedHitChance);
-				}
-			};
-			foreach (MemberBodyPart part in currentParts.Values)
-			{
-				partHitChanceCalculation.Invoke(part);
-			}
-			/*
-			//For debug purposes only
-			GameManager.DebugPrint("New hit probabilities:");
-			foreach (MemberBodyPart part in partHitChances.probabilities.Keys)
-			{
-				GameManager.DebugPrint(part.partType.ToString()+":"+partHitChances.probabilities[part]);
-			}*/
-		}
-		
-		public bool TryHit(int damage, out BodyPartTypes damagedPartType)
-		{
-			float attackRoll=Random.value;
-			MemberBodyPart damagedPart;
-			damagedPartType=BodyPartTypes.Hands;
-			bool success=partHitChances.RollProbability(out damagedPart);
-			if (success)
-			{
-				damagedPartType=damagedPart.partType;
-				TakeHit(damage,damagedPart);
-			} 
-			//else EncounterCanvasHandler.main.AddNewLogMessage("Member dodged!");
-			return success;
-		}
-
-		public BodyPartTypes HitRandomPart(int damage)
-		{
-			float attackRoll=Random.value;
-			MemberBodyPart damagedPart;
-			BodyPartTypes damagedPartType=BodyPartTypes.Hands;
-			if (GetDodgelessHitchances().RollProbability(out damagedPart)) 
-			{	
-				TakeHit(damage,damagedPart);
-				damagedPartType=damagedPart.partType;
-			}
-			else throw new System.Exception("Could not hit member body part at hit p=1!");
-			//else EncounterCanvasHandler.main.AddNewLogMessage("Member dodged!");
-			return damagedPartType;
-		}
-
-		public void TakeHit(int damage, BodyPartTypes damagedPartType)
-		{
-			TakeHit(damage,currentParts[damagedPartType]);
-		}
-		
-		public void TakeHit(int damage, MemberBodyPart damagedPart)
-		{
-			damagedPart.DamagePart(-damage);
-			//EncounterCanvasHandler.main.AddNewLogMessage(damagedPart.partType.ToString()+" damaged!");
-			if (damagedPart.broken)
-			{ 
-				if (EncounterCanvasHandler.main.encounterOngoing)
-				EncounterCanvasHandler.main.AddNewLogMessage(damagedPart.partType.ToString()+" broken!");
-				CalculateHitChances();
-			}
-		}
-		
-		public bool HealPart(BodyPartTypes healedPart, int healAmount)
-		{
-			bool healed=currentParts[healedPart].Heal(healAmount);
-			if (healed) CalculateHitChances();
-			return healed;
-		}
-		
-		//Internal MemberBodyParts class
-		public class MemberBodyPart
-		{
-			public BodyPartTypes partType;
-			public int maxHealth;
-			public int health;
-			public bool broken=false;
-			PartyMember member;
-			MemberStatusEffect ongoingEffect;
-			//public readonly string partName;
-			
-			public MemberBodyPart(PartyMember partOwner,BodyPartTypes type, int hp)
-			{
-				partType=type;
-				maxHealth=hp;
-				health=maxHealth;
-				member=partOwner;
-			}
-			
-			void PartDamagedEffect()
-			{
-				broken=true;
-				switch(partType)
-				{
-				case BodyPartTypes.Hands:
-				{
-					ongoingEffect=new BrokenArmsMember();
-					PartyManager.mainPartyManager.AddPartyMemberStatusEffect(member,ongoingEffect);
-					break;
-				}
-				case BodyPartTypes.Legs:
-				{
-					ongoingEffect=new BrokenLegsMember();
-					PartyManager.mainPartyManager.AddPartyMemberStatusEffect(member,ongoingEffect);
-					break;
-				}
-				case BodyPartTypes.Vitals:
-				{
-					member.DisposePartyMember();
-					break;
-				}
-				}
-			}
-			void PartRestoredEffect()
-			{
-				broken=false;
-				switch(partType)
-				{
-				case BodyPartTypes.Hands:
-				{
-					BrokenArmsMember effect=ongoingEffect as BrokenArmsMember;
-					effect.CureArms();
-					ongoingEffect=null;
-					break;
-				}
-				case BodyPartTypes.Legs:
-				{
-					//PartyManager.mainPartyManager.RemovePartyMemberStatusEffect(member,ongoingEffect);
-					BrokenLegsMember effect=ongoingEffect as BrokenLegsMember;
-					effect.CureLegs();
-					ongoingEffect=null;
-					break;
-				}
-				case BodyPartTypes.Vitals:
-				{
-					
-					break;
-				}
-				}
-			}
-			
-			public void DamagePart(int healthDelta)
-			{
-				health+=healthDelta;
-				if (health<=0)
-				{
-					health=0;
-					if (!broken) PartDamagedEffect();
-				}
-			}
-			
-			public bool Heal(int healAmount)
-			{
-				bool healed=(health<maxHealth);
-				if (healed) 
-				{	
-					health+=healAmount;
-					if (health>=maxHealth)
-					{
-						health=maxHealth;
-						if (broken) PartRestoredEffect();
-					}
-				}
-				return healed;
-			}
-		} 		
-	}
-	
 	public string name;
 	public Color color;
 	
@@ -320,12 +44,6 @@ public class PartyMember: Mercenary
 		namesList.Add("Timur");
 		namesList.Add ("Kolya");
 		namesList.Add ("Max");
-		/*
-		foreach (string name in occupiedNames) {namesList.Remove(name);}
-		if (namesList.Count==0) {throw new System.Exception("All names are occupied!");}
-		
-		string finalName=namesList[Random.Range(0,namesList.Count)];
-		occupiedNames.Add(finalName);*/
 		
 		return namesList[Random.Range(0,namesList.Count)];
 	}
@@ -333,14 +51,6 @@ public class PartyMember: Mercenary
 	static List<Color> GetColors() 
 	{
 		List<Color> possibleColors=new List<Color>(SpriteBase.mainSpriteBase.possibleMemberColors);
-		//possibleColors.Add(Color.gray);
-		//Blue and gray are reserved, black is too dark
-		/*
-		possibleColors.Add(Color.red);
-		possibleColors.Add(Color.cyan);
-		possibleColors.Add(Color.green);
-		possibleColors.Add(Color.yellow);
-		possibleColors.Add(Color.magenta);*/
 		return possibleColors;
 	}
 	static List<Color> availableColors=null;
@@ -690,6 +400,8 @@ public class PartyMember: Mercenary
 	public enum MercClass {Soldier,Bandit,Gunman,Mercenary};
 	public MercClass myClass;
 	CombatDeck combatDeck = new CombatDeck();
+	List<PrepCard> weaponPrepCards = new List<PrepCard>();
+	List<PrepCard> classPrepCards = new List<PrepCard>();
 
 	int ammo = 10;
 	int healthMax = 100;
@@ -727,31 +439,48 @@ public class PartyMember: Mercenary
 		}
 	}
 
-	static CombatDeck GetClassDeck(MercClass mercClass)
+	static CombatDeck GenerateClassCombatDeck(MercClass mercClass)
 	{
 		CombatDeck result = new CombatDeck();
 
 		if (mercClass == MercClass.Soldier)
-		{
 			result = SoldierCards.GetClassCards();
-		}
 		if (mercClass == MercClass.Bandit)
-		{
 			result = BanditCards.GetClassCards();
-		}
 		if (mercClass == MercClass.Gunman)
-		{
 			result = GunmanCards.GetClassCards();
-		}
 		if (mercClass==MercClass.Mercenary)
-		{
 			result = MercenaryCards.GetClassCards();
-		}
 		//result = new CombatDeck();
-		//result.AddCards(typeof(SemperFi),4);
+		//result.AddCards(typeof(SetupDefence),4);
 
 		return result;
 	}
+
+	static List<PrepCard> GenerateClassPrepCards(MercClass mercClass)
+	{
+		List<PrepCard> result = new List<PrepCard>();
+
+		if (mercClass == MercClass.Soldier)
+			result = SoldierCards.GetClassPrepCards();
+		if (mercClass == MercClass.Bandit)
+			result = BanditCards.GetClassPrepCards();
+		if (mercClass == MercClass.Gunman)
+			result = GunmanCards.GetClassPrepCards();
+		if (mercClass == MercClass.Mercenary)
+			result = MercenaryCards.GetClassPrepCards();
+
+		return result;
+	}
+
+	static List<PrepCard> GenerateDefaultWeaponPrepCards()
+	{
+		List<PrepCard> defaultPrepCardList = new List<PrepCard>();
+		defaultPrepCardList.Add(new DefaultMeleePrepCard());
+		defaultPrepCardList.Add(new DefaultRangedPrepCard());
+		return defaultPrepCardList;
+	}
+
 
 	public PartyMember ()//Vector2 startingWorldCoords)
 	{
@@ -769,7 +498,10 @@ public class PartyMember: Mercenary
 		
 		var classtypes=System.Enum.GetValues(typeof(MercClass));
 		myClass = (MercClass)classtypes.GetValue(Random.Range(0,classtypes.Length));
-		combatDeck = GetClassDeck(myClass);
+		combatDeck = GenerateClassCombatDeck(myClass);
+		classPrepCards = GenerateClassPrepCards(myClass);
+		weaponPrepCards = GenerateDefaultWeaponPrepCards();
+		
 		SetClassStats(myClass);
 
 		//Pick color out of ones left
@@ -1477,8 +1209,10 @@ public class PartyMember: Mercenary
 			equippedMeleeWeapon = newWeapon as MeleeWeapon;
 		if (newWeapon.GetType().BaseType == typeof(RangedWeapon))
 			equippedRangedWeapon = newWeapon as RangedWeapon;
-		
-		combatDeck.AddCards(newWeapon.addedCombatCards.ToArray());
+
+		PrepCard cardAddedByWeapon;
+		if (newWeapon.TryGetAddedPrepCard(out cardAddedByWeapon))
+			weaponPrepCards.Add(cardAddedByWeapon);
 		
 		stamina += newWeapon.staminaBonus;
 		ammo += newWeapon.ammoBonus;
@@ -1494,8 +1228,10 @@ public class PartyMember: Mercenary
 			equippedMeleeWeapon = null;
 		if (equippedRangedWeapon == uneqippedWeapon)
 			equippedRangedWeapon = null;
-		
-		combatDeck.RemoveCards(uneqippedWeapon.addedCombatCards.ToArray());
+
+		PrepCard cardAddedByWeapon;
+		if (uneqippedWeapon.TryGetAddedPrepCard(out cardAddedByWeapon))
+			weaponPrepCards.Remove(cardAddedByWeapon);
 
 		stamina -= uneqippedWeapon.staminaBonus;
 		ammo -= uneqippedWeapon.ammoBonus;
@@ -1565,11 +1301,303 @@ public class PartyMember: Mercenary
 		return color;
 	}
 
-	public CombatDeck GetCombatDeck() { return combatDeck; }
-	public List<CombatCard> GetAllUsedCards() { return combatDeck.GetDeckCards();}
+	public List<PrepCard> GetWeaponPrepCards(){
+		return weaponPrepCards;
+	}
+
+	public List<PrepCard> GetClassPrepCards()
+	{
+		return classPrepCards;
+	}
+
+	public CombatDeck GetCombatDeck() { 
+		return combatDeck; 
+	}
+	public List<CombatCard> GetAllUsedCards() { 
+		return combatDeck.GetDeckCards();
+	}
 
 	public int GetStartAmmo() 
 	{ 
 		return ammo; 
+	}
+
+	//OLD CRAP
+	public enum BodyPartTypes { Vitals, Hands, Legs };
+	public class BodyParts
+	{
+		PartyMember assignedMember;
+
+		ProbabilityList<MemberBodyPart> partHitChances;
+		public float GetPartHitChance(BodyPartTypes type)
+		{
+			if (partHitChances.probabilities.ContainsKey(currentParts[type])) return partHitChances.probabilities[currentParts[type]];
+			else return 0;
+		}
+		//Dictionary<Parts,int> partsHealth=new Dictionary<Parts, int>();
+		public Dictionary<BodyPartTypes, MemberBodyPart> currentParts = new Dictionary<BodyPartTypes, MemberBodyPart>();
+		//float totalHitProbability;
+
+		//Probability distribution within the overall hitchance range
+		const float vitalsHitChance = 0.2f;
+		const float handsHitChance = 0.4f;
+		const float legsHitChance = 0.4f;
+
+		float GetPartTypeHitChance(BodyPartTypes type)
+		{
+			float hitChance = 0;
+			switch (type)
+			{
+				case BodyPartTypes.Hands: { hitChance = handsHitChance; break; }
+				case BodyPartTypes.Legs: { hitChance = legsHitChance; break; }
+				case BodyPartTypes.Vitals: { hitChance = vitalsHitChance; break; }
+			}
+			return hitChance;
+		}
+		public int GetPartHealth(BodyPartTypes type)
+		{
+			return currentParts[type].health;
+		}
+
+		public BodyParts(PartyMember member, int handsMaxHealth, int legsMaxHealth, int vitalsMaxHealth)
+		{
+			assignedMember = member;
+
+			currentParts.Add(BodyPartTypes.Hands, new MemberBodyPart(assignedMember, BodyPartTypes.Hands, handsMaxHealth));
+			currentParts.Add(BodyPartTypes.Legs, new MemberBodyPart(assignedMember, BodyPartTypes.Legs, legsMaxHealth));
+			currentParts.Add(BodyPartTypes.Vitals, new MemberBodyPart(assignedMember, BodyPartTypes.Vitals, vitalsMaxHealth));
+			CalculateHitChances();
+		}
+
+		public void ChangePartMaxHealth(int newHealth, BodyPartTypes part)
+		{
+			int healthChangeDelta = newHealth - currentParts[part].maxHealth;
+			currentParts[part].maxHealth = newHealth;
+			if (healthChangeDelta > 0) currentParts[part].Heal(healthChangeDelta);
+			else currentParts[part].DamagePart(healthChangeDelta);
+		}
+
+		public ProbabilityList<MemberBodyPart> GetDodgelessHitchances()
+		{
+			float totalHitProbability = 1;
+
+			ProbabilityList<MemberBodyPart> dodgeLessHitChances = new ProbabilityList<MemberBodyPart>();
+
+			float missingHitChanceFromBrokenParts = 0;
+			foreach (MemberBodyPart part in currentParts.Values)
+			{
+				if (part.broken) missingHitChanceFromBrokenParts += totalHitProbability * GetPartTypeHitChance(part.partType);
+			}
+			System.Action<MemberBodyPart> partHitChanceCalculation = (MemberBodyPart part) =>
+			{
+				if (!part.broken)
+				{
+					float adjustedHitChance = totalHitProbability * GetPartTypeHitChance(part.partType);
+					if (missingHitChanceFromBrokenParts > 0)
+					{
+						//Increase for body parts that get broken
+						float addedHitChance = missingHitChanceFromBrokenParts * (adjustedHitChance / (totalHitProbability - missingHitChanceFromBrokenParts));
+						adjustedHitChance += addedHitChance;
+						//missingHitChanceFromBrokenParts-=addedHitChance;
+					}
+					dodgeLessHitChances.AddProbability(currentParts[part.partType], adjustedHitChance);
+				}
+			};
+			foreach (MemberBodyPart part in currentParts.Values)
+			{
+				partHitChanceCalculation.Invoke(part);
+			}
+			return dodgeLessHitChances;
+		}
+
+		public void CalculateHitChances()
+		{
+			float totalHitProbability = 1 - assignedMember.currentDodgeChance;
+
+			partHitChances = new ProbabilityList<MemberBodyPart>();
+
+			float missingHitChanceFromBrokenParts = 0;
+			foreach (MemberBodyPart part in currentParts.Values)
+			{
+				if (part.broken) missingHitChanceFromBrokenParts += totalHitProbability * GetPartTypeHitChance(part.partType);
+			}
+			System.Action<MemberBodyPart> partHitChanceCalculation = (MemberBodyPart part) =>
+			{
+				if (!part.broken)
+				{
+					float adjustedHitChance = totalHitProbability * GetPartTypeHitChance(part.partType);
+					if (missingHitChanceFromBrokenParts > 0)
+					{
+						//Increase for body parts that get broken
+						float addedHitChance = missingHitChanceFromBrokenParts * (adjustedHitChance / (totalHitProbability - missingHitChanceFromBrokenParts));
+						adjustedHitChance += addedHitChance;
+						//missingHitChanceFromBrokenParts-=addedHitChance;
+					}
+					partHitChances.AddProbability(currentParts[part.partType], adjustedHitChance);
+				}
+			};
+			foreach (MemberBodyPart part in currentParts.Values)
+			{
+				partHitChanceCalculation.Invoke(part);
+			}
+			/*
+			//For debug purposes only
+			GameManager.DebugPrint("New hit probabilities:");
+			foreach (MemberBodyPart part in partHitChances.probabilities.Keys)
+			{
+				GameManager.DebugPrint(part.partType.ToString()+":"+partHitChances.probabilities[part]);
+			}*/
+		}
+
+		public bool TryHit(int damage, out BodyPartTypes damagedPartType)
+		{
+			float attackRoll = Random.value;
+			MemberBodyPart damagedPart;
+			damagedPartType = BodyPartTypes.Hands;
+			bool success = partHitChances.RollProbability(out damagedPart);
+			if (success)
+			{
+				damagedPartType = damagedPart.partType;
+				TakeHit(damage, damagedPart);
+			}
+			//else EncounterCanvasHandler.main.AddNewLogMessage("Member dodged!");
+			return success;
+		}
+
+		public BodyPartTypes HitRandomPart(int damage)
+		{
+			float attackRoll = Random.value;
+			MemberBodyPart damagedPart;
+			BodyPartTypes damagedPartType = BodyPartTypes.Hands;
+			if (GetDodgelessHitchances().RollProbability(out damagedPart))
+			{
+				TakeHit(damage, damagedPart);
+				damagedPartType = damagedPart.partType;
+			}
+			else throw new System.Exception("Could not hit member body part at hit p=1!");
+			//else EncounterCanvasHandler.main.AddNewLogMessage("Member dodged!");
+			return damagedPartType;
+		}
+
+		public void TakeHit(int damage, BodyPartTypes damagedPartType)
+		{
+			TakeHit(damage, currentParts[damagedPartType]);
+		}
+
+		public void TakeHit(int damage, MemberBodyPart damagedPart)
+		{
+			damagedPart.DamagePart(-damage);
+			//EncounterCanvasHandler.main.AddNewLogMessage(damagedPart.partType.ToString()+" damaged!");
+			if (damagedPart.broken)
+			{
+				if (EncounterCanvasHandler.main.encounterOngoing)
+					EncounterCanvasHandler.main.AddNewLogMessage(damagedPart.partType.ToString() + " broken!");
+				CalculateHitChances();
+			}
+		}
+
+		public bool HealPart(BodyPartTypes healedPart, int healAmount)
+		{
+			bool healed = currentParts[healedPart].Heal(healAmount);
+			if (healed) CalculateHitChances();
+			return healed;
+		}
+
+		//Internal MemberBodyParts class
+		public class MemberBodyPart
+		{
+			public BodyPartTypes partType;
+			public int maxHealth;
+			public int health;
+			public bool broken = false;
+			PartyMember member;
+			MemberStatusEffect ongoingEffect;
+			//public readonly string partName;
+
+			public MemberBodyPart(PartyMember partOwner, BodyPartTypes type, int hp)
+			{
+				partType = type;
+				maxHealth = hp;
+				health = maxHealth;
+				member = partOwner;
+			}
+
+			void PartDamagedEffect()
+			{
+				broken = true;
+				switch (partType)
+				{
+					case BodyPartTypes.Hands:
+						{
+							ongoingEffect = new BrokenArmsMember();
+							PartyManager.mainPartyManager.AddPartyMemberStatusEffect(member, ongoingEffect);
+							break;
+						}
+					case BodyPartTypes.Legs:
+						{
+							ongoingEffect = new BrokenLegsMember();
+							PartyManager.mainPartyManager.AddPartyMemberStatusEffect(member, ongoingEffect);
+							break;
+						}
+					case BodyPartTypes.Vitals:
+						{
+							member.DisposePartyMember();
+							break;
+						}
+				}
+			}
+			void PartRestoredEffect()
+			{
+				broken = false;
+				switch (partType)
+				{
+					case BodyPartTypes.Hands:
+						{
+							BrokenArmsMember effect = ongoingEffect as BrokenArmsMember;
+							effect.CureArms();
+							ongoingEffect = null;
+							break;
+						}
+					case BodyPartTypes.Legs:
+						{
+							//PartyManager.mainPartyManager.RemovePartyMemberStatusEffect(member,ongoingEffect);
+							BrokenLegsMember effect = ongoingEffect as BrokenLegsMember;
+							effect.CureLegs();
+							ongoingEffect = null;
+							break;
+						}
+					case BodyPartTypes.Vitals:
+						{
+
+							break;
+						}
+				}
+			}
+
+			public void DamagePart(int healthDelta)
+			{
+				health += healthDelta;
+				if (health <= 0)
+				{
+					health = 0;
+					if (!broken) PartDamagedEffect();
+				}
+			}
+
+			public bool Heal(int healAmount)
+			{
+				bool healed = (health < maxHealth);
+				if (healed)
+				{
+					health += healAmount;
+					if (health >= maxHealth)
+					{
+						health = maxHealth;
+						if (broken) PartRestoredEffect();
+					}
+				}
+				return healed;
+			}
+		}
 	}
 }

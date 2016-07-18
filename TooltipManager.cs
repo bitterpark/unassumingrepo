@@ -34,7 +34,7 @@ public class TooltipManager : MonoBehaviour
 				{
 					Weapon castItem = item as Weapon;
 					CreateTooltip(item.GetMouseoverDescription(), parent
-						, castItem.addedCombatCards.ToArray());
+						, castItem.GetAddedCombatCards());
 				}
 			}
 		}

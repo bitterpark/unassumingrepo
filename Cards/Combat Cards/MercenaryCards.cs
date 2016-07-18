@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
 
 public class MercenaryCards
 {
@@ -7,25 +8,135 @@ public class MercenaryCards
 	{
 		CombatDeck result = new CombatDeck();
 
-		result.AddCards(typeof(TakeCover), 2);
-		result.AddCards(typeof(Discretion));
-		result.AddCards(typeof(Gambit));
-		result.AddCards(typeof(RunAndGun));
+		result.AddCards(typeof(TakeCover));
 		result.AddCards(typeof(Hipfire));
-		result.AddCards(typeof(Overconfidence));
 		result.AddCards(typeof(SuicideCharge));
 		result.AddCards(typeof(Jab));
-		result.AddCards(typeof(Smash));
-		result.AddCards(typeof(LastStand),2);
+		result.AddCards(typeof(Smash),2);
+		result.AddCards(typeof(ComeAtMe));
+		result.AddCards(typeof(ControlledBursts));
 
 		return result;
+	}
+
+	public static List<PrepCard> GetClassPrepCards()
+	{
+		List<PrepCard> result = new List<PrepCard>();
+		result.Add(new Deathwish());
+		result.Add(new Unbreakable());
+		result.Add(new HiredGun());
+
+
+		return result;
+	}
+
+	public class Deathwish : PrepCard
+	{
+		public Deathwish()
+		{
+			name = "Deathwish";
+			description = "Adds cards to your deck";
+			image = SpriteBase.mainSpriteBase.skull;
+
+			addedCombatCards.Add(new Overconfidence());
+			addedCombatCards.Add(new SuicideCharge());
+			addedCombatCards.Add(new ComeAtMe());
+			addedCombatCards.Add(new RunAndGun());
+		}
+	}
+	public class Unbreakable : PrepCard
+	{
+		public Unbreakable()
+		{
+			name = "Unbreakable";
+			description = "Adds cards to your deck";
+			image = SpriteBase.mainSpriteBase.armor;
+
+			addedCombatCards.Add(new TakeCover());
+			addedCombatCards.Add(new LastStand());
+			addedCombatCards.Add(new PlanB());
+			addedCombatCards.Add(new PlanB());
+		}
+	}
+	public class HiredGun : PrepCard
+	{
+		public HiredGun()
+		{
+			name = "Hired Gun";
+			description = "Adds cards to your deck";
+			image = SpriteBase.mainSpriteBase.assaultRifleSprite;
+
+			addedCombatCards.Add(new BurstFire());
+			addedCombatCards.Add(new BurstFire());
+			addedCombatCards.Add(new Hipfire());
+			addedCombatCards.Add(new ControlledBursts());
+		}
+	}
+}
+
+public class ControlledBursts : EffectCard
+{
+	protected override void ExtenderConstructor()
+	{
+		targetType = TargetType.None;
+		addedStipulationCard = new TriggerDiscipline();
+		staminaCost = 1;
+
+		name = "Controlled Bursts";
+		description = "Play a Trigger Discipline card to the character";
+		image = SpriteBase.mainSpriteBase.bullets;
+
+	}
+
+	public class TriggerDiscipline : CharacterStipulationCard
+	{
+		public TriggerDiscipline()
+		{
+			name = "Trigger Discipline";
+			image = SpriteBase.mainSpriteBase.crosshair;
+			description = "Character's next ranged attack costs stamina instead of ammo";
+		}
+
+		protected override void ExtenderSpecificActivation()
+		{
+			appliedToCharacter.SetRangedAttacksCostStamina(true);
+			RangedCard.ERangedCardPlayed += TriggerEffect;
+		}
+		void TriggerEffect(CharacterGraphic cardPlayer, RangedCard playedCard)
+		{
+			if (cardPlayer==appliedToCharacter)
+				appliedToCharacter.RemoveCharacterStipulationCard(this);
+		}
+
+		protected override void ExtenderSpecificDeactivation()
+		{
+			appliedToCharacter.SetRangedAttacksCostStamina(false);
+			RangedCard.ERangedCardPlayed -= TriggerEffect;
+		}
+	}
+}
+
+public class PlanB : EffectCard
+{
+	protected override void ExtenderConstructor()
+	{
+		targetType = TargetType.None;
+		userArmorGain = 50;
+
+		name = "Plan B";
+		description = "Gain "+userArmorGain+" armor, lose all stamina";
+		image = SpriteBase.mainSpriteBase.lateralArrows;
+	}
+	protected override void CardPlayEffects()
+	{
+		base.CardPlayEffects();
+		userCharGraphic.IncrementStamina(-userCharGraphic.GetStamina());
 	}
 }
 
 public class Gambit : EffectCard
 {
-	public Gambit()
-		: base()
+	protected override void ExtenderConstructor()
 	{
 		targetType = TargetType.None;
 		staminaCost = 1;
@@ -41,8 +152,7 @@ public class Gambit : EffectCard
 
 public class TakeCover : EffectCard
 {
-	public TakeCover()
-		: base()
+	protected override void ExtenderConstructor()
 	{
 		targetType = TargetType.None;
 		staminaCost = 2;
@@ -54,26 +164,11 @@ public class TakeCover : EffectCard
 	}
 }
 
-public class Discretion : EffectCard
-{
-	public Discretion()
-		: base()
-	{
-		targetType = TargetType.None;
-		staminaCost = 4;
-		userArmorGain = 75;
-		
-		name = "Discretion";
-		description = "Better part of valor (gain " + userArmorGain + " armor)";
-		image = SpriteBase.mainSpriteBase.cover;
-		
-	}
-}
+
 
 public class LastStand : EffectCard
 {
-	public LastStand()
-		: base()
+	protected override void ExtenderConstructor()
 	{
 		targetType = TargetType.None;
 		takeDamageCost = 40;
@@ -85,10 +180,52 @@ public class LastStand : EffectCard
 	}
 }
 
+public class ComeAtMe : EffectCard
+{
+	protected override void ExtenderConstructor()
+	{
+		targetType = TargetType.None;
+		addedStipulationCard = new Brawler();
+		staminaCost = 2;
+
+		name = "Come At Me";
+		description = "Play a Come At Me card to the character";
+		image = SpriteBase.mainSpriteBase.skull;
+
+	}
+
+	public class Brawler : CharacterStipulationCard
+	{
+		public Brawler()
+		{
+			SetLastsForRounds(1);
+
+			name = "Brawler";
+			image = SpriteBase.mainSpriteBase.brokenArmsSprite;
+			description = "For one round: all melee attacks played by enemies will only target this character";
+		}
+
+		protected override void ExtenderSpecificActivation()
+		{
+			CardsScreen.main.SetNewMeleeTargetMerc(appliedToCharacter);
+			CardsScreen.ENewMeleeTargetMercSet += RemoveCard;
+		}
+		void RemoveCard()
+		{
+			appliedToCharacter.RemoveCharacterStipulationCard(this);
+		}
+
+		protected override void ExtenderSpecificDeactivation()
+		{
+			CardsScreen.main.ClearMeleeTargetMerc();
+			CardsScreen.ENewMeleeTargetMercSet -= RemoveCard;
+		}
+	}
+}
+
 public class RunAndGun : MeleeCard
 {
-	public RunAndGun()
-		: base()
+	protected override void ExtenderConstructor()
 	{
 		damage = 60;
 		ammoCost = 1;
@@ -108,9 +245,8 @@ public class RunAndGun : MeleeCard
 //Second Wind
 
 public class Overconfidence : MeleeCard
-{	
-	public Overconfidence()
-		: base()
+{
+	protected override void ExtenderConstructor()
 	{
 		targetType = TargetType.Strongest;
 		staminaCost = 2;
@@ -125,8 +261,7 @@ public class Overconfidence : MeleeCard
 }
 public class SuicideCharge : MeleeCard
 {
-	public SuicideCharge()
-		: base()
+	protected override void ExtenderConstructor()
 	{
 		damage = 40;
 		staminaCost = 4;

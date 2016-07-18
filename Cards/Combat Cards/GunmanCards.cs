@@ -10,24 +10,190 @@ public class GunmanCards
 
 		result.AddCards(typeof(Pistolwhip));
 		result.AddCards(typeof(Jab));
-		result.AddCards(typeof(Sidearm), 2);
+		result.AddCards(typeof(Sidearm),2);
+		result.AddCards(typeof(Hipfire),2);
 		result.AddCards(typeof(BurstFire));
 		result.AddCards(typeof(FullAuto));
-		result.AddCards(typeof(LimbShot), 2);
-		result.AddCards(typeof(ScopeIn));
-		result.AddCards(typeof(DetonateAmmo));
-		result.AddCards(typeof(Tripmine));
-		result.AddCards(typeof(HollowPoint));
 
 		return result;
 	}
 
+	public static List<PrepCard> GetClassPrepCards()
+	{
+		List<PrepCard> result = new List<PrepCard>();
+		result.Add(new Sniper());
+		result.Add(new Sprayer());
+		result.Add(new Prepared());
+
+
+		return result;
+	}
+
+	public class Prepared : PrepCard
+	{
+		public Prepared()
+		{
+			name = "Prepared";
+			description = "Adds cards to your deck";
+			image = SpriteBase.mainSpriteBase.medal;
+
+			addedCombatCards.Add(new Camo());
+			addedCombatCards.Add(new PersonalSpace());
+			addedCombatCards.Add(new Pistolwhip());
+			addedCombatCards.Add(new Tripmine());
+		}
+	}
+
+	public class Sniper : PrepCard
+	{
+		public Sniper()
+		{
+			name = "Sniper";
+			description = "Adds cards to your deck";
+			image = SpriteBase.mainSpriteBase.crosshair;
+
+			addedCombatCards.Add(new LimbShot());
+			addedCombatCards.Add(new LimbShot());
+			addedCombatCards.Add(new Headshot());
+			addedCombatCards.Add(new DetonateAmmo());
+		}
+	}
+	public class Sprayer : PrepCard
+	{
+		public Sprayer()
+		{
+			name = "Sprayer";
+			description = "Adds cards to your deck";
+			image = SpriteBase.mainSpriteBase.bullets;
+
+			addedCombatCards.Add(new FullAuto());
+			addedCombatCards.Add(new HollowPoint());
+			addedCombatCards.Add(new TrickMags());
+			addedCombatCards.Add(new TrickMags());
+		}
+	}
+
+}
+
+public class TrickMags : EffectCard
+{
+	protected override void ExtenderConstructor()
+	{
+		targetType = TargetType.None;
+		addedStipulationCard = new ExtendedMag();
+		staminaCost = 1;
+
+		name = "Trick Mags";
+		description = "Play an Extended Mag card to the character";
+		image = SpriteBase.mainSpriteBase.ammoBoxSprite;
+
+	}
+
+	public class ExtendedMag : CharacterStipulationCard
+	{
+		public ExtendedMag()
+		{
+			name = "Extended Mag";
+			image = SpriteBase.mainSpriteBase.bullets;
+			description = "Character's next ranged attack costs no ammo";
+		}
+
+		protected override void ExtenderSpecificActivation()
+		{
+			appliedToCharacter.SetRangedAttacksFree(true);
+			RangedCard.ERangedCardPlayed += UseUpCard;
+		}
+		void UseUpCard(CharacterGraphic cardPlayer,RangedCard playedCard)
+		{
+			if (cardPlayer==appliedToCharacter)
+				appliedToCharacter.RemoveCharacterStipulationCard(this);
+		}
+
+		protected override void ExtenderSpecificDeactivation()
+		{
+			RangedCard.ERangedCardPlayed -= UseUpCard;
+			appliedToCharacter.SetRangedAttacksFree(false);
+		}
+	}
+}
+
+public class Headshot : EffectCard
+{
+	protected override void ExtenderConstructor()
+	{
+		targetType = TargetType.None;
+		addedStipulationCard = new ScopeIn();
+		staminaCost = 1;
+
+		name = "Headshot";
+		description = "Play a Scope In card to the character";
+		image = SpriteBase.mainSpriteBase.skull;
+
+	}
+
+	public class ScopeIn : CharacterStipulationCard
+	{
+		RangedCard affectedCard = null;
+		
+		public ScopeIn()
+		{
+			name = "Scope In";
+			image = SpriteBase.mainSpriteBase.crosshair;
+			description = "Character's next ranged attack ignores armor";
+		}
+
+		protected override void ExtenderSpecificActivation()
+		{
+			RangedCard.ERangedCardPlayed += UseUpCard;
+		}
+		void UseUpCard(CharacterGraphic cardPlayer,RangedCard playedCard)
+		{
+			affectedCard = playedCard;
+			affectedCard.SetIgnoresArmor(true);
+			if (cardPlayer==appliedToCharacter)
+				appliedToCharacter.RemoveCharacterStipulationCard(this);
+		}
+
+		protected override void ExtenderSpecificDeactivation()
+		{
+			affectedCard.SetDefaultState();
+			RangedCard.ERangedCardPlayed -= UseUpCard;
+		}
+	}
+}
+
+public class Tripmine : EffectCard
+{
+	int mineDamage;
+	protected override void ExtenderConstructor()
+	{
+		name = "Tripmine";
+		description = "Places a Trip Mine in the room";
+		image = SpriteBase.mainSpriteBase.bomb;
+		targetType = TargetType.None;
+		ammoCost = 1;
+		mineDamage = 40;
+		addedStipulationCard = new TripmineFriendly(mineDamage);
+	}
+}
+
+public class Camo : EffectCard
+{
+	protected override void ExtenderConstructor()
+	{
+		name = "Camo";
+		description = "Gain "+userArmorGain+" armor";
+		image = SpriteBase.mainSpriteBase.arrow;
+
+		targetType = TargetType.None;
+		staminaCost = 1;
+		userArmorGain = 30;
+	}
 }
 
 public class FullAuto : RangedCard
 {
-	public FullAuto()
-		: base()
+	protected override void ExtenderConstructor()
 	{
 		name = "Full Auto";
 		description = "Say hello";
@@ -40,42 +206,9 @@ public class FullAuto : RangedCard
 	}
 }
 
-public class TrickMags : EffectCard
-{
-	public TrickMags()
-		: base()
-	{
-		targetType = TargetType.None;
-		staminaCost = 4;
-		userAmmoGain = 2;
-		
-		name = "Trick Mags";
-		description = "Gain " + userAmmoGain + " ammo";
-		image = SpriteBase.mainSpriteBase.bullets;
-		
-	}
-}
-
-public class Tripmine : EffectCard
-{
-	int mineDamage;
-	public Tripmine()
-		: base()
-	{
-		name = "Tripmine";
-		description = "Places a Trip Mine in the room";
-		image = SpriteBase.mainSpriteBase.bomb;
-		targetType = TargetType.None;
-		ammoCost = 1;
-		mineDamage = 40;
-		addedStipulationCard = new TripmineFriendly(mineDamage);
-	}
-}
-
 public class HollowPoint : RangedCard
-{	
-	public HollowPoint()
-		: base()
+{
+	protected override void ExtenderConstructor()
 	{
 		damage = 10;
 		unarmoredBonusDamage = 30;
@@ -88,25 +221,10 @@ public class HollowPoint : RangedCard
 	}
 }
 
-public class Pistolwhip : MeleeCard
-{
-	public Pistolwhip()
-		: base() //x2
-	{
-		name = "Pistol Whip";
-		description = "Guns don't kill people";
-		image = SpriteBase.mainSpriteBase.nineMSprite;
-		targetType = TargetType.SelectEnemy;
-
-		staminaCost = 2;
-		damage = 20;
-	}
-}
 //Unused
 public class Doubletap : RangedCard
 {
-	public Doubletap()
-		: base() //x2
+	protected override void ExtenderConstructor()
 	{
 		name = "Double Tap";
 		description = "Always";
@@ -118,27 +236,9 @@ public class Doubletap : RangedCard
 	}
 }
 
-public class ScopeIn : RangedCard
-{
-	public ScopeIn()
-		: base()
-	{
-		name = "Scope In";
-		description = "Whites of their eyes (ignores armor)";
-		image = SpriteBase.mainSpriteBase.crosshair;
-
-		damage = 30;
-		ammoCost = 1;
-		staminaCost = 1;
-		ignoresArmor = true;
-		targetType = TargetType.SelectEnemy;
-	}
-}
-
 public class LimbShot : RangedCard
 {
-	public LimbShot()
-		: base()
+	protected override void ExtenderConstructor()
 	{
 		name = "Limb Shot";
 		description = "Let them suffer";
@@ -154,8 +254,7 @@ public class DetonateAmmo : RangedCard
 {
 	int bonusDamage= 20;
 
-	public DetonateAmmo()
-		: base()
+	protected override void ExtenderConstructor()
 	{
 		name = "Detonate Ammo";
 		description = "If target has ammo, remove ammo and deal extra "+bonusDamage+" damage";
@@ -173,5 +272,34 @@ public class DetonateAmmo : RangedCard
 			totalDamage += bonusDamage;
 		targetChars[0].SetAmmo(0);
 		targetChars[0].TakeDamage(totalDamage);
+	}
+}
+
+public class Pistolwhip : MeleeCard
+{
+	protected override void ExtenderConstructor()
+	{
+		name = "Pistol Whip";
+		description = "Guns don't kill people";
+		image = SpriteBase.mainSpriteBase.nineMSprite;
+		targetType = TargetType.SelectEnemy;
+
+		staminaCost = 2;
+		damage = 20;
+	}
+}
+
+public class PersonalSpace : MeleeCard
+{
+	protected override void ExtenderConstructor()
+	{
+		name = "Personal Space";
+		description = "Too close for comfort (take "+takeDamageCost+" damage)";
+		image = SpriteBase.mainSpriteBase.bullet;
+		targetType = TargetType.SelectEnemy;
+
+		takeDamageCost = 10;
+		ammoCost = 1;
+		damage = 40;
 	}
 }

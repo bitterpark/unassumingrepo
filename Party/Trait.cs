@@ -309,7 +309,7 @@ public class Deadeye: Skill
 {
 	//int rangedDamageChange=20;
 	float rangedHitchanceChange=0.3f;
-	public Deadeye ()
+	public Deadeye()
 	{
 		name="Deadeye";
 		oppositePerk=typeof(PoorShot);
@@ -692,7 +692,7 @@ public class PoorShot: Trait
 	public PoorShot ()
 	{
 		name="Poor shot";
-		oppositePerk=typeof(Deadeye);
+		oppositePerk=typeof(Headshot);
 	}
 	public override void ActivateEffect(PartyMember member) {member.rangedHitchanceMod+=rangedhitchanceChange;}
 	public override string GetMouseoverDescription () {return "Can't hit the broad side of a barn\n\n"+rangedhitchanceChange+" to ranged hit chance";}//+rangedDamageChange+" to ranged damage";}

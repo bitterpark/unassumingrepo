@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
 
 public class BanditCards
 {
@@ -7,23 +8,127 @@ public class BanditCards
 	{
 		CombatDeck result = new CombatDeck();
 
-		result.AddCards(typeof(SuckerPunch),2);
-		result.AddCards(typeof(LightsOut));
-		result.AddCards(typeof(Jab));
+		result.AddCards(typeof(SuckerPunch));
 		result.AddCards(typeof(Roundhouse));
-		result.AddCards(typeof(Kick), 2);
-		result.AddCards(typeof(Execution), 2);
+		result.AddCards(typeof(Jab),2);
 		result.AddCards(typeof(Sidearm));
 		result.AddCards(typeof(Throw),2);
+		result.AddCards(typeof(NoRest));
 
 		return result;
+	}
+
+	public static List<PrepCard> GetClassPrepCards()
+	{
+		List<PrepCard> result = new List<PrepCard>();
+		result.Add(new Enforcer());
+		result.Add(new Hitman());
+		result.Add(new Muscle());
+
+
+		return result;
+	}
+
+	public class Enforcer : PrepCard
+	{
+		public Enforcer()
+		{
+			name = "Enforcer";
+			description = "Adds cards to your deck";
+			image = SpriteBase.mainSpriteBase.brokenArmsSprite;
+
+			addedCombatCards.Add(new GangUp());
+			addedCombatCards.Add(new GangUp());
+			addedCombatCards.Add(new SuckerPunch());
+			addedCombatCards.Add(new LightsOut());
+		}
+	}
+
+	public class Muscle : PrepCard
+	{
+		public Muscle()
+		{
+			name = "Muscle";
+			description = "Adds cards to your deck";
+			image = SpriteBase.mainSpriteBase.brokenArmsSprite;
+
+			addedCombatCards.Add(new Kick());
+			addedCombatCards.Add(new Roundhouse());
+			addedCombatCards.Add(new LightsOut());
+			addedCombatCards.Add(new NoRest());
+		}
+	}
+
+	public class Hitman : PrepCard
+	{
+		public Hitman()
+		{
+			name = "Hitman";
+			description = "Adds cards to your deck";
+			image = SpriteBase.mainSpriteBase.crosshair;
+
+			addedCombatCards.Add(new Sidearm());
+			addedCombatCards.Add(new SprayNPray());
+			addedCombatCards.Add(new Execution());
+			addedCombatCards.Add(new Execution());
+		}
+	}
+}
+
+public class NoRest : EffectCard
+{
+	protected override void ExtenderConstructor()
+	{
+		name = "No Rest";
+		description = "If stamina is 1 or lower, play a Second Wind card to the character";
+		image = SpriteBase.mainSpriteBase.restSprite;
+		targetType = TargetType.None;
+
+		addedStipulationCard = new SecondWind();
+	}
+
+	protected override void CardPlayEffects()
+	{
+		if (userCharGraphic.GetStamina() > 1)
+			addedStipulationCard = null;
+		base.CardPlayEffects();
+	}
+
+	public class SecondWind : CharacterStipulationCard
+	{
+		public SecondWind()
+		{
+			name = "Second Wind";
+			image = SpriteBase.mainSpriteBase.lightning;
+			description = "The character's next melee attack is free";
+		}
+
+		protected override void ExtenderSpecificActivation()
+		{
+			appliedToCharacter.SetMeleeAttacksFree(true);
+			MeleeCard.EMeleeCardPlayed += UseUpCard;
+		}
+
+		void UseUpCard(CharacterGraphic meleeCardPlayer, MeleeCard playedCard)
+		{
+			if (meleeCardPlayer == appliedToCharacter)
+			{
+				appliedToCharacter.RemoveCharacterStipulationCard(this);
+			}
+		}
+
+		protected override void ExtenderSpecificDeactivation()
+		{
+			MeleeCard.EMeleeCardPlayed -= UseUpCard;
+			appliedToCharacter.SetMeleeAttacksFree(true);
+		}
 	}
 
 }
 
 public class SuckerPunch : MeleeCard
 {
-	public SuckerPunch()
+	protected override void ExtenderConstructor()
 	{
 		name = "Sucker Punch";
 		description = "Won't know what him 'em";
@@ -37,8 +142,7 @@ public class SuckerPunch : MeleeCard
 
 public class LightsOut : MeleeCard
 {
-	public LightsOut()
-		: base()
+	protected override void ExtenderConstructor()
 	{
 		name = "Lights Out";
 		description = "Like a truck";
@@ -53,8 +157,7 @@ public class LightsOut : MeleeCard
 
 public class Roundhouse : MeleeCard
 {
-	public Roundhouse()
-		: base()
+	protected override void ExtenderConstructor()
 	{
 		name = "Roundhouse kick";
 		description = "Badass";
@@ -68,8 +171,7 @@ public class Roundhouse : MeleeCard
 
 public class Execution : MeleeCard
 {
-	public Execution()
-		: base()
+	protected override void ExtenderConstructor()
 	{
 		name = "Execution";
 		description = "Targets the weakest enemy";
@@ -80,25 +182,11 @@ public class Execution : MeleeCard
 		damage = 40;
 	}
 }
-//UNused
-public class SprayNPray : RangedCard
-{
-	public SprayNPray()
-	{
-		name = "Spray And Pray";
-		description = "Quantity over quality (Targets random enemy)";
-		image = SpriteBase.mainSpriteBase.bullets;
-		targetType = TargetType.Random;
 
-		ammoCost = 2;
-		damage = 30;
-	}
-}
 
 public class Kick : MeleeCard
 {
-	public Kick()
-		: base()
+	protected override void ExtenderConstructor()
 	{
 		name = "Kick";
 		description = "Guard break (ignores armor)";
@@ -108,5 +196,64 @@ public class Kick : MeleeCard
 
 		staminaCost = 4;
 		damage = 30;
+	}
+}
+
+public class GangUp : MeleeCard
+{
+	protected override void ExtenderConstructor()
+	{
+		targetType = TargetType.SelectEnemy;
+		addedStipulationCard = new TagTeam();
+		staminaCost = 4;
+
+		name = "Gang Up";
+		description = "Play a Tag Team card to a hostile character";
+		image = SpriteBase.mainSpriteBase.cover;
+
+	}
+
+	public class TagTeam : CharacterStipulationCard
+	{
+		int damagePerMeleeAttack = 30;
+
+		public TagTeam()
+		{
+			SetLastsForRounds(1);
+
+			name = "Tag Team";
+			image = SpriteBase.mainSpriteBase.brokenArmsSprite;
+			description = "For one round: character takes "+damagePerMeleeAttack+" extra damage from every melee attack ";
+		}
+
+		protected override void ExtenderSpecificActivation()
+		{
+			MeleeCard.EMeleeCardPlayed += TriggerEffect;
+		}
+
+		void TriggerEffect(CharacterGraphic meleeCardPlayer, MeleeCard playedCard)
+		{
+			if (meleeCardPlayer.GetType() == typeof(MercGraphic))
+				appliedToCharacter.TakeDamage(damagePerMeleeAttack);
+		}
+
+		protected override void ExtenderSpecificDeactivation()
+		{
+			MeleeCard.EMeleeCardPlayed -= TriggerEffect;
+		}
+	}
+}
+
+public class SprayNPray : RangedCard
+{
+	protected override void ExtenderConstructor()
+	{
+		name = "Spray And Pray";
+		description = "Quantity over quality (Targets random enemy)";
+		image = SpriteBase.mainSpriteBase.bullets;
+		targetType = TargetType.Random;
+
+		staminaCost = 2;
+		damage = 40;
 	}
 }

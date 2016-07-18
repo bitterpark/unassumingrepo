@@ -2,157 +2,6 @@
 using System.Collections;
 using System.Collections.Generic;
 
-public class EnemyBodyPart
-{
-	public enum PartTypes {Vitals, Hands, Legs, Other}
-	public PartTypes partType;
-	public string name;
-	public int hp;
-	public float defaultHitchanceShare;
-	public float currentHitchanceShare;
-	System.Action destructionEffect;
-	System.Action<int> damageEffect;
-	
-	public EnemyBodyPart(string newName, int newHp, System.Action newDestroyEffect, System.Action<int> newDamageEffect, PartTypes type)
-	{
-		BasicConstructor(newName,newHp,newDestroyEffect,newDamageEffect,type,0);
-	}
-	public EnemyBodyPart(string newName, int newHp, System.Action newDestroyEffect, System.Action<int> newDamageEffect, PartTypes type, float hitModifier)
-	{
-		BasicConstructor(newName,newHp,newDestroyEffect,newDamageEffect,type,hitModifier);
-	}
-	
-	void BasicConstructor(string newName, int newHp, System.Action newDestroyEffect, System.Action<int> newDamageEffect,PartTypes type, float hitModifier)
-	{
-		name=newName;
-		hp=newHp;
-		destructionEffect=newDestroyEffect;
-		damageEffect=newDamageEffect;
-		defaultHitchanceShare=hitModifier;
-        //currentHitchanceShare = defaultHitchanceShare;
-		partType=type;
-	}
-	
-	public void DamageBodypart(int damageDelta)
-	{
-		hp-=damageDelta;
-		if (damageEffect!=null) damageEffect.Invoke(hp);
-		
-		//This launches destruction effect, but the limb is still removed from outside
-		if (hp<=0 && destructionEffect!=null) destructionEffect.Invoke();
-	}
-}
-
-public class EnemyBody
-{
-	//PartyMember assignedMember;
-
-	List<EnemyBodyPart> currentParts=new List<EnemyBodyPart>();
-	public List<EnemyBodyPart> GetHealthyParts() 
-	{
-		List<EnemyBodyPart> healthyParts=new List<EnemyBodyPart>();
-		foreach (EnemyBodyPart part in currentParts) if (part.hp>0) healthyParts.Add(part);
-		return healthyParts;
-	}
-
-	public bool TryGetBodyPart(EnemyBodyPart.PartTypes type, out EnemyBodyPart part)
-	{
-		part=null;
-		foreach (EnemyBodyPart iterPart in currentParts)
-		{
-			if (iterPart.partType==type && iterPart.hp>0) {part=iterPart; return true;}
-		}
-		return false;
-	}
-
-	public float dodgeChance;
-	public void SetNewDodgeChance(float newDodgeChance)
-	{
-		dodgeChance=newDodgeChance;
-		CalculateHitChances();
-	}
-		
-	public EnemyBody(float totalDodgeChance,params EnemyBodyPart[] enemyParts)
-	{
-		foreach (EnemyBodyPart part in enemyParts) currentParts.Add(part);
-		SetNewDodgeChance(totalDodgeChance);
-	}
-    
-	public void CalculateHitChances()
-	{
-        float totalHitProbability = 0;//1-dodgeChance;
-		
-		float missingHitChanceFromBrokenParts=0;
-		foreach (EnemyBodyPart part in currentParts)
-		{
-            totalHitProbability+=part.defaultHitchanceShare;
-            if (part.hp <= 0) missingHitChanceFromBrokenParts += part.defaultHitchanceShare;//totalHitProbability*part.defaultHitchanceShare;
-		}
-		System.Action<EnemyBodyPart> partHitChanceCalculation=(EnemyBodyPart part)=>
-		{
-			if (part.hp>0) 
-			{
-                float adjustedHitChance = part.defaultHitchanceShare;//totalHitProbability*part.defaultHitchanceShare;
-				if (missingHitChanceFromBrokenParts>0)
-				{
-					//Increase for body parts that get broken
-					float addedHitChance=missingHitChanceFromBrokenParts*(adjustedHitChance/(totalHitProbability-missingHitChanceFromBrokenParts));
-					adjustedHitChance+=addedHitChance;
-				}
-				//currentPartHitChances.AddProbability(part,adjustedHitChance);
-				part.currentHitchanceShare=adjustedHitChance;
-			}
-		};
-		foreach (EnemyBodyPart part in currentParts)
-		{
-			partHitChanceCalculation.Invoke(part);
-		}
-	}
-
-	public void DamageBodyPart(EnemyBodyPart damagedPart, int damage)
-	{
-		if (!currentParts.Contains(damagedPart)) throw new System.Exception("Attempting to damage an enemy body part that doesn't exist in enemybody!");
-		else
-		{
-			damagedPart.DamageBodypart(damage);
-			if (damagedPart.hp<=0) EncounterCanvasHandler.main.AddNewLogMessage(damagedPart.name+" is broken!");
-			CalculateHitChances();
-		}
-	}
-}
-
-public struct EnemyAttack
-{
-	public int damageDealt;
-	public bool hitSuccesful;
-	public bool blocked;
-	public IGotHitAnimation attackedTarget;
-	public EncounterEnemy attackingEnemy;
-	public PartyMember.BodyPartTypes hitBodyPart;
-	
-	public EnemyAttack(bool attackHit,int dmg, bool blockStatus, IGotHitAnimation defender, EncounterEnemy attacker
-	, PartyMember.BodyPartTypes hitPart)
-	{
-		damageDealt=dmg;
-		blocked=blockStatus;
-		attackedTarget=defender;
-		attackingEnemy=attacker;
-		hitSuccesful=attackHit;
-		hitBodyPart=hitPart;
-	}
-}
-
-public struct EnemyMove
-{
-	public List<Vector2> enemyMoveCoords;
-	public Vector2 startCoords;
-	public EnemyMove(List<Vector2> moves, Vector2 start)
-	{
-		startCoords=start;
-		enemyMoveCoords=moves;
-	}
-}
-
 public abstract class EncounterEnemy: Character 
 {	
 	//STATIC
@@ -209,47 +58,12 @@ public abstract class EncounterEnemy: Character
 	public static EncounterEnemy GetEnemy(EnemyTypes enemyType, Vector2 coords)
 	{
 		EncounterEnemy enemy=null;
-		switch(enemyType)
-		{
-			case EnemyTypes.Gasser: {enemy=new Gasser(coords); break;}
-			case EnemyTypes.Spindler: {enemy=new Spindler(coords); break;}
-			case EnemyTypes.Flesh: {enemy=new FleshMass(coords); break;}
-			case EnemyTypes.Muscle: {enemy=new MuscleMass(coords); break;}
-			case EnemyTypes.Transient: {enemy=new Transient(coords); break;}
-			case EnemyTypes.Quick: {enemy=new QuickMass(coords); break;}
-			case EnemyTypes.Slime: {enemy=new SlimeMass(coords); break;}
-		}
 		return enemy;
 	}
 
 	public static List<EncounterEnemy> GenerateWeightedEnemySet(int requiredTotalWeight,Vector2 spawnCoords)
 	{
-		Dictionary<EnemyTypes,int> weightsDict=new Dictionary<EnemyTypes, int>();
-		List<EnemyTypes> allEnemyTypes=new List<EnemyTypes>();
-
-		List<EnemyTypes> allowedTypes = new List<EnemyTypes>();
-		allowedTypes.Add(EnemyTypes.Quick);
-
-		//QUICKS ARE CURRENTLY REMOVED FROM THE LIST DUE TO THE FREEZE BUG
-		foreach (EnemyTypes type in allowedTypes)//System.Enum.GetValues(typeof(EnemyTypes)))
-		{
-			//if (type!=EnemyTypes.Quick)
-			{
-				weightsDict.Add(type,GetEnemy(type,spawnCoords).weight);
-				allEnemyTypes.Add(type);
-			}
-		}
 		List<EncounterEnemy> resultList=new List<EncounterEnemy>();
-		int currentTotalWeight=0;
-		while (currentTotalWeight<requiredTotalWeight)
-		{
-			EnemyTypes randomType=allEnemyTypes[Random.Range(0,allEnemyTypes.Count)];
-			if (currentTotalWeight+weightsDict[randomType]<=requiredTotalWeight)
-			{	
-				resultList.Add(GetEnemy(randomType,spawnCoords));
-				currentTotalWeight+=weightsDict[randomType];
-			}
-		}
 		return resultList;
 	}
 
@@ -720,6 +534,20 @@ public abstract class EncounterEnemy: Character
 	protected int stamina=0;
 	protected int ammo = 0;
 	protected int armor = 0;
+	protected List<CharacterStipulationCard> variationCards = new List<CharacterStipulationCard>();
+
+	public List<CharacterStipulationCard> GetRandomVariationCards(int countRequired)
+	{
+		List<CharacterStipulationCard> resultList = new List<CharacterStipulationCard>(variationCards);
+		if (variationCards.Count > 0)
+		{
+			if (countRequired > variationCards.Count)
+				countRequired = variationCards.Count;
+			while (resultList.Count > countRequired)
+				resultList.RemoveAt(Random.Range(0, resultList.Count));
+		}
+		return resultList;
+	}
 
 	public string GetName()
 	{
@@ -772,591 +600,160 @@ public abstract class EncounterEnemy: Character
 	public void TakeDamage(int damage) { health -= damage; }
 }
 
-
-public class QuickMass:EncounterEnemy
-{
-	public QuickMass(Vector2 coords) : base(coords)
-	{
-		name="Quick mass";
-		health=45;
-		minDamage=3;
-		maxDamage=4;
-		color=Color.blue;
-
-		defaultDodgeChance=0.25f;
-		body=new EnemyBody(defaultDodgeChance
-		,new EnemyBodyPart("Vitals",health,null,(int newHealth)=>{this.health=newHealth;},EnemyBodyPart.PartTypes.Vitals,0.3f)
-		,new EnemyBodyPart("Arms",30,()=>{this.AddStatusEffect(new NoArms(this));},null,EnemyBodyPart.PartTypes.Hands,0.5f)
-		,new EnemyBodyPart("Legs",60,()=>{this.AddStatusEffect(new NoLegs(this));},null,EnemyBodyPart.PartTypes.Legs,0.9f));
-	}
-}
-
-public class Transient:EncounterEnemy
-{
-	public Transient(Vector2 coords) : base(coords)
-	{
-		name="Transient";
-		health=45;
-		minDamage=5;
-		maxDamage=8;
-
-		defaultDodgeChance=0.1f;
-		body=new EnemyBody(defaultDodgeChance
-		,new EnemyBodyPart("Vitals",health,null,(int newHealth)=>{this.health=newHealth;},EnemyBodyPart.PartTypes.Vitals,0.2f)
-		,new EnemyBodyPart("Arms",45,()=>{this.AddStatusEffect(new NoArms(this));},null,EnemyBodyPart.PartTypes.Hands,0.4f)
-		,new EnemyBodyPart("Legs",90,()=>{this.AddStatusEffect(new NoLegs(this));},null,EnemyBodyPart.PartTypes.Legs,0.4f));
-	}
-	
-	bool phasedIn=true;
-	PhasedOut myEffect;
-	/*
-	public override int TakeDamage(int dmgTaken, BodyPart damagedPart, bool isRanged)
-	{
-		int realDmg=0;
-		if (phasedIn) 
-		{
-			phasedIn=false;
-			realDmg=dmgTaken;
-			//myEffect=new PhasedOut();
-			//AddStatusEffect(myEffect);//activeEffects.Add(myEffect);
-			//EncounterCanvasHandler.main.DisplayNewMessage(name+" phases out!");
-		}
-		else 
-		{
-			//EncounterCanvasHandler.main.DisplayNewMessage("Attack passes through air!");
-		}
-		return base.TakeDamage(realDmg, isRanged);
-	}*/
-	
-	public override EnemyAttack AttackAction(List<IGotHitAnimation> presentTargets)//Dictionary<PartyMember,Vector2> memberCoords)
-	{
-		phasedIn=true;
-		//EncounterCanvasHandler.main.RemoveEnemyStatusEffect(myEffect);
-		RemoveStatusEffect(myEffect);//activeEffects.Remove(myEffect);
-		if (health>0)
-		{
-			//EncounterCanvasHandler.main.DisplayNewMessage(name+" phases in!");			
-		}
-		return base.AttackAction(presentTargets);
-	}
-	/*
-	public override void TurnAction()
-	{
-		
-		if (phasedIn)
-		{
-			phasedIn=false;
-			myEffect=new PhasedOut();
-			activeEffects.Add(myEffect);
-			//EncounterCanvasHandler.main.AddEnemyStatusEffect(myEffect);
-			EncounterCanvasHandler.main.DisplayNewMessage(name+" phases out!");
-		}
-	}*/
-}
-
-public class Gasser:EncounterEnemy
-{
-	public Gasser(Vector2 coords) : base(coords)
-	{
-		name="Gas spitter";
-		health=45;
-		minDamage=3;
-		maxDamage=5;
-
-		color=Color.green;
-
-		visionRange=1;
-		maxAttackRange=1;
-		inFront=false;
-		bleedChance = 0;
-		//if (Random.value<0.5f) inFront=true;
-
-		defaultDodgeChance=0.1f;
-		body=new EnemyBody(defaultDodgeChance
-		,new EnemyBodyPart("Vitals",health,null,(int newHealth)=>{this.health=newHealth;},EnemyBodyPart.PartTypes.Vitals,0.4f)
-		,new EnemyBodyPart("Legs",30,()=>{this.AddStatusEffect(new NoLegs(this));},null,EnemyBodyPart.PartTypes.Legs,0.9f));
-	}
-	
-	//Potentially deprecate this mechanic later
-	int retaliationDamage=15;
-	int retaliationDamageThreshold=70;
-	int damageGainedThisRound=0;
-	
-	public override int TakeDamage(int dmgTaken, EnemyBodyPart damagedPart, bool isRanged)
-	{
-		int recievedDamage=base.TakeDamage(dmgTaken,damagedPart, isRanged);
-		/*
-		damageGainedThisRound+=recievedDamage;
-		if (damageGainedThisRound>=retaliationDamageThreshold && health>0)
-		{
-			PartyMember attackedMember=EncounterCanvasHandler.main.selectedMember;
-			int realRetaliationDmg=attackedMember.TakeDamage(retaliationDamage,false);
-			EncounterCanvasHandler.main.StartDamageNumber(realRetaliationDmg,attackedMember,this);
-			damageGainedThisRound=0;
-		}*/
-		return recievedDamage;
-	}
-	
-	public override EnemyAttack AttackAction (List<IGotHitAnimation> presenttargets)//Dictionary<PartyMember,Vector2> memberCoords)
-	{
-		damageGainedThisRound=0;
-		return base.AttackAction (presenttargets);
-	}
-}
-
-public class Spindler : EncounterEnemy
-{
-	public Spindler(Vector2 coords)
-		: base(coords)
-	{
-		name = "Spindler";
-		health = 45;
-		minDamage = 5;
-		maxDamage = 7;
-
-		bleedChance = 0.8f;
-
-		color = Color.black;
-
-		defaultDodgeChance = 0.05f;
-		body = new EnemyBody(defaultDodgeChance
-		, new EnemyBodyPart("Vitals", health, null, (int newHealth) => { this.health = newHealth; }, EnemyBodyPart.PartTypes.Vitals, 0.5f)
-		, new EnemyBodyPart("Arms", 30, () => { this.AddStatusEffect(new NoArms(this)); }, null, EnemyBodyPart.PartTypes.Hands, 0.8f)
-		, new EnemyBodyPart("Legs", 90, () => { this.AddStatusEffect(new NoLegs(this)); }, null, EnemyBodyPart.PartTypes.Legs, 0.6f));
-	}
-}
-
-public class FleshMass:EncounterEnemy
-{
-	public FleshMass(Vector2 coords) : base(coords)
-	{
-		name="Flesh mass";
-		health=90;
-		minDamage=6;
-		maxDamage=9;
-
-		weight = 2;
-
-		color=Color.yellow;
-
-		defaultDodgeChance=0.1f;
-		body=new EnemyBody(defaultDodgeChance
-		,new EnemyBodyPart("Vitals",health,null,(int newHealth)=>{this.health=newHealth;},EnemyBodyPart.PartTypes.Vitals,0.4f)
-		,new EnemyBodyPart("Arms",90,()=>{this.AddStatusEffect(new NoArms(this));},null,EnemyBodyPart.PartTypes.Hands,0.6f)
-		,new EnemyBodyPart("Legs",180,()=>{this.AddStatusEffect(new NoLegs(this));},null,EnemyBodyPart.PartTypes.Legs,0.6f));
-	}
-}
-
-
-public class MuscleMass:EncounterEnemy
-{
-	public MuscleMass(Vector2 coords) : base(coords)
-	{
-		name="Muscle mass";
-		health=90;
-		minDamage=7;
-		maxDamage=11;
-
-		color=Color.red;
-
-		weight=2;
-
-		defaultDodgeChance=0f;
-		body=new EnemyBody(defaultDodgeChance
-		,new EnemyBodyPart("Vitals",health,null,(int newHealth)=>{this.health=newHealth;},EnemyBodyPart.PartTypes.Vitals,0.4f)
-		,new EnemyBodyPart("Arms",90,()=>{this.AddStatusEffect(new NoArms(this));},null,EnemyBodyPart.PartTypes.Hands,0.7f)
-		,new EnemyBodyPart("Legs",90,()=>{this.AddStatusEffect(new NoLegs(this));},null,EnemyBodyPart.PartTypes.Legs,0.8f));
-	}
-}
-
-
-
-public class SlimeMass:EncounterEnemy
-{	
-	public SlimeMass(Vector2 coords) : base(coords)
-	{
-		name="Slime mass";
-		health=180;
-		minDamage=4;
-		maxDamage=6;
-
-		color=Color.magenta;
-
-		weight=2;
-
-		defaultDodgeChance=0f;
-		body=new EnemyBody(defaultDodgeChance
-		,new EnemyBodyPart("Vitals",health,null,(int newHealth)=>{this.health=newHealth;},EnemyBodyPart.PartTypes.Vitals,0.5f)
-		,new EnemyBodyPart("Arms",180,()=>{this.AddStatusEffect(new NoArms(this));},null,EnemyBodyPart.PartTypes.Hands,0.8f));
-	}
-	
-	//int rangedResistance=3;
-	float rangedDamageMultiplier=0.5f;
-	
-	public override int TakeDamage(int dmgTaken, EnemyBodyPart damagedPart, bool isRanged)
-	{
-		if (isRanged) 
-		{
-			dmgTaken=Mathf.FloorToInt(dmgTaken*rangedDamageMultiplier);
-			//EncounterCanvasHandler.main.DisplayNewMessage("Shots pass clean through the slime!");
-		}
-		return base.TakeDamage (dmgTaken,damagedPart, isRanged);
-	}
-}
-
 //New encounter enemies
 
-public class Skitter : EncounterEnemy
+
+
+
+//
+
+public class EnemyBodyPart
 {
-	public Skitter(): base()
+	public enum PartTypes { Vitals, Hands, Legs, Other }
+	public PartTypes partType;
+	public string name;
+	public int hp;
+	public float defaultHitchanceShare;
+	public float currentHitchanceShare;
+	System.Action destructionEffect;
+	System.Action<int> damageEffect;
+
+	public EnemyBodyPart(string newName, int newHp, System.Action newDestroyEffect, System.Action<int> newDamageEffect, PartTypes type)
 	{
-		name = "Skitter";
-		health = 80;
-
-		stamina = 6;
-
-		combatDeck.AddCards(typeof(Tear));
-		combatDeck.AddCards(typeof(Slash),2);
-		combatDeck.AddCards(typeof(Latch));
-		combatDeck.AddCards(typeof(Bite), 2);
+		BasicConstructor(newName, newHp, newDestroyEffect, newDamageEffect, type, 0);
+	}
+	public EnemyBodyPart(string newName, int newHp, System.Action newDestroyEffect, System.Action<int> newDamageEffect, PartTypes type, float hitModifier)
+	{
+		BasicConstructor(newName, newHp, newDestroyEffect, newDamageEffect, type, hitModifier);
 	}
 
-	public class Bite : MeleeCard
+	void BasicConstructor(string newName, int newHp, System.Action newDestroyEffect, System.Action<int> newDamageEffect, PartTypes type, float hitModifier)
 	{
-		public Bite()
-			: base()
+		name = newName;
+		hp = newHp;
+		destructionEffect = newDestroyEffect;
+		damageEffect = newDamageEffect;
+		defaultHitchanceShare = hitModifier;
+		//currentHitchanceShare = defaultHitchanceShare;
+		partType = type;
+	}
+
+	public void DamageBodypart(int damageDelta)
+	{
+		hp -= damageDelta;
+		if (damageEffect != null) damageEffect.Invoke(hp);
+
+		//This launches destruction effect, but the limb is still removed from outside
+		if (hp <= 0 && destructionEffect != null) destructionEffect.Invoke();
+	}
+}
+
+public class EnemyBody
+{
+	//PartyMember assignedMember;
+
+	List<EnemyBodyPart> currentParts = new List<EnemyBodyPart>();
+	public List<EnemyBodyPart> GetHealthyParts()
+	{
+		List<EnemyBodyPart> healthyParts = new List<EnemyBodyPart>();
+		foreach (EnemyBodyPart part in currentParts) if (part.hp > 0) healthyParts.Add(part);
+		return healthyParts;
+	}
+
+	public bool TryGetBodyPart(EnemyBodyPart.PartTypes type, out EnemyBodyPart part)
+	{
+		part = null;
+		foreach (EnemyBodyPart iterPart in currentParts)
 		{
-			name = "Bite";
-			description = "Targets the weakest enemy";
-			image = SpriteBase.mainSpriteBase.skull;
-			damage = 30;
-			staminaCost = 1;
-			targetType = TargetType.Weakest;
+			if (iterPart.partType == type && iterPart.hp > 0) { part = iterPart; return true; }
+		}
+		return false;
+	}
+
+	public float dodgeChance;
+	public void SetNewDodgeChance(float newDodgeChance)
+	{
+		dodgeChance = newDodgeChance;
+		CalculateHitChances();
+	}
+
+	public EnemyBody(float totalDodgeChance, params EnemyBodyPart[] enemyParts)
+	{
+		foreach (EnemyBodyPart part in enemyParts) currentParts.Add(part);
+		SetNewDodgeChance(totalDodgeChance);
+	}
+
+	public void CalculateHitChances()
+	{
+		float totalHitProbability = 0;//1-dodgeChance;
+
+		float missingHitChanceFromBrokenParts = 0;
+		foreach (EnemyBodyPart part in currentParts)
+		{
+			totalHitProbability += part.defaultHitchanceShare;
+			if (part.hp <= 0) missingHitChanceFromBrokenParts += part.defaultHitchanceShare;//totalHitProbability*part.defaultHitchanceShare;
+		}
+		System.Action<EnemyBodyPart> partHitChanceCalculation = (EnemyBodyPart part) =>
+		{
+			if (part.hp > 0)
+			{
+				float adjustedHitChance = part.defaultHitchanceShare;//totalHitProbability*part.defaultHitchanceShare;
+				if (missingHitChanceFromBrokenParts > 0)
+				{
+					//Increase for body parts that get broken
+					float addedHitChance = missingHitChanceFromBrokenParts * (adjustedHitChance / (totalHitProbability - missingHitChanceFromBrokenParts));
+					adjustedHitChance += addedHitChance;
+				}
+				//currentPartHitChances.AddProbability(part,adjustedHitChance);
+				part.currentHitchanceShare = adjustedHitChance;
+			}
+		};
+		foreach (EnemyBodyPart part in currentParts)
+		{
+			partHitChanceCalculation.Invoke(part);
 		}
 	}
 
-	public class Slash : MeleeCard
+	public void DamageBodyPart(EnemyBodyPart damagedPart, int damage)
 	{
-		public Slash()
-			: base()
+		if (!currentParts.Contains(damagedPart)) throw new System.Exception("Attempting to damage an enemy body part that doesn't exist in enemybody!");
+		else
 		{
-			name = "Slash";
-			description = "Targets the strongest enemy";
-			image = SpriteBase.mainSpriteBase.skull;
-			damage = 30;
-			staminaCost = 1;
-			targetType = TargetType.Strongest;
-		}
-	}
-
-	public class Latch : MeleeCard
-	{
-		public Latch()
-			: base()
-		{
-			name = "Latch";
-			image = SpriteBase.mainSpriteBase.skull;
-			damage = 40;
-			staminaCost = 3;
-			targetType = TargetType.SelectEnemy;
-		}
-	}
-
-	public class Tear : MeleeCard
-	{
-		public Tear()
-			: base()
-		{
-			name = "Tear";
-			description = "Targets the strongest enemy";
-			image = SpriteBase.mainSpriteBase.skull;
-			damage = 50;
-			staminaCost = 3;
-			targetType = TargetType.Strongest;
+			damagedPart.DamageBodypart(damage);
+			if (damagedPart.hp <= 0) EncounterCanvasHandler.main.AddNewLogMessage(damagedPart.name + " is broken!");
+			CalculateHitChances();
 		}
 	}
 }
 
-//Skitter cards
-
-
-public class Bugzilla : EncounterEnemy
+public struct EnemyAttack
 {
-	public Bugzilla()
-		: base()
-	{
-		name = "Bugzilla";
-		health = 140;
-		stamina = 3;
+	public int damageDealt;
+	public bool hitSuccesful;
+	public bool blocked;
+	public IGotHitAnimation attackedTarget;
+	public EncounterEnemy attackingEnemy;
+	public PartyMember.BodyPartTypes hitBodyPart;
 
-		combatDeck.AddCards(typeof(Throwdown), 2);
-		combatDeck.AddCards(typeof(Pummel));
-		combatDeck.AddCards(typeof(Dominate),2);
-		//combatDeck.AddCards(typeof(Posture),2);
-		combatDeck.AddCards(typeof(Charge));
-		
-	}
-
-	public class Throwdown : MeleeCard
+	public EnemyAttack(bool attackHit, int dmg, bool blockStatus, IGotHitAnimation defender, EncounterEnemy attacker
+	, PartyMember.BodyPartTypes hitPart)
 	{
-		public Throwdown()
-			: base()
-		{
-			name = "Throwdown";
-			description = "Targets the strongest enemy";
-			image = SpriteBase.mainSpriteBase.skull;
-			damage = 30;
-			staminaCost = 1;
-			targetType = TargetType.Strongest;
-		}
-	}
-
-	public class Pummel : MeleeCard
-	{
-		public Pummel()
-			: base()
-		{
-			name = "Pummel";
-			image = SpriteBase.mainSpriteBase.skull;
-			damage = 20;
-			staminaCost = 1;
-			targetType = TargetType.SelectEnemy;
-		}
-	}
-
-	public class Dominate : MeleeCard
-	{
-		public Dominate()
-			: base()
-		{
-			name = "Dominate";
-			description = "Targets the strongest enemy";
-			image = SpriteBase.mainSpriteBase.skull;
-			damage = 40;
-			staminaCost = 2;
-			targetType = TargetType.Strongest;
-		}
-	}
-
-	public class Charge : MeleeCard
-	{
-		public Charge()
-			: base()
-		{
-			name = "Charge";
-			description = "Targets all enemies";
-			image = SpriteBase.mainSpriteBase.skull;
-			damage = 10;
-			staminaCost = 3;
-			targetType = TargetType.AllEnemies;
-		}
+		damageDealt = dmg;
+		blocked = blockStatus;
+		attackedTarget = defender;
+		attackingEnemy = attacker;
+		hitSuccesful = attackHit;
+		hitBodyPart = hitPart;
 	}
 }
 
-//Bugzilla cards
-
-
-public class Stinger : EncounterEnemy
+public struct EnemyMove
 {
-	public Stinger()
-		: base()
+	public List<Vector2> enemyMoveCoords;
+	public Vector2 startCoords;
+	public EnemyMove(List<Vector2> moves, Vector2 start)
 	{
-		name = "Stinger";
-		health = 80;
-		stamina = 4;
-		ammo = 2;
-
-		combatDeck.AddCards(typeof(Sting));
-		//combatDeck.AddCards(typeof(Posture));
-		combatDeck.AddCards(typeof(Venom),2);
-		combatDeck.AddCards(typeof(Lunge),2);
-		combatDeck.AddCards(typeof(Corner));
-		combatDeck.AddCards(typeof(Regrow));
-	}
-
-	public class Lunge : MeleeCard
-	{
-		public Lunge()
-			: base()
-		{
-			name = "Lunge";
-			description = "Targets the weakest enemy";
-			image = SpriteBase.mainSpriteBase.skull;
-			damage = 30;
-			staminaCost = 1;
-			targetType = TargetType.Weakest;
-		}
-	}
-
-	public class Corner : MeleeCard
-	{
-		public Corner()
-			: base()
-		{
-			name = "Corner";
-			description = "Targets the weakest enemy";
-			image = SpriteBase.mainSpriteBase.skull;
-			damage = 40;
-			staminaCost = 2;
-			targetType = TargetType.Weakest;
-		}
-	}
-
-	public class Sting : RangedCard
-	{
-		public Sting()
-			: base()
-		{
-			damage = 20;
-			ammoCost = 2;
-			staminaCost = 1;
-			ignoresArmor = true;
-			targetType = TargetType.SelectEnemy;
-
-			name = "Sting";
-			image = SpriteBase.mainSpriteBase.skull;
-			description = "Ignores armor";
-		}
-	}
-
-	public class Venom : RangedCard
-	{
-		public Venom()
-			: base()
-		{
-			name = "Venom";
-			//description = "Restores " + staminaRestore + " stamina";
-			image = SpriteBase.mainSpriteBase.droplet;
-
-			staminaDamage = 3;
-			staminaCost = 2;
-			ammoCost = 1;
-			targetType = TargetType.SelectEnemy;
-		}
-	}
-
-	public class Regrow : EffectCard
-	{
-		public Regrow()
-			: base()
-		{
-			staminaCost = 2;
-			userAmmoGain = 2;
-			targetType = TargetType.None;
-			
-			name = "Regrow";
-			image = SpriteBase.mainSpriteBase.skull;
-			description = "Restores " + userAmmoGain + " ammo";
-		}
+		startCoords = start;
+		enemyMoveCoords = moves;
 	}
 }
-
-//Stinger cards
-
-
-
-public class Puffer : EncounterEnemy
-{
-	public Puffer()
-		: base()
-	{
-		name = "Puffer";
-		health = 120;
-		stamina = 4; 
-		ammo = 0;
-
-		combatDeck.AddCards(typeof(Pop), 2);
-		combatDeck.AddCards(typeof(Inflate),2);
-	}
-}
-//Puffer cards
-public class Inflate : EffectCard
-{
-	public Inflate()
-		: base()
-	{
-		staminaCost = 3;
-		userAmmoGain = 2;
-		targetType = TargetType.None;
-		
-		name = "Inflate";
-		description = "Gains " + userAmmoGain + " ammo";
-		image = SpriteBase.mainSpriteBase.restSprite;
-		//healthDamage = 5;
-		
-	}
-}
-public class Pop : RangedCard
-{
-	public Pop()
-		: base()
-	{
-		ammoCost = 2;
-		removeHealthCost = 20;
-		damage = 20;
-		targetType = TargetType.AllEnemies;
-		
-		name = "Pop";
-		description = "Targets all enemies, puffer loses " + removeHealthCost + " health";
-		image = SpriteBase.mainSpriteBase.fire;
-		
-	}
-}
-
-public class Hardshell : EncounterEnemy
-{
-	public Hardshell()
-		: base()
-	{
-		name = "Hardshell";
-		health = 80;
-		armor = 40;
-		stamina = 4; 
-
-		combatDeck.AddCards(typeof(Harden), 2);
-		combatDeck.AddCards(typeof(Snap), 2);
-		combatDeck.AddCards(typeof(Pinch),2);
-	}
-
-	public class Harden : EffectCard
-	{
-		public Harden()
-			: base()
-		{
-			staminaCost = 2;
-			userArmorGain = 40;
-			targetType = TargetType.None;
-			
-			name = "Harden";
-			description = "Gains " + userArmorGain + " armor";
-			image = SpriteBase.mainSpriteBase.cover;
-			
-		}
-	}
-
-	public class Pinch : MeleeCard
-	{
-		public Pinch()
-			: base()
-		{
-			name = "Pinch";
-			image = SpriteBase.mainSpriteBase.skull;
-			damage = 20;
-			staminaCost = 1;
-			targetType = TargetType.SelectEnemy;
-		}
-	}
-	public class Snap : MeleeCard
-	{
-		public Snap()
-			: base()
-		{
-			name = "Snap";
-			image = SpriteBase.mainSpriteBase.skull;
-			damage = 30;
-			staminaCost = 2;
-			targetType = TargetType.SelectEnemy;
-		}
-	}
-}
-

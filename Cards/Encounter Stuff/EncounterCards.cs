@@ -4,25 +4,13 @@ using System.Collections.Generic;
 
 public abstract class RoomCard : Card
 {
+	
 	//public Deck<RoomCard> possibleRoomCards=new Deck<RoomCard>();
 	protected List<RoomStipulationCard> possibleRoomCards = new List<RoomStipulationCard>();
-	public RoomStipulationCard[] GetRoomCards()
-	{
-		return possibleRoomCards.ToArray();
-	}
-	public List<RoomStipulationCard> GetRandomRoomStipulationCards(int cardNumber)
-	{
-		List<RoomStipulationCard> resultList=new List<RoomStipulationCard>();
-		List<RoomStipulationCard> selectionBufferList=new List<RoomStipulationCard>(possibleRoomCards);
-		while (resultList.Count < cardNumber && selectionBufferList.Count > 0)
-		{
-			int randomCardIndex=Random.Range(0,selectionBufferList.Count);
-			resultList.Add(selectionBufferList[randomCardIndex]);
-			selectionBufferList.RemoveAt(randomCardIndex);
-		}
-		
-		return possibleRoomCards;
-	}
+
+	const int maxEnemyCountInRoom = 4;
+	const int minEnemyCountInRoom = 3;
+	int enemyCountInRoom;
 
 	public static List<System.Type> GetAllPossibleRoomCards(Encounter.EncounterTypes encounterType)
 	{
@@ -52,6 +40,40 @@ public abstract class RoomCard : Card
 	{
 		return (RoomCard)System.Activator.CreateInstance(roomCardType);
 	}
+
+	public RoomCard()
+	{
+		enemyCountInRoom = Random.Range(minEnemyCountInRoom, maxEnemyCountInRoom + 1);
+		ExtenderConstructor();
+	}
+
+	protected virtual void ExtenderConstructor()
+	{
+
+	}
+
+	public int GetEnemyCount()
+	{
+		return enemyCountInRoom;
+	}
+
+	public RoomStipulationCard[] GetRoomStipulationCards()
+	{
+		return possibleRoomCards.ToArray();
+	}
+	public List<RoomStipulationCard> GetRandomRoomStipulationCards(int cardNumber)
+	{
+		List<RoomStipulationCard> resultList=new List<RoomStipulationCard>();
+		List<RoomStipulationCard> selectionBufferList=new List<RoomStipulationCard>(possibleRoomCards);
+		while (resultList.Count < cardNumber && selectionBufferList.Count > 0)
+		{
+			int randomCardIndex=Random.Range(0,selectionBufferList.Count);
+			resultList.Add(selectionBufferList[randomCardIndex]);
+			selectionBufferList.RemoveAt(randomCardIndex);
+		}
+		
+		return possibleRoomCards;
+	}
 }
 
 public abstract class StipulationCard : Card
@@ -61,42 +83,57 @@ public abstract class StipulationCard : Card
 
 public abstract class CharacterStipulationCard : StipulationCard
 {
-	public abstract void ActivateCard(CharacterGraphic user);
-	public abstract void DeactivateCard();
+	public CharacterGraphic appliedToCharacter;
+	public List<CombatCard> addedCombatCards=new List<CombatCard>();
 
-	public CharacterGraphic characterGraphic;
-}
+	bool lastsIndefinitely = true;
+	int maxRoundsActive;
+	int currentRoundsActive;
+	//CharacterGraphic countRoundsFromCharacter;
 
-public class MeleeDefence :CharacterStipulationCard
-{
-	int damage=20;
-
-	public MeleeDefence()
+	protected void SetLastsForRounds(int rounds)
 	{
-		name = "Melee Defence";
-		image = SpriteBase.mainSpriteBase.brokenArmsSprite;
-
-		description = "When a melee attack is played, the attacker takes "+damage+" damage";
+		lastsIndefinitely = false;
+		maxRoundsActive = rounds;
 	}
 
-	public override void ActivateCard(CharacterGraphic user)
+	public void ActivateCard(CharacterGraphic applyCardTo)
 	{
-		characterGraphic = user;
-		MeleeCard.EMeleeCardPlayed += Detonate;
-	}
-	void Detonate(CharacterGraphic cardPlayer)
-	{
-		if (cardPlayer.GetType() != typeof(MercGraphic))
+		if (!lastsIndefinitely)
 		{
-			//characterGraphic.RemoveCharacterCard(this);
-			cardPlayer.TakeDamage(damage);
+			CardsScreen.ERoundIsOver += RoundOver;
+			currentRoundsActive = 0;
 		}
+		appliedToCharacter = applyCardTo;
 
+		if (addedCombatCards.Count > 0)
+			appliedToCharacter.AddCardsToCurrentDeck(addedCombatCards.ToArray());
+		ExtenderSpecificActivation();
 	}
-	public override void DeactivateCard()
+
+	void RoundOver()
 	{
-		MeleeCard.EMeleeCardPlayed -= Detonate;
+		currentRoundsActive++;
+		if (currentRoundsActive >= maxRoundsActive)
+			appliedToCharacter.RemoveCharacterStipulationCard(this);
 	}
+
+	protected virtual void ExtenderSpecificActivation() { }
+
+	public void DeactivateCard()
+	{
+		if (!lastsIndefinitely)
+			CardsScreen.ERoundIsOver -= RoundOver;
+
+		if (addedCombatCards.Count > 0)
+			appliedToCharacter.RemoveCardsFromCurrentDeck(addedCombatCards.ToArray());
+
+		ExtenderSpecificDeactivation();
+	}
+
+	protected virtual void ExtenderSpecificDeactivation() { }
+
+	
 }
 
 public abstract class RoomStipulationCard : StipulationCard
@@ -126,11 +163,11 @@ public class TripmineEnemy : RoomStipulationCard
 	{
 		MeleeCard.EMeleeCardPlayed += Detonate;
 	}
-	void Detonate(CharacterGraphic cardPlayer)
+	void Detonate(CharacterGraphic cardPlayer, MeleeCard playedCard)
 	{
 		if (cardPlayer.GetType() == typeof(MercGraphic))
 		{
-			CardsScreen.main.RemoveRoomCard(this);
+			CardsScreen.main.RemoveRoomStipulationCard(this);
 			cardPlayer.TakeDamage(damage);
 		}
 
@@ -158,11 +195,11 @@ public class TripmineFriendly : RoomStipulationCard
 	{
 		MeleeCard.EMeleeCardPlayed += Detonate;
 	}
-	void Detonate(CharacterGraphic cardPlayer)
+	void Detonate(CharacterGraphic cardPlayer, MeleeCard playedCard)
 	{
 		if (cardPlayer.GetType() != typeof(MercGraphic))
 		{
-			CardsScreen.main.RemoveRoomCard(this);
+			CardsScreen.main.RemoveRoomStipulationCard(this);
 			cardPlayer.TakeDamage(damage);
 		}
 	}
@@ -272,7 +309,7 @@ public class Airlock : RoomCard
 		{
 			RangedCard.ERangedCardPlayed += Trigger;
 		}
-		void Trigger(CharacterGraphic cardPlayer)
+		void Trigger(CharacterGraphic cardPlayer, RangedCard playedCard)
 		{
 			//CardsScreen.main.RemoveRoomCard(this);
 			cardPlayer.TakeDamage(rangedAttackDamagePenalty);
@@ -310,9 +347,9 @@ public class LowerDecks : RoomCard
 			RangedCard.ERangedCardPlayed += ExplosionEffect;
 		}
 
-		void ExplosionEffect(CharacterGraphic cardPlayer)
+		void ExplosionEffect(CharacterGraphic cardPlayer, RangedCard playedCard)
 		{
-			CardsScreen.main.RemoveRoomCard(this);
+			CardsScreen.main.RemoveRoomStipulationCard(this);
 			CardsScreen.main.DamageAllCharacters(damageToEveryone);
 		}
 
@@ -359,9 +396,9 @@ public class Backdoor : RoomCard
 		{
 			MeleeCard.EMeleeCardPlayed += Detonate;
 		}
-		void Detonate(CharacterGraphic cardPlayer)
+		void Detonate(CharacterGraphic cardPlayer, MeleeCard playedCard)
 		{
-			CardsScreen.main.RemoveRoomCard(this);
+			CardsScreen.main.RemoveRoomStipulationCard(this);
 			cardPlayer.TakeDamage(damage);
 
 		}
@@ -446,9 +483,9 @@ public class Armory : RoomCard
 			RangedCard.ERangedCardPlayed += ExplosionEffect;
 		}
 
-		void ExplosionEffect(CharacterGraphic cardPlayer)
+		void ExplosionEffect(CharacterGraphic cardPlayer, RangedCard playedCard)
 		{
-			CardsScreen.main.RemoveRoomCard(this);
+			CardsScreen.main.RemoveRoomStipulationCard(this);
 			CardsScreen.main.DamageOpposingTeam(damageToOpposingTeam);
 		}
 
@@ -551,7 +588,7 @@ public class Courtyard : RoomCard
 		{
 			MeleeCard.EMeleeCardPlayed += Trigger;
 		}
-		void Trigger(CharacterGraphic cardPlayer)
+		void Trigger(CharacterGraphic cardPlayer, MeleeCard playedCard)
 		{
 			//CardsScreen.main.RemoveRoomCard(this);
 			cardPlayer.TakeDamage(meleeAttackDamagePenalty);

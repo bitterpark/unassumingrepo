@@ -72,7 +72,7 @@ public class Deck<T> where T:class
 		return drawnCards;
 	}
 
-	public bool DrawCard(out T drawnCard)
+	public virtual bool DrawCard(out T drawnCard)
 	{
 		if (drawPile.Count < 1)
 		{
@@ -88,7 +88,7 @@ public class Deck<T> where T:class
 		return true;
 	}
 
-	public void DiscardCards(params T[] discarded)
+	public virtual void DiscardCards(params T[] discarded)
 	{
 		foreach (T card in discarded) discardPile.Add(card);
 	}
@@ -119,7 +119,10 @@ public class CombatDeck : Deck<CombatCard>
 	public override void AddCards(params CombatCard[] cards)
 	{
 		foreach (CombatCard card in cards)
+		{
 			card.originDeck = this;
+			card.SetDefaultState();
+		}
 		base.AddCards(cards);
 	}
 	
@@ -135,5 +138,21 @@ public class CombatDeck : Deck<CombatCard>
 			card.originDeck = this;
 		}
 		AddCards(newCards);
+	}
+
+	public override bool DrawCard(out CombatCard drawnCard)
+	{
+		bool successfullyDrewCard = false;
+		successfullyDrewCard = base.DrawCard(out drawnCard);
+		if (successfullyDrewCard)
+			drawnCard.SetDefaultState();
+		return successfullyDrewCard;
+	}
+
+	public override void DiscardCards(params CombatCard[] discarded)
+	{
+		foreach (CombatCard card in discarded)
+			card.SetDefaultState();
+		base.DiscardCards(discarded);
 	}
 }

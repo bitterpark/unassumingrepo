@@ -163,12 +163,23 @@ public abstract class EquippableItem:InventoryItem
 
 public abstract class Weapon:InventoryItem
 {	
-	//damage for display on mouseover text
-	//public abstract int GetMaxDamage();
-	//public abstract int GetMinDamage();
 	public int baseDamage;
 	public int weight=1;
 	public float accuracyMod;
+
+	public int ammoBonus = 0;
+	public int staminaBonus = 0;
+
+	protected List<CombatCard> addedCombatCards = new List<CombatCard>();
+	PrepCard addedPrepCard = null;
+
+	public Weapon()
+	{
+		ExtenderConstructor();
+		TryGeneratePrepCard();
+	}
+
+	protected abstract void ExtenderConstructor();
 
 	public override int GetWeight()
 	{
@@ -183,11 +194,23 @@ public abstract class Weapon:InventoryItem
 		return actualDamage;
 	}
 
-	public int ammoBonus=0;
-	public int staminaBonus=0;
+	
+	void TryGeneratePrepCard()
+	{
+		if (addedCombatCards.Count > 0)
+			addedPrepCard = new CustomPrepCard(itemName, "Add cards to your deck", GetItemSprite(), addedCombatCards);
+		else
+			addedPrepCard = null;
+	}
 
-
-	public List<CombatCard> addedCombatCards = new List<CombatCard>();
+	public bool TryGetAddedPrepCard(out PrepCard card)
+	{
+		card = addedPrepCard;
+		if (card == null)
+			return false;
+		else
+			return true;
+	}
 
 	public virtual void Unequip(PartyMember member)//virtual void Unequip (PartyMember member) {}
 	{
@@ -203,10 +226,14 @@ public abstract class Weapon:InventoryItem
 			desc += "\nAmmo bonus:" + ammoBonus;
 
 		if (addedCombatCards.Count>0)
-		{
 			desc+="\nAdds cards:";
-		}
+
 		return desc;
+	}
+	//Only for tooltips
+	public CombatCard[] GetAddedCombatCards()
+	{
+		return addedCombatCards.ToArray();
 	}
 }
 
@@ -218,7 +245,7 @@ public abstract class RangedWeapon:Weapon
 
 public class NineM:RangedWeapon
 {
-	public NineM()
+	protected override void ExtenderConstructor()
 	{
 		itemName="9mm Pistol";
 		baseDamage=45;
@@ -255,8 +282,8 @@ public class NineM:RangedWeapon
 
 public class Shotgun:RangedWeapon
 {
-	
-	public Shotgun()
+
+	protected override void ExtenderConstructor()
 	{
 		itemName="Shotgun";
 		oneShotDamage=45;
@@ -349,7 +376,7 @@ public class Shotgun:RangedWeapon
 
 public class AssaultRifle:RangedWeapon
 {
-	public AssaultRifle()
+	protected override void ExtenderConstructor()
 	{
 		itemName="Assault Rifle";
 		oneShotDamage=60;
@@ -360,7 +387,7 @@ public class AssaultRifle:RangedWeapon
 
 		ammoBonus = 2;
 		addedCombatCards = new List<CombatCard>();
-		addedCombatCards.Add(new ScopeIn());
+		addedCombatCards.Add(new FullAuto());
 		addedCombatCards.Add(new FullAuto());
 		addedCombatCards.Add(new FullMetalJacket());
 	}
@@ -427,7 +454,7 @@ public class AssaultRifle:RangedWeapon
 
 public class Pipegun:RangedWeapon
 {
-	public Pipegun()
+	protected override void ExtenderConstructor()
 	{
 		itemName="Pipegun";
 		baseDamage=30;
@@ -476,7 +503,7 @@ public abstract class MeleeWeapon:Weapon
 
 public class Pipe:MeleeWeapon
 {
-	public Pipe()
+	protected override void ExtenderConstructor()
 	{
 		itemName="Pipe";
 		baseDamage=90;
@@ -543,7 +570,7 @@ public class Pipe:MeleeWeapon
 
 public class Knife:MeleeWeapon
 {
-	public Knife()
+	protected override void ExtenderConstructor()
 	{
 		itemName="Knife";
 		baseDamage=45;
@@ -597,7 +624,7 @@ public class Knife:MeleeWeapon
 
 public class Axe:MeleeWeapon
 {
-	public Axe()
+	protected override void ExtenderConstructor()
 	{
 		itemName="Axe";
 		baseDamage=180;

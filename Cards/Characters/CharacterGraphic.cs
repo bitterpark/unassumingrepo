@@ -3,11 +3,10 @@ using UnityEngine.UI;
 using System.Collections;
 using System.Collections.Generic;
 
-public class CharacterGraphic : MonoBehaviour {
+public abstract class CharacterGraphic : MonoBehaviour {
 
 	public FloatingText floatingTextPrefab;
-	public VisualCardGraphic visualCardPrefab;
-	public CombatCardGraphic combatCardPrefab;
+	public CharStipulationCardGraphic stipulationCardPrefab;
 
 	public Text nameText;
 	public Text healthText;
@@ -15,40 +14,52 @@ public class CharacterGraphic : MonoBehaviour {
 	public Text staminaText;
 	public Text ammoText;
 	public Image portrait;
+	public Image background;
 
 	public Transform appliedCardsGroup;
-	public Transform characterHandGroup;
 
 	bool floatingTextIsOut = false;
 
-	Character assignedCharacter;
+	protected Character assignedCharacter;
 
-	bool hasTurn = false;
+	protected CombatDeck currentCharacterDeck;
+	protected List<CombatCard> characterHand = new List<CombatCard>();
 
-	int ammo = 0;
-	int stamina = 0;
-	int armor = 0;
-
-	public CombatDeck characterDeck;
-	public List<CombatCard> characterHand = new List<CombatCard>();
-
-	public List<CharacterStipulationCard> activeStipulationCards = new List<CharacterStipulationCard>();
+	List<CharacterStipulationCard> activeStipulationCards = new List<CharacterStipulationCard>();
 
 	public enum Resource {Health,Armor,Stamina,Ammo};
 
 	public delegate void TurnStartDeleg();
 	public event TurnStartDeleg ECharacterTurnStarted;
 
+	public delegate void TookDamageDeleg();
+	public event TookDamageDeleg ETookDamage;
+
+	bool hasTurn = false;
+
+	int ammo = 0;
+	int stamina = 0;
+	int armor = 0;
+	bool meleeAttacksAreFree = false;
+	bool rangedAttacksAreFree = false;
+	bool rangedAttacksCostStamina = false;
+
+	HandDisplayingObject myHandDisplayer;
+
 	public void AssignCharacter(Character newChar)
 	{
 		assignedCharacter = newChar;
 		//CAUTION - Enemy char graphics do not have this button in their prefab, so trying to call this on a non-merc char graphic
 		//will result in an exception
-		if (newChar.GetType()==typeof(PartyMember))
+		if (newChar.GetType() == typeof(PartyMember))
 		{
 			portrait.GetComponent<Button>().onClick.AddListener(
-				()=>InventoryScreenHandler.mainISHandler.ToggleSelectedMember(assignedCharacter as PartyMember));
+				() => InventoryScreenHandler.mainISHandler.ToggleSelectedMember(assignedCharacter as PartyMember));
+			myHandDisplayer = CardsScreen.main.playerHandObject;
 		}
+		else
+			myHandDisplayer = CardsScreen.main.enemyHandObject;
+
 		nameText.text = newChar.GetName();
 		healthText.text = newChar.GetHealth().ToString();
 		portrait.sprite = newChar.GetPortrait();
@@ -57,8 +68,18 @@ public class CharacterGraphic : MonoBehaviour {
 		SetStartAmmo();
 		SetStartArmor();
 
-		characterDeck = assignedCharacter.GetCombatDeck();
-		characterHand.AddRange(characterDeck.DrawCards(CardsScreen.startingHandSize));
+		//currentCharacterDeck = assignedCharacter.GetCombatDeck();
+	}
+
+	public abstract void GenerateCombatStartDeck();
+
+	public void AddCardsToCurrentDeck(params CombatCard[] cards)
+	{
+		currentCharacterDeck.AddCards(cards);
+	}
+	public void RemoveCardsFromCurrentDeck(params CombatCard[] cards)
+	{
+		currentCharacterDeck.RemoveCards(cards);
 	}
 
 	public void DrawCardsToHand()
@@ -67,48 +88,38 @@ public class CharacterGraphic : MonoBehaviour {
 	}
 	public void DrawCardsToHand(int count)
 	{
-		characterHand.AddRange(characterDeck.DrawCards(count));
+		characterHand.AddRange(currentCharacterDeck.DrawCards(count));
+	}
+
+	public void RemoveCardFromHand(CombatCard card)
+	{
+		characterHand.Remove(card);
 	}
 
 	public void DiscardCurrentHand()
 	{
-		characterDeck.DiscardCards(characterHand.ToArray());
+		currentCharacterDeck.DiscardCards(characterHand.ToArray());
 		characterHand.Clear();
 	}
 
-	public virtual void DisplayHand(bool interactable)
+	public void DisplayMyHand(bool interactable)
 	{
-		foreach (CombatCard card in characterHand)
-		{
-			CombatCardGraphic newCardGraphic = Instantiate(combatCardPrefab);
-			newCardGraphic.AssignCard(card);
-			newCardGraphic.transform.SetParent(characterHandGroup, false);
-			newCardGraphic.GetComponent<Button>().interactable = interactable;
-		}
+		myHandDisplayer.DisplayHand(interactable, characterHand);
 	}
 
-	public void SetHandInteractivity(bool interactable)
+	public void SetMyHandInteractivity(bool interactable)
 	{
-		foreach (CombatCardGraphic card in characterHandGroup.GetComponentsInChildren<CombatCardGraphic>())
-		{
-			card.GetComponent<Button>().interactable=interactable;
-		}
+		myHandDisplayer.SetHandInteractivity(interactable);
 	}
 
-	public void ClearDisplayedHand()
+	public void HideMyDisplayedHand()
 	{
-		foreach (CombatCardGraphic card in characterHandGroup.GetComponentsInChildren<CombatCardGraphic>())
-		{
-			GameObject.Destroy(card.gameObject);
-		}
+		myHandDisplayer.HideDisplayedHand();
 	}
 
 	public List<CombatCardGraphic> GetHandGraphics()
 	{
-		List<CombatCardGraphic> graphics = new List<CombatCardGraphic>();
-		foreach (CombatCardGraphic graphic in characterHandGroup.GetComponentsInChildren<CombatCardGraphic>())
-			graphics.Add(graphic);
-		return graphics;
+		return myHandDisplayer.GetHandGraphics();
 	}
 
 	public Character GetCharacter()
@@ -139,6 +150,9 @@ public class CharacterGraphic : MonoBehaviour {
 
 	public void TakeDamage(int damage, bool ignoreArmor)
 	{
+		if (ETookDamage != null)
+			ETookDamage();
+
 		int damageToHealth = damage;
 		if (!ignoreArmor)
 		{
@@ -267,9 +281,18 @@ public class CharacterGraphic : MonoBehaviour {
 	}
 
 
-	public void PlaceCharacterCard(CharacterStipulationCard playedCard)
+	public void TryPlaceCharacterStipulationCard(CharacterStipulationCard playedCard)
 	{
-		VisualCardGraphic cardGraphic = Instantiate(visualCardPrefab);
+		foreach (CharacterStipulationCard card in activeStipulationCards)
+		{
+			if (card.GetType() == playedCard.GetType())
+			{
+				RemoveCharacterStipulationCard(card);
+				break;
+			}
+		}
+
+		CharStipulationCardGraphic cardGraphic = Instantiate(stipulationCardPrefab);
 		cardGraphic.AssignCard(playedCard);
 		cardGraphic.transform.SetParent(appliedCardsGroup, false);
 		cardGraphic.transform.SetAsFirstSibling();
@@ -277,10 +300,10 @@ public class CharacterGraphic : MonoBehaviour {
 		activeStipulationCards.Add(playedCard);
 	}
 
-	public void RemoveCharacterCard(CharacterStipulationCard removedCard)
+	public void RemoveCharacterStipulationCard(CharacterStipulationCard removedCard)
 	{
 		removedCard.DeactivateCard();
-		foreach (VisualCardGraphic graphic in appliedCardsGroup.GetComponentsInChildren<VisualCardGraphic>())
+		foreach (CharStipulationCardGraphic graphic in appliedCardsGroup.GetComponentsInChildren<CharStipulationCardGraphic>())
 		{
 			if (graphic.assignedCard == removedCard)
 			{
@@ -295,7 +318,7 @@ public class CharacterGraphic : MonoBehaviour {
 	{
 		foreach (CharacterStipulationCard card in new List<CharacterStipulationCard>(activeStipulationCards))
 		{
-			RemoveCharacterCard(card);
+			RemoveCharacterStipulationCard(card);
 		}
 	}
 
@@ -307,7 +330,6 @@ public class CharacterGraphic : MonoBehaviour {
 	public virtual void StartedTurn()
 	{
 		DoTurnEventAndDrawCards();
-		DisplayHand(false);
 	}
 
 	protected void DoTurnEventAndDrawCards()
@@ -320,11 +342,80 @@ public class CharacterGraphic : MonoBehaviour {
 
 	public void GiveTurn()
 	{
-		hasTurn = true;
+		SetTurnPossibility(true);
+	}
+	public void RemoveTurn()
+	{
+		SetTurnPossibility(false);
 	}
 	public void TurnDone()
 	{
-		hasTurn = false;
+		HideMyDisplayedHand();
+		SetTurnPossibility(false);
+	}
+	void SetTurnPossibility(bool hasTurn)
+	{
+		this.hasTurn = hasTurn;
+		if (hasTurn)
+			background.color = Color.white;
+		else
+			background.color = Color.gray;
+	}
+
+	public void SetMeleeAttacksFree(bool free)
+	{
+		meleeAttacksAreFree = free;
+	}
+
+	public void SetRangedAttacksFree(bool free)
+	{
+		rangedAttacksAreFree = free;
+	}
+
+	public void SetRangedAttacksCostStamina(bool costStamina)
+	{
+		rangedAttacksCostStamina = costStamina;
+	}
+
+	public bool CharacterMeetsCardCostRequirements(CombatCard card)
+	{
+		int staminaReq = card.staminaCost;
+		int ammoReq = card.ammoCost;
+
+		if (meleeAttacksAreFree)
+			staminaReq = 0;
+
+		if (rangedAttacksAreFree)
+			ammoReq = 0;
+		else
+			if (rangedAttacksCostStamina)
+			{
+				staminaReq += ammoReq;
+				ammoReq = 0;
+			}
+
+		if (GetStamina() < staminaReq)
+			return false;
+		if (GetAmmo() < ammoReq)
+			return false;
+
+		return true;
+	}
+
+	public void SubtractCardCostsFromResources(int ammoCost, int staminaCost, int takeDamageCost, int removeHealthCost)
+	{
+		if (!rangedAttacksAreFree)
+		{
+			if (rangedAttacksCostStamina)
+			{
+				staminaCost += ammoCost;
+				ammoCost = 0;
+			}
+			IncrementAmmo(-ammoCost);
+		}
+		IncrementStamina(-staminaCost);
+		TakeDamage(takeDamageCost);
+		TakeDamage(removeHealthCost, true);
 	}
 
 	struct FloatingTextInfo
@@ -382,5 +473,4 @@ public class CharacterGraphic : MonoBehaviour {
 	{ 
 		CardsScreen.main.StopPeekingCharacterHand(this);
 	}
-
 }

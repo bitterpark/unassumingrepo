@@ -168,6 +168,80 @@ public class IncomeReward : RewardCard
 	}*/
 }
 
+public abstract class PrepCard : Card
+{
+	
+	protected List<CombatCard> addedCombatCards=new List<CombatCard>();
+
+	public void PlayCard(CharacterGraphic playToCharacter)
+	{
+		playToCharacter.AddCardsToCurrentDeck(addedCombatCards.ToArray());
+	}
+
+	public List<CombatCard> GetAddedCombatCards()
+	{
+		return addedCombatCards;
+	}
+
+}
+
+public class CustomPrepCard : PrepCard
+{
+	public CustomPrepCard(string name, string description, Sprite image, List<CombatCard> addedCombatCards)
+	{
+		this.name = name;
+		this.description = description;
+		this.image = image;
+		this.addedCombatCards = addedCombatCards;
+	}
+}
+
+public class DefaultMeleePrepCard : PrepCard {
+
+	public DefaultMeleePrepCard()
+	{
+		name = "Bare Hands";
+		description = "Add melee cards to your deck";
+		image = SpriteBase.mainSpriteBase.brokenArmsSprite;
+
+		addedCombatCards.Add(new Jab());
+		addedCombatCards.Add(new Jab());
+		addedCombatCards.Add(new Smash());
+		addedCombatCards.Add(new Smash());
+
+	}
+}
+
+public class DefaultRangedPrepCard : PrepCard
+{
+	public DefaultRangedPrepCard()
+	{
+		name = "Sidearm";
+		description = "Add ranged cards to your deck";
+		image = SpriteBase.mainSpriteBase.pipegunSprite;
+
+		addedCombatCards.Add(new Pistolwhip());
+		addedCombatCards.Add(new Sidearm());
+		addedCombatCards.Add(new Sidearm());
+		addedCombatCards.Add(new Sidearm());
+	}
+}
+
+public class ExamplePrepCard : PrepCard
+{
+	public ExamplePrepCard()
+	{
+		name = "example";
+		description = "111";
+		image = SpriteBase.mainSpriteBase.assaultRifleSprite;
+
+		addedCombatCards.Add(new BurstFire());
+		addedCombatCards.Add(new BurstFire());
+		addedCombatCards.Add(new Hipfire());
+		addedCombatCards.Add(new Hipfire());
+	}
+}
+
 public abstract class CombatCard: Card
 {
 	public int damage=0;
@@ -197,25 +271,50 @@ public abstract class CombatCard: Card
 
 	public void PlayCard()
 	{
+		ApplyPlayCosts();
 		CardPlayEvents();
 		if (userCharGraphic.GetHealth()>0)
 			CardPlayEffects();
-		ClearTargetsAfterPlay();
+		SetDefaultState();
 	}
+
+	public void SetIgnoresArmor(bool ignoresArmor)
+	{
+		this.ignoresArmor = ignoresArmor;
+	}
+
+	public CombatCard()
+	{
+		ExtenderConstructor();
+	}
+
+	public void SetDefaultState()
+	{
+		damage=0;
+		staminaDamage=0;
+		unarmoredBonusDamage = 0;
+
+		ammoCost=0;
+		staminaCost=0;
+		removeHealthCost = 0;
+		takeDamageCost = 0;
+
+		ignoresArmor = false;
+		userCharGraphic = null;
+		targetChars.Clear();
+		ExtenderConstructor();
+	}
+	protected abstract void ExtenderConstructor();
 
 	protected virtual void CardPlayEffects()
 	{
-		ApplyPlayCosts();
 		TryAddStipulationCards();
 		ApplyEffects();
 	}
 
 	protected virtual void ApplyPlayCosts()
 	{
-		userCharGraphic.IncrementAmmo(-ammoCost);
-		userCharGraphic.IncrementStamina(-staminaCost);
-		userCharGraphic.TakeDamage(takeDamageCost);
-		userCharGraphic.TakeDamage(removeHealthCost, true);
+		userCharGraphic.SubtractCardCostsFromResources(ammoCost,staminaCost,takeDamageCost,removeHealthCost);
 	}
 
 	protected virtual void ApplyEffects()
@@ -245,12 +344,15 @@ public abstract class CombatCard: Card
 			if (addedStipulationCard.GetType().BaseType == typeof(RoomStipulationCard))
 			{
 				RoomStipulationCard card = addedStipulationCard as RoomStipulationCard;
-				CardsScreen.main.PlaceRoomCard(card);
+				CardsScreen.main.PlaceRoomStipulationCard(card);
 			}
 			if (addedStipulationCard.GetType().BaseType == typeof(CharacterStipulationCard))
 			{
 				CharacterStipulationCard card = addedStipulationCard as CharacterStipulationCard;
-				userCharGraphic.PlaceCharacterCard(card);
+				if (targetType == TargetType.None)
+					userCharGraphic.TryPlaceCharacterStipulationCard(card);
+				else
+					targetChars[0].TryPlaceCharacterStipulationCard(card);
 			}
 		}
 	}
@@ -258,12 +360,6 @@ public abstract class CombatCard: Card
 	protected virtual void CardPlayEvents()
 	{
 
-	}
-
-	void ClearTargetsAfterPlay()
-	{
-		targetChars.Clear();
-		userCharGraphic = null;
 	}
 
 
@@ -283,7 +379,7 @@ public abstract class CombatCard: Card
 
 public class RangedCard : CombatCard
 {
-	public delegate void RangedCardDeleg(CharacterGraphic cardPlayer);
+	public delegate void RangedCardDeleg(CharacterGraphic cardPlayer, RangedCard playedCard);
 	public static event RangedCardDeleg ERangedCardPlayed;
 	
 	public RangedCard()
@@ -292,9 +388,15 @@ public class RangedCard : CombatCard
 		cardType = CardType.Ranged_Attack;
 	}
 
+	protected override void ExtenderConstructor()
+	{
+	
+	}
+
 	protected override void CardPlayEvents()
 	{
-		if (ERangedCardPlayed != null) ERangedCardPlayed(userCharGraphic);
+		if (ERangedCardPlayed != null) 
+			ERangedCardPlayed(userCharGraphic,this);
 	}
 }
 
@@ -306,12 +408,18 @@ public class MeleeCard : CombatCard
 		cardType = CardType.Melee_Attack;
 	}
 
-	public delegate void MeleeCardDeleg(CharacterGraphic cardPlayer);
+	public delegate void MeleeCardDeleg(CharacterGraphic cardPlayer, MeleeCard playedCard);
 	public static event MeleeCardDeleg EMeleeCardPlayed;
+
+	protected override void ExtenderConstructor()
+	{
+
+	}
 
 	protected override void CardPlayEvents()
 	{
-		if (EMeleeCardPlayed != null) EMeleeCardPlayed(userCharGraphic);
+		if (EMeleeCardPlayed != null) 
+			EMeleeCardPlayed(userCharGraphic,this);
 	}
 }
 
@@ -330,6 +438,11 @@ public class EffectCard : CombatCard
 		: base()
 	{
 		cardType=CardType.Effect;
+	}
+
+	protected override void ExtenderConstructor()
+	{
+
 	}
 
 	protected override void ApplyEffects()
