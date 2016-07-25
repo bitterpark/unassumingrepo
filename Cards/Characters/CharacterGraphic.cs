@@ -248,7 +248,7 @@ public abstract class CharacterGraphic : MonoBehaviour {
 		if (stamina < 0) stamina = 0;
 		if (stamina > assignedCharacter.GetMaxStamina())
 			SetStartStamina();
-		staminaText.text = stamina.ToString();
+		staminaText.text = stamina.ToString() + "/" + assignedCharacter.GetMaxStamina();
 	}
 
 	public void SetStartAmmo()
@@ -377,26 +377,31 @@ public abstract class CharacterGraphic : MonoBehaviour {
 		rangedAttacksCostStamina = costStamina;
 	}
 
-	public bool CharacterMeetsCardCostRequirements(CombatCard card)
+	public bool CharacterMeetsCardRequirements(CombatCard card)
 	{
 		int staminaReq = card.staminaCost;
 		int ammoReq = card.ammoCost;
 
-		if (meleeAttacksAreFree)
+		if (card.GetType().BaseType==typeof(MeleeCard) && meleeAttacksAreFree)
 			staminaReq = 0;
 
-		if (rangedAttacksAreFree)
-			ammoReq = 0;
-		else
-			if (rangedAttacksCostStamina)
-			{
-				staminaReq += ammoReq;
+		if (card.GetType().BaseType == typeof(RangedCard))
+		{
+			if (rangedAttacksAreFree)
 				ammoReq = 0;
-			}
+			else
+				if (rangedAttacksCostStamina)
+				{
+					staminaReq += ammoReq;
+					ammoReq = 0;
+				}
+		}
 
 		if (GetStamina() < staminaReq)
 			return false;
 		if (GetAmmo() < ammoReq)
+			return false;
+		if (!card.SpecialPrerequisitesMet(this))
 			return false;
 
 		return true;
@@ -413,7 +418,10 @@ public abstract class CharacterGraphic : MonoBehaviour {
 			}
 			IncrementAmmo(-ammoCost);
 		}
-		IncrementStamina(-staminaCost);
+		
+		if (!meleeAttacksAreFree)
+			IncrementStamina(-staminaCost);
+
 		TakeDamage(takeDamageCost);
 		TakeDamage(removeHealthCost, true);
 	}

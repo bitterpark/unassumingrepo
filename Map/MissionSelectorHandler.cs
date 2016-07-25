@@ -38,7 +38,6 @@ public class MissionSelectorHandler : MonoBehaviour {
 	public void DrawMouseoverText()
 	{
 		string text=assignedMember.name;
-		foreach (Relationship relation in assignedMember.relationships.Values){text+="\n"+relation.GetText();}
 		TooltipManager.main.CreateTooltip(text,this.transform);
 	}
 	public void StopMouseoverText() {TooltipManager.main.StopAllTooltips();}

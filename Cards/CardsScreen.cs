@@ -7,18 +7,9 @@ using System.Collections.Generic;
 public class CardsScreen : MonoBehaviour 
 {
 	
-	public const float cardPlayAnimationTime = 1.75f;
-	
-	public CharacterGraphic selectedCharacter;
+	public const float cardPlayAnimationTime = 2.25f;
 
 	public static CardsScreen main;
-
-	public enum TurnStatus {Player,Enemy};
-	public TurnStatus turnStatus;
-
-	public List<CharacterGraphic> mercGraphics = new List<CharacterGraphic>();
-	public List<CharacterGraphic> enemyGraphics = new List<CharacterGraphic>();
-	public List<RoomStipulationCard> activeRoomCards = new List<RoomStipulationCard>();
 
 	public Transform enemiesGroup;
 	public Transform mercsGroup;
@@ -54,16 +45,30 @@ public class CardsScreen : MonoBehaviour
 	public static event SetMeleeTargetMercDeleg ENewMeleeTargetMercSet;
 	public delegate void SetMeleeTargetEnemyDeleg();
 	public static event SetMeleeTargetEnemyDeleg ENewMeleeTargetEnemySet;
+	public delegate void SetRangedTargetMercDeleg();
+	public static event SetRangedTargetMercDeleg ENewRangedTargetMercSet;
+	public delegate void SetRangedTargetEnemyDeleg();
+	public static event SetRangedTargetEnemyDeleg ENewRangedTargetEnemySet;
 
+	enum TurnStatus { Player, Enemy };
+	TurnStatus turnStatus;
+
+	CharacterGraphic selectedCharacter;
+
+	List<CharacterGraphic> mercGraphics = new List<CharacterGraphic>();
+	List<CharacterGraphic> enemyGraphics = new List<CharacterGraphic>();
+	List<RoomStipulationCard> activeRoomCards = new List<RoomStipulationCard>();
+
+	CharacterGraphic meleeCardTargetOverrideMerc = null;
+	CharacterGraphic meleeCardTargetOverrideEnemy = null;
+	CharacterGraphic rangedCardTargetOverrideMerc = null;
+	CharacterGraphic rangedCardTargetOverrideEnemy = null;
 
 	public const int startingHandSize = 4;
 	const int maxHandSize = 8;
 	const int cardDrawPerTurn = 1;
 	const int staminaRegen = 1;
 	const int enemyTeamSize = 4;
-
-	CharacterGraphic meleeCardTargetOverrideMerc = null;
-	CharacterGraphic meleeCardTargetOverrideEnemy = null;
 
 	bool rangedAttacksAllowed = true;
 
@@ -121,7 +126,7 @@ public class CardsScreen : MonoBehaviour
 		RoomCard playedCard = playedCardGraphic.assignedCard;
 		GameObject.Destroy(playedCardGraphic.gameObject);
 		ClearRoomSelection();
-		StartCombat(playedCard, playedEncounter.GenerateEnemies(playedCardGraphic.GetRoomEnemyCount()));
+		StartCombat(playedCard, playedCard.GetEnemies());
 	}
 
 	void ShowNextRoomSelection()
@@ -176,8 +181,6 @@ public class CardsScreen : MonoBehaviour
 		{
 			enemy.GiveTurn();
 			enemy.GenerateCombatStartDeck();
-			EnemyGraphic enemyGraphic = enemy as EnemyGraphic;
-			enemyGraphic.PlayVariationCards(1);
 		}
 
 		beginCombatButton.gameObject.SetActive(true);
@@ -229,8 +232,8 @@ public class CardsScreen : MonoBehaviour
 		{
 			CombatCardGraphic newCardGraphic = Instantiate(combatCardPrefab);
 			newCardGraphic.AssignCard(card);
+			newCardGraphic.SetInteractable(false);
 			newCardGraphic.transform.SetParent(prepCardsDisplayArea, false);
-			newCardGraphic.GetComponent<Button>().interactable = false;
 		}
 
 		currentPrepMode = PrepMode.SelectClassCard;
@@ -341,30 +344,44 @@ public class CardsScreen : MonoBehaviour
 		CombatCard playedCard = cardGraphic.assignedCard;
 		if (CardRequirementsMet(playedCard))
 		{
-			StartCoroutine("PlayerTurnProcess",cardGraphic);
+			PlayerCardTargetAssignment(cardGraphic);
 		}
 	}
 
-	IEnumerator PlayerTurnProcess(CombatCardGraphic cardGraphic)
+	void PlayerCardTargetAssignment(CombatCardGraphic cardGraphic)
 	{
 		CombatCard playedCard = cardGraphic.assignedCard;
 		DisableTurnoverButtons();
-		if (playedCard.targetType == CombatCard.TargetType.SelectEnemy || playedCard.targetType == CombatCard.TargetType.SelectFriendly)
+		if (playedCard.targetType == CombatCard.TargetType.SelectFriendly | playedCard.targetType == CombatCard.TargetType.SelectFriendlyOther)
 		{
-			if (playedCard.targetType == CombatCard.TargetType.SelectEnemy
-				&& playedCard.GetType().BaseType == typeof(MeleeCard)
-				&& meleeCardTargetOverrideEnemy != null)
+			StartCoroutine("SelectCardTargetCharacterByPlayer", cardGraphic);
+			return;
+		}
+
+		if (playedCard.targetType == CombatCard.TargetType.SelectEnemy)
+		{
+			if (playedCard.GetType().BaseType == typeof(MeleeCard) && meleeCardTargetOverrideEnemy != null)
 			{
 				AssignCardTargets(cardGraphic.assignedCard);
-				yield return StartCoroutine("CombatCardPlayed", cardGraphic);
+				StartCoroutine("CombatCardPlayed", cardGraphic);
+				return;
 			}
-			else
-				yield return StartCoroutine("SelectCardTargetCharacterByPlayer", cardGraphic);
+			if (playedCard.GetType().BaseType == typeof(RangedCard) && rangedCardTargetOverrideEnemy != null)
+			{
+				AssignCardTargets(cardGraphic.assignedCard);
+				StartCoroutine("CombatCardPlayed", cardGraphic);
+				return;
+			}
+
+			StartCoroutine("SelectCardTargetCharacterByPlayer", cardGraphic);
+			return;
 		}
-		else
+		if (playedCard.targetType != CombatCard.TargetType.SelectFriendly 
+			&& playedCard.targetType!=CombatCard.TargetType.SelectFriendlyOther
+			&& playedCard.targetType!=CombatCard.TargetType.SelectEnemy)
 		{
 			AssignCardTargets(cardGraphic.assignedCard);
-			yield return StartCoroutine("CombatCardPlayed", cardGraphic);
+			StartCoroutine("CombatCardPlayed", cardGraphic);
 		}
 	}
 
@@ -372,6 +389,7 @@ public class CardsScreen : MonoBehaviour
 	{
 		CharacterGraphic targetChar = null;
 		bool selectFriendly=false;
+		bool selectOtherFriendly = false;
 		string centerMessageText = "Select enemy";
 		if (playedCardGraphic.assignedCard.targetType == CombatCard.TargetType.SelectEnemy)
 		{
@@ -381,6 +399,13 @@ public class CardsScreen : MonoBehaviour
 		if (playedCardGraphic.assignedCard.targetType == CombatCard.TargetType.SelectFriendly)
 		{
 			selectFriendly=true;
+			SetMercPortraitsEnabled(false);
+			centerMessageText = "Select friendly";
+		}
+		if (playedCardGraphic.assignedCard.targetType == CombatCard.TargetType.SelectFriendlyOther)
+		{
+			selectFriendly = true;
+			selectOtherFriendly = true;
 			SetMercPortraitsEnabled(false);
 			centerMessageText = "Select friendly";
 		}
@@ -400,6 +425,15 @@ public class CardsScreen : MonoBehaviour
 			}
 			if (Input.GetMouseButton(0))
 			{
+				if (selectOtherFriendly)
+				{
+					if (RaycastForOtherFriendlyCharacter(selectedCharacter,out targetChar))
+					{
+						targetFound = true;
+						break;
+					}
+				}
+				else
 				if (RaycastForCharacter(selectFriendly, out targetChar))
 				{
 					targetFound = true;
@@ -417,6 +451,18 @@ public class CardsScreen : MonoBehaviour
 			playedCardGraphic.assignedCard.targetChars.Add(targetChar);
 			yield return StartCoroutine("CombatCardPlayed", playedCardGraphic);
 		}
+	}
+
+	bool RaycastForOtherFriendlyCharacter(CharacterGraphic sourceCharacter,out CharacterGraphic foundChar)
+	{
+		if (RaycastForCharacter(true, out foundChar))
+		{
+			if (foundChar != sourceCharacter)
+				return true;
+			else
+				return false;
+		}
+		return false;
 	}
 
 	bool RaycastForCharacter(bool friendly, out CharacterGraphic foundChar)
@@ -509,7 +555,7 @@ public class CardsScreen : MonoBehaviour
 
 	bool CardRequirementsMet(CombatCard card)
 	{
-		if (selectedCharacter.CharacterMeetsCardCostRequirements(card))
+		if (selectedCharacter.CharacterMeetsCardRequirements(card))
 		{
 			if (card.cardType == CombatCard.CardType.Ranged_Attack && rangedAttacksAllowed)
 				return true;
@@ -547,7 +593,13 @@ public class CardsScreen : MonoBehaviour
 		}
 		if (playedCard.targetType == CombatCard.TargetType.SelectFriendly)
 		{
-			playedCard.targetChars.Add(friendlyGroup[Random.Range(0, opposingGroup.Count)]);
+			playedCard.targetChars.Add(friendlyGroup[Random.Range(0, friendlyGroup.Count)]);
+		}
+		if (playedCard.targetType == CombatCard.TargetType.SelectFriendlyOther)
+		{
+			List<CharacterGraphic> friendlyOthers = new List<CharacterGraphic>(friendlyGroup);
+			friendlyOthers.Remove(selectedCharacter);
+			playedCard.targetChars.Add(friendlyOthers[Random.Range(0, friendlyOthers.Count)]);
 		}
 		if (playedCard.targetType == CombatCard.TargetType.Random)
 		{
@@ -597,24 +649,64 @@ public class CardsScreen : MonoBehaviour
 			}
 			playedCard.targetChars.Add(strongestCharGraphic);
 		}
-		if (turnStatus == TurnStatus.Enemy)
+
+		if (playedCard.GetType().BaseType == typeof(MeleeCard))
+			TryOverrideMeleeCardTarget(playedCard);
+		if (playedCard.GetType().BaseType == typeof(RangedCard))
+			TryOverrideRangedCardTarget(playedCard);
+	}
+
+	void TryOverrideRangedCardTarget(CombatCard playedRangedCard)
+	{
+		if (playedRangedCard.targetType == CombatCard.TargetType.SelectEnemy
+			|| playedRangedCard.targetType == CombatCard.TargetType.Random
+			|| playedRangedCard.targetType == CombatCard.TargetType.Strongest
+			|| playedRangedCard.targetType == CombatCard.TargetType.Weakest)
 		{
-			if (meleeCardTargetOverrideMerc != null && playedCard.GetType().BaseType == typeof(MeleeCard))
+			if (turnStatus == TurnStatus.Enemy)
 			{
-				playedCard.targetChars.Clear();
-				playedCard.targetChars.Add(meleeCardTargetOverrideMerc);
+				if (rangedCardTargetOverrideMerc != null)
+				{
+					playedRangedCard.targetChars.Clear();
+					playedRangedCard.targetChars.Add(rangedCardTargetOverrideMerc);
+				}
 			}
-		}
-		if (turnStatus == TurnStatus.Player)
-		{
-			if (meleeCardTargetOverrideEnemy != null && playedCard.GetType().BaseType == typeof(MeleeCard))
+			if (turnStatus == TurnStatus.Player)
 			{
-				playedCard.targetChars.Clear();
-				playedCard.targetChars.Add(meleeCardTargetOverrideEnemy);
+				if (rangedCardTargetOverrideEnemy != null)
+				{
+					playedRangedCard.targetChars.Clear();
+					playedRangedCard.targetChars.Add(rangedCardTargetOverrideEnemy);
+				}
 			}
 		}
 	}
 
+	void TryOverrideMeleeCardTarget(CombatCard playedMeleeCard)
+	{
+		if (playedMeleeCard.targetType == CombatCard.TargetType.SelectEnemy
+			|| playedMeleeCard.targetType == CombatCard.TargetType.Random
+			|| playedMeleeCard.targetType == CombatCard.TargetType.Strongest
+			|| playedMeleeCard.targetType == CombatCard.TargetType.Weakest)
+		{
+			if (turnStatus == TurnStatus.Enemy)
+			{
+				if (meleeCardTargetOverrideMerc != null)
+				{
+					playedMeleeCard.targetChars.Clear();
+					playedMeleeCard.targetChars.Add(meleeCardTargetOverrideMerc);
+				}
+			}
+			if (turnStatus == TurnStatus.Player)
+			{
+				if (meleeCardTargetOverrideEnemy != null)
+				{
+					playedMeleeCard.targetChars.Clear();
+					playedMeleeCard.targetChars.Add(meleeCardTargetOverrideEnemy);
+				}
+			}
+		}
+	}
 
 	IEnumerator CombatCardPlayed(CombatCardGraphic playedCardGraphic)
 	{
@@ -627,8 +719,8 @@ public class CardsScreen : MonoBehaviour
 		//Actual effects
 		playedCard.userCharGraphic = selectedCharacter;
 		selectedCharacter.RemoveCardFromHand(playedCard);
-		playedCard.originDeck.DiscardCards(playedCard);
 		playedCard.PlayCard();
+		playedCard.originDeck.DiscardCards(playedCard);
 		//Visualize card play
 		if (playedCard.targetType==CombatCard.TargetType.None)
  			PutCardToCharacter(playedCardGraphic, selectedCharacter);
@@ -923,6 +1015,7 @@ public class CardsScreen : MonoBehaviour
 	{
 		if (selectedCharacter == killedCharGraphic)
 		{
+			killedCharGraphic.HideMyDisplayedHand();
 			NullifySelectedCharacter();
 		}
 		killedCharGraphic.DoCleanupAfterCharacterDeath();
@@ -1078,6 +1171,7 @@ public class CardsScreen : MonoBehaviour
 		}
 	}
 
+
 	public void SetNewMeleeTargetMerc(CharacterGraphic newTargetMerc)
 	{
 		if (!mercGraphics.Contains(newTargetMerc))
@@ -1097,7 +1191,7 @@ public class CardsScreen : MonoBehaviour
 	public void SetNewMeleeTargetEnemy(CharacterGraphic newTargetEnemy)
 	{
 		if (!enemyGraphics.Contains(newTargetEnemy))
-			throw new System.Exception("Trying to set a melee target merc that doesn't exist in mission!");
+			throw new System.Exception("Trying to set a melee target enemy that doesn't exist in mission!");
 		//Important to do the event first
 		if (ENewMeleeTargetEnemySet != null)
 			ENewMeleeTargetEnemySet();
@@ -1110,10 +1204,54 @@ public class CardsScreen : MonoBehaviour
 		meleeCardTargetOverrideEnemy = null;
 	}
 
+	public void SetNewRangedTargetEnemy(CharacterGraphic newTargetEnemy)
+	{
+		if (!enemyGraphics.Contains(newTargetEnemy))
+			throw new System.Exception("Trying to set a range target enemy that doesn't exist in mission!");
+		//Important to do the event first
+		if (ENewRangedTargetEnemySet != null)
+			ENewRangedTargetEnemySet();
+		ClearRangedTargetEnemy();
+		rangedCardTargetOverrideEnemy = newTargetEnemy;
+
+	}
+	public void ClearRangedTargetEnemy()
+	{
+		rangedCardTargetOverrideEnemy = null;
+	}
+
+	public void SetNewRangedTargetMerc(CharacterGraphic newTargetMerc)
+	{
+		if (!mercGraphics.Contains(newTargetMerc))
+			throw new System.Exception("Trying to set a range target merc that doesn't exist in mission!");
+		//Important to do the event first
+		if (ENewRangedTargetMercSet != null)
+			ENewRangedTargetMercSet();
+		ClearRangedTargetMerc();
+		rangedCardTargetOverrideMerc = newTargetMerc;
+
+	}
+	public void ClearRangedTargetMerc()
+	{
+		rangedCardTargetOverrideMerc = null;
+	}
+
 	public void SetRangedAttacksRestriction(bool allowed)
 	{
 		rangedAttacksAllowed = allowed;
 	}
+
+
+	public int GetCurrentEnemyCount()
+	{
+		return enemyGraphics.Count;
+	}
+
+	public int GetCurrentMercCount()
+	{
+		return mercGraphics.Count;
+	}
+
 
 	public void PeekCharacterHand(CharacterGraphic shownCharacter)
 	{

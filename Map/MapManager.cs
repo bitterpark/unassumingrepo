@@ -219,7 +219,12 @@ public class MapManager : MonoBehaviour
 	void GenerateRandomEncounterNode(Vector2 slotIndex)
 	{
 		MapRegion newEncounterNode=CreateEncounterNode(slotIndex);
-		newEncounterNode.AssignEncounter(new Encounter(true));
+
+		Encounter.Difficulty nodeDifficulty = Encounter.Difficulty.Normal;
+		if (Random.value < 0.5f)
+			nodeDifficulty = Encounter.Difficulty.Hard;
+
+		newEncounterNode.AssignEncounter(new Encounter(nodeDifficulty));
 	}
 
 	public void UnlockStoryEncounterOne()
@@ -419,15 +424,6 @@ public class MapManager : MonoBehaviour
 		}
 		//Currently unused
 		endgameCenter+=new Vector2(townslotsXOffset,townslotsYOffset);
-		//Include endgame region into estimation
-		/*
-		Vector2 adjustedEndgameSlotMinEdgeCoords=endgameCenter-new Vector2(townSlotSideSize*0.5f,townSlotSideSize*0.5f);
-		Vector2 adjustedEndgameSlotMaxEdgeCoords=endgameCenter+new Vector2(townSlotSideSize*0.5f,townSlotSideSize*0.5f);
-		mapMinX=Mathf.Min(adjustedEndgameSlotMinEdgeCoords.x,mapMinX);
-		mapMinY=Mathf.Min(adjustedEndgameSlotMinEdgeCoords.y,mapMinY);
-		mapMaxX=Mathf.Max(adjustedEndgameSlotMaxEdgeCoords.x,mapMaxX);
-		mapMaxY=Mathf.Max(adjustedEndgameSlotMaxEdgeCoords.y,mapMaxY);
-		*/
 
 		//Determine final size of scrollgroup
 		float mapFinalWidth=borderOffset*2+Mathf.Abs(mapMaxX-mapMinX);
@@ -450,108 +446,6 @@ public class MapManager : MonoBehaviour
 		PartyManager.ETimePassed+=SetDailyTemperatureRating;
 	}
 
-	void PopulateTowns(float townNodeSideSize, float townAreaSpriteSize, int townNodeSlotCount, System.Func<float, Vector2, Vector2> slotOffsetter)
-	{
-		List<Vector2> populatingOffsets = CreateTownNodeSlotCoords(townNodeSideSize, townNodeSlotCount);
-		Dictionary<MapRegion, List<MapRegion>> regionsByTown = PopulateInnerTownNodes(townNodeSideSize, townAreaSpriteSize, populatingOffsets, slotOffsetter);
-		PersistentEventsAdd(regionsByTown);
-	}
-
-	Dictionary<MapRegion, List<MapRegion>> PopulateInnerTownNodes(float townNodeSideSize, float townAreaSpriteSize, List<Vector2> populatingOffsets, System.Func<float, Vector2, Vector2> slotOffsetter)
-	{
-		//Prepare node lists by town
-		Dictionary<MapRegion, List<MapRegion>> regionsByTown = new Dictionary<MapRegion, List<MapRegion>>();
-		
-		//Fill in nodes
-		foreach (MapRegion town in townCenterRegions)
-		{
-			int nodeCount = Random.Range(6, 9);
-			int loopCount = 0;
-			int gauntletCount = 0;
-
-			float randomRoll = Random.value;
-			//See if town will have any special nodes at all
-			if (randomRoll <= 0.8f)
-			{
-				//See if it will have only loops, gauntlets, or both
-				if (Random.value > 0.66f) { loopCount = 1; gauntletCount = 1; }
-				if (Random.value <= 0.66f) { loopCount = 2; gauntletCount = 0; }
-				if (Random.value <= 0.33f) { loopCount = 0; gauntletCount = 2; }
-			}
-
-			List<Vector2> unusedOffsets = new List<Vector2>(populatingOffsets);
-			//Create gauntlets and loops
-			int specialNodesPerLoop = Random.Range(2, 4);
-			int specialNodesPerGauntlet = Random.Range(2, 4);
-			int nodesRemaining = nodeCount;
-
-			//print ("Town gauntlets:"+gauntletCount+", town loops:"+loopCount);
-			//print ("Nodes per:"+specialNodesPer);
-			//print ("Total slots:"+unusedOffsets.Count);
-			List<MapRegion> createdTownRegions = new List<MapRegion>();
-			regionsByTown.Add(town, createdTownRegions);
-			//Do gauntlets
-			for (int i = 0; i < gauntletCount; i++)
-			{
-				int startingSlotIndex = Random.Range(0, unusedOffsets.Count - specialNodesPerGauntlet);
-
-				List<MapRegion> previousNodes = new List<MapRegion>();
-				for (int j = 0; j < specialNodesPerGauntlet; j++)
-				{
-					Vector2 usedSlot = unusedOffsets[startingSlotIndex + j];
-
-					Vector2 newOffset = slotOffsetter.Invoke(Random.Range(1f, townNodeSideSize * 0.5f - townAreaSpriteSize * 0.5f), usedSlot);
-					MapRegion newNode = CreateRegion((Vector2)town.transform.localPosition + newOffset);
-					createdTownRegions.Add(newNode);
-					newNode.townCenter = town;
-					if (j > 0) newNode.AddConnectedRegion(previousNodes[previousNodes.Count - 1], false, PartyMember.defaultFatigueMoveCost);
-					else newNode.AddConnectedRegion(town, false, PartyMember.defaultFatigueMoveCost);
-					previousNodes.Add(newNode);
-					nodesRemaining--;
-				}
-				//This is necesary to properly iterate and dispose indices
-				unusedOffsets.RemoveRange(startingSlotIndex, specialNodesPerGauntlet);
-			}
-			//Do loops
-			for (int i = 0; i < loopCount; i++)
-			{
-				if (specialNodesPerLoop == 3 && specialNodesPerLoop >= nodesRemaining) specialNodesPerLoop--;
-				int startingSlotIndex = Random.Range(0, unusedOffsets.Count - specialNodesPerLoop);
-
-				List<MapRegion> previousNodes = new List<MapRegion>();
-				for (int j = 0; j < specialNodesPerLoop; j++)
-				{
-					Vector2 usedSlot = unusedOffsets[startingSlotIndex + j];
-
-					Vector2 newOffset = slotOffsetter.Invoke(Random.Range(1f, townNodeSideSize * 0.5f - townAreaSpriteSize * 0.5f), usedSlot);
-					MapRegion newNode = CreateRegion((Vector2)town.transform.localPosition + newOffset);
-					createdTownRegions.Add(newNode);
-					newNode.townCenter = town;
-					if (j > 0) newNode.AddConnectedRegion(previousNodes[previousNodes.Count - 1], false, PartyMember.defaultFatigueMoveCost);
-					if (j == 0 || j == specialNodesPerLoop - 1) newNode.AddConnectedRegion(town, false, PartyMember.defaultFatigueMoveCost);
-					previousNodes.Add(newNode);
-					nodesRemaining--;//
-				}
-				//This is necessary to properly track indices and dispose
-				unusedOffsets.RemoveRange(startingSlotIndex, specialNodesPerLoop);
-			}
-			//Do regular nodes
-			for (int i = 0; i < nodesRemaining; i++)
-			{
-				//Vector2 randomPointInNode=Random.insideUnitCircle*(Random.Range(1f,townNodeSideSize*0.5f-townAreaSpriteSize*0.5f));
-				Vector2 usedSlot = unusedOffsets[Random.Range(0, unusedOffsets.Count)];
-				unusedOffsets.Remove(usedSlot);
-				Vector2 newOffset = slotOffsetter.Invoke(Random.Range(1f, townNodeSideSize * 0.5f - townAreaSpriteSize * 0.5f), usedSlot);
-
-				MapRegion newNode = CreateRegion((Vector2)town.transform.localPosition + newOffset);
-				createdTownRegions.Add(newNode);
-				newNode.townCenter = town;
-				newNode.AddConnectedRegion(town, false, PartyMember.defaultFatigueMoveCost);
-			}
-		}
-		return regionsByTown;
-	}
-
 	List<Vector2> CreateTownNodeSlotCoords(float townNodeSideSize, int townNodeSlots)
 	{
 		List<Vector2> populatingOffsets = new List<Vector2>();
@@ -566,63 +460,11 @@ public class MapManager : MonoBehaviour
 		return populatingOffsets;
 	}
 
-
-
-	void PersistentEventsAdd(Dictionary<MapRegion,List<MapRegion>> regionsByTown)
-	{
-		//Add persistent events and gas event to each town
-		foreach (MapRegion town in regionsByTown.Keys)
-		{
-			int requiredPersistentEventNodes = 1;
-			List<MapRegion> encounterRegionsRemaining = new List<MapRegion>(regionsByTown[town]);
-			for (int i = 0; i <= requiredPersistentEventNodes; i++)
-			{
-				//If there aren't enough non-persistent nodes left, terminate
-				if (encounterRegionsRemaining.Count == 0) break;
-				else
-				{
-					//Randomly pick a region index out of the remaining regions
-					int randomIndex = Random.Range(0, encounterRegionsRemaining.Count);
-					//Do gas event first
-					if (i == 0) encounterRegionsRemaining[randomIndex].SetRegionalEvent(new GasolineEvent());
-					else
-					{
-						//Try to add a random persistent event.
-						PersistentEvent assignedEvent = GameEventManager.mainEventManager.GetPersistentEvent();
-						if (assignedEvent != null) encounterRegionsRemaining[randomIndex].SetRegionalEvent(assignedEvent);
-					}
-					//WARNING - even if no random persistent event could be found above (because they'd all been used up), this will still
-					//remove regions from available pool
-					encounterRegionsRemaining.RemoveAt(randomIndex);
-				}
-			}
-		}
-	}
-	
-	/*
-	MapRegion CreateNewRegion(Vector2 newRegionPos, int xCoord, int yCoord)
-	{
-		MapRegion newRegion=Instantiate(mapRegionPrefab,newRegionPos,Quaternion.identity) as MapRegion;
-		newRegion.xCoord=xCoord;
-		newRegion.yCoord=yCoord;
-		newRegion.transform.SetParent(regionsGridGroup);
-		return newRegion;
-	}*/
-	/*
-	MapRegion CreateNewTownRegion(Vector2 newRegionPos)
-	{
-		MapRegion newRegion=Instantiate(mapRegionPrefab,newRegionPos,Quaternion.identity) as MapRegion;
-		newRegion.transform.SetParent(regionsGridGroup);
-		newRegion.GenerateEncounter(false);
-		return newRegion;
-	}*/
-
 	MapRegion CreateRegion(Vector2 newRegionPos)
 	{
 		MapRegion newRegion=Instantiate(mapRegionPrefab,newRegionPos,Quaternion.identity) as MapRegion;
 		newRegion.transform.SetParent(regionsGridGroup);
 		newRegion.transform.localPosition=newRegionPos;
-		newRegion.GenerateEncounter();
 		mapRegions.Add(newRegion);
 		return newRegion;
 	}
@@ -757,12 +599,6 @@ public class MapManager : MonoBehaviour
 		}
 	}*/
 
-	public void EnterEncounter(Encounter newEncounter, List<PartyMember> team, bool isAmbush)
-	{
-		EncounterCanvasHandler.main.StartNewEncounter(newEncounter,team,isAmbush);
-		scoutingHandler.EndDialog();
-		PartyStatusCanvasHandler.main.RefreshAssignmentButtons();
-	}
 	/*
 	public void AddHorde(Vector2 hiveCoords,EncounterEnemy.EnemyTypes hordeType)
 	{

@@ -6,11 +6,12 @@ public abstract class RoomCard : Card
 {
 	
 	//public Deck<RoomCard> possibleRoomCards=new Deck<RoomCard>();
-	protected List<RoomStipulationCard> possibleRoomCards = new List<RoomStipulationCard>();
+	protected List<RoomStipulationCard> possibleRoomStipulationCards = new List<RoomStipulationCard>();
 
 	const int maxEnemyCountInRoom = 4;
 	const int minEnemyCountInRoom = 3;
 	int enemyCountInRoom;
+	Encounter parentMission;
 
 	public static List<System.Type> GetAllPossibleRoomCards(Encounter.EncounterTypes encounterType)
 	{
@@ -36,15 +37,26 @@ public abstract class RoomCard : Card
 		}
 		return possibleCards;
 	}
-	public static RoomCard GetRoomCardByType(System.Type roomCardType)
+	public static RoomCard GetRoomCardByType(System.Type roomCardType, Encounter parentMission)
 	{
-		return (RoomCard)System.Activator.CreateInstance(roomCardType);
+		RoomCard newRoomCard=(RoomCard)System.Activator.CreateInstance(roomCardType);
+		newRoomCard.SetParentMission(parentMission);
+		return newRoomCard;
 	}
 
 	public RoomCard()
 	{
-		enemyCountInRoom = Random.Range(minEnemyCountInRoom, maxEnemyCountInRoom + 1);
+		enemyCountInRoom = 0;
+		if (Random.value < 0.25f)
+			enemyCountInRoom = minEnemyCountInRoom;
+		else
+			enemyCountInRoom = maxEnemyCountInRoom;
 		ExtenderConstructor();
+	}
+
+	public void SetParentMission(Encounter parentMission)
+	{
+		this.parentMission = parentMission;
 	}
 
 	protected virtual void ExtenderConstructor()
@@ -52,19 +64,39 @@ public abstract class RoomCard : Card
 
 	}
 
+	public EncounterEnemy[] GetEnemies()
+	{
+		return parentMission.GenerateEnemies(GetEnemyCount());
+	}
+
+
 	public int GetEnemyCount()
 	{
 		return enemyCountInRoom;
 	}
 
-	public RoomStipulationCard[] GetRoomStipulationCards()
+	public bool TryGetRespectiveStipulationCard(out RoomStipulationCard card)
 	{
-		return possibleRoomCards.ToArray();
+		if (possibleRoomStipulationCards.Count > 0)
+		{
+			card = possibleRoomStipulationCards[0];
+			return true;
+		}
+		else
+		{
+			card = null;
+			return false;
+		}
+	}
+
+	public RoomStipulationCard[] GetAllRoomStipulationCards()
+	{
+		return possibleRoomStipulationCards.ToArray();
 	}
 	public List<RoomStipulationCard> GetRandomRoomStipulationCards(int cardNumber)
 	{
 		List<RoomStipulationCard> resultList=new List<RoomStipulationCard>();
-		List<RoomStipulationCard> selectionBufferList=new List<RoomStipulationCard>(possibleRoomCards);
+		List<RoomStipulationCard> selectionBufferList=new List<RoomStipulationCard>(possibleRoomStipulationCards);
 		while (resultList.Count < cardNumber && selectionBufferList.Count > 0)
 		{
 			int randomCardIndex=Random.Range(0,selectionBufferList.Count);
@@ -72,7 +104,7 @@ public abstract class RoomCard : Card
 			selectionBufferList.RemoveAt(randomCardIndex);
 		}
 		
-		return possibleRoomCards;
+		return possibleRoomStipulationCards;
 	}
 }
 
@@ -134,6 +166,14 @@ public abstract class CharacterStipulationCard : StipulationCard
 	protected virtual void ExtenderSpecificDeactivation() { }
 
 	
+}
+
+public abstract class EnemyVariationCard : CharacterStipulationCard
+{
+	public void AddEnemysBasicCombatDeck(CombatCard[] basicDeckCards)
+	{
+		addedCombatCards.AddRange(basicDeckCards);
+	}
 }
 
 public abstract class RoomStipulationCard : StipulationCard
@@ -214,12 +254,12 @@ public class TripmineFriendly : RoomStipulationCard
 //SHIP ROOMS
 public class EngineRoom : RoomCard
 {
-	public EngineRoom()
+	protected override void ExtenderConstructor()
 	{
 		name = "Engine Room";
 		image = SpriteBase.mainSpriteBase.wrench;
 		description = "Radiation leaks";
-		possibleRoomCards.Add(new Radiation());
+		possibleRoomStipulationCards.Add(new Radiation());
 	}
 
 	public class Radiation : RoomStipulationCard
@@ -250,12 +290,12 @@ public class EngineRoom : RoomCard
 
 public class CoolantRoom : RoomCard
 {
-	public CoolantRoom()
+	protected override void ExtenderConstructor()
 	{
 		name = "Coolant Room";
 		image = SpriteBase.mainSpriteBase.snowflake;
 		description = "Freezing hazards";
-		possibleRoomCards.Add(new Freeze());
+		possibleRoomStipulationCards.Add(new Freeze());
 	}
 
 	public class Freeze : RoomStipulationCard
@@ -286,17 +326,17 @@ public class CoolantRoom : RoomCard
 
 public class Airlock : RoomCard
 {
-	public Airlock()
+	protected override void ExtenderConstructor()
 	{
 		name = "Airlock";
 		image = SpriteBase.mainSpriteBase.door;
 		description = "Tight Quarters";
-		possibleRoomCards.Add(new TightQuarters());
+		possibleRoomStipulationCards.Add(new TightQuarters());
 	}
 
 	public class TightQuarters : RoomStipulationCard
 	{
-		int rangedAttackDamagePenalty = 15;
+		int rangedAttackDamagePenalty = 30;
 
 		public TightQuarters()
 		{
@@ -323,13 +363,13 @@ public class Airlock : RoomCard
 
 public class LowerDecks : RoomCard
 {
-	public LowerDecks()
+	protected override void ExtenderConstructor()
 	{
 		name = "Lower Decks";
 		image = SpriteBase.mainSpriteBase.anchor;
 		description = "Filled with gas";
 
-		possibleRoomCards.Add(new VolatileGas());
+		possibleRoomStipulationCards.Add(new VolatileGas());
 	}
 
 	public class VolatileGas : RoomStipulationCard
@@ -362,7 +402,7 @@ public class LowerDecks : RoomCard
 
 public class UpperDecks : RoomCard
 {
-	public UpperDecks()
+	protected override void ExtenderConstructor()
 	{
 		name = "Upper Decks";
 		image = SpriteBase.mainSpriteBase.arrow;
@@ -373,12 +413,12 @@ public class UpperDecks : RoomCard
 //RUINS
 public class Backdoor : RoomCard
 {
-	public Backdoor()
+	protected override void ExtenderConstructor()
 	{
 		name = "Backdoor";
 		image = SpriteBase.mainSpriteBase.lockIcon;
 		description = "Usually mined";
-		possibleRoomCards.Add(new Mine());
+		possibleRoomStipulationCards.Add(new Mine());
 	}
 
 	public class Mine : RoomStipulationCard
@@ -412,29 +452,29 @@ public class Backdoor : RoomCard
 public class GuardPost : RoomCard
 {
 	int mineDamage = 30;
-	
-	public GuardPost()
+
+	protected override void ExtenderConstructor()
 	{
 		name = "Guard Post";
 		image = SpriteBase.mainSpriteBase.flag;
 		description = "Complete with booby traps";
-		possibleRoomCards.Add(new TripmineEnemy(mineDamage));
+		possibleRoomStipulationCards.Add(new TripmineEnemy(mineDamage));
 	}
 }
 
 public class Rooftop : RoomCard
 {
-	public Rooftop()
+	protected override void ExtenderConstructor()
 	{
 		name = "Rooftop";
 		image = SpriteBase.mainSpriteBase.cloud;
 		description = "Little to no cover";
-		possibleRoomCards.Add(new NoCover());
+		possibleRoomStipulationCards.Add(new NoCover());
 	}
 
 	public class NoCover : RoomStipulationCard
 	{
-		int armorPenalty = 15;
+		int armorPenalty = 30;
 
 		public NoCover()
 		{
@@ -460,12 +500,12 @@ public class Rooftop : RoomCard
 
 public class Armory : RoomCard
 {
-	public Armory()
+	protected override void ExtenderConstructor()
 	{
 		name = "Armory";
 		image = SpriteBase.mainSpriteBase.armor;
 		description = "Volatile materials";
-		possibleRoomCards.Add(new ExplosiveBarrel());
+		possibleRoomStipulationCards.Add(new ExplosiveBarrel());
 	}
 
 	public class ExplosiveBarrel : RoomStipulationCard
@@ -498,12 +538,12 @@ public class Armory : RoomCard
 
 public class StoreRoom : RoomCard
 {
-	public StoreRoom()
+	protected override void ExtenderConstructor()
 	{
 		name = "Storage Room";
 		image = SpriteBase.mainSpriteBase.sack;
 		description = "Shelves provide heavy cover";
-		possibleRoomCards.Add(new HardCover());
+		possibleRoomStipulationCards.Add(new HardCover());
 	}
 
 	public class HardCover : RoomStipulationCard
@@ -529,17 +569,17 @@ public class StoreRoom : RoomCard
 
 public class RuinedHall : RoomCard
 {
-	public RuinedHall()
+	protected override void ExtenderConstructor()
 	{
 		name = "Ruined Hall";
 		image = SpriteBase.mainSpriteBase.rock;
 		description = "Crumbled architecture provides light cover";
-		possibleRoomCards.Add(new LightCover());
+		possibleRoomStipulationCards.Add(new LightCover());
 	}
 
 	public class LightCover : RoomStipulationCard
 	{
-		int armorBonus = 15;
+		int armorBonus = 30;
 
 		public LightCover()
 		{
@@ -565,17 +605,17 @@ public class RuinedHall : RoomCard
 
 public class Courtyard : RoomCard
 {
-	public Courtyard()
+	protected override void ExtenderConstructor()
 	{
 		name = "Courtyard";
 		image = SpriteBase.mainSpriteBase.roseOfWinds;
 		description = "Open space for snipers";
-		possibleRoomCards.Add(new OpenSpace());
+		possibleRoomStipulationCards.Add(new OpenSpace());
 	}
 
 	public class OpenSpace : RoomStipulationCard
 	{
-		int meleeAttackDamagePenalty = 15;
+		int meleeAttackDamagePenalty = 30;
 
 		public OpenSpace()
 		{

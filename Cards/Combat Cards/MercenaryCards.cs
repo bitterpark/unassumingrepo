@@ -10,11 +10,12 @@ public class MercenaryCards
 
 		result.AddCards(typeof(TakeCover));
 		result.AddCards(typeof(Hipfire));
+		result.AddCards(typeof(BurstFire));
 		result.AddCards(typeof(SuicideCharge));
-		result.AddCards(typeof(Jab));
-		result.AddCards(typeof(Smash),2);
-		result.AddCards(typeof(ComeAtMe));
-		result.AddCards(typeof(ControlledBursts));
+		result.AddCards(typeof(Overconfidence));
+		result.AddCards(typeof(RunAndGun));
+		result.AddCards(typeof(LastStand));
+		result.AddCards(typeof(Gambit));
 
 		return result;
 	}
@@ -38,10 +39,10 @@ public class MercenaryCards
 			description = "Adds cards to your deck";
 			image = SpriteBase.mainSpriteBase.skull;
 
-			addedCombatCards.Add(new Overconfidence());
-			addedCombatCards.Add(new SuicideCharge());
+			//addedCombatCards.Add(new Overconfidence());
+			//addedCombatCards.Add(new SuicideCharge());
 			addedCombatCards.Add(new ComeAtMe());
-			addedCombatCards.Add(new RunAndGun());
+			//addedCombatCards.Add(new RunAndGun());
 		}
 	}
 	public class Unbreakable : PrepCard
@@ -52,9 +53,9 @@ public class MercenaryCards
 			description = "Adds cards to your deck";
 			image = SpriteBase.mainSpriteBase.armor;
 
-			addedCombatCards.Add(new TakeCover());
-			addedCombatCards.Add(new LastStand());
-			addedCombatCards.Add(new PlanB());
+			//addedCombatCards.Add(new TakeCover());
+			//addedCombatCards.Add(new LastStand());
+			//addedCombatCards.Add(new PlanB());
 			addedCombatCards.Add(new PlanB());
 		}
 	}
@@ -66,9 +67,9 @@ public class MercenaryCards
 			description = "Adds cards to your deck";
 			image = SpriteBase.mainSpriteBase.assaultRifleSprite;
 
-			addedCombatCards.Add(new BurstFire());
-			addedCombatCards.Add(new BurstFire());
-			addedCombatCards.Add(new Hipfire());
+			//addedCombatCards.Add(new BurstFire());
+			//addedCombatCards.Add(new BurstFire());
+			//addedCombatCards.Add(new Hipfire());
 			addedCombatCards.Add(new ControlledBursts());
 		}
 	}
@@ -118,18 +119,22 @@ public class ControlledBursts : EffectCard
 
 public class PlanB : EffectCard
 {
+	int bonusArmorPerStaminaPoint = 10;
+	
 	protected override void ExtenderConstructor()
 	{
 		targetType = TargetType.None;
-		userArmorGain = 50;
+		userArmorGain = 30;
 
 		name = "Plan B";
-		description = "Gain "+userArmorGain+" armor, lose all stamina";
+		description = "Gain " + userArmorGain + " armor, lose all stamina, gain " + bonusArmorPerStaminaPoint+" armor for every point of stamina";
 		image = SpriteBase.mainSpriteBase.lateralArrows;
 	}
 	protected override void CardPlayEffects()
 	{
 		base.CardPlayEffects();
+		int bonusArmorGain = bonusArmorPerStaminaPoint * userCharGraphic.GetStamina();
+		userCharGraphic.IncrementArmor(bonusArmorGain);
 		userCharGraphic.IncrementStamina(-userCharGraphic.GetStamina());
 	}
 }
@@ -140,7 +145,7 @@ public class Gambit : EffectCard
 	{
 		targetType = TargetType.None;
 		staminaCost = 1;
-		userArmorGain = 35;
+		userArmorGain = 70;
 		removeHealthCost = 10;
 		
 		name = "Gambit";

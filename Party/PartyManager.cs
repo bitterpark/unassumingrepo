@@ -308,10 +308,6 @@ public class PartyManager : MonoBehaviour
 					ENewWeekStart();
 				
 		}
-		else
-		{
-			GameEventManager.mainEventManager.DoEvent(new GameWinEvent(),partyMembers[0].currentRegion,partyMembers);
-		}
 		//PartyStatusCanvasHandler.main.StartTimeFlash();
 	}
 	
@@ -391,97 +387,6 @@ public class PartyManager : MonoBehaviour
 			MapManager.main.memberTokens[selectedMember].Select();
 		}
 	}
-	//Makes sure members can't move too far away, and takes care of move penalties
-	public bool ConfirmMapMovement(MapRegion moveRegion, out List<PartyMember> movedList)
-	{
-		bool moveSuccesful=false;
-		//cancel if not enough stamina to move
-		/*
-		foreach (PartyMember member in partyMembers) 
-		{
-			if (member.stamina<1) {return moveSuccesful;}
-		}*/
-		movedList=new List<PartyMember>();
-		//float moveLength=1f;//(new Vector2(x,y)-selectedMembers[0].worldCoords).magnitude;//Mathf.Abs(x-mapCoordX)+Mathf.Abs(y-mapCoordY);//Mathf.Max (Mathf.Abs(x-mapCoordX),Mathf.Abs(y-mapCoordY));
-		if (selectedMembers[0].currentRegion!=moveRegion 
-		&& selectedMembers[0].currentRegion.connections.ContainsKey(moveRegion))
-		{
-			moveSuccesful=true;
-			//If moving between towns, confirm to prime for the event, else - reduce fatigue
-			if (selectedMembers[0].currentRegion.connections[moveRegion].isIntercity)
-			{
-				{
-					moveSuccesful=true;
-					//PartyManager.mainPartyManager.gas-=selectedMembers[0].currentRegion.connections[moveRegion].moveCost;
-					foreach (PartyMember member in selectedMembers)
-					{
-						movedList.Add(member);
-					}
-				}
-			}
-			else
-			{
-				//IF MOVING BETWEEN TOWN NODES
-				foreach (PartyMember member in selectedMembers)
-				{
-					if	(member.CheckEnoughFatigue(member.currentRegion.connections[moveRegion].moveCost)) movedList.Add(member);//!MapManager.main.memberTokens[member].moved) movedList.Add(member);
-				}
-				
-				if (movedList.Count>0)
-				{
-					moveSuccesful=true;
-					//Deselect all non-moved members
-					List<PartyMember> cachedSelectedMembers=new List<PartyMember>(selectedMembers);
-					foreach (PartyMember member in cachedSelectedMembers)
-					{
-						if (!movedList.Contains(member)) MapManager.main.memberTokens[member].Deselect();
-					}
-					//Apply fatigue to all moved members
-					foreach (PartyMember member in movedList) 
-					{
-						member.ChangeFatigue(member.currentRegion.connections[moveRegion].moveCost+member.currentFatigueMoveModifier);
-						MapManager.main.memberTokens[member].moved=true;
-					}
-				} 
-				else moveSuccesful=false;
-			}
-		}
-		return moveSuccesful;
-	}
-	
-	public void AddPartyMemberStatusEffect(PartyMember member, MemberStatusEffect effect)//(int memberIndex, StatusEffect effect)
-	{
-		if (partyMembers.Contains(member))
-		{
-			//member.activeStatusEffects.Add(effect);
-			if (member.TryAddOrStackStatusEffect(effect)) 
-			{
-				partyMemberCanvases[member].AddStatusEffectToken(effect);
-				//If an encounter is happening, add effect tokens to encounter member tokens too
-				if (EncounterCanvasHandler.main.encounterOngoing)
-				{
-					MemberTokenHandler memberToken;
-					if (EncounterCanvasHandler.main.memberTokens.TryGetValue(member,out memberToken)) memberToken.AddNewStatusEffectToken(effect);
-				}
-			}
-		}
-	}
-	
-	public void RemovePartyMemberStatusEffect(PartyMember member, MemberStatusEffect effect)//(int memberIndex, StatusEffect effect)
-	{
-		if (partyMembers.Contains(member))
-		{
-			member.activeStatusEffects.Remove(effect);
-			partyMemberCanvases[member].RemoveStatusEffectToken(effect);
-			//If an encounter is happening, remove effect tokens from encounter member tokens too
-			if (EncounterCanvasHandler.main.encounterOngoing)
-			{
-				MemberTokenHandler memberToken;
-				if (EncounterCanvasHandler.main.memberTokens.TryGetValue(member,out memberToken)) memberToken.RemoveOldstatusEffectToken(effect);
-			}
-		}
-		effect.CleanupEffect();
-	}
 	
 	public void GameOverCleanup()
 	{
@@ -503,15 +408,6 @@ public class PartyManager : MonoBehaviour
 
 	void Update()
 	{
-		if (Input.GetKeyDown(KeyCode.K)) 
-		{
-			partyMembers[0].TakeDamage(25,false,PartyMember.BodyPartTypes.Hands);
-			partyMembers[0].TakeDamage(25, false, PartyMember.BodyPartTypes.Legs);
-			partyMembers[0].TakeDamage(49, false, PartyMember.BodyPartTypes.Vitals);
-			partyMembers[1].TakeDamage(25, false, PartyMember.BodyPartTypes.Hands);
-			partyMembers[1].TakeDamage(25, false, PartyMember.BodyPartTypes.Legs);
-			partyMembers[1].TakeDamage(49, false, PartyMember.BodyPartTypes.Vitals);
-		}
 		if (Input.GetKeyDown(KeyCode.Space)) AdvanceMapTurn();
 	}
 }

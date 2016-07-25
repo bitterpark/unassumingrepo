@@ -38,7 +38,8 @@ public class InventoryScreenHandler : MonoBehaviour
 	public MeleeSlot meleeSlotPrefab;
 	public RangedSlot rangedSlotPrefab;
 	public SlotItem slotItemPrefab;
-	public CombatCardGraphic cardPrefab;
+	public CombatCardGraphic combatCardPrefab;
+	public PrepCardGraphic prepCardPrefab;
 	
 	
 	//GROUPS
@@ -50,7 +51,9 @@ public class InventoryScreenHandler : MonoBehaviour
 	public Transform memberInventoryGroup;
 	public Transform traitGroup;
 	public Transform skillGroup;
-	public Transform deckGroup;
+	public Transform prepCardsGroup;
+	public Transform combatDeckGroup;
+
 	
 	/*
 	public void InventoryChangeHandler() 
@@ -63,7 +66,6 @@ public class InventoryScreenHandler : MonoBehaviour
 		if (selectedMember!=newMember)
 		{
 			//Determine whether or not inventory screen is allowed to be opened at this time
-			EncounterCanvasHandler encounterManager=EncounterCanvasHandler.main;
 			if (!GameEventManager.mainEventManager.drawingEvent)
 			{
 				OpenScreen(newMember);
@@ -190,6 +192,7 @@ public class InventoryScreenHandler : MonoBehaviour
 			}
 			RefreshTraits();
 			RefreshMercDeck();
+			RefreshMercPrepCards();
 		}
 	}
 
@@ -303,12 +306,8 @@ public class InventoryScreenHandler : MonoBehaviour
 		int slotCount = 40;
 		List<InventoryItem> activeList;
 		//select the right list for in-encounter and out-of-encounter
-		if (EncounterCanvasHandler.main.encounterOngoing)
-		{
-			EncounterCanvasHandler encounterManager = EncounterCanvasHandler.main;
-			activeList = encounterManager.currentEncounter.encounterMap[encounterManager.memberCoords[selectedMember]].floorItems;
-		}
-		else { activeList = selectedMember.currentRegion.GetStashedItems(); }//PartyManager.mainPartyManager.GetPartyInventory();}
+
+		activeList = selectedMember.currentRegion.GetStashedItems();
 		//Use floor or inventory list
 		for (int i = 0; i < slotCount; i++)
 		{
@@ -349,6 +348,29 @@ public class InventoryScreenHandler : MonoBehaviour
 		}
 	}
 
+	void RefreshMercPrepCards()
+	{
+		ClearMercPrepCards();
+		DisplayMercPrepCards();
+	}
+	void DisplayMercPrepCards()
+	{
+		foreach (PrepCard card in selectedMember.GetClassPrepCards())
+		{
+			PrepCardGraphic newGraphic = Instantiate(prepCardPrefab);
+			newGraphic.AssignCard(card);
+			newGraphic.SetInteractable(false);
+			newGraphic.transform.SetParent(prepCardsGroup, false);
+		}
+	}
+	void ClearMercPrepCards()
+	{
+		foreach (PrepCardGraphic graphic in prepCardsGroup.GetComponentsInChildren<PrepCardGraphic>())
+		{
+			GameObject.Destroy(graphic.gameObject);
+		}
+	}
+
 	void RefreshMercDeck()
 	{
 		ClearMercDeck();
@@ -358,14 +380,15 @@ public class InventoryScreenHandler : MonoBehaviour
 	{
 		foreach (CombatCard card in selectedMember.GetAllUsedCards())
 		{
-			CombatCardGraphic newGraphic = Instantiate(cardPrefab);
+			CombatCardGraphic newGraphic = Instantiate(combatCardPrefab);
 			newGraphic.AssignCard(card);
-			newGraphic.transform.SetParent(deckGroup,false);
+			newGraphic.SetInteractable(false);
+			newGraphic.transform.SetParent(combatDeckGroup,false);
 		}
 	}
 	void ClearMercDeck()
 	{
-		foreach (CombatCardGraphic graphic in deckGroup.GetComponentsInChildren<CombatCardGraphic>())
+		foreach (CombatCardGraphic graphic in combatDeckGroup.GetComponentsInChildren<CombatCardGraphic>())
 		{
 			GameObject.Destroy(graphic.gameObject);
 		}

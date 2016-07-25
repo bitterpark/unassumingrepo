@@ -208,37 +208,6 @@ public class MapRegion : MonoBehaviour
 	}
 	
 	public enum ThreatLevels {None,Low,Medium,High};
-	//public ThreatLevels threatLevel=ThreatLevels.Low;
-	public ThreatLevels CalculateThreatLevel(List<PartyMember> movingMembers)
-	{
-		return CalculateThreatLevel(movingMembers.Count);
-	}
-	public ThreatLevels CalculateThreatLevel(int memberCount)
-	{
-		ThreatLevels estimatedThreat=ThreatLevels.None;
-		if (hasEncounter)
-		{
-				//int requiredMemberDifference=Mathf.Abs(regionalEncounter.maxAllowedMembers-movingMembers.Count);
-			int memberCountThreat=Mathf.Abs(regionalEncounter.maxRequiredMembers-memberCount);
-
-			if (memberCountThreat+ambientThreatNumber>0) estimatedThreat=ThreatLevels.Low;
-			if (memberCountThreat+ambientThreatNumber>1) estimatedThreat=ThreatLevels.Medium;
-			if (memberCountThreat+ambientThreatNumber>2) estimatedThreat=ThreatLevels.High;
-		}
-		return estimatedThreat;
-	}
-	//SET THREAT LEVEL, REFRESH SCOUTING HANDLER AND CHANGE MAP THREAT ICON
-	public int ambientThreatNumber
-	{
-		get {return _ambientThreatNumber;}
-		set 
-		{
-			_ambientThreatNumber=value;
-			SetThreatTokenState(_ambientThreatNumber);
-			MapScoutingHandler.main.TryRefreshEncounterDialog();
-		}
-	}
-	int _ambientThreatNumber=0;
 
 	public bool hasEncounter=false;
 	
@@ -289,19 +258,8 @@ public class MapRegion : MonoBehaviour
 	}
 	public bool _hasEncounter=false;*/
 	public Encounter regionalEncounter;
-	public PersistentEvent regionalEvent=null;
 
 	public bool hasEvent=false;
-	public void SetRegionalEvent(PersistentEvent newEvent)
-	{
-		regionalEvent=newEvent;
-		if (regionalEncounter!=null)
-		{
-			regionalEncounter=null;
-			hasEncounter=false;
-			hasEvent=true;
-		}
-	}
 
 	/*
 	bool hasHorde=false;
@@ -371,29 +329,11 @@ public class MapRegion : MonoBehaviour
 	{
 		hasEncounter = true;
 
-		float threatRoll = Random.value;
-		if (threatRoll < 0.75f) ambientThreatNumber = 1;
-		if (threatRoll < 0.5f) ambientThreatNumber = 2;
-		if (threatRoll < 0.25f) ambientThreatNumber = 3;
-
 		//teamSizeText.text = regionalEncounter.minRequiredMembers + "-" + regionalEncounter.maxRequiredMembers;
 		encounterInRegion = newEncounter;
 
 		//remove this later
 		regionalEncounter = new Encounter();
-	}
-	//Currently unused
-	public void GenerateEncounter()
-	{
-		hasEncounter=true;
-		regionalEncounter=new Encounter();
-			
-		float threatRoll=Random.value;
-		if (threatRoll<0.75f) ambientThreatNumber=1;
-		if (threatRoll<0.5f) ambientThreatNumber=2;
-		if (threatRoll<0.25f) ambientThreatNumber=3;
-
-		teamSizeText.text=regionalEncounter.minRequiredMembers+"-"+regionalEncounter.maxRequiredMembers;
 	}
 	
 	public void SetUpCamp(int manhoursInvested)
@@ -558,39 +498,6 @@ public class MapRegion : MonoBehaviour
 	}
 
 	//ICON TOOLTIPS
-	public void ShowThreatTooltip()
-	{
-		string tooltipText="Exploration threat:"+CalculateThreatLevel(regionalEncounter.maxRequiredMembers);
-		TooltipManager.main.CreateTooltip(tooltipText,threatToken.transform);
-	}
-
-	public void ShowCampTooltip()
-	{
-		string tooltipText="Camp security:";
-		tooltipText+=GetCampSecurityDescription();
-		tooltipText+="\n";
-		tooltipText+="Temperature:"+GetTemperatureDescription(localTemperature)+"\n\n";
-		if (!hasCamp) 
-		{
-			tooltipText+="This area has no secure hideouts";
-			tooltipText+="\nResting here is dangerous and restores less fatigue";
-		}
-		else
-		{
-			tooltipText+="You have secured a hideout in this area.\n";
-			tooltipText+="You can forify, burn fuel and craft items here.\n";
-			tooltipText+="Resting here restores more fatigue";
-		}
-		TooltipManager.main.CreateTooltip(tooltipText,campToken.transform);
-	}
-
-	public void ShowCarTooltip()
-	{
-		string tooltipText="Your car is parked here";
-		tooltipText+="\nThe car allows you to travel to other towns using gas";
-		tooltipText+="\nWhen you travel, all items in this area will be moved with you";
-		TooltipManager.main.CreateTooltip(tooltipText,carToken.transform);
-	}
 
 	public void StopTooltips()
 	{

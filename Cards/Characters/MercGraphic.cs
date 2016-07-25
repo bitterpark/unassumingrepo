@@ -34,7 +34,9 @@ public class MercGraphic : CharacterGraphic
 	{
 		int size = CardsScreen.startingHandSize;
 		currentCharacterDeck = new CombatDeck();
-		currentCharacterDeck.AddCards(assignedMerc.GetCombatDeck().DrawCards(size).ToArray());
+		CombatCard[] startingDeckCards = assignedMerc.GetCombatDeck().DrawCards(size).ToArray();
+		currentCharacterDeck.AddCards(startingDeckCards);
+		assignedMerc.GetCombatDeck().DiscardCards(startingDeckCards);
 	}
 
 	public override void StartedTurn()

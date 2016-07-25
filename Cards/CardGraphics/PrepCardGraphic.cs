@@ -14,6 +14,11 @@ public class PrepCardGraphic : CardGraphic {
 		GetComponent<Button>().onClick.AddListener(CardClicked);
 	}
 
+	public void SetInteractable(bool interactable)
+	{
+		GetComponent<Button>().interactable = interactable;
+	}
+
 	public void PlayAssignedCard(CharacterGraphic playToCharacter)
 	{
 		assignedCard.PlayCard(playToCharacter);

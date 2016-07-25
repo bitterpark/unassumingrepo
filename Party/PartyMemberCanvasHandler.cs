@@ -17,24 +17,8 @@ public class PartyMemberCanvasHandler : MonoBehaviour {
 	public Text contractTimeText;
 	public Button memberInventoryOpenButton;
 	public Button assignmentButton;
-	Dictionary<MemberStatusEffect,StatusEffectImageHandler> statusEffectTokens=new Dictionary<MemberStatusEffect, StatusEffectImageHandler>();
-	public StatusEffectImageHandler tokenPrefab;
 	
 	public void AssignPartyMember(PartyMember assigned) {assignedMember=assigned;}
-	
-	public void AddStatusEffectToken(MemberStatusEffect effect)
-	{
-		StatusEffectImageHandler newStatusToken=Instantiate(tokenPrefab) as StatusEffectImageHandler;
-		newStatusToken.transform.SetParent(transform.FindChild("Status Tokens Group"),false);
-		newStatusToken.AssignStatusEffect(effect);
-		statusEffectTokens.Add(effect,newStatusToken);
-	}
-	public void RemoveStatusEffectToken(MemberStatusEffect effect)
-	{
-		StatusEffectImageHandler removedToken=statusEffectTokens[effect];
-		statusEffectTokens.Remove(effect);
-		GameObject.Destroy(removedToken.gameObject);
-	}
 	
 	
 	public void DisableTooltip()

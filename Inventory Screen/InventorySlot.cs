@@ -21,21 +21,7 @@ public class InventorySlot : MonoBehaviour, IDropHandler
 	protected virtual void RegisterNewItem(SlotItem newSlotItem)
 	{
 		AssignItem(newSlotItem);
-		//this makes common inventory slots act as both common party inventory outside encounters and encounter floor within
-		if (EncounterCanvasHandler.main.encounterOngoing)
-		{
-			/*
-			EncounterCanvasHandler encounterManager=EncounterCanvasHandler.main;
-			EncounterRoom affectedRoom=EncounterCanvasHandler.main.currentEncounter
-				.encounterMap[EncounterCanvasHandler.main.memberCoords[InventoryScreenHandler.mainISHandler.selectedMember]];
-			affectedRoom.AddFloorItem(newSlotItem.assignedItem);
-			*/
-			RoomButtonHandler affectedRoom=EncounterCanvasHandler.main
-			.roomButtons[EncounterCanvasHandler.main.memberCoords[InventoryScreenHandler.mainISHandler.selectedMember]];
-			affectedRoom.DropItemOnFloor(newSlotItem.assignedItem);
-		}
-		else {InventoryScreenHandler.mainISHandler.selectedMember.currentRegion.StashItem(newSlotItem.assignedItem);}
-		//PartyManager.mainPartyManager.GainItems(newSlotItem.assignedItem);}
+		InventoryScreenHandler.mainISHandler.selectedMember.currentRegion.StashItem(newSlotItem.assignedItem);
 	}
 	
 	//see if the new item can currently be filled into this slot, if yes - return true

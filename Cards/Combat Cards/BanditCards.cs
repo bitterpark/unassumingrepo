@@ -10,10 +10,11 @@ public class BanditCards
 
 		result.AddCards(typeof(SuckerPunch));
 		result.AddCards(typeof(Roundhouse));
-		result.AddCards(typeof(Jab),2);
-		result.AddCards(typeof(Sidearm));
-		result.AddCards(typeof(Throw),2);
-		result.AddCards(typeof(NoRest));
+		result.AddCards(typeof(Kick));
+		result.AddCards(typeof(LightsOut));
+		result.AddCards(typeof(Throw));
+		result.AddCards(typeof(Execution));
+		result.AddCards(typeof(SprayNPray));
 
 		return result;
 	}
@@ -38,9 +39,9 @@ public class BanditCards
 			image = SpriteBase.mainSpriteBase.brokenArmsSprite;
 
 			addedCombatCards.Add(new GangUp());
-			addedCombatCards.Add(new GangUp());
-			addedCombatCards.Add(new SuckerPunch());
-			addedCombatCards.Add(new LightsOut());
+			//addedCombatCards.Add(new GangUp());
+			//addedCombatCards.Add(new SuckerPunch());
+			//addedCombatCards.Add(new LightsOut());
 		}
 	}
 
@@ -52,9 +53,9 @@ public class BanditCards
 			description = "Adds cards to your deck";
 			image = SpriteBase.mainSpriteBase.brokenArmsSprite;
 
-			addedCombatCards.Add(new Kick());
-			addedCombatCards.Add(new Roundhouse());
-			addedCombatCards.Add(new LightsOut());
+			//addedCombatCards.Add(new Kick());
+			//addedCombatCards.Add(new Roundhouse());
+			//addedCombatCards.Add(new LightsOut());
 			addedCombatCards.Add(new NoRest());
 		}
 	}
@@ -67,9 +68,9 @@ public class BanditCards
 			description = "Adds cards to your deck";
 			image = SpriteBase.mainSpriteBase.crosshair;
 
-			addedCombatCards.Add(new Sidearm());
-			addedCombatCards.Add(new SprayNPray());
-			addedCombatCards.Add(new Execution());
+			//addedCombatCards.Add(new Sidearm());
+			//addedCombatCards.Add(new SprayNPray());
+			//addedCombatCards.Add(new Execution());
 			addedCombatCards.Add(new Execution());
 		}
 	}
@@ -77,6 +78,15 @@ public class BanditCards
 
 public class NoRest : EffectCard
 {
+
+	protected override bool ExtenderPrerequisitesMet(CharacterGraphic user)
+	{
+		if (user.GetStamina() <= 1)
+			return true;
+		else
+			return false;
+	}
+	
 	protected override void ExtenderConstructor()
 	{
 		name = "No Rest";
@@ -233,7 +243,7 @@ public class GangUp : MeleeCard
 
 		void TriggerEffect(CharacterGraphic meleeCardPlayer, MeleeCard playedCard)
 		{
-			if (meleeCardPlayer.GetType() == typeof(MercGraphic))
+			if (playedCard.targetChars.Contains(appliedToCharacter))
 				appliedToCharacter.TakeDamage(damagePerMeleeAttack);
 		}
 
@@ -253,7 +263,7 @@ public class SprayNPray : RangedCard
 		image = SpriteBase.mainSpriteBase.bullets;
 		targetType = TargetType.Random;
 
-		staminaCost = 2;
+		ammoCost = 1;
 		damage = 40;
 	}
 }

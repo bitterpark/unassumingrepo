@@ -301,8 +301,7 @@ public class Shotgun:RangedWeapon
 
 	public class Spread : MeleeCard
 	{
-		public Spread()
-			: base()
+		protected override void ExtenderConstructor()
 		{
 			name = "Spread";
 			description = "Targets all enemies";
@@ -316,8 +315,7 @@ public class Shotgun:RangedWeapon
 
 	public class PointBlank : MeleeCard
 	{
-		public PointBlank()
-			: base()
+		protected override void ExtenderConstructor()
 		{
 			name = "Point Blank";
 			description = "";
@@ -331,8 +329,7 @@ public class Shotgun:RangedWeapon
 
 	public class Buckshot : RangedCard
 	{
-		public Buckshot()
-		: base()
+		protected override void ExtenderConstructor()
 		{
 			damage = 20;
 			unarmoredBonusDamage = 40;
@@ -394,8 +391,7 @@ public class AssaultRifle:RangedWeapon
 
 	public class FullMetalJacket : RangedCard
 	{
-		public FullMetalJacket()
-		: base()
+		protected override void ExtenderConstructor()
 		{
 			name = "FMJ";
 			description = "Ignores armor";
@@ -404,14 +400,8 @@ public class AssaultRifle:RangedWeapon
 			damage = 50;
 			ammoCost = 2;
 			staminaCost = 1;
+			ignoresArmor = true;
 			targetType = TargetType.SelectEnemy;
-		}
-
-		protected override void CardPlayEffects()
-		{
-			userCharGraphic.IncrementAmmo(-ammoCost);
-
-			targetChars[0].TakeDamage(damage,true);
 		}
 	}
 
@@ -520,8 +510,7 @@ public class Pipe:MeleeWeapon
 
 	public class Crush : MeleeCard
 	{
-		public Crush()
-		: base()
+		protected override void ExtenderConstructor()
 		{
 			damage = 20;
 			unarmoredBonusDamage = 20;
@@ -537,8 +526,7 @@ public class Pipe:MeleeWeapon
 	public class Bump : MeleeCard
 	{
 
-		public Bump()
-			: base()
+		protected override void ExtenderConstructor()
 		{
 			name = "Bump";
 			image = SpriteBase.mainSpriteBase.pipe;
@@ -588,8 +576,7 @@ public class Knife:MeleeWeapon
 
 	public class Stab : MeleeCard
 	{
-		public Stab()
-			: base()
+		protected override void ExtenderConstructor()
 		{
 			damage = 20;
 			staminaCost = 3;
@@ -641,8 +628,7 @@ public class Axe:MeleeWeapon
 
 	public class Cleave : MeleeCard
 	{
-		public Cleave()
-			: base()
+		protected override void ExtenderConstructor()
 		{
 			name = "Cleave";
 			description = "Targets all enemies";
@@ -652,18 +638,11 @@ public class Axe:MeleeWeapon
 			staminaCost = 6;
 			targetType = TargetType.AllEnemies;
 		}
-
-		protected override void CardPlayEffects()
-		{
-			userCharGraphic.IncrementStamina(-staminaCost);
-			targetChars[0].TakeDamage(damage, true);
-		}
 	}
 
 	public class Chop : MeleeCard
 	{
-		public Chop()
-			: base()
+		protected override void ExtenderConstructor()
 		{
 			name = "Chop";
 			description = "";

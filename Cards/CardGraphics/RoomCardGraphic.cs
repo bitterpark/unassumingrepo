@@ -20,9 +20,22 @@ public class RoomCardGraphic :CardGraphic
 		return assignedCard.GetEnemyCount();
 	}
 
-	void CardClicked()
+	public void ShowRoomTooltip()
 	{
-		CardsScreen.main.PlayRoomCard(this);
+		RoomStipulationCard spawnedRoomStipulationCard;//
+		if (assignedCard.TryGetRespectiveStipulationCard(out spawnedRoomStipulationCard))
+			TooltipManager.main.CreateTooltip("", transform, spawnedRoomStipulationCard);
+	}
+
+	public void StopShowingRoomTooltip()
+	{
+		TooltipManager.main.StopAllTooltips();
+	}
+
+	public void CardClicked()
+	{
+		if (GetComponent<Button>().IsInteractable())
+			CardsScreen.main.PlayRoomCard(this);
 	}
 
 }

@@ -10,10 +10,12 @@ public class SoldierCards
 
 		result.AddCards(typeof(Grenade));
 		result.AddCards(typeof(Diversion));
-		result.AddCards(typeof(Smash),2);
-		result.AddCards(typeof(Jab),2);
 		result.AddCards(typeof(Throw));
 		result.AddCards(typeof(Sacrifice));
+		result.AddCards(typeof(Defillade));
+		result.AddCards(typeof(Smokescreen));
+		result.AddCards(typeof(PickOff));
+		result.AddCards(typeof(Camaraderie));
 
 		return result;
 	}
@@ -37,9 +39,9 @@ public class SoldierCards
 			description = "Adds cards to your deck";
 			image = SpriteBase.mainSpriteBase.cover;
 
-			addedCombatCards.Add(new Sacrifice());
-			addedCombatCards.Add(new Smokescreen());
-			addedCombatCards.Add(new AllForOne());
+			//addedCombatCards.Add(new Sacrifice());
+			//addedCombatCards.Add(new Smokescreen());
+			//addedCombatCards.Add(new AllForOne());
 			addedCombatCards.Add(new AllForOne());
 		}
 	}
@@ -51,10 +53,10 @@ public class SoldierCards
 			description = "Adds cards to your deck";
 			image = SpriteBase.mainSpriteBase.medal;
 
+			//addedCombatCards.Add(new MarkTarget());
 			addedCombatCards.Add(new MarkTarget());
-			addedCombatCards.Add(new MarkTarget());
-			addedCombatCards.Add(new PickOff());
-			addedCombatCards.Add(new Camaraderie());
+			//addedCombatCards.Add(new PickOff());
+			//addedCombatCards.Add(new Camaraderie());
 		}
 	}
 	public class Survivor : PrepCard
@@ -63,11 +65,11 @@ public class SoldierCards
 		{
 			name = "Survivor";
 			description = "Adds cards to your deck";
-			image = SpriteBase.mainSpriteBase.medal;
+			image = SpriteBase.mainSpriteBase.skull;
 
-			addedCombatCards.Add(new Defillade());
-			addedCombatCards.Add(new Defillade());
-			addedCombatCards.Add(new Smokescreen());
+			//addedCombatCards.Add(new Defillade());
+			//addedCombatCards.Add(new Defillade());
+			//addedCombatCards.Add(new Smokescreen());
 			addedCombatCards.Add(new Discretion());
 		}
 
@@ -80,27 +82,12 @@ public class Discretion : EffectCard
 	{
 		targetType = TargetType.None;
 		staminaCost = 4;
-		userArmorGain = 75;
+		userArmorGain = 80;
 
 		name = "Discretion";
 		description = "Better part of valor (gain " + userArmorGain + " armor)";
 		image = SpriteBase.mainSpriteBase.cover;
 
-	}
-}
-
-public class Smokescreen : EffectCard
-{
-	protected override void ExtenderConstructor()
-	{
-		targetType = TargetType.AllFriendlies;
-		ammoCost = 2;
-		targetArmorGain = 30;
-		
-		name = "Smokescreen";
-		description = "The user and all friendly characters gain " + targetArmorGain + " armor";
-		image = SpriteBase.mainSpriteBase.cover;
-		
 	}
 }
 
@@ -212,7 +199,7 @@ public class Camaraderie : EffectCard
 {
 	protected override void ExtenderConstructor()
 	{
-		targetType = TargetType.SelectFriendly;
+		targetType = TargetType.SelectFriendlyOther;
 		staminaCost = 3;
 		targetStaminaGain = 3;
 		
@@ -226,7 +213,7 @@ public class Sacrifice : EffectCard
 {
 	protected override void ExtenderConstructor()
 	{
-		targetType = TargetType.SelectFriendly;
+		targetType = TargetType.SelectFriendlyOther;
 		staminaCost = 1;
 		takeDamageCost = 10;
 		targetArmorGain = 30;
@@ -273,43 +260,11 @@ public class MarkTarget : RangedCard
 		targetType = TargetType.Strongest;
 		ammoCost = 1;
 		damage = 20;
-		addedStipulationCard = new FocusFire();
+		addedStipulationCard = new CrossFire(false);
 		
 		name = "Mark Target";
-		description = "Play Focus Fire to the strongest enemy";
+		description = "Play Crossfire to the strongest enemy";
 		image = SpriteBase.mainSpriteBase.crosshair;	
-	}
-
-	public class FocusFire : CharacterStipulationCard
-	{
-		int damagePerRangedAttack = 20;
-
-		public FocusFire()
-		{
-			SetLastsForRounds(1);
-
-			name = "Focus Fire";
-			image = SpriteBase.mainSpriteBase.brokenArmsSprite;
-			description = "For one round: character takes " + damagePerRangedAttack + " extra damage from every ranged attack ";
-		}
-
-		protected override void ExtenderSpecificActivation()
-		{
-			ERangedCardPlayed += TriggerEffect;
-
-		}
-
-		void TriggerEffect(CharacterGraphic rangedCardPlayer, RangedCard playedCard)
-		{
-			if (rangedCardPlayer.GetType() == typeof(MercGraphic)
-				&& playedCard.targetChars[0]==appliedToCharacter)
-				appliedToCharacter.TakeDamage(damagePerRangedAttack);
-		}
-
-		protected override void ExtenderSpecificDeactivation()
-		{
-			ERangedCardPlayed -= TriggerEffect;
-		}
 	}
 }
 

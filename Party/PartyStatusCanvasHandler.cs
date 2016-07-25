@@ -159,7 +159,6 @@ public class PartyStatusCanvasHandler : MonoBehaviour {
 	
 	void Start() {main=this;}
 	
-	// Update is called once per frame
 	void Update () 
 	{
 		if (displayEnabled)
@@ -168,7 +167,7 @@ public class PartyStatusCanvasHandler : MonoBehaviour {
 			{
 				if (GameManager.main.gameStarted)
 				{
-					if (EncounterCanvasHandler.main.encounterOngoing || GameEventManager.mainEventManager.drawingEvent)
+					if (GameEventManager.mainEventManager.drawingEvent)
 					{
 						ResetTimeTurnButton(false);
 					}
@@ -178,7 +177,7 @@ public class PartyStatusCanvasHandler : MonoBehaviour {
 			{
 				if (GameManager.main.gameStarted)
 				{
-					if (!EncounterCanvasHandler.main.encounterOngoing && !GameEventManager.mainEventManager.drawingEvent)
+					if (!GameEventManager.mainEventManager.drawingEvent)
 					{
 						ResetTimeTurnButton(true);
 					}

@@ -134,3 +134,57 @@ public class SetupDefence : EffectCard
 		}
 	}
 }
+
+public class CrossFire : CharacterStipulationCard
+{
+	int damagePerRangedAttack = 20;
+	System.Type appropriateAttackerType;
+
+	public CrossFire(bool playedByEnemies)
+	{
+		if (playedByEnemies)
+			appropriateAttackerType = typeof(EnemyGraphic);
+		else
+			appropriateAttackerType = typeof(MercGraphic);
+
+		SetLastsForRounds(1);
+
+		name = "Crossfire";
+		image = SpriteBase.mainSpriteBase.brokenArmsSprite;
+		description = "For one round: character takes " + damagePerRangedAttack + " extra damage from every ranged attack ";
+	}
+
+	protected override void ExtenderSpecificActivation()
+	{
+		RangedCard.ERangedCardPlayed += TriggerEffect;
+	}
+
+	void TriggerEffect(CharacterGraphic rangedCardPlayer, RangedCard playedCard)
+	{
+
+
+		if (rangedCardPlayer.GetType() == appropriateAttackerType
+			&& playedCard.targetChars[0] == appliedToCharacter)
+			appliedToCharacter.TakeDamage(damagePerRangedAttack);
+	}
+
+	protected override void ExtenderSpecificDeactivation()
+	{
+		RangedCard.ERangedCardPlayed -= TriggerEffect;
+	}
+}
+
+public class Smokescreen : EffectCard
+{
+	protected override void ExtenderConstructor()
+	{
+		targetType = TargetType.AllFriendlies;
+		ammoCost = 2;
+		targetArmorGain = 30;
+
+		name = "Smokescreen";
+		description = "The user and all friendly characters gain " + targetArmorGain + " armor";
+		image = SpriteBase.mainSpriteBase.cover;
+
+	}
+}

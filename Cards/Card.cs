@@ -207,7 +207,6 @@ public class DefaultMeleePrepCard : PrepCard {
 		addedCombatCards.Add(new Jab());
 		addedCombatCards.Add(new Jab());
 		addedCombatCards.Add(new Smash());
-		addedCombatCards.Add(new Smash());
 
 	}
 }
@@ -220,8 +219,7 @@ public class DefaultRangedPrepCard : PrepCard
 		description = "Add ranged cards to your deck";
 		image = SpriteBase.mainSpriteBase.pipegunSprite;
 
-		addedCombatCards.Add(new Pistolwhip());
-		addedCombatCards.Add(new Sidearm());
+		addedCombatCards.Add(new Hipfire());
 		addedCombatCards.Add(new Sidearm());
 		addedCombatCards.Add(new Sidearm());
 	}
@@ -257,7 +255,7 @@ public abstract class CombatCard: Card
 
 	public StipulationCard addedStipulationCard = null;
 
-	public enum TargetType { None, SelectEnemy, SelectFriendly,Weakest,Strongest,Random,AllEnemies,AllFriendlies};
+	public enum TargetType { None, SelectEnemy, SelectFriendly,SelectFriendlyOther,Weakest,Strongest,Random,AllEnemies,AllFriendlies};
 	public TargetType targetType=TargetType.None;
 
 	public enum CardType {Melee_Attack,Ranged_Attack,Effect};
@@ -268,6 +266,28 @@ public abstract class CombatCard: Card
 	public CharacterGraphic userCharGraphic;
 
 	public Deck<CombatCard> originDeck;
+
+	public bool SpecialPrerequisitesMet(CharacterGraphic user)
+	{
+		bool prerequisitesMet = true;
+
+		if (targetType == TargetType.SelectFriendlyOther)
+		{
+			if (user.GetType() == typeof(EnemyGraphic))
+				prerequisitesMet = CardsScreen.main.GetCurrentEnemyCount() > 1;
+			if (user.GetType() == typeof(MercGraphic))
+				prerequisitesMet = CardsScreen.main.GetCurrentMercCount() > 1;
+		}
+		if (!ExtenderPrerequisitesMet(user))
+			prerequisitesMet = false;
+
+		return prerequisitesMet;
+	}
+
+	protected virtual bool ExtenderPrerequisitesMet(CharacterGraphic user)
+	{
+		return true;
+	}
 
 	public void PlayCard()
 	{

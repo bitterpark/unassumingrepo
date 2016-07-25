@@ -77,7 +77,7 @@ public class MapScoutingHandler : MonoBehaviour {
 			newSelector.AssignMember(member);
 			newSelector.GetComponent<Button>().onClick.AddListener(()=>ToggleMissionMember(newSelector));
 			newSelector.transform.SetParent(memberSelectorGroup,false);
-			selectCountText.text=selectedForMission.Count+"/"+assignedRegion.regionalEncounter.maxRequiredMembers;//+EncounterCanvasHandler.encounterMaxPlayerCount;
+			selectCountText.text=selectedForMission.Count+"/"+maxMercsPerMission;//+EncounterCanvasHandler.encounterMaxPlayerCount;
 			selectionText.text="";
 		}
 	}
@@ -101,11 +101,12 @@ public class MapScoutingHandler : MonoBehaviour {
 
 	void ShowPrepForEvent()
 	{
+		/*
 		descriptionText.text=assignedRegion.regionalEvent.GetScoutingDescription();
 		if (!assignedRegion.regionalEvent.eventCompleted)
 		{
 			confirmButton.GetComponentInChildren<Text>().text="Investigate";
-		}
+		}*/
 	}
 
 	public void TryRefreshEncounterDialog()
@@ -133,6 +134,7 @@ public class MapScoutingHandler : MonoBehaviour {
 						confirmButton.interactable=false;
 					selectCountText.text = selectedForMission.Count+"/"+maxMercsPerMission;
 				}
+					/*
 				else
 				{
 					//If a region has no encounter, assume that it has an event
@@ -146,7 +148,7 @@ public class MapScoutingHandler : MonoBehaviour {
 					}
 					else confirmButton.gameObject.SetActive(false);
 					scoutMoreButton.SetActive(false);
-				}
+				}*/
 			}
 			else 
 			{
@@ -178,7 +180,6 @@ public class MapScoutingHandler : MonoBehaviour {
 		AssignedTaskTypes emptyOutVar;
 		if (!selectedForMission.Contains(member)
 		&& selectedForMission.Count<maxMercsPerMission
-		&& handler.assignedMember.CheckEnoughFatigue(PartyMember.fatigueIncreasePerEncounter)
 		&& !PartyManager.mainPartyManager.GetAssignedTask(member, out emptyOutVar))//EncounterCanvasHandler.encounterMaxPlayerCount) 
 		{
 			selectedForMission.Add(member);
@@ -189,7 +190,7 @@ public class MapScoutingHandler : MonoBehaviour {
 			selectedForMission.Remove(member);	
 			handler.selected=false;
 		}
-		selectCountText.text=selectedForMission.Count+"/"+assignedRegion.regionalEncounter.maxRequiredMembers;
+		selectCountText.text=selectedForMission.Count+"/"+maxMercsPerMission;
 		if (selectedForMission.Count==0) {selectionText.text="";}
 		else
 		{
@@ -217,42 +218,15 @@ public class MapScoutingHandler : MonoBehaviour {
 				CardsScreen.main.OpenScreen(assignedRegion.encounterInRegion,selectedForMission.ToArray());
 				EndDialog();
 			}
+				/*
 			else
 			{
 				//If a region has no encounter, assume that it has an event
 				EndDialog();
 				GameEventManager.mainEventManager.DoEvent(assignedRegion.regionalEvent,assignedRegion,assignedRegion.localPartyMembers);
-			}
+			}*/
 			
 		}
-	}
-
-	public void ScoutMorePressed()
-	{
-		StartCoroutine(ScoutMoreRoutine());
-	}
-	IEnumerator ScoutMoreRoutine()
-	{
-		GameEventManager.mainEventManager.DoEvent(new CleanupEvent(),assignedRegion,assignedRegion.localPartyMembers);
-		while (GameEventManager.mainEventManager.drawingEvent) yield return new WaitForFixedUpdate();
-		if (GameManager.main.gameStarted)
-		{
-			TryRefreshEncounterDialog();
-		}
-		yield break;
-	}
-
-	IEnumerator WaitForAmbushEvent(List<PartyMember> eventMembers)
-	{
-		yield return StartCoroutine(GameEventManager.mainEventManager.WaitForEventEnd(new AmbushEvent(),assignedRegion,eventMembers));
-		List<PartyMember> survivingMembers=new List<PartyMember>();
-		foreach (PartyMember member in eventMembers)
-		{
-			if (PartyManager.mainPartyManager.partyMembers.Contains(member)) survivingMembers.Add(member);
-		}
-		if (GameManager.main.gameStarted && survivingMembers.Count > 0) StartEncounter(survivingMembers);
-		else EndDialog();
-		yield break;
 	}
 
 	void StartEncounter(List<PartyMember> encounterMembers)

@@ -7,21 +7,36 @@ public class Infestation {
 
 public class Skitter : EncounterEnemy
 {
-	public Skitter()
-		: base()
+	protected override void NormalConstructor()
 	{
 		name = "Skitter";
 		health = 80;
 
 		stamina = 6;
 
-		combatDeck.AddCards(typeof(Slash), 2);
-		combatDeck.AddCards(typeof(Tear), 2);
+		basicCombatDeck.AddCards(typeof(Slash));
+		basicCombatDeck.AddCards(typeof(Tear));
 		variationCards.Add(new Vulture());
+		variationCards.Add(new Latcher());
+	}
+
+	protected override void ToughConstructor()
+	{
+		name = "Tough Skitter";
+		health = 80;
+		armor = 60;
+
+		stamina = 12;
+
+		basicCombatDeck.AddCards(typeof(Slash));
+		basicCombatDeck.AddCards(typeof(Tear));
+
+		variationCards.Add(new Vulture());
+		variationCards.Add(new Latcher());
 		variationCards.Add(new Striker());
 	}
 
-	public class Vulture : CharacterStipulationCard
+	public class Vulture : EnemyVariationCard
 	{
 		public Vulture()
 		{
@@ -50,11 +65,9 @@ public class Skitter : EncounterEnemy
 		}
 	}
 
-	public class Striker : CharacterStipulationCard
+	public class Latcher : EnemyVariationCard
 	{
-		int damage = 20;
-
-		public Striker()
+		public Latcher()
 		{
 			//SetLastsForRounds(1);
 
@@ -76,6 +89,45 @@ public class Skitter : EncounterEnemy
 				damage = 40;
 				staminaCost = 3;
 				targetType = TargetType.SelectEnemy;
+			}
+		}
+	}
+
+	public class Striker : EnemyVariationCard
+	{
+		public Striker()
+		{
+			//SetLastsForRounds(1);
+
+			name = "Striker";
+			image = SpriteBase.mainSpriteBase.brokenArmsSprite;
+
+			description = "Add Strike to your deck";
+
+			addedCombatCards.Add(new Strike());
+		}
+
+		public class Strike : MeleeCard
+		{
+			int damagePerStaminaPoint;
+			int totalDamage;
+			
+			protected override void ExtenderConstructor()
+			{
+				staminaCost = 6;
+				targetType = TargetType.SelectEnemy;
+				damagePerStaminaPoint = 5;
+				
+				name = "Strike";
+				description = "Remove all stamina, deal " + damagePerStaminaPoint + " damage per point of stamina";
+				image = SpriteBase.mainSpriteBase.skull;
+				
+			}
+
+			protected override void ApplyPlayCosts()
+			{
+				damage = userCharGraphic.GetStamina() * damagePerStaminaPoint;
+				base.ApplyPlayCosts();
 			}
 		}
 	}
@@ -112,47 +164,33 @@ public class Skitter : EncounterEnemy
 
 public class Bugzilla : EncounterEnemy
 {
-	public Bugzilla()
-		: base()
+	protected override void NormalConstructor()
 	{
 		name = "Bugzilla";
 		health = 140;
 		stamina = 3;
 
-		combatDeck.AddCards(typeof(Throwdown), 2);
+		basicCombatDeck.AddCards(typeof(Throwdown));
 
 		variationCards.Add(new Meatshield());
 		variationCards.Add(new Rage());
 		variationCards.Add(new Dominance());
 	}
 
-	public class Meatshield : CharacterStipulationCard
+	protected override void ToughConstructor()
 	{
-		public Meatshield()
-		{
-			name = "Meatshield";
-			image = SpriteBase.mainSpriteBase.cover;
-			description = "All melee attacks played by enemies will only target this character";
-		}
+		name = "Tough Bugzilla";
+		health = 300;
+		stamina = 4;
 
-		protected override void ExtenderSpecificActivation()
-		{
-			CardsScreen.main.SetNewMeleeTargetEnemy(appliedToCharacter);
-			CardsScreen.ENewMeleeTargetEnemySet += RemoveCard;
-		}
-		void RemoveCard()
-		{
-			appliedToCharacter.RemoveCharacterStipulationCard(this);
-		}
+		basicCombatDeck.AddCards(typeof(Throwdown));
 
-		protected override void ExtenderSpecificDeactivation()
-		{
-			CardsScreen.main.ClearMeleeTargetEnemy();
-			CardsScreen.ENewMeleeTargetEnemySet -= RemoveCard;
-		}
+		variationCards.Add(new Meatshield());
+		variationCards.Add(new Rage());
+		variationCards.Add(new Dominance());
 	}
 
-	public class Rage : CharacterStipulationCard
+	public class Rage : EnemyVariationCard
 	{
 		public Rage()
 		{
@@ -165,7 +203,6 @@ public class Bugzilla : EncounterEnemy
 
 			addedCombatCards.Add(new Enrage());
 			addedCombatCards.Add(new Gore());
-			addedCombatCards.Add(new Charge());
 			addedCombatCards.Add(new Charge());
 		}
 
@@ -211,7 +248,7 @@ public class Bugzilla : EncounterEnemy
 		}
 	}
 
-	public class Dominance : CharacterStipulationCard
+	public class Dominance : EnemyVariationCard
 	{
 		public Dominance()
 		{
@@ -266,21 +303,33 @@ public class Bugzilla : EncounterEnemy
 
 public class Stinger : EncounterEnemy
 {
-	public Stinger()
-		: base()
+	protected override void NormalConstructor()
 	{
 		name = "Stinger";
 		health = 80;
 		stamina = 4;
 		ammo = 2;
 
-		combatDeck.AddCards(typeof(Lash), 2);
+		basicCombatDeck.AddCards(typeof(Lash), 2);
 
 		variationCards.Add(new Hunter());
 		variationCards.Add(new Range());
 	}
 
-	public class Range : CharacterStipulationCard
+	protected override void ToughConstructor()
+	{
+		name = "Tough Stinger";
+		health = 100;
+		stamina = 6;
+		ammo = 6;
+
+		basicCombatDeck.AddCards(typeof(Lash));
+
+		variationCards.Add(new Hunter());
+		variationCards.Add(new Range());
+	}
+
+	public class Range : EnemyVariationCard
 	{
 		public Range()
 		{
@@ -291,11 +340,18 @@ public class Stinger : EncounterEnemy
 
 			addedCombatCards.Add(new Sting());
 			addedCombatCards.Add(new Venom());
-			addedCombatCards.Add(new Venom());
 			addedCombatCards.Add(new Regrow());
 		}
 		public class Regrow : EffectCard
 		{
+			protected override bool ExtenderPrerequisitesMet(CharacterGraphic user)
+			{
+				if (user.GetAmmo() == 0)
+					return true;
+				else
+					return false;
+			}
+			
 			protected override void ExtenderConstructor()
 			{
 				staminaCost = 2;
@@ -304,7 +360,7 @@ public class Stinger : EncounterEnemy
 
 				name = "Regrow";
 				image = SpriteBase.mainSpriteBase.restSprite;
-				description = "Restores " + userAmmoGain + " ammo";
+				description = "If character has no ammo, restore " + userAmmoGain + " ammo";
 			}
 		}
 		public class Sting : RangedCard
@@ -339,7 +395,7 @@ public class Stinger : EncounterEnemy
 		}
 	}
 
-	public class Hunter : CharacterStipulationCard
+	public class Hunter : EnemyVariationCard
 	{
 		public Hunter()
 		{
@@ -349,8 +405,6 @@ public class Stinger : EncounterEnemy
 			description = "Add cards to your deck";
 
 			addedCombatCards.Add(new Lunge());
-			addedCombatCards.Add(new Lunge());
-			addedCombatCards.Add(new Corner());
 			addedCombatCards.Add(new Corner());
 		}
 		public class Lunge : MeleeCard
@@ -390,7 +444,7 @@ public class Stinger : EncounterEnemy
 			targetType = TargetType.SelectEnemy;
 
 			name = "Lash";
-			image = SpriteBase.mainSpriteBase.skull;
+			image = SpriteBase.mainSpriteBase.arrow;
 		}
 	}
 }
@@ -401,21 +455,33 @@ public class Stinger : EncounterEnemy
 
 public class Puffer : EncounterEnemy
 {
-	public Puffer()
-		: base()
+	protected override void NormalConstructor()
 	{
 		name = "Puffer";
 		health = 120;
 		stamina = 4;
 		ammo = 0;
 
-		combatDeck.AddCards(typeof(Inflate), 2);
+		basicCombatDeck.AddCards(typeof(Inflate), 2);
 
 		variationCards.Add(new Spread());
 		variationCards.Add(new Direct());
 	}
 
-	public class Spread : CharacterStipulationCard
+	protected override void ToughConstructor()
+	{
+		name = "Tough Puffer";
+		health = 240;
+		stamina = 4;
+		ammo = 2;
+
+		basicCombatDeck.AddCards(typeof(Inflate));
+
+		variationCards.Add(new Spread());
+		variationCards.Add(new Direct());
+	}
+
+	public class Spread : EnemyVariationCard
 	{
 		public Spread()
 		{
@@ -424,7 +490,6 @@ public class Puffer : EncounterEnemy
 
 			description = "Add cards to your deck";
 
-			addedCombatCards.Add(new Pop());
 			addedCombatCards.Add(new Pop());
 		}
 		public class Pop : RangedCard
@@ -442,7 +507,7 @@ public class Puffer : EncounterEnemy
 			}
 		}
 	}
-	public class Direct : CharacterStipulationCard
+	public class Direct : EnemyVariationCard
 	{
 		public Direct()
 		{
@@ -451,7 +516,6 @@ public class Puffer : EncounterEnemy
 
 			description = "Add cards to your deck";
 
-			addedCombatCards.Add(new Vomit());
 			addedCombatCards.Add(new Vomit());
 		}
 		public class Vomit : RangedCard
@@ -463,7 +527,7 @@ public class Puffer : EncounterEnemy
 				damage = 30;
 				targetType = TargetType.SelectEnemy;
 
-				name = "Pop";
+				name = "Vomit";
 				description = "Lose " + removeHealthCost + " health";
 				image = SpriteBase.mainSpriteBase.droplet;
 			}
@@ -472,6 +536,14 @@ public class Puffer : EncounterEnemy
 
 	public class Inflate : EffectCard
 	{
+		protected override bool ExtenderPrerequisitesMet(CharacterGraphic user)
+		{
+			if (user.GetAmmo() == 0)
+				return true;
+			else
+				return false;
+		}
+		
 		protected override void ExtenderConstructor()
 		{
 			staminaCost = 3;
@@ -479,31 +551,43 @@ public class Puffer : EncounterEnemy
 			targetType = TargetType.None;
 
 			name = "Inflate";
-			description = "Gains " + userAmmoGain + " ammo";
+			description = "If character has no ammo, gain " + userAmmoGain + " ammo";
 			image = SpriteBase.mainSpriteBase.restSprite;
-			//healthDamage = 5;
-
 		}
 	}
 }
 public class Hardshell : EncounterEnemy
 {
-	public Hardshell()
-		: base()
+	protected override void NormalConstructor()
 	{
 		name = "Hardshell";
 		health = 80;
 		armor = 40;
 		stamina = 4;
 
-		combatDeck.AddCards(typeof(Snap));
-		combatDeck.AddCards(typeof(Pinch));
+		basicCombatDeck.AddCards(typeof(Snap));
+		basicCombatDeck.AddCards(typeof(Pinch));
 
 		variationCards.Add(new TurtleUp());
 		variationCards.Add(new Warrior());
 	}
 
-	public class TurtleUp : CharacterStipulationCard
+	protected override void ToughConstructor()
+	{
+		name = "Tough Hardshell";
+		health = 80;
+		armor = 200;
+		stamina = 4;
+
+		basicCombatDeck.AddCards(typeof(Snap));
+		basicCombatDeck.AddCards(typeof(Pinch));
+
+		variationCards.Add(new TurtleUp());
+		variationCards.Add(new Warrior());
+		variationCards.Add(new Blocker());
+	}
+
+	public class TurtleUp : EnemyVariationCard
 	{
 		public TurtleUp()
 		{
@@ -512,7 +596,6 @@ public class Hardshell : EncounterEnemy
 
 			description = "Add cards to your deck";
 
-			addedCombatCards.Add(new CurlUp());
 			addedCombatCards.Add(new CurlUp());
 		}
 
@@ -564,7 +647,7 @@ public class Hardshell : EncounterEnemy
 		}
 	}
 
-	public class Warrior : CharacterStipulationCard
+	public class Warrior : EnemyVariationCard
 	{
 		public Warrior()
 		{
@@ -573,7 +656,6 @@ public class Hardshell : EncounterEnemy
 
 			description = "Add cards to your deck";
 
-			addedCombatCards.Add(new Ram());
 			addedCombatCards.Add(new Ram());
 		}
 
@@ -584,7 +666,7 @@ public class Hardshell : EncounterEnemy
 			protected override void ExtenderConstructor()
 			{
 				staminaCost = 1;
-				targetType = TargetType.None;
+				targetType = TargetType.SelectEnemy;
 				damage = 10;
 
 				name = "Ram";
@@ -598,6 +680,40 @@ public class Hardshell : EncounterEnemy
 					damage += bonusDamageForHavingArmor;
 				base.DamageTargets();
 			}
+		}
+	}
+
+	public class Blocker : EnemyVariationCard
+	{
+		public Blocker()
+		{
+			name = "Blocker";
+			image = SpriteBase.mainSpriteBase.cover;
+			description = "While character has armor: all melee attacks played by enemies will only target this character";
+		}
+
+		protected override void ExtenderSpecificActivation()
+		{
+			CardsScreen.main.SetNewMeleeTargetEnemy(appliedToCharacter);
+			CardsScreen.ENewMeleeTargetEnemySet += RemoveCard;
+			appliedToCharacter.ETookDamage += CheckIfCharacterHasArmor;
+		}
+
+		void CheckIfCharacterHasArmor()
+		{
+			if (appliedToCharacter.GetArmor() == 0)
+				RemoveCard();
+		}
+		void RemoveCard()
+		{
+			appliedToCharacter.RemoveCharacterStipulationCard(this);
+		}
+
+		protected override void ExtenderSpecificDeactivation()
+		{
+			CardsScreen.main.ClearMeleeTargetEnemy();
+			CardsScreen.ENewMeleeTargetEnemySet -= RemoveCard;
+			appliedToCharacter.ETookDamage -= CheckIfCharacterHasArmor;
 		}
 	}
 
@@ -622,5 +738,31 @@ public class Hardshell : EncounterEnemy
 			staminaCost = 2;
 			targetType = TargetType.SelectEnemy;
 		}
+	}
+}
+
+public class Meatshield : EnemyVariationCard
+{
+	public Meatshield()
+	{
+		name = "Meatshield";
+		image = SpriteBase.mainSpriteBase.cover;
+		description = "All melee attacks played by enemies will only target this character";
+	}
+
+	protected override void ExtenderSpecificActivation()
+	{
+		CardsScreen.main.SetNewMeleeTargetEnemy(appliedToCharacter);
+		CardsScreen.ENewMeleeTargetEnemySet += RemoveCard;
+	}
+	void RemoveCard()
+	{
+		appliedToCharacter.RemoveCharacterStipulationCard(this);
+	}
+
+	protected override void ExtenderSpecificDeactivation()
+	{
+		CardsScreen.main.ClearMeleeTargetEnemy();
+		CardsScreen.ENewMeleeTargetEnemySet -= RemoveCard;
 	}
 }

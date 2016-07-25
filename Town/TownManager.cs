@@ -82,8 +82,6 @@ public class TownManager : MonoBehaviour {
 
 		MapManager.main.GetTown().StashItem(new AssaultRifle());
 		MapManager.main.GetTown().StashItem(new AssaultRifle());
-		MapManager.main.GetTown().StashItem(new AssaultRifle());
-		MapManager.main.GetTown().StashItem(new Axe());
 		MapManager.main.GetTown().StashItem(new Axe());
 		MapManager.main.GetTown().StashItem(new Axe());
 	}

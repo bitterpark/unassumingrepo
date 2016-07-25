@@ -9,11 +9,14 @@ public class GunmanCards
 		CombatDeck result = new CombatDeck();
 
 		result.AddCards(typeof(Pistolwhip));
-		result.AddCards(typeof(Jab));
-		result.AddCards(typeof(Sidearm),2);
-		result.AddCards(typeof(Hipfire),2);
+		result.AddCards(typeof(Hipfire));
 		result.AddCards(typeof(BurstFire));
 		result.AddCards(typeof(FullAuto));
+		result.AddCards(typeof(Camo));
+		result.AddCards(typeof(Tripmine));
+		result.AddCards(typeof(LimbShot));
+		result.AddCards(typeof(DetonateAmmo));
+		result.AddCards(typeof(HollowPoint));
 
 		return result;
 	}
@@ -37,10 +40,10 @@ public class GunmanCards
 			description = "Adds cards to your deck";
 			image = SpriteBase.mainSpriteBase.medal;
 
-			addedCombatCards.Add(new Camo());
+			//addedCombatCards.Add(new Camo());
 			addedCombatCards.Add(new PersonalSpace());
-			addedCombatCards.Add(new Pistolwhip());
-			addedCombatCards.Add(new Tripmine());
+			//addedCombatCards.Add(new Pistolwhip());
+			//addedCombatCards.Add(new Tripmine());
 		}
 	}
 
@@ -52,10 +55,10 @@ public class GunmanCards
 			description = "Adds cards to your deck";
 			image = SpriteBase.mainSpriteBase.crosshair;
 
-			addedCombatCards.Add(new LimbShot());
-			addedCombatCards.Add(new LimbShot());
+			//addedCombatCards.Add(new LimbShot());
+			//addedCombatCards.Add(new LimbShot());
 			addedCombatCards.Add(new Headshot());
-			addedCombatCards.Add(new DetonateAmmo());
+			//addedCombatCards.Add(new DetonateAmmo());
 		}
 	}
 	public class Sprayer : PrepCard
@@ -66,9 +69,9 @@ public class GunmanCards
 			description = "Adds cards to your deck";
 			image = SpriteBase.mainSpriteBase.bullets;
 
-			addedCombatCards.Add(new FullAuto());
-			addedCombatCards.Add(new HollowPoint());
-			addedCombatCards.Add(new TrickMags());
+			//addedCombatCards.Add(new FullAuto());
+			//addedCombatCards.Add(new HollowPoint());
+			//addedCombatCards.Add(new TrickMags());
 			addedCombatCards.Add(new TrickMags());
 		}
 	}
@@ -84,7 +87,7 @@ public class TrickMags : EffectCard
 		staminaCost = 1;
 
 		name = "Trick Mags";
-		description = "Play an Extended Mag card to the character";
+		description = "Character's next ranged attack costs no ammo";
 		image = SpriteBase.mainSpriteBase.ammoBoxSprite;
 
 	}
@@ -148,15 +151,17 @@ public class Headshot : EffectCard
 		}
 		void UseUpCard(CharacterGraphic cardPlayer,RangedCard playedCard)
 		{
-			affectedCard = playedCard;
-			affectedCard.SetIgnoresArmor(true);
-			if (cardPlayer==appliedToCharacter)
+			if (cardPlayer == appliedToCharacter)
+			{
+				affectedCard = playedCard;
+				affectedCard.SetIgnoresArmor(true);
 				appliedToCharacter.RemoveCharacterStipulationCard(this);
+			}
 		}
 
 		protected override void ExtenderSpecificDeactivation()
 		{
-			affectedCard.SetDefaultState();
+			//affectedCard.SetDefaultState();
 			RangedCard.ERangedCardPlayed -= UseUpCard;
 		}
 	}
@@ -181,13 +186,13 @@ public class Camo : EffectCard
 {
 	protected override void ExtenderConstructor()
 	{
-		name = "Camo";
-		description = "Gain "+userArmorGain+" armor";
-		image = SpriteBase.mainSpriteBase.arrow;
-
 		targetType = TargetType.None;
 		staminaCost = 1;
 		userArmorGain = 30;
+
+		name = "Camo";
+		description = "Gain " + userArmorGain + " armor";
+		image = SpriteBase.mainSpriteBase.arrow;
 	}
 }
 
@@ -293,13 +298,13 @@ public class PersonalSpace : MeleeCard
 {
 	protected override void ExtenderConstructor()
 	{
+		takeDamageCost = 10;
+		ammoCost = 1;
+		damage = 40;
+		
 		name = "Personal Space";
 		description = "Too close for comfort (take "+takeDamageCost+" damage)";
 		image = SpriteBase.mainSpriteBase.bullet;
 		targetType = TargetType.SelectEnemy;
-
-		takeDamageCost = 10;
-		ammoCost = 1;
-		damage = 40;
 	}
 }
