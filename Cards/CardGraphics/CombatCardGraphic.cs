@@ -1,8 +1,9 @@
 ﻿using UnityEngine;
 using UnityEngine.UI;
 using System.Collections;
+using UnityEngine.EventSystems;
 
-public class CombatCardGraphic : CardGraphic
+public class CombatCardGraphic : CardGraphic, IPointerEnterHandler,IPointerExitHandler
 {
 
 	public GameObject staminaCost;
@@ -11,16 +12,25 @@ public class CombatCardGraphic : CardGraphic
 	public GameObject staminaDamage;
 	public Text cardTypeText;
 
-	public CombatCard assignedCard;
-
 	public Color effectCardColor;
 	public Color rangedCardColor;
 	public Color meleeCardColor;
 
+	CombatCard assignedCard;
+	HandDisplayer handDisplayer;
+	CharacterGraphic myHandOwner;
+
+
 	public void AssignCard(CombatCard newCard)
+	{
+		AssignCard(newCard, null);
+	}
+
+	public void AssignCard(CombatCard newCard, HandDisplayer handDisplayer)
 	{
 		base.UpdateBasicVisuals(newCard);
 		assignedCard = newCard;
+		this.handDisplayer = handDisplayer;
 
 		SetColor();
 		SetTypeText();
@@ -102,7 +112,24 @@ public class CombatCardGraphic : CardGraphic
 
 	public void CardClicked()
 	{
-		if (GetComponent<Button>().IsInteractable())
-			CardsScreen.main.ClickCombatCard(this);
+		if (GetComponent<Button>().IsInteractable() && handDisplayer != null)
+			handDisplayer.HandCardClicked(this);
+	}
+
+	public CombatCard GetAssignedCard()
+	{
+		return assignedCard;
+	}
+
+	public void OnPointerEnter(PointerEventData eventData)
+	{
+		if (handDisplayer!=null)
+			handDisplayer.HandCardHoverStart(this);
+	}
+
+	public void OnPointerExit(PointerEventData eventData)
+	{
+		if (handDisplayer != null)
+			handDisplayer.HandCardHoverEnd(this);
 	}
 }

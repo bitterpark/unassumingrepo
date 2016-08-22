@@ -19,7 +19,7 @@ public class RecipeGroup : MonoBehaviour
 	{
 		assignedRecipe=newRecipe;
 		//Add required ingredient icons
-		foreach (InventoryItem.LootItems ingredientKey in newRecipe.requiredIngredients.Keys)
+		foreach (CraftRecipe.CraftableItems ingredientKey in newRecipe.requiredIngredients.Keys)
 		{
 			RecipeIngredient newIngredientImage=Instantiate(ingredientPrefab);
 			newIngredientImage.AssignIngredientItem(ingredientKey,newRecipe.requiredIngredients[ingredientKey]);

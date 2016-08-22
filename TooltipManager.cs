@@ -8,8 +8,6 @@ public class TooltipManager : MonoBehaviour
 	
 	public Tooltip tooltipPrefab;
 	static Tooltip activeTooltip=null;
-	float edgeOffsetSize=5f;
-	float tooltipWidth=80f;
 	
 	void Start() 
 	{
@@ -28,9 +26,9 @@ public class TooltipManager : MonoBehaviour
 				{
 					EquippableItem castItem = item as EquippableItem;
 					main.CreateTooltip(item.GetMouseoverDescription(), parent
-						, castItem.addedCombatCards.ToArray());
+						, castItem.GetAddedCombatCards());
 				}
-				if (item.GetType().BaseType.BaseType == typeof(Weapon))
+				if (item.GetType().BaseType == typeof(Weapon))
 				{
 					Weapon castItem = item as Weapon;
 					CreateTooltip(item.GetMouseoverDescription(), parent

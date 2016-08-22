@@ -86,7 +86,7 @@ public class Encounter
 
 	protected virtual void GenerateRewards()
 	{
-		rewards.AddCards(new CashStash(),new CashVault(), new AmmoStash(), new AmmoStash(), new AmmoStash(), new ArmorStash(), new ArmorStash(), new ArmorStash());
+		rewards.AddCards(new CashStash(),new CashVault());
 		rewards.Shuffle();
 
 		float diceRoll = Random.value;
@@ -137,6 +137,10 @@ public class Encounter
 				enemyPowerLevel = EncounterEnemy.PowerLevel.Normal;
 			if (difficulty == Difficulty.Hard)
 				enemyPowerLevel = EncounterEnemy.PowerLevel.Tough;
+
+			//!!
+			//randomEnemyType = typeof(Bugzilla);
+			//!!
 
 			resultList[i] = EncounterEnemy.CreateEnemyOfSetPowerLevel(randomEnemyType, enemyPowerLevel);
 		}

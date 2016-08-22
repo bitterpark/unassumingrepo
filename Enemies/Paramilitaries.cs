@@ -4,33 +4,32 @@ using System.Collections.Generic;
 
 public class Marksman : EncounterEnemy
 {
+	protected override void CommonConstructor()
+	{
+		basicCombatDeck.AddCards(typeof(Reload));
+		basicCombatDeck.AddCards(typeof(HighGround));
+
+		variationCards.Add(new Finisher());
+		variationCards.Add(new Softener());
+	}
+	
 	protected override void NormalConstructor()
 	{
 		name = "Marksman";
 		health = 60;
-		armor = 20;
+		armor = 40;
 		stamina = 2;
-		ammo = 4;
-
-		basicCombatDeck.AddCards(typeof(Reload));
-		basicCombatDeck.AddCards(typeof(BoobyTrap));
-
-		variationCards.Add(new Finisher());
-		variationCards.Add(new Softener());
+		ammo = 6;
+		
 	}
 	protected override void ToughConstructor()
 	{
 		name = "Tough Marksman";
 		health = 60;
-		armor = 80;
+		armor = 120;
 		stamina = 2;
-		ammo = 8;
+		ammo = 9;
 
-		basicCombatDeck.AddCards(typeof(Reload));
-		basicCombatDeck.AddCards(typeof(BoobyTrap));
-
-		variationCards.Add(new Finisher());
-		variationCards.Add(new Softener());
 		variationCards.Add(new Sniper());
 	}
 
@@ -56,8 +55,8 @@ public class Marksman : EncounterEnemy
 				description = "Targets weakest enemy";
 				image = SpriteBase.mainSpriteBase.skull;
 
-				damage = 20;
-				ammoCost = 2;
+				damage = 30;
+				ammoCost = 3;
 				targetType = TargetType.Weakest;
 			}
 		}
@@ -69,8 +68,6 @@ public class Marksman : EncounterEnemy
 
 		public Softener()
 		{
-			//SetLastsForRounds(1);
-
 			name = "Softener";
 			image = SpriteBase.mainSpriteBase.crosshair;
 
@@ -87,8 +84,8 @@ public class Marksman : EncounterEnemy
 				description = "Targets the toughest enemy";
 				image = SpriteBase.mainSpriteBase.bullet;
 
-				damage = 40;
-				ammoCost = 2;
+				damage = 50;
+				ammoCost = 3;
 				targetType = TargetType.Strongest;
 			}
 		}
@@ -96,8 +93,6 @@ public class Marksman : EncounterEnemy
 
 	public class Sniper : EnemyVariationCard
 	{
-		int damage = 20;
-
 		public Sniper()
 		{
 			name = "Sniper";
@@ -105,32 +100,44 @@ public class Marksman : EncounterEnemy
 
 			description = "Add cards to your deck";
 
-			addedCombatCards.Add(new HighGround());
-			addedCombatCards.Add(new SemiAuto());
+			addedCombatCards.Add(new AimedShot());
 		}
 
-		public class HighGround : EffectCard
+		public class AimedShot : RangedCard
 		{
 			protected override void ExtenderConstructor()
 			{
-				targetType = TargetType.None;
-				ammoCost = 4;
-
-				name = "High Ground";
-				description = "Play a Killzone to the character";
-				image = SpriteBase.mainSpriteBase.arrow;
-				addedStipulationCard = new Killzone();
+				name = "Aimed Shot";
+				image = SpriteBase.mainSpriteBase.crosshair;
+				targetType = TargetType.SelectEnemy;
+				damage = 40;
+				ammoCost = 3;
 			}
+		}
+	}
+
+	public class HighGround : EffectCard
+	{
+		protected override void ExtenderConstructor()
+		{
+			targetType = TargetType.None;
+			staminaCost = 2;
+			addedStipulationCard = new Killzone();
+
+			name = "High Ground";
+			description = addedStipulationCard.description;//"Play a Killzone to the character";
+			image = SpriteBase.mainSpriteBase.arrow;
+
 		}
 
 		public class Killzone : CharacterStipulationCard
 		{
-			int damageForMeleeAttacks=60;
+			int damageForMeleeAttacks = 60;
 
 			public Killzone()
 			{
 				SetLastsForRounds(2);
-				
+
 				name = "Killzone";
 				image = SpriteBase.mainSpriteBase.roseOfWinds;
 
@@ -143,7 +150,7 @@ public class Marksman : EncounterEnemy
 			}
 			void EffectTriggered(CharacterGraphic cardPlayer, MeleeCard playedCard)
 			{
-				if (cardPlayer.GetType()==typeof(MercGraphic))
+				if (cardPlayer.GetType() == typeof(MercGraphic))
 					cardPlayer.TakeDamage(damageForMeleeAttacks);
 			}
 			protected override void ExtenderSpecificDeactivation()
@@ -162,11 +169,12 @@ public class Marksman : EncounterEnemy
 			targetType = TargetType.None;
 			ammoCost = 1;
 			trapDamage = 30;
+			addedStipulationCard = new Tripmine(trapDamage);
 
 			name = "Booby Trap";
-			description = "Play a Tripmine to the character";
+			description = addedStipulationCard.description;
 			image = SpriteBase.mainSpriteBase.bomb;
-			addedStipulationCard = new Tripmine(trapDamage);
+			
 		}
 
 		public class Tripmine : CharacterStipulationCard
@@ -176,7 +184,7 @@ public class Marksman : EncounterEnemy
 			public Tripmine(int damage)
 			{
 				name = "Tripmine";
-				image = SpriteBase.mainSpriteBase.brokenArmsSprite;
+				image = SpriteBase.mainSpriteBase.arm;
 
 				this.damage = damage;
 				description = "Any enemy playing a melee attack against this character takes "+damage+" damage, and removes the card";
@@ -230,19 +238,22 @@ public class Reload : EffectCard
 
 public class HeavyGunner : EncounterEnemy
 {
+	protected override void CommonConstructor()
+	{
+		basicCombatDeck.AddCards(typeof(Reload));
+		basicCombatDeck.AddCards(typeof(Overwatch));
+
+		variationCards.Add(new CrowdControl());
+		variationCards.Add(new TargetPriority());
+	}
+	
 	protected override void NormalConstructor()
 	{
 		name = "Heavy Gunner";
 		health = 70;
 		armor = 30;
 		stamina = 2;
-		ammo = 3;
-
-		basicCombatDeck.AddCards(typeof(Reload));
-		basicCombatDeck.AddCards(typeof(CQC));
-
-		variationCards.Add(new CrowdControl());
-		variationCards.Add(new TargetPriority());
+		ammo = 6;
 	}
 
 	protected override void ToughConstructor()
@@ -251,13 +262,9 @@ public class HeavyGunner : EncounterEnemy
 		health = 70;
 		armor = 60;
 		stamina = 2;
-		ammo = 6;
+		ammo = 9;
 
-		basicCombatDeck.AddCards(typeof(Reload));
-		basicCombatDeck.AddCards(typeof(CQC));
-
-		variationCards.Add(new CrowdControl());
-		variationCards.Add(new TargetPriority());
+		variationCards.Add(new SupportGunner());
 	}
 
 	public class CrowdControl : EnemyVariationCard
@@ -320,7 +327,7 @@ public class HeavyGunner : EncounterEnemy
 			protected override void ExtenderConstructor()
 			{
 				name = "Machinegun";
-				description = "Targets strongest enemy";
+				description = "Targets toughest enemy";
 				image = SpriteBase.mainSpriteBase.bullets;
 
 				damage = 50;
@@ -334,55 +341,170 @@ public class HeavyGunner : EncounterEnemy
 			protected override void ExtenderConstructor()
 			{
 				name = "Pin Down";
+				description = "Targets the toughest enemy";
 				image = SpriteBase.mainSpriteBase.lightning;
 
 				staminaDamage = 3;
 				ammoCost = 3;
+				targetType = TargetType.Strongest;
+			}
+		}
+	}
+
+	public class SupportGunner : EnemyVariationCard
+	{
+		public SupportGunner()
+		{
+			name = "Support Gunner";
+			image = SpriteBase.mainSpriteBase.armor;
+
+			description = "Add cards to your deck";
+
+			addedCombatCards.Add(new EatLead());
+			addedCombatCards.Add(new FireSupport());
+		
+		}
+
+		public class EatLead : RangedCard
+		{
+			protected override void ExtenderConstructor()
+			{
+				name = "Eat Lead";
+				image = SpriteBase.mainSpriteBase.bullets;
 				targetType = TargetType.SelectEnemy;
+				damage = 40;
+				ammoCost = 3;
+			}
+		}
+
+		public class FireSupport : EffectCard
+		{
+			protected override void ExtenderConstructor()
+			{
+				targetType = TargetType.None;
+				staminaCost = 2;
+				addedStipulationCard = new FireSupportStipulation();
+
+				name = "Fire Support";
+				description = addedStipulationCard.description;//"Play a Killzone to the character";
+				image = SpriteBase.mainSpriteBase.armor;
+
+			}
+
+			public class FireSupportStipulation : CharacterStipulationCard
+			{
+				int friendlyArmorGain = 10;
+
+				public FireSupportStipulation()
+				{
+					SetLastsForRounds(3);
+
+					name = "Killzone";
+					image = SpriteBase.mainSpriteBase.armor;
+
+					description = "For two rounds: all allies gain "+friendlyArmorGain+" armor for every ranged attack played by the character";
+				}
+
+				protected override void ExtenderSpecificActivation()
+				{
+					RangedCard.ERangedCardPlayed += EffectTriggered;
+				}
+				void EffectTriggered(CharacterGraphic cardPlayer, RangedCard playedCard)
+				{
+					if (cardPlayer == appliedToCharacter)
+						MissionCharacterManager.main.IncrementAllCharactersResource(CharacterGraphic.Resource.Armor,friendlyArmorGain);
+				}
+				protected override void ExtenderSpecificDeactivation()
+				{
+					RangedCard.ERangedCardPlayed -= EffectTriggered;
+				}
 			}
 		}
 	}
 
 	
+
+	public class Overwatch : EffectCard
+	{
+		protected override void ExtenderConstructor()
+		{
+			targetType = TargetType.None;
+			staminaCost = 2;
+			addedStipulationCard = new OverwatchStipulation();
+
+			name = "Overwatch";
+			description = addedStipulationCard.description;//"Play a Killzone to the character";
+			image = SpriteBase.mainSpriteBase.roseOfWinds;
+
+		}
+
+		public class OverwatchStipulation : CharacterStipulationCard
+		{
+			int damageForRangedAttacks = 60;
+
+			public OverwatchStipulation()
+			{
+				SetLastsForRounds(2);
+
+				name = "Killzone";
+				image = SpriteBase.mainSpriteBase.roseOfWinds;
+
+				description = "For one round: any enemy playing a ranged attack takes " + damageForRangedAttacks + " damage";
+			}
+
+			protected override void ExtenderSpecificActivation()
+			{
+				RangedCard.ERangedCardPlayed += EffectTriggered;
+			}
+			void EffectTriggered(CharacterGraphic cardPlayer, RangedCard playedCard)
+			{
+				if (cardPlayer.GetType() == typeof(MercGraphic))
+					cardPlayer.TakeDamage(damageForRangedAttacks);
+			}
+			protected override void ExtenderSpecificDeactivation()
+			{
+				RangedCard.ERangedCardPlayed -= EffectTriggered;
+			}
+		}
+	}
+	
 }
 
 public class ShockTrooper : EncounterEnemy
 {
+	protected override void CommonConstructor()
+	{
+		basicCombatDeck.AddCards(typeof(Reload));
+		basicCombatDeck.AddCards(typeof(SmokeGrenade));
+		basicCombatDeck.AddCards(typeof(SemiAuto));
+
+		variationCards.Add(new Flanker());
+		variationCards.Add(new Blitzer());
+	}
+	
 	protected override void NormalConstructor()
 	{
 		name = "Shock Trooper";
 		health = 60;
-		armor = 20;
-		stamina = 4;
+		armor = 40;
+		stamina = 6;
 		ammo = 2;
 
-		basicCombatDeck.AddCards(typeof(Reload));
-		basicCombatDeck.AddCards(typeof(Blindfire));
-		basicCombatDeck.AddCards(typeof(CQC));
-
-		variationCards.Add(new Flanker());
-		variationCards.Add(new Shock());
+		
 	}
 	protected override void ToughConstructor()
 	{
 		name = "Tough Trooper";
 		health = 120;
 		armor = 40;
-		stamina = 6;
+		stamina = 9;
 		ammo = 4;
 
-		basicCombatDeck.AddCards(typeof(Reload));
-		basicCombatDeck.AddCards(typeof(Blindfire));
-		basicCombatDeck.AddCards(typeof(CQC));
-
-		variationCards.Add(new Flanker());
-		variationCards.Add(new Shock());
+		variationCards.Add(new Interference());
 	}
 
 	public class Flanker : EnemyVariationCard
 	{
-		int damage = 20;
-
 		public Flanker()
 		{
 			name = "Flanker";
@@ -399,17 +521,17 @@ public class ShockTrooper : EncounterEnemy
 
 			protected override void ExtenderConstructor()
 			{
-				staminaCost = 1;
-				ammoCost = 1;
-				damage = 10;
+				staminaCost = 3;
+				damage = 20;
 				penaltyDamage = 20;
 				targetType = TargetType.SelectEnemy;
+				addedStipulationCard = new Flanked(penaltyDamage);
 
 				name = "Flanking";
-				description = "Play a Flanked card to the target";
+				description = addedStipulationCard.description;
 				image = SpriteBase.mainSpriteBase.lateralArrows;
 
-				addedStipulationCard = new Flanked(penaltyDamage);
+				
 			}
 
 			public class Flanked : CharacterStipulationCard
@@ -422,9 +544,9 @@ public class ShockTrooper : EncounterEnemy
 					this.damage = damage;
 					
 					name = "Flanked";
-					image = SpriteBase.mainSpriteBase.brokenArmsSprite;
+					image = SpriteBase.mainSpriteBase.arm;
 
-					description = "For one round: character takes "+damage+" damage for every ranged card played";
+					description = "For one round: character takes "+damage+" damage for playing ranged cards";
 				}
 
 				protected override void ExtenderSpecificActivation()
@@ -448,46 +570,102 @@ public class ShockTrooper : EncounterEnemy
 		}
 	}
 
-	public class Shock : EnemyVariationCard
+	public class Blitzer : EnemyVariationCard
 	{
-		int damage = 20;
-
-		public Shock()
+		public Blitzer()
 		{
-			name = "Shock";
+			name = "Blitzer";
 			image = SpriteBase.mainSpriteBase.lightning;
 
 			description = "Add cards to your deck";
 
 			addedCombatCards.Add(new Blitz());
 		}
-	}
 
-	public class Blitz : MeleeCard
-	{
-		protected override void ExtenderConstructor()
+		public class Blitz : MeleeCard
 		{
-			name = "Blitz";
-			description = "";
-			image = SpriteBase.mainSpriteBase.lightning;
+			protected override void ExtenderConstructor()
+			{
+				name = "Blitz";
+				description = "";
+				image = SpriteBase.mainSpriteBase.lightning;
 
-			staminaCost = 2;
-			ammoCost = 1;
-			damage = 40;
-			targetType = TargetType.SelectEnemy;
+				staminaCost = 3;
+				damage = 40;
+				targetType = TargetType.SelectEnemy;
+			}
 		}
 	}
 
-	public class Blindfire : RangedCard
+	public class Interference : EnemyVariationCard
+	{
+		public Interference()
+		{
+			name = "Interference";
+			image = SpriteBase.mainSpriteBase.lightning;
+
+			description = "Add cards to your deck";
+
+			addedCombatCards.Add(new Shock());
+		}
+
+		public class Shock : EffectCard
+		{
+			protected override void ExtenderConstructor()
+			{
+				staminaCost = 3;
+				targetType = TargetType.None;
+				addedStipulationCard = new ShockStipulation();
+				
+				name = "Shock";
+				description = addedStipulationCard.description;
+				image = SpriteBase.mainSpriteBase.lightning;
+
+				
+			}
+
+			public class ShockStipulation : CharacterStipulationCard
+			{
+				int meleeAttackPenaltyDamage = 30;
+
+				public ShockStipulation()
+				{
+					SetLastsForRounds(2);
+					
+					name = "Shock";
+					image = SpriteBase.mainSpriteBase.lightning;
+					description = "For one round: when an enemy plays a melee attack against any ally, deal " + meleeAttackPenaltyDamage+" damage";
+				}
+
+				protected override void ExtenderSpecificActivation()
+				{
+					MeleeCard.EMeleeCardPlayed += TriggerEffect;
+				}
+				void TriggerEffect( CharacterGraphic cardPlayer, MeleeCard card)
+				{
+					if (!card.targetChars.Contains(appliedToCharacter))
+						cardPlayer.TakeDamage(meleeAttackPenaltyDamage);
+				}
+
+				protected override void ExtenderSpecificDeactivation()
+				{
+					MeleeCard.EMeleeCardPlayed -= TriggerEffect;
+				}
+			}
+		}
+	}
+
+	public class SmokeGrenade : EffectCard
 	{
 		protected override void ExtenderConstructor()
 		{
-			name = "Blind Fire";
-			image = SpriteBase.mainSpriteBase.bullets;
+			name = "Smoke Grenade";
+			description = "Gain "+userArmorGain+" armor";
+			image = SpriteBase.mainSpriteBase.lightning;
 
-			damage = 20;
-			ammoCost = 1;
-			targetType = TargetType.SelectEnemy;
+			userArmorGain = 40;
+			ammoCost = 2;
+			targetType = TargetType.None;
 		}
 	}
 }
@@ -498,7 +676,7 @@ public class CQC : MeleeCard
 	{
 		name = "CQC";
 		description = "Targets the strongest enemy";
-		image = SpriteBase.mainSpriteBase.brokenArmsSprite;
+		image = SpriteBase.mainSpriteBase.arm;
 
 		damage = 40;
 		staminaCost = 2;
@@ -508,33 +686,34 @@ public class CQC : MeleeCard
 
 public class Commander : EncounterEnemy
 {
+	protected override void CommonConstructor()
+	{
+		basicCombatDeck.AddCards(typeof(Reload));
+		basicCombatDeck.AddCards(typeof(SemiAuto));
+		basicCombatDeck.AddCards(typeof(Flashbang));
+
+		variationCards.Add(new Support());
+		variationCards.Add(new Leadership());
+	}
+	
 	protected override void NormalConstructor()
 	{
 		name = "Commander";
-		health = 40;
+		health = 60;
 		armor = 40;
 		stamina = 4;
-		ammo = 2;
+		ammo = 4;
 
-		basicCombatDeck.AddCards(typeof(Reload));
-		basicCombatDeck.AddCards(typeof(SemiAuto));
-
-		variationCards.Add(new Support());
-		variationCards.Add(new Tactics());
+		
 	}
 	protected override void ToughConstructor()
 	{
 		name = "Tough Commander";
-		health = 40;
+		health = 60;
 		armor = 120;
 		stamina = 6;
 		ammo = 4;
 
-		basicCombatDeck.AddCards(typeof(Reload));
-		basicCombatDeck.AddCards(typeof(SemiAuto));
-		basicCombatDeck.AddCards(typeof(CQC));
-
-		variationCards.Add(new Support());
 		variationCards.Add(new Tactics());
 	}
 
@@ -543,51 +722,23 @@ public class Commander : EncounterEnemy
 		public Support()
 		{
 			name = "Support";
-			image = SpriteBase.mainSpriteBase.ammoBoxSprite;
+			image = SpriteBase.mainSpriteBase.armor;
 
 			description = "Add cards to your deck";
-
-			//addedCombatCards.Add(new Rally());
 			addedCombatCards.Add(new Smokescreen());
-		}
-
-		public class Rally : EffectCard
-		{
-			int friendliesStaminaGain = 2;
-
-			protected override void ExtenderConstructor()
-			{
-				name = "Rally";
-				description = "Allies gain " + friendliesStaminaGain + " stamina";
-				image = SpriteBase.mainSpriteBase.cover;
-
-				staminaCost = 4;
-				targetType = TargetType.AllFriendlies;
-			}
-
-			protected override void CardPlayEffects()
-			{
-				base.CardPlayEffects();
-				foreach (CharacterGraphic graphic in targetChars)
-				{
-					if (graphic != userCharGraphic)
-						graphic.IncrementStamina(friendliesStaminaGain);
-				}
-			}
 		}
 	}
 
-	public class Tactics : EnemyVariationCard
+	public class Leadership : EnemyVariationCard
 	{
-		public Tactics()
+		public Leadership()
 		{
-			name = "Tactics";
-			image = SpriteBase.mainSpriteBase.arrow;
+			name = "Leadership";
+			image = SpriteBase.mainSpriteBase.medal;
 
 			description = "Add cards to your deck";
 
 			addedCombatCards.Add(new Prioritize());
-			addedCombatCards.Add(new Flashbang());
 		}
 
 		public class Prioritize : RangedCard
@@ -595,12 +746,12 @@ public class Commander : EncounterEnemy
 			protected override void ExtenderConstructor()
 			{	
 				targetType = TargetType.SelectEnemy;
-				ammoCost = 1;
-				damage = 20;
+				ammoCost = 4;
+				damage = 40;
 				addedStipulationCard = new FocusFire();
 
 				name = "Prioritize";
-				description = "Play Focus Fire to the target";
+				description = addedStipulationCard.description;
 				image = SpriteBase.mainSpriteBase.crosshair;
 			}
 
@@ -617,8 +768,8 @@ public class Commander : EncounterEnemy
 
 				protected override void ExtenderSpecificActivation()
 				{
-					CardsScreen.main.SetNewRangedTargetMerc(appliedToCharacter);
-					CardsScreen.ENewRangedTargetMercSet += RemoveCard;
+					CombatCardTargeter.main.SetNewRangedTargetMerc(appliedToCharacter);
+					CombatCardTargeter.ENewRangedTargetMercSet += RemoveCard;
 				}
 				void RemoveCard()
 				{
@@ -627,36 +778,71 @@ public class Commander : EncounterEnemy
 
 				protected override void ExtenderSpecificDeactivation()
 				{
-					CardsScreen.main.ClearRangedTargetMerc();
-					CardsScreen.ENewRangedTargetMercSet -= RemoveCard;
+					CombatCardTargeter.main.ClearRangedTargetMerc();
+					CombatCardTargeter.ENewRangedTargetMercSet -= RemoveCard;
 				}
 			}
 		}
+	}
 
-		public class Flashbang : RangedCard
+	public class Tactics : EnemyVariationCard
+	{
+		public Tactics()
 		{
-			int noCoverStaminaDamageBonus = 1;
+			name = "Tactics";
+			image = SpriteBase.mainSpriteBase.arrow;
 
+			description = "Add cards to your deck";
+
+			addedCombatCards.Add(new Maneuvers());
+		}
+
+		public class Maneuvers : EffectCard
+		{
+			int damageToArmor = 20;
+			
 			protected override void ExtenderConstructor()
 			{
-				name = "Flashbang";
-				description = "Targets all enemies, characters with 0 armor lose extra " + noCoverStaminaDamageBonus + " stamina";
-				image = SpriteBase.mainSpriteBase.lightning;
 				targetType = TargetType.AllEnemies;
+				staminaCost = 3;
 
-				ammoCost = 2;
-				staminaCost = 1;
-				staminaDamage = 1;
+				name = "Maneuvers";
+				description = "Remove " + damageToArmor + " armor from all enemies";
+				image = SpriteBase.mainSpriteBase.lateralArrows;
+
 			}
 
-			protected override void CardPlayEffects()
+			protected override void ApplyEffects()
 			{
-				base.CardPlayEffects();
 				foreach (CharacterGraphic graphic in targetChars)
-				{
-					if (graphic.GetArmor() == 0)
-						graphic.IncrementStamina(-noCoverStaminaDamageBonus);
-				}
+					graphic.IncrementArmor(-damageToArmor);
+			}
+		}
+
+	}
+
+	public class Flashbang : RangedCard
+	{
+		int noCoverStaminaDamageBonus = 1;
+
+		protected override void ExtenderConstructor()
+		{
+			name = "Flashbang";
+			description = "Targets all enemies, characters with 0 armor lose extra " + noCoverStaminaDamageBonus + " stamina";
+			image = SpriteBase.mainSpriteBase.lightning;
+			targetType = TargetType.AllEnemies;
+
+			staminaCost = 4;
+			staminaDamage = 1;
+		}
+
+		protected override void CardPlayEffects()
+		{
+			base.CardPlayEffects();
+			foreach (CharacterGraphic graphic in targetChars)
+			{
+				if (graphic.GetArmor() == 0)
+					graphic.IncrementStamina(-noCoverStaminaDamageBonus);
 			}
 		}
 	}
@@ -667,7 +853,7 @@ public class SemiAuto : RangedCard
 	protected override void ExtenderConstructor()
 	{
 		name = "Semi Auto";
-		image = SpriteBase.mainSpriteBase.nineMSprite;
+		image = SpriteBase.mainSpriteBase.pistol;
 		targetType = TargetType.SelectEnemy;
 		damage = 30;
 		ammoCost = 2;

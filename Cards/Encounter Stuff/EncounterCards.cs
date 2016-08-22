@@ -133,7 +133,7 @@ public abstract class CharacterStipulationCard : StipulationCard
 	{
 		if (!lastsIndefinitely)
 		{
-			CardsScreen.ERoundIsOver += RoundOver;
+			CombatManager.ERoundIsOver += RoundOver;
 			currentRoundsActive = 0;
 		}
 		appliedToCharacter = applyCardTo;
@@ -155,7 +155,7 @@ public abstract class CharacterStipulationCard : StipulationCard
 	public void DeactivateCard()
 	{
 		if (!lastsIndefinitely)
-			CardsScreen.ERoundIsOver -= RoundOver;
+			CombatManager.ERoundIsOver -= RoundOver;
 
 		if (addedCombatCards.Count > 0)
 			appliedToCharacter.RemoveCardsFromCurrentDeck(addedCombatCards.ToArray());
@@ -207,7 +207,7 @@ public class TripmineEnemy : RoomStipulationCard
 	{
 		if (cardPlayer.GetType() == typeof(MercGraphic))
 		{
-			CardsScreen.main.RemoveRoomStipulationCard(this);
+			CombatManager.main.RemoveRoomStipulationCard(this);
 			cardPlayer.TakeDamage(damage);
 		}
 
@@ -239,7 +239,7 @@ public class TripmineFriendly : RoomStipulationCard
 	{
 		if (cardPlayer.GetType() != typeof(MercGraphic))
 		{
-			CardsScreen.main.RemoveRoomStipulationCard(this);
+			CombatManager.main.RemoveRoomStipulationCard(this);
 			cardPlayer.TakeDamage(damage);
 		}
 	}
@@ -274,16 +274,16 @@ public class EngineRoom : RoomCard
 
 		public override void ActivateCard()
 		{
-			CardsScreen.ERoundIsOver += DamageAllCharactersInRoom;
+			CombatManager.ERoundIsOver += DamageAllCharactersInRoom;
 		}
 		void DamageAllCharactersInRoom()
 		{
-			CardsScreen.main.DamageAllMercs(damagePerTurn, true);
-			CardsScreen.main.DamageAllEnemies(damagePerTurn, true);
+			MissionCharacterManager.main.DamageAllMercs(damagePerTurn, true);
+			MissionCharacterManager.main.DamageAllEnemies(damagePerTurn, true);
 		}
 		public override void DeactivateCard()
 		{
-			CardsScreen.ERoundIsOver -= DamageAllCharactersInRoom;
+			CombatManager.ERoundIsOver -= DamageAllCharactersInRoom;
 		}
 	}
 }
@@ -315,7 +315,7 @@ public class CoolantRoom : RoomCard
 		}
 		void ReduceStaminaForAll()
 		{
-			CardsScreen.main.IncrementAllCharactersResource(CharacterGraphic.Resource.Stamina, -staminaReduction);
+			MissionCharacterManager.main.IncrementAllCharactersResource(CharacterGraphic.Resource.Stamina, -staminaReduction);
 		}
 		public override void DeactivateCard()
 		{
@@ -389,8 +389,8 @@ public class LowerDecks : RoomCard
 
 		void ExplosionEffect(CharacterGraphic cardPlayer, RangedCard playedCard)
 		{
-			CardsScreen.main.RemoveRoomStipulationCard(this);
-			CardsScreen.main.DamageAllCharacters(damageToEveryone);
+			CombatManager.main.RemoveRoomStipulationCard(this);
+			MissionCharacterManager.main.DamageAllCharacters(damageToEveryone);
 		}
 
 		public override void DeactivateCard()
@@ -438,7 +438,7 @@ public class Backdoor : RoomCard
 		}
 		void Detonate(CharacterGraphic cardPlayer, MeleeCard playedCard)
 		{
-			CardsScreen.main.RemoveRoomStipulationCard(this);
+			CombatManager.main.RemoveRoomStipulationCard(this);
 			cardPlayer.TakeDamage(damage);
 
 		}
@@ -489,7 +489,7 @@ public class Rooftop : RoomCard
 		}
 		void DecreaseArmorForAll()
 		{
-			CardsScreen.main.IncrementAllCharactersResource(CharacterGraphic.Resource.Armor, -armorPenalty);
+			MissionCharacterManager.main.IncrementAllCharactersResource(CharacterGraphic.Resource.Armor, -armorPenalty);
 		}
 		public override void DeactivateCard()
 		{
@@ -525,8 +525,8 @@ public class Armory : RoomCard
 
 		void ExplosionEffect(CharacterGraphic cardPlayer, RangedCard playedCard)
 		{
-			CardsScreen.main.RemoveRoomStipulationCard(this);
-			CardsScreen.main.DamageOpposingTeam(damageToOpposingTeam);
+			CombatManager.main.RemoveRoomStipulationCard(this);
+			MissionCharacterManager.main.DamageOpposingTeam(damageToOpposingTeam);
 		}
 
 		public override void DeactivateCard()
@@ -557,11 +557,11 @@ public class StoreRoom : RoomCard
 
 		public override void ActivateCard()
 		{
-			CardsScreen.main.SetRangedAttacksRestriction(false);
+			CombatManager.rulesHandler.SetRangedAttacksRestriction(false);
 		}
 		public override void DeactivateCard()
 		{
-			CardsScreen.main.SetRangedAttacksRestriction(true);
+			CombatManager.rulesHandler.SetRangedAttacksRestriction(true);
 		}
 	}
 
@@ -594,7 +594,7 @@ public class RuinedHall : RoomCard
 		}
 		void IncreaseArmorForAll()
 		{
-			CardsScreen.main.IncrementAllCharactersResource(CharacterGraphic.Resource.Armor, armorBonus);
+			MissionCharacterManager.main.IncrementAllCharactersResource(CharacterGraphic.Resource.Armor, armorBonus);
 		}
 		public override void DeactivateCard()
 		{

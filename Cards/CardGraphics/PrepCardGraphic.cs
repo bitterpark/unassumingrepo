@@ -27,7 +27,7 @@ public class PrepCardGraphic : CardGraphic {
 	public void CardClicked()
 	{
 		if (GetComponent<Button>().IsInteractable())
-			CardsScreen.main.PlayPrepCard(this);
+			PrepCardManager.main.PlayPrepCard(this);
 	}
 
 	public void ShowAddedCombatCardsTooltip()

@@ -11,14 +11,14 @@ public class RecipeMakeButton : MonoBehaviour,IPointerEnterHandler,IPointerExitH
 	public static event ItemMadeDeleg EItemMade;
 
 	public Text resultItemCountText;
-	
-	InventoryItem.LootItems madeItemType;
+
+	CraftRecipe.CraftableItems madeItemType;
 	
 	public void AssignMadeItem(CraftRecipe newRecipe)
 	{
 		madeItemType=newRecipe.resultItem;
 		//This is very badly written
-		GetComponent<Image>().sprite=InventoryItem.GetLootingItem(madeItemType).GetItemSprite();
+		GetComponent<Image>().sprite=CraftRecipe.GetItemInstance(madeItemType).GetItemSprite();
 		resultItemCountText.text="x"+newRecipe.resultItemCount;
 		//Find out if item can be made
 		bool canMakeItem=false;
@@ -31,14 +31,13 @@ public class RecipeMakeButton : MonoBehaviour,IPointerEnterHandler,IPointerExitH
 		//if (currentSelectedMember.CheckEnoughFatigue(totalBuildFatigueCost))
 		{
 			//Prep used item list and required item count dict
-			
-			Dictionary<InventoryItem.LootItems,int> availableIngredients=new Dictionary<InventoryItem.LootItems, int>(newRecipe.requiredIngredients);
+			Dictionary<CraftRecipe.CraftableItems,int> availableIngredients=new Dictionary<CraftRecipe.CraftableItems, int>(newRecipe.requiredIngredients);
 			//Run a check through local inventory and member personal inventory, to see if 
-			foreach (InventoryItem.LootItems ingredientKey in newRecipe.requiredIngredients.Keys)
+			foreach (CraftRecipe.CraftableItems ingredientKey in newRecipe.requiredIngredients.Keys)
 			{
 				foreach (InventoryItem localItem in MapManager.main.GetTown().GetStashedItems())//InventoryScreenHandler.mainISHandler.selectedMember.currentRegion.GetStashedItems())
 				{
-					if (localItem.GetType()==InventoryItem.GetLootingItem(ingredientKey).GetType())
+					if (localItem.GetType()==CraftRecipe.GetItemInstance(ingredientKey).GetType())
 					{
 						availableIngredients[ingredientKey]=availableIngredients[ingredientKey]-1;
 						usedLocalItems.Add(localItem);
@@ -48,7 +47,7 @@ public class RecipeMakeButton : MonoBehaviour,IPointerEnterHandler,IPointerExitH
 				/*
 				foreach (InventoryItem carriedItem in InventoryScreenHandler.mainISHandler.selectedMember.carriedItems)
 				{
-					if (carriedItem.GetType()==InventoryItem.GetLootingItem(ingredientKey).GetType())
+					if (carriedItem.GetType()==CraftRecipe.GetLootingItem(ingredientKey).GetType())
 					{
 						availableIngredients[ingredientKey]=availableIngredients[ingredientKey]-1;
 						usedCarriedItems.Add(carriedItem);
@@ -82,7 +81,7 @@ public class RecipeMakeButton : MonoBehaviour,IPointerEnterHandler,IPointerExitH
 				MapRegion centralRegion = MapManager.main.GetTown();
 				foreach (InventoryItem usedLocalItem in usedLocalItems) centralRegion.TakeStashItem(usedLocalItem);//creator.currentRegion.TakeStashItem(usedLocalItem);
 				//foreach(InventoryItem usedCarriedItem in usedCarriedItems) creator.RemoveCarriedItem(usedCarriedItem);
-				for(int i=0; i<newRecipe.resultItemCount; i++) centralRegion.StashItem(InventoryItem.GetLootingItem(madeItemType));
+				for(int i=0; i<newRecipe.resultItemCount; i++) centralRegion.StashItem(CraftRecipe.GetItemInstance(madeItemType));
 				if (RecipeMakeButton.EItemMade != null) 
 					RecipeMakeButton.EItemMade();
 			});
@@ -94,7 +93,7 @@ public class RecipeMakeButton : MonoBehaviour,IPointerEnterHandler,IPointerExitH
 	#region IPointerEnterHandler implementation
 	public void OnPointerEnter (PointerEventData eventData)
 	{
-		TooltipManager.main.CreateItemTooltip(InventoryItem.GetLootingItem(madeItemType), transform);
+		TooltipManager.main.CreateItemTooltip(CraftRecipe.GetItemInstance(madeItemType), transform);
 	}
 	#endregion
 

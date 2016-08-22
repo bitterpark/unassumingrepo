@@ -23,25 +23,22 @@ public class BanditCards
 	{
 		List<PrepCard> result = new List<PrepCard>();
 		result.Add(new Enforcer());
-		result.Add(new Hitman());
+		result.Add(new Thug());
 		result.Add(new Muscle());
 
 
 		return result;
 	}
 
-	public class Enforcer : PrepCard
+	public class Thug : PrepCard
 	{
-		public Enforcer()
+		public Thug()
 		{
-			name = "Enforcer";
+			name = "Thug";
 			description = "Adds cards to your deck";
-			image = SpriteBase.mainSpriteBase.brokenArmsSprite;
+			image = SpriteBase.mainSpriteBase.arm;
 
 			addedCombatCards.Add(new GangUp());
-			//addedCombatCards.Add(new GangUp());
-			//addedCombatCards.Add(new SuckerPunch());
-			//addedCombatCards.Add(new LightsOut());
 		}
 	}
 
@@ -51,27 +48,44 @@ public class BanditCards
 		{
 			name = "Muscle";
 			description = "Adds cards to your deck";
-			image = SpriteBase.mainSpriteBase.brokenArmsSprite;
+			image = SpriteBase.mainSpriteBase.arm;
 
-			//addedCombatCards.Add(new Kick());
-			//addedCombatCards.Add(new Roundhouse());
-			//addedCombatCards.Add(new LightsOut());
 			addedCombatCards.Add(new NoRest());
 		}
 	}
 
-	public class Hitman : PrepCard
+	public class Enforcer : PrepCard
 	{
-		public Hitman()
+		public Enforcer()
 		{
-			name = "Hitman";
+			name = "Enforcer";
 			description = "Adds cards to your deck";
 			image = SpriteBase.mainSpriteBase.crosshair;
 
-			//addedCombatCards.Add(new Sidearm());
-			//addedCombatCards.Add(new SprayNPray());
-			//addedCombatCards.Add(new Execution());
-			addedCombatCards.Add(new Execution());
+			addedCombatCards.Add(new RoughUp());
+		}
+
+		public class RoughUp : MeleeCard
+		{
+			protected override bool ExtenderPrerequisitesMet(CharacterGraphic user)
+			{
+				return user.GetStamina() > 0;
+			}
+			
+			protected override void ExtenderConstructor()
+			{	
+				name = "Rough Up";
+				description = "Spend all stamina, remove equal stamina from target";
+				image = SpriteBase.mainSpriteBase.arm;
+				targetType = TargetType.SelectEnemy;
+			}
+
+			protected override void ApplyPlayCosts()
+			{
+				staminaCost = userCharGraphic.GetStamina();
+				staminaDamage = staminaCost;
+				base.ApplyPlayCosts();
+			}
 		}
 	}
 }
@@ -130,10 +144,9 @@ public class NoRest : EffectCard
 		protected override void ExtenderSpecificDeactivation()
 		{
 			MeleeCard.EMeleeCardPlayed -= UseUpCard;
-			appliedToCharacter.SetMeleeAttacksFree(true);
+			appliedToCharacter.SetMeleeAttacksFree(false);
 		}
 	}
-
 }
 
 public class SuckerPunch : MeleeCard
@@ -142,7 +155,7 @@ public class SuckerPunch : MeleeCard
 	{
 		name = "Sucker Punch";
 		description = "Won't know what him 'em";
-		image = SpriteBase.mainSpriteBase.brokenArmsSprite;
+		image = SpriteBase.mainSpriteBase.arm;
 		targetType = TargetType.SelectEnemy;
 
 		staminaCost = 3;
@@ -156,7 +169,7 @@ public class LightsOut : MeleeCard
 	{
 		name = "Lights Out";
 		description = "Like a truck";
-		image = SpriteBase.mainSpriteBase.brokenLegsSprite;
+		image = SpriteBase.mainSpriteBase.leg;
 		targetType = TargetType.SelectEnemy;
 
 		staminaCost = 4;
@@ -171,7 +184,7 @@ public class Roundhouse : MeleeCard
 	{
 		name = "Roundhouse kick";
 		description = "Badass";
-		image = SpriteBase.mainSpriteBase.brokenLegsSprite;
+		image = SpriteBase.mainSpriteBase.leg;
 		targetType = TargetType.SelectEnemy;
 
 		staminaCost = 5;
@@ -200,7 +213,7 @@ public class Kick : MeleeCard
 	{
 		name = "Kick";
 		description = "Guard break (ignores armor)";
-		image = SpriteBase.mainSpriteBase.brokenLegsSprite;
+		image = SpriteBase.mainSpriteBase.leg;
 		targetType = TargetType.SelectEnemy;
 		ignoresArmor = true;
 
@@ -232,7 +245,7 @@ public class GangUp : MeleeCard
 			SetLastsForRounds(1);
 
 			name = "Tag Team";
-			image = SpriteBase.mainSpriteBase.brokenArmsSprite;
+			image = SpriteBase.mainSpriteBase.arm;
 			description = "For one round: character takes "+damagePerMeleeAttack+" extra damage from every melee attack ";
 		}
 

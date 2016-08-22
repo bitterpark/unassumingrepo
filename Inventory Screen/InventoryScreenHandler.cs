@@ -33,10 +33,9 @@ public class InventoryScreenHandler : MonoBehaviour
 
 	//PREFABS
 	public InventorySlot inventorySlotPrefab;
-	public MemberInventorySlot memberSlotPrefab;
 	public EquipmentSlot equipmentSlotPrefab;
-	public MeleeSlot meleeSlotPrefab;
-	public RangedSlot rangedSlotPrefab;
+	public WeaponSlot weaponSlotPrefab;
+
 	public SlotItem slotItemPrefab;
 	public CombatCardGraphic combatCardPrefab;
 	public PrepCardGraphic prepCardPrefab;
@@ -44,16 +43,16 @@ public class InventoryScreenHandler : MonoBehaviour
 	
 	//GROUPS
 	//public Transform weaponsGroup;
-	public Transform meleeSlotPlacement;
-	public Transform rangedSlotPlacement;
+	public Transform weaponsGroup;
 	public Transform equipmentGroup;
 	public Transform inventoryGroup;
-	public Transform memberInventoryGroup;
 	public Transform traitGroup;
 	public Transform skillGroup;
 	public Transform prepCardsGroup;
 	public Transform combatDeckGroup;
 
+	const int equipmentSlotCount = 3;
+	const int weaponSlotCount = 3;
 	
 	/*
 	public void InventoryChangeHandler() 
@@ -69,7 +68,7 @@ public class InventoryScreenHandler : MonoBehaviour
 			if (!GameEventManager.mainEventManager.drawingEvent)
 			{
 				OpenScreen(newMember);
-				if (PartyManager.mainPartyManager.partyMembers.Contains(newMember) && !CardsScreen.missionOngoing)
+				if (PartyManager.mainPartyManager.partyMembers.Contains(newMember) && !CardsScreen.IsMissionOngoing())
 					kickMemberButton.gameObject.SetActive(true);
 				else 
 					kickMemberButton.gameObject.SetActive(false);
@@ -91,7 +90,7 @@ public class InventoryScreenHandler : MonoBehaviour
 	void OpenScreen(PartyMember newMember)
 	{
 		selectedMember=newMember;
-		if (PartyManager.mainPartyManager.partyMembers.Contains(selectedMember) && !CardsScreen.missionOngoing)
+		if (PartyManager.mainPartyManager.partyMembers.Contains(selectedMember) && !CardsScreen.IsMissionOngoing())
 			interactive = true;
 		else
 			interactive = false;
@@ -107,48 +106,7 @@ public class InventoryScreenHandler : MonoBehaviour
 		InventorySlot.EItemDropped += RefreshInventoryItems;
 		InventorySlot.EItemUsed += RefreshInventoryItems;
 	}
-	/*
-	void InventoryCloseEncounterEffect()
-	{
-		EncounterCanvasHandler encounterManager=EncounterCanvasHandler.main;
-		if (selectedMember!=null && encounterManager.encounterOngoing)
-		{
-			if (IsMemberInBattle(selectedMember))
-			{
-				bool emptyBool;
-				encounterManager.memberTokens[selectedMember].TryMove(out emptyBool);
-			}
-		}
-	}
 
-	bool AllowToggleInventoryFromEncounter(PartyMember newMember)
-	{
-		bool allowToggle=false;
-		EncounterCanvasHandler encounterManager=EncounterCanvasHandler.main;
-		//make sure guys outside of encounter can't interact with guys within an encounter and members currently in combat can't open inv
-		if(encounterManager.encounterMembers.Contains(newMember) 
-		&& (!IsMemberInBattle(newMember) || encounterManager.memberTokens[newMember].CanMove()))
-		{
-			//Only allow to open the member's inventory while in battle, do not allow to switch from it
-			if (selectedMember==null) allowToggle=true;
-			else if (!IsMemberInBattle(selectedMember)) allowToggle=true;
-		}
-		return allowToggle;
-	}
-
-	bool IsMemberInBattle(PartyMember checkedMember)
-	{
-		EncounterCanvasHandler encounterManager=EncounterCanvasHandler.main;
-		if (encounterManager.encounterOngoing)
-		{
-			if (!encounterManager.roomButtons[encounterManager.memberCoords[checkedMember]].RoomHasEnemies())
-			{
-				return true;
-			}
-		}
-		return false;
-	}
-	*/
 	public void GameEndHandler()
 	{
 		CloseScreen();
@@ -172,23 +130,18 @@ public class InventoryScreenHandler : MonoBehaviour
 			RefreshLeftCornerText();
 			if (interactive)
 			{
-				rangedSlotPlacement.gameObject.SetActive(true);
-				meleeSlotPlacement.gameObject.SetActive(true);
 				equipmentGroup.parent.gameObject.SetActive(true);
+				weaponsGroup.parent.gameObject.SetActive(true);
 				inventoryGroup.parent.gameObject.SetActive(true);
-				memberInventoryGroup.parent.gameObject.SetActive(true);
 				RefreshWeapons();
 				RefreshEquipment();
-				RefreshMemberInventory();
 				RefreshLocalInventory();
 			}
 			else
 			{
-				rangedSlotPlacement.gameObject.SetActive(false);
-				meleeSlotPlacement.gameObject.SetActive(false);
 				equipmentGroup.parent.gameObject.SetActive(false);
+				weaponsGroup.parent.gameObject.SetActive(false);
 				inventoryGroup.parent.gameObject.SetActive(false);
-				memberInventoryGroup.parent.gameObject.SetActive(false);
 			}
 			RefreshTraits();
 			RefreshMercDeck();
@@ -203,52 +156,30 @@ public class InventoryScreenHandler : MonoBehaviour
 		startingArmorValueText.text = selectedMember.GetStartArmor().ToString();
 		startingStaminaValueText.text = selectedMember.GetMaxStamina().ToString();
 		startingAmmoValueText.text = selectedMember.GetStartAmmo().ToString();
-
-
-
-		//Update weapon damage
-		/*
-		string meleeText = "Melee:";
-		meleeText += selectedMember.GetMeleeDamageString();
-		meleeDamageText.text = meleeText;
-
-		string rangedText = "Ranged:";
-		rangedText += selectedMember.GetRangedDamage();
-		rangedDamageText.text = rangedText;
-		 */
 	}
 
 	void RefreshWeapons()
 	{
-		//Remove old weapons
-		Image oldMeleeSlot = meleeSlotPlacement.GetComponentInChildren<Image>();
-		Image oldRangedSlot = rangedSlotPlacement.GetComponentInChildren<Image>();
-		
-		if (oldMeleeSlot != null) 
-			GameObject.Destroy(oldMeleeSlot.gameObject);
-		if (oldRangedSlot != null) 
-			GameObject.Destroy(oldRangedSlot.gameObject);
-
-		//Refresh melee slot
-		MeleeSlot newMeleeSlot = Instantiate(meleeSlotPrefab);
-		newMeleeSlot.transform.SetParent(meleeSlotPlacement, false);
-		if (selectedMember.equippedMeleeWeapon != null)
+		//Refresh current weapons
+		foreach (Image oldItemSlot in weaponsGroup.GetComponentsInChildren<Image>())//.GetComponentsInChildren<Button>())
 		{
-			SlotItem meleeWeapon = Instantiate(slotItemPrefab);
-			meleeWeapon.AssignItem(selectedMember.equippedMeleeWeapon);
-			newMeleeSlot.AssignItem(meleeWeapon);
-			//!!NO ONCLICK LISTENER ASSIGNED!!
+			GameObject.Destroy(oldItemSlot.gameObject);
 		}
 
-		//Refresh ranged slot
-		RangedSlot newRangedSlot = Instantiate(rangedSlotPrefab);
-		newRangedSlot.transform.SetParent(rangedSlotPlacement, false);
-		if (selectedMember.equippedRangedWeapon != null)
+		for (int i = 0; i < weaponSlotCount; i++)
 		{
-			SlotItem rangedWeapon = Instantiate(slotItemPrefab);
-			rangedWeapon.AssignItem(selectedMember.equippedRangedWeapon);
-			newRangedSlot.AssignItem(rangedWeapon);
-			//!!NO ONCLICK LISTENER ASSIGNED!!
+			WeaponSlot newSlot = Instantiate(weaponSlotPrefab);
+			newSlot.transform.SetParent(weaponsGroup, false);
+
+			List<IEquipmentItem> membersWeapons=selectedMember.GetEquippedWeapons();
+			if (i < membersWeapons.Count)
+			{
+				SlotItem newItem = Instantiate(slotItemPrefab);
+				InventoryItem assignedItem = membersWeapons[i] as Weapon;
+				newItem.AssignItem(assignedItem);
+				newSlot.AssignItem(newItem);
+				//!!NO ONCLICK LISTENER ASSIGNED!!
+			}
 		}
 	}
 
@@ -259,39 +190,20 @@ public class InventoryScreenHandler : MonoBehaviour
 		{
 			GameObject.Destroy(oldItemSlot.gameObject);
 		}
-		int equipmentSlotCount = 4;
+
 		for (int i = 0; i < equipmentSlotCount; i++)
 		{
 			EquipmentSlot newSlot = Instantiate(equipmentSlotPrefab);
 			newSlot.transform.SetParent(equipmentGroup, false);
-			if (i < selectedMember.equippedItems.Count)
+
+			List<IEquipmentItem> membersEquipment = selectedMember.GetEquippedItems();
+			if (i < membersEquipment.Count)
 			{
 				SlotItem newItem = Instantiate(slotItemPrefab);
-				newItem.AssignItem(selectedMember.equippedItems[i]);
+				InventoryItem assignedItem = membersEquipment[i] as InventoryItem;
+				newItem.AssignItem(assignedItem);
 				newSlot.AssignItem(newItem);
 				//!!NO ONCLICK LISTENER ASSIGNED!!
-			}
-		}
-	}
-
-	void RefreshMemberInventory()
-	{
-		//REFRESH MEMBER INVENTORY
-		foreach (Image oldItemSlot in memberInventoryGroup.GetComponentsInChildren<Image>())//Button>())
-		{
-			GameObject.Destroy(oldItemSlot.gameObject);
-		}
-		int memberSlotCount = selectedMember.currentCarryCapacity;
-		for (int i = 0; i < memberSlotCount; i++)
-		{
-			InventorySlot newSlot = Instantiate(memberSlotPrefab);
-			newSlot.transform.SetParent(memberInventoryGroup, false);
-			if (i < selectedMember.carriedItems.Count)
-			{
-				SlotItem newItem = Instantiate(slotItemPrefab);
-				newItem.AssignItem(selectedMember.carriedItems[i]);
-				newSlot.AssignItem(newItem);
-				//newItem.GetComponent<Button>().onClick.AddListener(() => InventoryItemClicked(newItem.assignedItem, newItem.currentSlot));
 			}
 		}
 	}

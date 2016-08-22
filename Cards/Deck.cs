@@ -57,9 +57,13 @@ public class Deck<T> where T:class
 		drawPile.Insert(0, card); 
 	}
 
+	public List<T> DrawCards(int number)
+	{
+		return DrawCards(number, false);
+	}
 	
 
-	public List<T> DrawCards(int number)
+	public List<T> DrawCards(int number, bool discard)
 	{
 		List<T> drawnCards = new List<T>();
 
@@ -69,6 +73,8 @@ public class Deck<T> where T:class
 			if (DrawCard(out card))
 				drawnCards.Add(card);
 		}
+		if (discard)
+			DiscardCards(drawnCards.ToArray());
 		return drawnCards;
 	}
 

@@ -87,7 +87,7 @@ public class MapScoutingHandler : MonoBehaviour {
 		foreach (RewardCard card in assignedRegion.encounterInRegion.GetMissionEndRewards())
 		{
 			RewardCardGraphic newGraphic = Instantiate(rewardPrefab);
-			newGraphic.AssignCard(card);
+			newGraphic.AssignCardForDisplayOnly(card);
 			newGraphic.transform.SetParent(rewardCardsGroup, false);
 			newGraphic.GetComponent<Button>().interactable = false;
 		}

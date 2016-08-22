@@ -81,9 +81,9 @@ public class TownManager : MonoBehaviour {
 		itemsOnSale.Add(new ComputerParts());
 
 		MapManager.main.GetTown().StashItem(new AssaultRifle());
-		MapManager.main.GetTown().StashItem(new AssaultRifle());
-		MapManager.main.GetTown().StashItem(new Axe());
-		MapManager.main.GetTown().StashItem(new Axe());
+		MapManager.main.GetTown().StashItem(new Stim());
+		MapManager.main.GetTown().StashItem(new AmmoPouch());
+		MapManager.main.GetTown().StashItem(new ArmorVest());
 	}
 
 	public virtual void UpdateMercenaryHireList()

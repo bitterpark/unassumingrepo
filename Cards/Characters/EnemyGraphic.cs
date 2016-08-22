@@ -9,6 +9,7 @@ public class EnemyGraphic : CharacterGraphic
 	{
 		currentCharacterDeck = new CombatDeck();
 		ApplyVariationCardsToBasicDeck(1);
+		handManager.AssignDeck(currentCharacterDeck);
 	}
 
 	void ApplyVariationCardsToBasicDeck(int count)
@@ -23,11 +24,20 @@ public class EnemyGraphic : CharacterGraphic
 		}
 	}
 
-	public override void StartedTurn()
+	public virtual void StartedTurn()
 	{
-		base.StartedTurn();
-		DisplayMyHand(false);
+		handManager.DiscardCurrentHand();
+		handManager.DrawCardsToHand(CombatManager.startingHandSize);
 	}
 
-	
+	public List<CombatCard> GetCharacterHand()
+	{
+		return handManager.GetHand();
+	}
+
+	public void RemovePlayedCardFromHand(CombatCard card)
+	{
+		handManager.RemoveCardFromHand(card);
+	}
+
 }

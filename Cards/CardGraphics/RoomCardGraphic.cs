@@ -4,15 +4,24 @@ using System.Collections;
 
 public class RoomCardGraphic :CardGraphic 
 {
-	public RoomCard assignedCard;
-	public Text enemyCountText;
 	
-	public void AssignCard(RoomCard newCard)
+	public Text enemyCountText;
+	RoomCard assignedCard;
+	RoomCardDisplayer displayer;
+
+	public void AssignCard(RoomCard newCard, RoomCardDisplayer displayer)
 	{
 		base.UpdateBasicVisuals(newCard);
+		this.displayer = displayer;
+
 		GetComponent<Button>().onClick.AddListener(() => CardClicked());
 		assignedCard = newCard;
 		enemyCountText.text = assignedCard.GetEnemyCount().ToString();
+	}
+
+	public RoomCard GetAssignedCard()
+	{
+		return assignedCard;
 	}
 
 	public int GetRoomEnemyCount()
@@ -35,7 +44,7 @@ public class RoomCardGraphic :CardGraphic
 	public void CardClicked()
 	{
 		if (GetComponent<Button>().IsInteractable())
-			CardsScreen.main.PlayRoomCard(this);
+			displayer.PlayRoomCard(this);
 	}
 
 }

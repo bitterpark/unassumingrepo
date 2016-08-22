@@ -102,37 +102,6 @@ public class InventorySlot : MonoBehaviour, IDropHandler
 		}
 	}
 
-	//Only works for inheriting classes, does nothing for this class
-	public virtual void RclickAction()
-	{
-		//Drop item from current slot to local inventory
-		if (GetType()!=typeof(InventorySlot))
-		{
-			foreach (InventorySlot slot in InventoryScreenHandler.mainISHandler.inventoryGroup.GetComponentsInChildren<InventorySlot>())
-			{
-				if (slot.filledItem==null && slot!=this) 
-				{
-					slot.ItemDroppedIn(filledItem);
-					break;
-				}
-			} 
-		}
-		else
-		{
-			if (InventoryScreenHandler.mainISHandler.selectedMember.CanPickUpItem())
-			{
-				foreach (MemberInventorySlot slot in InventoryScreenHandler.mainISHandler.memberInventoryGroup.GetComponentsInChildren<MemberInventorySlot>())
-				{
-					if (slot.filledItem==null) 
-					{
-						slot.ItemDroppedIn(filledItem);
-						break;
-					}
-				}
-			}
-		}
-	}
-
 	//unconditional emptying out
 	public virtual void EmptySlot()
 	{

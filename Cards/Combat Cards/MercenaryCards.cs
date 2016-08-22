@@ -11,7 +11,6 @@ public class MercenaryCards
 		result.AddCards(typeof(TakeCover));
 		result.AddCards(typeof(Hipfire));
 		result.AddCards(typeof(BurstFire));
-		result.AddCards(typeof(SuicideCharge));
 		result.AddCards(typeof(Overconfidence));
 		result.AddCards(typeof(RunAndGun));
 		result.AddCards(typeof(LastStand));
@@ -25,7 +24,7 @@ public class MercenaryCards
 		List<PrepCard> result = new List<PrepCard>();
 		result.Add(new Deathwish());
 		result.Add(new Unbreakable());
-		result.Add(new HiredGun());
+		result.Add(new Challenger());
 
 
 		return result;
@@ -39,10 +38,7 @@ public class MercenaryCards
 			description = "Adds cards to your deck";
 			image = SpriteBase.mainSpriteBase.skull;
 
-			//addedCombatCards.Add(new Overconfidence());
-			//addedCombatCards.Add(new SuicideCharge());
-			addedCombatCards.Add(new ComeAtMe());
-			//addedCombatCards.Add(new RunAndGun());
+			addedCombatCards.Add(new SuicideCharge());
 		}
 	}
 	public class Unbreakable : PrepCard
@@ -53,89 +49,42 @@ public class MercenaryCards
 			description = "Adds cards to your deck";
 			image = SpriteBase.mainSpriteBase.armor;
 
-			//addedCombatCards.Add(new TakeCover());
-			//addedCombatCards.Add(new LastStand());
-			//addedCombatCards.Add(new PlanB());
 			addedCombatCards.Add(new PlanB());
 		}
 	}
-	public class HiredGun : PrepCard
+	public class Challenger : PrepCard
 	{
-		public HiredGun()
+		public Challenger()
 		{
-			name = "Hired Gun";
+			name = "Challenger";
 			description = "Adds cards to your deck";
-			image = SpriteBase.mainSpriteBase.assaultRifleSprite;
+			image = SpriteBase.mainSpriteBase.arm;
 
-			//addedCombatCards.Add(new BurstFire());
-			//addedCombatCards.Add(new BurstFire());
-			//addedCombatCards.Add(new Hipfire());
-			addedCombatCards.Add(new ControlledBursts());
+			addedCombatCards.Add(new ComeAtMe());
 		}
 	}
 }
 
-public class ControlledBursts : EffectCard
-{
-	protected override void ExtenderConstructor()
-	{
-		targetType = TargetType.None;
-		addedStipulationCard = new TriggerDiscipline();
-		staminaCost = 1;
 
-		name = "Controlled Bursts";
-		description = "Play a Trigger Discipline card to the character";
-		image = SpriteBase.mainSpriteBase.bullets;
-
-	}
-
-	public class TriggerDiscipline : CharacterStipulationCard
-	{
-		public TriggerDiscipline()
-		{
-			name = "Trigger Discipline";
-			image = SpriteBase.mainSpriteBase.crosshair;
-			description = "Character's next ranged attack costs stamina instead of ammo";
-		}
-
-		protected override void ExtenderSpecificActivation()
-		{
-			appliedToCharacter.SetRangedAttacksCostStamina(true);
-			RangedCard.ERangedCardPlayed += TriggerEffect;
-		}
-		void TriggerEffect(CharacterGraphic cardPlayer, RangedCard playedCard)
-		{
-			if (cardPlayer==appliedToCharacter)
-				appliedToCharacter.RemoveCharacterStipulationCard(this);
-		}
-
-		protected override void ExtenderSpecificDeactivation()
-		{
-			appliedToCharacter.SetRangedAttacksCostStamina(false);
-			RangedCard.ERangedCardPlayed -= TriggerEffect;
-		}
-	}
-}
 
 public class PlanB : EffectCard
 {
-	int bonusArmorPerStaminaPoint = 10;
+	int bonusArmorPerStaminaPoint = 25;
 	
 	protected override void ExtenderConstructor()
 	{
 		targetType = TargetType.None;
-		userArmorGain = 30;
 
 		name = "Plan B";
-		description = "Gain " + userArmorGain + " armor, lose all stamina, gain " + bonusArmorPerStaminaPoint+" armor for every point of stamina";
+		description = "Spend all stamina, gain " + bonusArmorPerStaminaPoint+" armor per point of stamina";
 		image = SpriteBase.mainSpriteBase.lateralArrows;
 	}
-	protected override void CardPlayEffects()
+
+	protected override void ApplyPlayCosts()
 	{
-		base.CardPlayEffects();
-		int bonusArmorGain = bonusArmorPerStaminaPoint * userCharGraphic.GetStamina();
-		userCharGraphic.IncrementArmor(bonusArmorGain);
-		userCharGraphic.IncrementStamina(-userCharGraphic.GetStamina());
+		staminaCost = userCharGraphic.GetStamina();
+		userArmorGain = bonusArmorPerStaminaPoint * staminaCost;
+		base.ApplyPlayCosts();
 	}
 }
 
@@ -161,7 +110,7 @@ public class TakeCover : EffectCard
 	{
 		targetType = TargetType.None;
 		staminaCost = 2;
-		userArmorGain = 45;
+		userArmorGain = 40;
 		
 		name = "Take Cover";
 		description = "Hit the deck (gain " + userArmorGain + " armor)";
@@ -176,8 +125,8 @@ public class LastStand : EffectCard
 	protected override void ExtenderConstructor()
 	{
 		targetType = TargetType.None;
-		takeDamageCost = 40;
-		userStaminaGain = 3;
+		takeDamageCost = 20;
+		userStaminaGain = 2;
 		
 		name = "Last Stand";
 		description = "Restore " + userStaminaGain + " stamina, take " + takeDamageCost + " damage";
@@ -206,14 +155,14 @@ public class ComeAtMe : EffectCard
 			SetLastsForRounds(1);
 
 			name = "Brawler";
-			image = SpriteBase.mainSpriteBase.brokenArmsSprite;
+			image = SpriteBase.mainSpriteBase.arm;
 			description = "For one round: all melee attacks played by enemies will only target this character";
 		}
 
 		protected override void ExtenderSpecificActivation()
 		{
-			CardsScreen.main.SetNewMeleeTargetMerc(appliedToCharacter);
-			CardsScreen.ENewMeleeTargetMercSet += RemoveCard;
+			CombatCardTargeter.main.SetNewMeleeTargetMerc(appliedToCharacter);
+			CombatCardTargeter.ENewMeleeTargetMercSet += RemoveCard;
 		}
 		void RemoveCard()
 		{
@@ -222,8 +171,8 @@ public class ComeAtMe : EffectCard
 
 		protected override void ExtenderSpecificDeactivation()
 		{
-			CardsScreen.main.ClearMeleeTargetMerc();
-			CardsScreen.ENewMeleeTargetMercSet -= RemoveCard;
+			CombatCardTargeter.main.ClearMeleeTargetMerc();
+			CombatCardTargeter.ENewMeleeTargetMercSet -= RemoveCard;
 		}
 	}
 }
@@ -268,13 +217,18 @@ public class SuicideCharge : MeleeCard
 {
 	protected override void ExtenderConstructor()
 	{
-		damage = 40;
-		staminaCost = 4;
-		takeDamageCost = 20;
-		targetType = TargetType.AllEnemies;
+		damage = 10;
+		targetType = TargetType.SelectEnemy;
 		
 		name = "Suicide Charge";
-		description = "Take " + takeDamageCost + " damage. Targets all enemies.";
+		description = "Spend all armor, do damage equal to armor spent";
 		image = SpriteBase.mainSpriteBase.skull;
+	}
+
+	protected override void ApplyPlayCosts()
+	{
+		takeDamageCost = userCharGraphic.GetArmor();
+		damage += takeDamageCost;
+		base.ApplyPlayCosts();
 	}
 }

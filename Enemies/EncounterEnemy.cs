@@ -7,6 +7,7 @@ public abstract class EncounterEnemy: Character
 	public static EncounterEnemy CreateEnemyOfSetPowerLevel(System.Type enemyType,PowerLevel powerLevel)
 	{
 		EncounterEnemy newEnemy=(EncounterEnemy)System.Activator.CreateInstance(enemyType);
+		newEnemy.CommonConstructor();
 		if (powerLevel == PowerLevel.Normal)
 			newEnemy.NormalConstructor();
 		if (powerLevel == PowerLevel.Tough)
@@ -37,19 +38,13 @@ public abstract class EncounterEnemy: Character
 	
 	public Vector2 GetCoords() {return new Vector2(xCoord,yCoord);}
 	public void SetCoords(Vector2 newCoords) {xCoord=(int)newCoords.x; yCoord=(int)newCoords.y;}
-	
+
 	public EncounterEnemy() {}
 
 	public enum PowerLevel {Normal, Tough};
 
-	public EncounterEnemy(PowerLevel powerLevel)
-	{
-		if (powerLevel==PowerLevel.Tough)
-			ToughConstructor();
-		else
-			NormalConstructor();
-	}
 
+	protected abstract void CommonConstructor();
 	protected abstract void NormalConstructor();
 	protected abstract void ToughConstructor();
 

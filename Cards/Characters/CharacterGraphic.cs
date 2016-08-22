@@ -8,6 +8,8 @@ public abstract class CharacterGraphic : MonoBehaviour {
 	public FloatingText floatingTextPrefab;
 	public CharStipulationCardGraphic stipulationCardPrefab;
 
+	public HandManager handManager;
+
 	public Text nameText;
 	public Text healthText;
 	public Text armorText;
@@ -23,14 +25,11 @@ public abstract class CharacterGraphic : MonoBehaviour {
 	protected Character assignedCharacter;
 
 	protected CombatDeck currentCharacterDeck;
-	protected List<CombatCard> characterHand = new List<CombatCard>();
 
 	List<CharacterStipulationCard> activeStipulationCards = new List<CharacterStipulationCard>();
 
 	public enum Resource {Health,Armor,Stamina,Ammo};
 
-	public delegate void TurnStartDeleg();
-	public event TurnStartDeleg ECharacterTurnStarted;
 
 	public delegate void TookDamageDeleg();
 	public event TookDamageDeleg ETookDamage;
@@ -44,7 +43,6 @@ public abstract class CharacterGraphic : MonoBehaviour {
 	bool rangedAttacksAreFree = false;
 	bool rangedAttacksCostStamina = false;
 
-	HandDisplayingObject myHandDisplayer;
 
 	public void AssignCharacter(Character newChar)
 	{
@@ -55,10 +53,7 @@ public abstract class CharacterGraphic : MonoBehaviour {
 		{
 			portrait.GetComponent<Button>().onClick.AddListener(
 				() => InventoryScreenHandler.mainISHandler.ToggleSelectedMember(assignedCharacter as PartyMember));
-			myHandDisplayer = CardsScreen.main.playerHandObject;
 		}
-		else
-			myHandDisplayer = CardsScreen.main.enemyHandObject;
 
 		nameText.text = newChar.GetName();
 		healthText.text = newChar.GetHealth().ToString();
@@ -67,7 +62,6 @@ public abstract class CharacterGraphic : MonoBehaviour {
 		SetStartStamina();
 		SetStartAmmo();
 		SetStartArmor();
-
 		//currentCharacterDeck = assignedCharacter.GetCombatDeck();
 	}
 
@@ -82,45 +76,17 @@ public abstract class CharacterGraphic : MonoBehaviour {
 		currentCharacterDeck.RemoveCards(cards);
 	}
 
-	public void DrawCardsToHand()
+
+	public List<CombatCard> DrawCardsFromCharacterDeck(int count)
 	{
-		DrawCardsToHand(CardsScreen.startingHandSize);
-	}
-	public void DrawCardsToHand(int count)
-	{
-		characterHand.AddRange(currentCharacterDeck.DrawCards(count));
+		return currentCharacterDeck.DrawCards(count,true);
 	}
 
-	public void RemoveCardFromHand(CombatCard card)
+	public CombatDeck GetCurrentCombatDeck()
 	{
-		characterHand.Remove(card);
+		return currentCharacterDeck;
 	}
-
-	public void DiscardCurrentHand()
-	{
-		currentCharacterDeck.DiscardCards(characterHand.ToArray());
-		characterHand.Clear();
-	}
-
-	public void DisplayMyHand(bool interactable)
-	{
-		myHandDisplayer.DisplayHand(interactable, characterHand);
-	}
-
-	public void SetMyHandInteractivity(bool interactable)
-	{
-		myHandDisplayer.SetHandInteractivity(interactable);
-	}
-
-	public void HideMyDisplayedHand()
-	{
-		myHandDisplayer.HideDisplayedHand();
-	}
-
-	public List<CombatCardGraphic> GetHandGraphics()
-	{
-		return myHandDisplayer.GetHandGraphics();
-	}
+	
 
 	public Character GetCharacter()
 	{
@@ -150,9 +116,6 @@ public abstract class CharacterGraphic : MonoBehaviour {
 
 	public void TakeDamage(int damage, bool ignoreArmor)
 	{
-		if (ETookDamage != null)
-			ETookDamage();
-
 		int damageToHealth = damage;
 		if (!ignoreArmor)
 		{
@@ -169,12 +132,14 @@ public abstract class CharacterGraphic : MonoBehaviour {
 		{
 			IncrementHealth(-damageToHealth);
 		}
+		if (ETookDamage != null && GetHealth()>0)
+			ETookDamage();
 	}
 
 	public void ResetCharacterResource(Resource resource)
 	{
 		if (resource == Resource.Health)
-			throw new System.Exception("Canno reset character health!");
+			throw new System.Exception("Cannot reset character health!");
 		if (resource == Resource.Stamina)
 			SetStartStamina();
 		if (resource == Resource.Armor)
@@ -327,31 +292,19 @@ public abstract class CharacterGraphic : MonoBehaviour {
 		return hasTurn;
 	}
 
-	public virtual void StartedTurn()
-	{
-		DoTurnEventAndDrawCards();
-	}
-
-	protected void DoTurnEventAndDrawCards()
-	{
-		if (ECharacterTurnStarted != null)
-			ECharacterTurnStarted();
-		DiscardCurrentHand();
-		DrawCardsToHand();
-	}
+	
 
 	public void GiveTurn()
 	{
 		SetTurnPossibility(true);
 	}
-	public void RemoveTurn()
+	public virtual void RemoveTurn()
 	{
 		SetTurnPossibility(false);
 	}
-	public void TurnDone()
+	public void TurnFinished()
 	{
-		HideMyDisplayedHand();
-		SetTurnPossibility(false);
+		RemoveTurn();
 	}
 	void SetTurnPossibility(bool hasTurn)
 	{
@@ -379,6 +332,9 @@ public abstract class CharacterGraphic : MonoBehaviour {
 
 	public bool CharacterMeetsCardRequirements(CombatCard card)
 	{
+		if (!hasTurn)
+			return false;
+		
 		int staminaReq = card.staminaCost;
 		int ammoReq = card.ammoCost;
 
@@ -471,14 +427,14 @@ public abstract class CharacterGraphic : MonoBehaviour {
 			newText.AssignFloatingText(value, textStartpoint, resourceType);
 		}
 	}
-
+	/*
 	public void HandWidgetHoverStart() 
-	{ 
-		CardsScreen.main.PeekCharacterHand(this); 
+	{
+		MissionUIToggler.main.PeekCharacterHand(this); 
 	}
 
 	public void HandWidgetHoverEnd() 
 	{ 
-		CardsScreen.main.StopPeekingCharacterHand(this);
-	}
+		MissionUIToggler.main.StopPeekingCharacterHand(this);
+	}*/
 }

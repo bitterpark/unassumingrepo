@@ -9,10 +9,10 @@ public class RecipeIngredient : MonoBehaviour,IPointerEnterHandler,IPointerExitH
 	public Text requiredNumberText;
 		
 	InventoryItem ingredientItem=null;
-	
-	public void AssignIngredientItem(InventoryItem.LootItems itemType, int requiredNumber)
+
+	public void AssignIngredientItem(CraftRecipe.CraftableItems itemType, int requiredNumber)
 	{
-		ingredientItem=InventoryItem.GetLootingItem(itemType);
+		ingredientItem = CraftRecipe.GetItemInstance(itemType);
 		ingredientIcon.sprite=ingredientItem.GetItemSprite();
 		requiredNumberText.text="x"+requiredNumber;
 	}

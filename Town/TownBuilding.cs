@@ -9,7 +9,7 @@ public interface IBuildable
 	string GetName();
 	string GetDescription();
 	Sprite GetIcon();
-	Dictionary<InventoryItem.LootItems, int> GetMaterials();
+	Dictionary<CraftRecipe.CraftableItems, int> GetMaterials();
 
 	void BuildingFinished();
 }
@@ -24,7 +24,7 @@ public abstract class BuildableObject: IBuildable
 	
 	protected string name;
 	protected string description;
-	protected Dictionary<InventoryItem.LootItems, int> requiredMaterials=new Dictionary<InventoryItem.LootItems,int>();
+	protected Dictionary<CraftRecipe.CraftableItems, int> requiredMaterials=new Dictionary<CraftRecipe.CraftableItems,int>();
 
 
 	public virtual void BuildingFinished()
@@ -59,7 +59,7 @@ public abstract class BuildableObject: IBuildable
 		return description;
 	}
 
-	public Dictionary<InventoryItem.LootItems, int> GetMaterials()
+	public Dictionary<CraftRecipe.CraftableItems, int> GetMaterials()
 	{
 		return requiredMaterials;
 	}
@@ -165,7 +165,7 @@ public class Habitation : TownBuilding
 	{
 		name = "Habitation";
 		icon = SpriteBase.mainSpriteBase.rest;
-		requiredMaterials.Add(InventoryItem.LootItems.Scrap,1);
+		requiredMaterials.Add(CraftRecipe.CraftableItems.Scrap,1);
 		buildMoneyCost = 800;
 
 		description="Cabins, bathrooms and the mess hall, which currently houses the local dive. The mercs congregate here, so this is a great place to mobilize them.";
@@ -198,7 +198,7 @@ public class Canteen : BuildingUpgrade
 	{
 		name = "Canteen";
 		icon = SpriteBase.mainSpriteBase.droplet;
-		requiredMaterials.Add(InventoryItem.LootItems.Scrap, 2);
+		requiredMaterials.Add(CraftRecipe.CraftableItems.Scrap, 2);
 		buildMoneyCost = 800;
 
 		description = "Upgrade our canteen (and bar) with fancy, hi-tech habitation systems, such as plumbing and refrigeration.";
@@ -221,8 +221,8 @@ public class CommCenter : TownBuilding
 	{
 		name = "Comms Center";
 		icon = SpriteBase.mainSpriteBase.radio;
-		requiredMaterials.Add(InventoryItem.LootItems.Scrap, 1);
-		requiredMaterials.Add(InventoryItem.LootItems.ComputerParts, 1);
+		requiredMaterials.Add(CraftRecipe.CraftableItems.Scrap, 1);
+		requiredMaterials.Add(CraftRecipe.CraftableItems.ComputerParts, 1);
 		buildMoneyCost = 800;
 
 		description = "The heart of our operation, this is the only way to locate the parts necessary for rebuilding this scrapheap and steal them";
@@ -251,9 +251,9 @@ public class Engines : TownBuilding
 	{
 		name = "Engines";
 		icon = SpriteBase.mainSpriteBase.flamingBullet;
-		requiredMaterials.Add(InventoryItem.LootItems.Scrap, 1);
-		requiredMaterials.Add(InventoryItem.LootItems.ComputerParts, 1);
-		requiredMaterials.Add(InventoryItem.LootItems.FusionModule, 1);
+		requiredMaterials.Add(CraftRecipe.CraftableItems.Scrap, 1);
+		requiredMaterials.Add(CraftRecipe.CraftableItems.ComputerParts, 1);
+		requiredMaterials.Add(CraftRecipe.CraftableItems.FusionModule, 1);
 		buildMoneyCost = 800;
 
 		description = "Aside from all the fancy radiation shielding and life support, this is what truly separates a spaceship from any old pile of metal in the middle of nowhere. Once we build this, we can finally get off this planet.";
@@ -311,7 +311,7 @@ public class CargoBay : TownBuilding
 	{
 		name = "Cargo Bay";
 		icon = SpriteBase.mainSpriteBase.sack;
-		requiredMaterials.Add(InventoryItem.LootItems.Scrap, 1);
+		requiredMaterials.Add(CraftRecipe.CraftableItems.Scrap, 1);
 		buildMoneyCost = 400;
 
 		description = "A part of the future ship, for now we can use the space and equipment to open a market terminal for passing truckers.";
@@ -344,7 +344,7 @@ public class CargoBay : TownBuilding
 		{
 			name = "Loader";
 			icon = SpriteBase.mainSpriteBase.wrench;
-			requiredMaterials.Add(InventoryItem.LootItems.Scrap, 2);
+			requiredMaterials.Add(CraftRecipe.CraftableItems.Scrap, 2);
 			buildMoneyCost = 100;
 
 			description = "Repairing the old cargo loader will allow us to offload cargo ourselves and save on teamster fees";
@@ -372,8 +372,8 @@ public class SickBay : TownBuilding
 	{
 		name = "Sick Bay";
 		icon = SpriteBase.mainSpriteBase.medicalCross;
-		requiredMaterials.Add(InventoryItem.LootItems.Scrap, 1);
-		requiredMaterials.Add(InventoryItem.LootItems.ComputerParts, 1);
+		requiredMaterials.Add(CraftRecipe.CraftableItems.Scrap, 1);
+		requiredMaterials.Add(CraftRecipe.CraftableItems.ComputerParts, 1);
 		buildMoneyCost = 400;
 
 		description = "The ship requires a treatment center capable of dealing with spacefaring injuries and diseases. We can also use it to patch up our wounded mercs.";
@@ -407,7 +407,7 @@ public class SickBay : TownBuilding
 		{
 			name = "Hull Repair";
 			icon = SpriteBase.mainSpriteBase.padlockIcon;
-			requiredMaterials.Add(InventoryItem.LootItems.ComputerParts, 1);
+			requiredMaterials.Add(CraftRecipe.CraftableItems.ComputerParts, 1);
 			buildMoneyCost = 400;
 
 			description = "Restoring hull integrity will improve medical conditions, and also stop people from throwing garbage into the holes in walls.";
@@ -432,7 +432,7 @@ public class SickBay : TownBuilding
 		{
 			name = "Air Filtration";
 			icon = SpriteBase.mainSpriteBase.padlockIcon;
-			requiredMaterials.Add(InventoryItem.LootItems.ComputerParts, 1);
+			requiredMaterials.Add(CraftRecipe.CraftableItems.ComputerParts, 1);
 			buildMoneyCost = 400;
 
 			description = "Our docs insist this is necessary for proper quarantine procedures, but I think they're just trying to get air conditioning.";

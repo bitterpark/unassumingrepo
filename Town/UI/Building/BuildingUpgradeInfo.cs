@@ -35,7 +35,7 @@ public class BuildingUpgradeInfo : MonoBehaviour
 	void ShowIncompleteUpgradeInfo()
 	{
 		//Add required ingredient icons
-		foreach (InventoryItem.LootItems ingredientKey in assignedBuilding.GetMaterials().Keys)
+		foreach (CraftRecipe.CraftableItems ingredientKey in assignedBuilding.GetMaterials().Keys)
 		{
 			RecipeIngredient newIngredientImage = Instantiate(ingredientPrefab);
 			newIngredientImage.AssignIngredientItem(ingredientKey, assignedBuilding.GetMaterials()[ingredientKey]);

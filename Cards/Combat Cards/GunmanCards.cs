@@ -88,7 +88,7 @@ public class TrickMags : EffectCard
 
 		name = "Trick Mags";
 		description = "Character's next ranged attack costs no ammo";
-		image = SpriteBase.mainSpriteBase.ammoBoxSprite;
+		image = SpriteBase.mainSpriteBase.ammoBox;
 
 	}
 
@@ -140,9 +140,11 @@ public class Headshot : EffectCard
 		
 		public ScopeIn()
 		{
+			SetLastsForRounds(2);
+			
 			name = "Scope In";
 			image = SpriteBase.mainSpriteBase.crosshair;
-			description = "Character's next ranged attack ignores armor";
+			description = "For two rounds: character's ranged attacks ignore armor";
 		}
 
 		protected override void ExtenderSpecificActivation()
@@ -196,21 +198,6 @@ public class Camo : EffectCard
 	}
 }
 
-public class FullAuto : RangedCard
-{
-	protected override void ExtenderConstructor()
-	{
-		name = "Full Auto";
-		description = "Say hello";
-		image = SpriteBase.mainSpriteBase.skull;
-
-		damage = 80;
-		ammoCost = 3;
-		staminaCost = 1;
-		targetType = TargetType.SelectEnemy;
-	}
-}
-
 public class HollowPoint : RangedCard
 {
 	protected override void ExtenderConstructor()
@@ -247,7 +234,7 @@ public class LimbShot : RangedCard
 	{
 		name = "Limb Shot";
 		description = "Let them suffer";
-		image = SpriteBase.mainSpriteBase.brokenArmsSprite;
+		image = SpriteBase.mainSpriteBase.arm;
 
 		staminaDamage = 2;
 		staminaCost = 2;
@@ -286,7 +273,7 @@ public class Pistolwhip : MeleeCard
 	{
 		name = "Pistol Whip";
 		description = "Guns don't kill people";
-		image = SpriteBase.mainSpriteBase.nineMSprite;
+		image = SpriteBase.mainSpriteBase.pistol;
 		targetType = TargetType.SelectEnemy;
 
 		staminaCost = 2;

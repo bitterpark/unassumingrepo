@@ -142,7 +142,9 @@ public class PartyMember: Mercenary
 	
 	public RangedWeapon equippedRangedWeapon;
 	public MeleeWeapon equippedMeleeWeapon;
-	public List<InventoryItem> equippedItems=new List<InventoryItem>();
+	List<IEquipmentItem> equippedItems = new List<IEquipmentItem>();
+	List<IEquipmentItem> equippedWeapons = new List<IEquipmentItem>();
+
 	public List<InventoryItem> carriedItems=new List<InventoryItem>();
 	public void RemoveCarriedItem(InventoryItem item)
 	{
@@ -459,7 +461,7 @@ public class PartyMember: Mercenary
 			
 		} else {throw new System.Exception("Dropped item does not exist in member's carriedItems!");}
 	}
-	
+	/*
 	public bool CanEquipItem(EquippableItem equippedItem)
 	{
 		bool allowEquip=true;
@@ -468,65 +470,74 @@ public class PartyMember: Mercenary
 			if (item.GetType()==equippedItem.GetType()) {allowEquip=false; break;}
 		}
 		return allowEquip;
-	}
+	}*/
 	
-	public void EquipItem(EquippableItem equippedItem)
+	public void EquipItem(IEquipmentItem item)
 	{
-		if (CanEquipItem(equippedItem))
-		{
-			equippedItem.EquipEffect(this);
-			equippedItems.Add(equippedItem);
-			combatDeck.AddCards(equippedItem.addedCombatCards.ToArray());
-		}
-		else {throw new System.Exception("Trying to equip an item that's already equipped twice");}
+		equippedItems.Add(item);
+		PrepCard cardAddedByItem;
+		if (item.TryGetAddedPrepCard(out cardAddedByItem))
+		weaponPrepCards.Add(cardAddedByItem);
+
+		stamina += item.GetStaminaModifier();
+		ammo += item.GetAmmoModifier();
+		startArmor += item.GetArmorModifier();
 	}
-	
-	public void UnequipItem(EquippableItem unequippedItem)
+
+	public void UnequipItem(IEquipmentItem unequippedItem)
 	{
 		if (equippedItems.Contains(unequippedItem)) 
 		{
-			unequippedItem.UnequipEffect(this);
 			equippedItems.Remove(unequippedItem);
-			combatDeck.RemoveCards(unequippedItem.addedCombatCards.ToArray());
+			PrepCard cardAddedByItem;
+			if (unequippedItem.TryGetAddedPrepCard(out cardAddedByItem))
+				weaponPrepCards.Remove(cardAddedByItem);
+
+			stamina -= unequippedItem.GetStaminaModifier();
+			ammo -= unequippedItem.GetAmmoModifier();
+			startArmor -= unequippedItem.GetArmorModifier();
 		}
 	}
 	
-	public void EquipWeapon(Weapon newWeapon)
+	public void EquipWeapon(IEquipmentItem newWeapon)
 	{
-		if (newWeapon.GetType().BaseType == typeof(MeleeWeapon))
-			equippedMeleeWeapon = newWeapon as MeleeWeapon;
-		if (newWeapon.GetType().BaseType == typeof(RangedWeapon))
-			equippedRangedWeapon = newWeapon as RangedWeapon;
-
+		equippedWeapons.Add(newWeapon);
 		PrepCard cardAddedByWeapon;
 		if (newWeapon.TryGetAddedPrepCard(out cardAddedByWeapon))
 			weaponPrepCards.Add(cardAddedByWeapon);
-		
-		stamina += newWeapon.staminaBonus;
-		ammo += newWeapon.ammoBonus;
 
-		UpdateCurrentCarryCapacity();
+		stamina += newWeapon.GetStaminaModifier();
+		ammo += newWeapon.GetAmmoModifier();
+		startArmor += newWeapon.GetArmorModifier();
+
 		//currentCarryCapacity=currentCarryCapacity-newWeapon.GetWeight();//Mathf.Max(0,currentCarryCapacity-newWeapon.GetWeight());
 		
 	}
-	
-	public void UnequipWeapon(Weapon uneqippedWeapon)
+
+	public void UnequipWeapon(IEquipmentItem uneqippedWeapon)
 	{
-		if (equippedMeleeWeapon == uneqippedWeapon)
-			equippedMeleeWeapon = null;
-		if (equippedRangedWeapon == uneqippedWeapon)
-			equippedRangedWeapon = null;
+		if (equippedWeapons.Contains(uneqippedWeapon))
+		{
+			equippedWeapons.Remove(uneqippedWeapon);
+			PrepCard cardAddedByWeapon;
+			if (uneqippedWeapon.TryGetAddedPrepCard(out cardAddedByWeapon))
+				weaponPrepCards.Remove(cardAddedByWeapon);
 
-		PrepCard cardAddedByWeapon;
-		if (uneqippedWeapon.TryGetAddedPrepCard(out cardAddedByWeapon))
-			weaponPrepCards.Remove(cardAddedByWeapon);
-
-		stamina -= uneqippedWeapon.staminaBonus;
-		ammo -= uneqippedWeapon.ammoBonus;
-
-		UpdateCurrentCarryCapacity();
-		//currentCarryCapacity=Mathf.Min(maxCarryCapacity,currentCarryCapacity+uneqippedWeapon.GetWeight());
+			stamina -= uneqippedWeapon.GetStaminaModifier();
+			ammo -= uneqippedWeapon.GetAmmoModifier();
+			startArmor -= uneqippedWeapon.GetArmorModifier();
+		}
 	}
+
+	public List<IEquipmentItem> GetEquippedItems()
+	{
+		return equippedItems;
+	}
+	public List<IEquipmentItem> GetEquippedWeapons()
+	{
+		return equippedWeapons;
+	}
+
 
 	public string GetName()
 	{

@@ -4,19 +4,10 @@ using System.Collections;
 public class SpriteBase : MonoBehaviour {
 	
 	public static SpriteBase mainSpriteBase;
-	
-	//Ranged
-	public Sprite nineMSprite;
-	public Sprite shotgunSprite;
-	public Sprite assaultRifleSprite;
-	public Sprite pipegunSprite;
-	//Melee
-	public Sprite pipeSprite;
-	public Sprite knifeSprite;
-	public Sprite axeSprite;
+
 	//Items
 	//Usable
-	public Sprite ammoBoxSprite;
+	
 	public Sprite medkitSprite;
 	public Sprite bandageSprite;
 	public Sprite perishableFoodSprite;
@@ -34,13 +25,12 @@ public class SpriteBase : MonoBehaviour {
 	public Sprite radioSprite;
 	public Sprite settableTrapSprite;
 	public Sprite gasolineSprite;
-	public Sprite backpackSprite;
+	
 	//Equippable
 	public Sprite flashlightSprite;
 	public Sprite armorvestSprite;
 	//Crafting ingredients
 	public Sprite gunpowderSprite;
-	public Sprite scrapSprite;
 	//Camp items
 	public Sprite bedSprite;
 	public Sprite fuelSprite;
@@ -58,8 +48,7 @@ public class SpriteBase : MonoBehaviour {
 	public Sprite bleedSprite;
 	public Sprite phasedOutSprite;
 	public Sprite coldSprite;
-	public Sprite brokenArmsSprite;
-	public Sprite brokenLegsSprite;
+	
 
 	//Event sprites
 	public Sprite gasStationSprite;
@@ -74,6 +63,16 @@ public class SpriteBase : MonoBehaviour {
 	public Sprite mercPortrait;
 	public Sprite enemyPortrait;
 
+	public Sprite arm;
+	public Sprite leg;
+
+	public Sprite pistol;
+	public Sprite shotgun;
+	public Sprite assaultRifle;
+	public Sprite pipegun;
+
+	public Sprite ammoBox;
+	public Sprite backpack;
 	public Sprite skull;
 	public Sprite droplet;
 	public Sprite crosshair;
@@ -89,7 +88,7 @@ public class SpriteBase : MonoBehaviour {
 	public Sprite sack;
 	public Sprite wrench;
 	public Sprite roseOfWinds;
-	public Sprite computerParts;
+	public Sprite screwdriver;
 	public Sprite medicalCross;
 	public Sprite radio;
 	public Sprite meat;

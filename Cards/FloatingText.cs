@@ -30,7 +30,7 @@ public class FloatingText : MonoBehaviour
 	IEnumerator MoveUpdward()
 	{
 		float elapsedMoveTime = 0;
-		float requiredMoveTime = CardsScreen.cardPlayAnimationTime;
+		float requiredMoveTime = CombatManager.cardPlayAnimationTime;
 
 		float upwardMoveSpeedPerSecond = 35f;
 

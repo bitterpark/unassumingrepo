@@ -19,10 +19,7 @@ public class EquipmentSlot :InventorySlot
 		{
 			//check if type is appropriate
 			if (newSlotItem.assignedItem.GetType().BaseType==typeof(EquippableItem))
-			{
-				//check if party member can equip (prevents equpping multiple flashlights or armor vests
-				if (InventoryScreenHandler.mainISHandler.selectedMember.CanEquipItem(newSlotItem.assignedItem as EquippableItem)) {allowItem=true;}
-			}
+				allowItem=true;
 		}	
 		return allowItem;
 	}

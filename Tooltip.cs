@@ -133,7 +133,7 @@ public class Tooltip : MonoBehaviour
 	void AddRewardCard(RewardCard addedCard)
 	{
 		RewardCardGraphic cardGraphic = Instantiate(rewardCardGraphicPrefab);
-		cardGraphic.AssignCard(addedCard);
+		cardGraphic.AssignCardForDisplayOnly(addedCard);
 		cardGraphic.GetComponent<Image>().raycastTarget = false;
 		cardGraphic.transform.SetParent(cardsDisplayGroup, false);
 	}

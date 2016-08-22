@@ -3,16 +3,49 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine.UI;
 
-public class CraftRecipe
+public abstract class CraftRecipe
 {
 	public string description = "Build";
-	public Dictionary<InventoryItem.LootItems,int> requiredIngredients;
+	public Dictionary<CraftableItems, int> requiredIngredients;
 	//public int requiredFatigue;
 	
-	//public List<InventoryItem.LootItems> resultItems=new List<InventoryItem.LootItems>();
-	public InventoryItem.LootItems resultItem;
+	//public List<CraftableItems> resultItems=new List<CraftableItems>();
+	public CraftableItems resultItem;
 	public int resultItemCount=1;
-	
+
+	public enum CraftableItems
+	{
+		Scrap, ComputerParts,FusionModule
+			, AssaultRifle, Shotgun, NineM
+			, Pipe, Knife,Axe
+			, ArmorVest,Stim,Ammopack
+	}
+	public static InventoryItem GetItemInstance(CraftableItems itemType)
+	{
+		InventoryItem itemInstance = null;
+		switch (itemType)
+		{
+			//MELEE WEAPONS
+			case CraftableItems.Pipe: { itemInstance = new Pipe(); break; }
+			case CraftableItems.Knife: { itemInstance = new Knife(); break; }
+			case CraftableItems.Axe: { itemInstance = new Axe(); break; }
+			//RANGED WEAPONS
+			case CraftableItems.NineM: { itemInstance = new NineM(); break; }
+			case CraftableItems.Shotgun: { itemInstance = new Shotgun(); break; }
+			case CraftableItems.AssaultRifle: { itemInstance = new AssaultRifle(); break; }
+			//EQUIPMENT
+			case CraftableItems.Stim: { itemInstance = new Stim(); break; }
+			case CraftableItems.ArmorVest: { itemInstance = new ArmorVest(); break; }
+			case CraftableItems.Ammopack: { itemInstance = new AmmoPouch(); break; }
+			//MISC
+			//INGREDIENTS
+			case CraftableItems.Scrap: { itemInstance = new Scrap(); break; }
+			case CraftableItems.ComputerParts: { itemInstance = new ComputerParts(); break; }
+			case CraftableItems.FusionModule: { itemInstance = new FusionCore(); break; }
+		}
+		return itemInstance;
+	}
+
 	public static List<CraftRecipe> GetGenericRecipes()
 	{
 		List<CraftRecipe> recipeList=new List<CraftRecipe>();
@@ -25,15 +58,27 @@ public class CraftRecipe
 		recipeList.Add(new AxeRecipe());
 		recipeList.Add(new KnifeRecipe());
 
+		recipeList.Add(new StimRecipe());
+		recipeList.Add(new ArmorVestRecipe());
+		recipeList.Add(new AmmopouchRecipe());
+
 		return recipeList;
 	}
-	
-	protected void SetResultItem(InventoryItem.LootItems item, int count)
+
+	public CraftRecipe()
+	{
+		requiredIngredients = new Dictionary<CraftableItems, int>();
+		requiredIngredients.Add(CraftableItems.Scrap, 1);
+		ExtenderConstructor();
+	}
+	protected abstract void ExtenderConstructor();
+
+	protected void SetResultItem(CraftableItems item, int count)
 	{
 		resultItem=item;
 		resultItemCount=count;
 	}
-	protected void SetResultItem(InventoryItem.LootItems item)
+	protected void SetResultItem(CraftableItems item)
 	{
 		SetResultItem(item,1);
 	}
@@ -41,58 +86,68 @@ public class CraftRecipe
 
 public class NineMRecipe : CraftRecipe
 {
-	public NineMRecipe()
+	protected override void ExtenderConstructor()
 	{
-		requiredIngredients=new Dictionary<InventoryItem.LootItems, int>();
-		requiredIngredients.Add(InventoryItem.LootItems.Scrap,1);
-		SetResultItem(InventoryItem.LootItems.NineM);
+		
+		SetResultItem(CraftableItems.NineM);
 	}
 }
 
 public class ShotgunRecipe : CraftRecipe
 {
-	public ShotgunRecipe()
+	protected override void ExtenderConstructor()
 	{
-		requiredIngredients = new Dictionary<InventoryItem.LootItems, int>();
-		requiredIngredients.Add(InventoryItem.LootItems.Scrap, 1);
-		SetResultItem(InventoryItem.LootItems.Shotgun);
+		SetResultItem(CraftableItems.Shotgun);
 	}
 }
 
 public class AssaultRifleRecipe : CraftRecipe
 {
-	public AssaultRifleRecipe()
+	protected override void ExtenderConstructor()
 	{
-		requiredIngredients = new Dictionary<InventoryItem.LootItems, int>();
-		requiredIngredients.Add(InventoryItem.LootItems.Scrap, 1);
-		SetResultItem(InventoryItem.LootItems.AssaultRifle);
+		SetResultItem(CraftableItems.AssaultRifle);
 	}
 }
 
 public class PipeRecipe : CraftRecipe
 {
-	public PipeRecipe()
+	protected override void ExtenderConstructor()
 	{
-		requiredIngredients = new Dictionary<InventoryItem.LootItems, int>();
-		requiredIngredients.Add(InventoryItem.LootItems.Scrap, 1);
-		SetResultItem(InventoryItem.LootItems.Pipe);
+		SetResultItem(CraftableItems.Pipe);
 	}
 }
 public class AxeRecipe : CraftRecipe
 {
-	public AxeRecipe()
+	protected override void ExtenderConstructor()
 	{
-		requiredIngredients = new Dictionary<InventoryItem.LootItems, int>();
-		requiredIngredients.Add(InventoryItem.LootItems.Scrap, 1);
-		SetResultItem(InventoryItem.LootItems.Axe);
+		SetResultItem(CraftableItems.Axe);
 	}
 }
 public class KnifeRecipe : CraftRecipe
 {
-	public KnifeRecipe()
+	protected override void ExtenderConstructor()
 	{
-		requiredIngredients = new Dictionary<InventoryItem.LootItems, int>();
-		requiredIngredients.Add(InventoryItem.LootItems.Scrap, 1);
-		SetResultItem(InventoryItem.LootItems.Knife);
+		SetResultItem(CraftableItems.Knife);
+	}
+}
+public class StimRecipe : CraftRecipe
+{
+	protected override void ExtenderConstructor()
+	{
+		SetResultItem(CraftableItems.Stim);
+	}
+}
+public class  AmmopouchRecipe : CraftRecipe
+{
+	protected override void ExtenderConstructor()
+	{
+		SetResultItem(CraftableItems.Ammopack);
+	}
+}
+public class ArmorVestRecipe : CraftRecipe
+{
+	protected override void ExtenderConstructor()
+	{
+		SetResultItem(CraftableItems.ArmorVest);
 	}
 }

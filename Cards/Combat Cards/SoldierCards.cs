@@ -10,11 +10,12 @@ public class SoldierCards
 
 		result.AddCards(typeof(Grenade));
 		result.AddCards(typeof(Diversion));
-		result.AddCards(typeof(Throw));
+		result.AddCards(typeof(MarkTarget));
 		result.AddCards(typeof(Sacrifice));
 		result.AddCards(typeof(Defillade));
 		result.AddCards(typeof(Smokescreen));
 		result.AddCards(typeof(PickOff));
+		result.AddCards(typeof(BurstFire));
 		result.AddCards(typeof(Camaraderie));
 
 		return result;
@@ -24,7 +25,7 @@ public class SoldierCards
 	{
 		List<PrepCard> result = new List<PrepCard>();
 		result.Add(new Saviour());
-		result.Add(new Commander());
+		result.Add(new Commando());
 		result.Add(new Survivor());
 
 
@@ -39,24 +40,19 @@ public class SoldierCards
 			description = "Adds cards to your deck";
 			image = SpriteBase.mainSpriteBase.cover;
 
-			//addedCombatCards.Add(new Sacrifice());
-			//addedCombatCards.Add(new Smokescreen());
-			//addedCombatCards.Add(new AllForOne());
 			addedCombatCards.Add(new AllForOne());
 		}
 	}
-	public class Commander : PrepCard
+	public class Commando : PrepCard
 	{
-		public Commander()
+		public Commando()
 		{
-			name = "Commander";
+			name = "Commando";
 			description = "Adds cards to your deck";
 			image = SpriteBase.mainSpriteBase.medal;
 
-			//addedCombatCards.Add(new MarkTarget());
-			addedCombatCards.Add(new MarkTarget());
-			//addedCombatCards.Add(new PickOff());
-			//addedCombatCards.Add(new Camaraderie());
+			addedCombatCards.Add(new ControlledBursts());
+
 		}
 	}
 	public class Survivor : PrepCard
@@ -67,12 +63,51 @@ public class SoldierCards
 			description = "Adds cards to your deck";
 			image = SpriteBase.mainSpriteBase.skull;
 
-			//addedCombatCards.Add(new Defillade());
-			//addedCombatCards.Add(new Defillade());
-			//addedCombatCards.Add(new Smokescreen());
 			addedCombatCards.Add(new Discretion());
 		}
 
+	}
+}
+
+public class ControlledBursts : EffectCard
+{
+	protected override void ExtenderConstructor()
+	{
+		targetType = TargetType.None;
+		addedStipulationCard = new TriggerDiscipline();
+		staminaCost = 1;
+
+		name = "Controlled Bursts";
+		description = "Play a Trigger Discipline card to the character";
+		image = SpriteBase.mainSpriteBase.bullets;
+
+	}
+
+	public class TriggerDiscipline : CharacterStipulationCard
+	{
+		public TriggerDiscipline()
+		{
+			name = "Trigger Discipline";
+			image = SpriteBase.mainSpriteBase.crosshair;
+			description = "Character's next ranged attack costs stamina instead of ammo";
+		}
+
+		protected override void ExtenderSpecificActivation()
+		{
+			appliedToCharacter.SetRangedAttacksCostStamina(true);
+			RangedCard.ERangedCardPlayed += TriggerEffect;
+		}
+		void TriggerEffect(CharacterGraphic cardPlayer, RangedCard playedCard)
+		{
+			if (cardPlayer == appliedToCharacter)
+				appliedToCharacter.RemoveCharacterStipulationCard(this);
+		}
+
+		protected override void ExtenderSpecificDeactivation()
+		{
+			appliedToCharacter.SetRangedAttacksCostStamina(false);
+			RangedCard.ERangedCardPlayed -= TriggerEffect;
+		}
 	}
 }
 
@@ -81,8 +116,8 @@ public class Discretion : EffectCard
 	protected override void ExtenderConstructor()
 	{
 		targetType = TargetType.None;
-		staminaCost = 4;
-		userArmorGain = 80;
+		staminaCost = 3;
+		userArmorGain = 60;
 
 		name = "Discretion";
 		description = "Better part of valor (gain " + userArmorGain + " armor)";
@@ -121,15 +156,15 @@ public class AllForOne : EffectCard
 	
 	public class CoverFire : CharacterStipulationCard
 	{
-		int armorGainPerRangedAttack = 30;
+		int armorGainPerRangedAttack = 20;
 		
 		public CoverFire()
 		{
-			SetLastsForRounds(1);
+			SetLastsForRounds(2);
 
 			name = "Cover Fire";
 			image = SpriteBase.mainSpriteBase.crosshair;
-			description = "For one round: gain "+armorGainPerRangedAttack+" armor for every friendly ranged attack";
+			description = "For two rounds: gain "+armorGainPerRangedAttack+" armor for every friendly ranged attack";
 		}
 
 		protected override void ExtenderSpecificActivation()
@@ -171,7 +206,7 @@ public class BoundingOverwatch : EffectCard
 		{
 			if (cardPlayer.GetType() != typeof(MercGraphic))
 			{
-				CardsScreen.main.RemoveRoomStipulationCard(this);
+				CombatManager.main.RemoveRoomStipulationCard(this);
 				cardPlayer.TakeDamage(damage,true);
 			}
 
@@ -205,7 +240,7 @@ public class Camaraderie : EffectCard
 		
 		name = "Camaraderie";
 		description = "A selected friendly character gains " + targetStaminaGain + " stamina";
-		image = SpriteBase.mainSpriteBase.brokenArmsSprite;
+		image = SpriteBase.mainSpriteBase.arm;
 	}
 }
 
@@ -220,7 +255,7 @@ public class Sacrifice : EffectCard
 		
 		name = "Sacrifice";
 		description = "Take " + takeDamageCost + " damage, a selected friendly character gains " + targetArmorGain + " armor";
-		image = SpriteBase.mainSpriteBase.brokenArmsSprite;
+		image = SpriteBase.mainSpriteBase.arm;
 		
 	}
 }
@@ -276,7 +311,7 @@ public class Diversion : MeleeCard
 	{
 		name = "Diversion";
 		description = "Targets all enemies, take "+damagePenalty+" damage";
-		image = SpriteBase.mainSpriteBase.brokenLegsSprite;
+		image = SpriteBase.mainSpriteBase.leg;
 		targetType = TargetType.AllEnemies;
 
 		staminaCost = 4;

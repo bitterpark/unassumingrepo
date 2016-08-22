@@ -69,14 +69,14 @@ public class AmmoStash : RewardCard
 	public AmmoStash()
 	{
 		name = "Ammo Stash";
-		image = SpriteBase.mainSpriteBase.ammoBoxSprite;
+		image = SpriteBase.mainSpriteBase.ammoBox;
 		description = "Neatly stacked boxes full of powder bullets";
 		effectDescription="Everyone gains full ammo";
 		//rewardItems.Add(new AmmoBox());
 	}
 	public override void PlayCard()
 	{
-		CardsScreen.main.ResetAllMercsResource(CharacterGraphic.Resource.Ammo);
+		MissionCharacterManager.main.ResetAllMercsResource(CharacterGraphic.Resource.Ammo);
 	}
 }
 
@@ -93,7 +93,7 @@ public class ArmorStash : RewardCard
 	}
 	public override void PlayCard()
 	{
-		CardsScreen.main.IncrementAllMercsResource(CharacterGraphic.Resource.Armor, armorReward);
+		MissionCharacterManager.main.IncrementAllMercsResource(CharacterGraphic.Resource.Armor, armorReward);
 	}
 }
 
@@ -125,7 +125,7 @@ public class ComputerPartsReward : RewardCard
 	public ComputerPartsReward()
 	{
 		name = "Computers";
-		image = SpriteBase.mainSpriteBase.computerParts;
+		image = SpriteBase.mainSpriteBase.screwdriver;
 		description = "Circuits lined with hundreds of thousands of transistors";
 		rewardItems.Add(new ComputerParts());
 	}
@@ -202,7 +202,7 @@ public class DefaultMeleePrepCard : PrepCard {
 	{
 		name = "Bare Hands";
 		description = "Add melee cards to your deck";
-		image = SpriteBase.mainSpriteBase.brokenArmsSprite;
+		image = SpriteBase.mainSpriteBase.arm;
 
 		addedCombatCards.Add(new Jab());
 		addedCombatCards.Add(new Jab());
@@ -217,7 +217,7 @@ public class DefaultRangedPrepCard : PrepCard
 	{
 		name = "Sidearm";
 		description = "Add ranged cards to your deck";
-		image = SpriteBase.mainSpriteBase.pipegunSprite;
+		image = SpriteBase.mainSpriteBase.pipegun;
 
 		addedCombatCards.Add(new Hipfire());
 		addedCombatCards.Add(new Sidearm());
@@ -231,7 +231,7 @@ public class ExamplePrepCard : PrepCard
 	{
 		name = "example";
 		description = "111";
-		image = SpriteBase.mainSpriteBase.assaultRifleSprite;
+		image = SpriteBase.mainSpriteBase.assaultRifle;
 
 		addedCombatCards.Add(new BurstFire());
 		addedCombatCards.Add(new BurstFire());
@@ -303,6 +303,15 @@ public abstract class CombatCard: Card
 		this.ignoresArmor = ignoresArmor;
 	}
 
+	public void SetUserChar(CharacterGraphic userChar)
+	{
+		userCharGraphic = userChar;
+	}
+	public CharacterGraphic GetUserChar()
+	{
+		return userCharGraphic;
+	}
+
 	public CombatCard()
 	{
 		ExtenderConstructor();
@@ -364,7 +373,7 @@ public abstract class CombatCard: Card
 			if (addedStipulationCard.GetType().BaseType == typeof(RoomStipulationCard))
 			{
 				RoomStipulationCard card = addedStipulationCard as RoomStipulationCard;
-				CardsScreen.main.PlaceRoomStipulationCard(card);
+				CombatManager.main.PlaceRoomStipulationCard(card);
 			}
 			if (addedStipulationCard.GetType().BaseType == typeof(CharacterStipulationCard))
 			{

@@ -7,7 +7,7 @@ public class Smash : MeleeCard
 	{
 		name = "Smash";
 		description = "When in doubt - punch things";
-		image = SpriteBase.mainSpriteBase.brokenArmsSprite;
+		image = SpriteBase.mainSpriteBase.arm;
 
 		damage = 30;
 		staminaCost = 2;
@@ -21,7 +21,7 @@ public class Jab : MeleeCard
 	{
 		name = "Jab";
 		description = "Left hand is enough";
-		image = SpriteBase.mainSpriteBase.brokenArmsSprite;
+		image = SpriteBase.mainSpriteBase.arm;
 
 		damage = 20;
 		staminaCost = 1;
@@ -51,7 +51,7 @@ public class Throw : RangedCard
 	{
 		name = "Throw";
 		description = "Everything is fair";
-		image = SpriteBase.mainSpriteBase.brokenArmsSprite;
+		image = SpriteBase.mainSpriteBase.arm;
 		targetType = TargetType.SelectEnemy;
 
 		staminaCost = 1;
@@ -73,13 +73,41 @@ public class BurstFire : RangedCard
 	}
 }
 
+public class FullAuto : RangedCard
+{
+	int bonusDamagePerAmmoPoint = 10;
+
+	protected override bool ExtenderPrerequisitesMet(CharacterGraphic user)
+	{
+		return user.GetAmmo() > 0;
+	}
+
+	protected override void ExtenderConstructor()
+	{
+		name = "Full Auto";
+		description = "Spend all ammo, deal " + bonusDamagePerAmmoPoint + " damage per point of ammo";
+		image = SpriteBase.mainSpriteBase.skull;
+
+		damage = 20;
+		staminaCost = 1;
+		targetType = TargetType.SelectEnemy;
+	}
+
+	protected override void ApplyPlayCosts()
+	{
+		damage += userCharGraphic.GetAmmo() * bonusDamagePerAmmoPoint;
+		ammoCost = userCharGraphic.GetAmmo();
+		base.ApplyPlayCosts();
+	}
+}
+
 public class Sidearm : RangedCard
 {
 	protected override void ExtenderConstructor()
 	{
 		name = "Sidearm";
 		description = "Trick gun";
-		image = SpriteBase.mainSpriteBase.nineMSprite;
+		image = SpriteBase.mainSpriteBase.pistol;
 		targetType = TargetType.SelectEnemy;
 		damage = 10;
 	}
@@ -91,7 +119,7 @@ public class SetupDefence : EffectCard
 	{
 		name = "Setup Defence";
 		description = "Adds a Melee Defence to user";
-		image = SpriteBase.mainSpriteBase.brokenArmsSprite;
+		image = SpriteBase.mainSpriteBase.arm;
 		targetType = TargetType.None;
 		staminaCost = 1;
 		addedStipulationCard = new MeleeDefence();
@@ -106,7 +134,7 @@ public class SetupDefence : EffectCard
 			//SetLastsForRounds(1);
 			
 			name = "Melee Defence";
-			image = SpriteBase.mainSpriteBase.brokenArmsSprite;
+			image = SpriteBase.mainSpriteBase.arm;
 
 			description = "When a melee attack is played, the attacker takes " + damage + " damage";
 
@@ -150,7 +178,7 @@ public class CrossFire : CharacterStipulationCard
 		SetLastsForRounds(1);
 
 		name = "Crossfire";
-		image = SpriteBase.mainSpriteBase.brokenArmsSprite;
+		image = SpriteBase.mainSpriteBase.arm;
 		description = "For one round: character takes " + damagePerRangedAttack + " extra damage from every ranged attack ";
 	}
 

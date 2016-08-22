@@ -26,14 +26,14 @@ public class BuildingBuildButton : MonoBehaviour, IPointerEnterHandler, IPointer
 			//if (currentSelectedMember.CheckEnoughFatigue(totalBuildFatigueCost))
 			{
 				//Prep used item list and required item count dict
-				Dictionary<InventoryItem.LootItems, int> availableIngredients 
-					= new Dictionary<InventoryItem.LootItems, int>(assignedBuilding.GetMaterials());
+				Dictionary<CraftRecipe.CraftableItems, int> availableIngredients 
+					= new Dictionary<CraftRecipe.CraftableItems, int>(assignedBuilding.GetMaterials());
 				//Run a check through local inventory and member personal inventory, to see if 
-				foreach (InventoryItem.LootItems ingredientKey in assignedBuilding.GetMaterials().Keys)
+				foreach (CraftRecipe.CraftableItems ingredientKey in assignedBuilding.GetMaterials().Keys)
 				{
 					foreach (InventoryItem localItem in MapManager.main.GetTown().GetStashedItems())//InventoryScreenHandler.mainISHandler.selectedMember.currentRegion.GetStashedItems())
 					{
-						if (localItem.GetType() == InventoryItem.GetLootingItem(ingredientKey).GetType())
+						if (localItem.GetType() == CraftRecipe.GetItemInstance(ingredientKey).GetType())
 						{
 							availableIngredients[ingredientKey] = availableIngredients[ingredientKey] - 1;
 							usedLocalItems.Add(localItem);
