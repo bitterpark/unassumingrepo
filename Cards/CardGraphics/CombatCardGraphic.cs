@@ -3,13 +3,13 @@ using UnityEngine.UI;
 using System.Collections;
 using UnityEngine.EventSystems;
 
-public class CombatCardGraphic : CardGraphic, IPointerEnterHandler,IPointerExitHandler
+public class CombatCardGraphic : CardGraphic, ICombatCard//, IPointerDownHandler
 {
 
 	public GameObject staminaCost;
 	public GameObject ammoCost;
-	public GameObject healthDamage;
-	public GameObject staminaDamage;
+	public GameObject nonStaminaDamage;
+	public GameObject damagePerStaminaPoint;
 	public Text cardTypeText;
 
 	public Color effectCardColor;
@@ -17,20 +17,16 @@ public class CombatCardGraphic : CardGraphic, IPointerEnterHandler,IPointerExitH
 	public Color meleeCardColor;
 
 	CombatCard assignedCard;
-	HandDisplayer handDisplayer;
-	CharacterGraphic myHandOwner;
-
 
 	public void AssignCard(CombatCard newCard)
 	{
-		AssignCard(newCard, null);
+		AssignCard(newCard,false);
 	}
 
-	public void AssignCard(CombatCard newCard, HandDisplayer handDisplayer)
+	public void AssignCard(CombatCard newCard, bool showStipulationCardTooltip)
 	{
 		base.UpdateBasicVisuals(newCard);
 		assignedCard = newCard;
-		this.handDisplayer = handDisplayer;
 
 		SetColor();
 		SetTypeText();
@@ -38,7 +34,7 @@ public class CombatCardGraphic : CardGraphic, IPointerEnterHandler,IPointerExitH
 		ShowCosts();
 		ShowDamage();
 
-		GetComponent<Button>().onClick.AddListener(() => { CardClicked(); });
+		description.raycastTarget = showStipulationCardTooltip;
 	}
 
 	void SetColor()
@@ -58,62 +54,49 @@ public class CombatCardGraphic : CardGraphic, IPointerEnterHandler,IPointerExitH
 
 	void ShowCosts()
 	{
+		
 		if (assignedCard.staminaCost > 0)
 		{
 			staminaCost.SetActive(true);
 			staminaCost.GetComponentInChildren<Text>().text = assignedCard.staminaCost.ToString();
 		}
-		else staminaCost.SetActive(false);
+		else 
+			staminaCost.SetActive(false);
 
 		if (assignedCard.ammoCost > 0)
 		{
 			ammoCost.SetActive(true);
 			ammoCost.GetComponentInChildren<Text>().text = assignedCard.ammoCost.ToString();
 		}
-		else ammoCost.SetActive(false);
+		else 
+			ammoCost.SetActive(false);
 	}
 
 	void ShowDamage()
 	{
 		if (assignedCard.damage > 0)
 		{
-			healthDamage.SetActive(true);
-			healthDamage.GetComponentInChildren<Text>().text = assignedCard.damage.ToString();
+			nonStaminaDamage.SetActive(true);
+			nonStaminaDamage.GetComponentInChildren<Text>().text = assignedCard.damage.ToString();
 		}
-		else healthDamage.SetActive(false);
+		else nonStaminaDamage.SetActive(false);
 
-		if (assignedCard.staminaDamage > 0)
+		if (assignedCard.damagePerStaminaPoint > 0)
 		{
-			staminaDamage.SetActive(true);
-			staminaDamage.GetComponentInChildren<Text>().text = assignedCard.staminaDamage.ToString();
+			damagePerStaminaPoint.SetActive(true);
+			damagePerStaminaPoint.GetComponentInChildren<Text>().text = assignedCard.staminaDamage.ToString();
 		}
-		else staminaDamage.SetActive(false);
+		else damagePerStaminaPoint.SetActive(false);
 	}
-
-
-	public void SetInteractable(bool interactable)
-	{
-		GetComponent<Button>().interactable = interactable;
-	}
-
 
 	public void ShowStipulationCardTooltip()
 	{
-		//if (GetComponent<Button>().IsInteractable())
-		//{
-			if (assignedCard.addedStipulationCard != null)
-				TooltipManager.main.CreateTooltip("", transform, assignedCard.addedStipulationCard);
-		//}
+		if (assignedCard.addedStipulationCard != null)
+			TooltipManager.main.CreateTooltip("", transform, assignedCard.addedStipulationCard);
 	}
 	public void StopShowingStipulationCardTooltip()
 	{
 		TooltipManager.main.StopAllTooltips();
-	}
-
-	public void CardClicked()
-	{
-		if (GetComponent<Button>().IsInteractable() && handDisplayer != null)
-			handDisplayer.HandCardClicked(this);
 	}
 
 	public CombatCard GetAssignedCard()
@@ -121,15 +104,8 @@ public class CombatCardGraphic : CardGraphic, IPointerEnterHandler,IPointerExitH
 		return assignedCard;
 	}
 
-	public void OnPointerEnter(PointerEventData eventData)
+	public Transform GetTransform()
 	{
-		if (handDisplayer!=null)
-			handDisplayer.HandCardHoverStart(this);
-	}
-
-	public void OnPointerExit(PointerEventData eventData)
-	{
-		if (handDisplayer != null)
-			handDisplayer.HandCardHoverEnd(this);
+		return transform;
 	}
 }

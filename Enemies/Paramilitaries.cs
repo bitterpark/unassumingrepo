@@ -6,7 +6,6 @@ public class Marksman : EncounterEnemy
 {
 	protected override void CommonConstructor()
 	{
-		basicCombatDeck.AddCards(typeof(Reload));
 		basicCombatDeck.AddCards(typeof(HighGround));
 
 		variationCards.Add(new Finisher());
@@ -17,8 +16,8 @@ public class Marksman : EncounterEnemy
 	{
 		name = "Marksman";
 		health = 60;
-		armor = 40;
-		stamina = 2;
+		armor = 70;
+		stamina = 1;
 		ammo = 6;
 		
 	}
@@ -37,8 +36,6 @@ public class Marksman : EncounterEnemy
 	{
 		public Finisher()
 		{
-			//SetLastsForRounds(1);
-
 			name = "Finisher";
 			image = SpriteBase.mainSpriteBase.skull;
 
@@ -52,11 +49,11 @@ public class Marksman : EncounterEnemy
 			protected override void ExtenderConstructor()
 			{
 				name = "Eliminate";
-				description = "Targets weakest enemy";
+				description = "Targets the weakest enemy";
 				image = SpriteBase.mainSpriteBase.skull;
 
 				damage = 30;
-				ammoCost = 3;
+				ammoCost = 2;
 				targetType = TargetType.Weakest;
 			}
 		}
@@ -64,8 +61,6 @@ public class Marksman : EncounterEnemy
 
 	public class Softener : EnemyVariationCard
 	{
-		int damage = 20;
-
 		public Softener()
 		{
 			name = "Softener";
@@ -85,7 +80,7 @@ public class Marksman : EncounterEnemy
 				image = SpriteBase.mainSpriteBase.bullet;
 
 				damage = 50;
-				ammoCost = 3;
+				ammoCost = 2;
 				targetType = TargetType.Strongest;
 			}
 		}
@@ -121,7 +116,7 @@ public class Marksman : EncounterEnemy
 		protected override void ExtenderConstructor()
 		{
 			targetType = TargetType.None;
-			staminaCost = 2;
+			staminaCost = 1;
 			addedStipulationCard = new Killzone();
 
 			name = "High Ground";
@@ -132,7 +127,7 @@ public class Marksman : EncounterEnemy
 
 		public class Killzone : CharacterStipulationCard
 		{
-			int damageForMeleeAttacks = 60;
+			int damageForMeleeAttacks = 30;
 
 			public Killzone()
 			{
@@ -159,7 +154,7 @@ public class Marksman : EncounterEnemy
 			}
 		}
 	}
-
+	//currently unused
 	public class BoobyTrap : EffectCard
 	{
 		int trapDamage;
@@ -167,8 +162,8 @@ public class Marksman : EncounterEnemy
 		protected override void ExtenderConstructor()
 		{
 			targetType = TargetType.None;
-			ammoCost = 1;
-			trapDamage = 30;
+			staminaCost = 1;
+			trapDamage = 20;
 			addedStipulationCard = new Tripmine(trapDamage);
 
 			name = "Booby Trap";
@@ -209,7 +204,7 @@ public class Marksman : EncounterEnemy
 		}
 	}
 }
-
+//currently unused
 public class Reload : EffectCard
 {
 	protected override bool ExtenderPrerequisitesMet(CharacterGraphic user)
@@ -240,7 +235,6 @@ public class HeavyGunner : EncounterEnemy
 {
 	protected override void CommonConstructor()
 	{
-		basicCombatDeck.AddCards(typeof(Reload));
 		basicCombatDeck.AddCards(typeof(Overwatch));
 
 		variationCards.Add(new CrowdControl());
@@ -251,9 +245,9 @@ public class HeavyGunner : EncounterEnemy
 	{
 		name = "Heavy Gunner";
 		health = 70;
-		armor = 30;
-		stamina = 2;
-		ammo = 6;
+		armor = 50;
+		stamina = 3;
+		ammo = 4;
 	}
 
 	protected override void ToughConstructor()
@@ -289,7 +283,7 @@ public class HeavyGunner : EncounterEnemy
 				image = SpriteBase.mainSpriteBase.bullets;
 
 				damage = 10;
-				ammoCost = 3;
+				ammoCost = 2;
 				targetType = TargetType.AllEnemies;
 			}
 		}
@@ -303,7 +297,7 @@ public class HeavyGunner : EncounterEnemy
 				image = SpriteBase.mainSpriteBase.bullets;
 
 				staminaDamage = 1;
-				ammoCost = 3;
+				ammoCost = 2;
 				targetType = TargetType.AllEnemies;
 			}
 		}
@@ -331,7 +325,7 @@ public class HeavyGunner : EncounterEnemy
 				image = SpriteBase.mainSpriteBase.bullets;
 
 				damage = 50;
-				ammoCost = 3;
+				ammoCost = 2;
 				targetType = TargetType.Strongest;
 			}
 		}
@@ -344,8 +338,8 @@ public class HeavyGunner : EncounterEnemy
 				description = "Targets the toughest enemy";
 				image = SpriteBase.mainSpriteBase.lightning;
 
-				staminaDamage = 3;
-				ammoCost = 3;
+				staminaDamage = 4;
+				ammoCost = 2;
 				targetType = TargetType.Strongest;
 			}
 		}
@@ -440,7 +434,7 @@ public class HeavyGunner : EncounterEnemy
 
 		public class OverwatchStipulation : CharacterStipulationCard
 		{
-			int damageForRangedAttacks = 60;
+			int damageForRangedAttacks = 30;
 
 			public OverwatchStipulation()
 			{
@@ -474,9 +468,8 @@ public class ShockTrooper : EncounterEnemy
 {
 	protected override void CommonConstructor()
 	{
-		basicCombatDeck.AddCards(typeof(Reload));
 		basicCombatDeck.AddCards(typeof(SmokeGrenade));
-		basicCombatDeck.AddCards(typeof(SemiAuto));
+		//basicCombatDeck.AddCards(typeof(SemiAuto));
 
 		variationCards.Add(new Flanker());
 		variationCards.Add(new Blitzer());
@@ -486,8 +479,8 @@ public class ShockTrooper : EncounterEnemy
 	{
 		name = "Shock Trooper";
 		health = 60;
-		armor = 40;
-		stamina = 6;
+		armor = 60;
+		stamina = 4;
 		ammo = 2;
 
 		
@@ -517,13 +510,12 @@ public class ShockTrooper : EncounterEnemy
 
 		public class Flanking : MeleeCard
 		{
-			int penaltyDamage;
-
 			protected override void ExtenderConstructor()
 			{
-				staminaCost = 3;
+				staminaCost = 2;
 				damage = 20;
-				penaltyDamage = 20;
+				int penaltyDamage = 30;
+
 				targetType = TargetType.SelectEnemy;
 				addedStipulationCard = new Flanked(penaltyDamage);
 
@@ -590,8 +582,9 @@ public class ShockTrooper : EncounterEnemy
 				description = "";
 				image = SpriteBase.mainSpriteBase.lightning;
 
-				staminaCost = 3;
-				damage = 40;
+				useUpAllStamina = true;
+				damage = 10;
+				damagePerStaminaPoint = 10;
 				targetType = TargetType.SelectEnemy;
 			}
 		}
@@ -663,8 +656,8 @@ public class ShockTrooper : EncounterEnemy
 			description = "Gain "+userArmorGain+" armor";
 			image = SpriteBase.mainSpriteBase.lightning;
 
-			userArmorGain = 40;
-			ammoCost = 2;
+			userArmorGain = 20;
+			ammoCost = 1;
 			targetType = TargetType.None;
 		}
 	}
@@ -675,7 +668,7 @@ public class CQC : MeleeCard
 	protected override void ExtenderConstructor()
 	{
 		name = "CQC";
-		description = "Targets the strongest enemy";
+		description = "Targets the toughest enemy";
 		image = SpriteBase.mainSpriteBase.arm;
 
 		damage = 40;
@@ -688,11 +681,11 @@ public class Commander : EncounterEnemy
 {
 	protected override void CommonConstructor()
 	{
-		basicCombatDeck.AddCards(typeof(Reload));
+		//basicCombatDeck.AddCards(typeof(Reload));
 		basicCombatDeck.AddCards(typeof(SemiAuto));
-		basicCombatDeck.AddCards(typeof(Flashbang));
+		//basicCombatDeck.AddCards(typeof(Flashbang));
 
-		variationCards.Add(new Support());
+		variationCards.Add(new Maneuvers());
 		variationCards.Add(new Leadership());
 	}
 	
@@ -702,7 +695,7 @@ public class Commander : EncounterEnemy
 		health = 60;
 		armor = 40;
 		stamina = 4;
-		ammo = 4;
+		ammo = 3;
 
 		
 	}
@@ -717,15 +710,30 @@ public class Commander : EncounterEnemy
 		variationCards.Add(new Tactics());
 	}
 
-	public class Support : EnemyVariationCard
+	public class Maneuvers : EnemyVariationCard
 	{
-		public Support()
+		public Maneuvers()
 		{
-			name = "Support";
+			name = "Maneuvers";
 			image = SpriteBase.mainSpriteBase.armor;
 
 			description = "Add cards to your deck";
 			addedCombatCards.Add(new Smokescreen());
+		}
+
+		public class Regroup : EffectCard
+		{
+			protected override void ExtenderConstructor()
+			{
+				targetType = TargetType.AllFriendlies;
+				staminaCost = 4;
+				targetArmorGain = 20;
+
+				name = "Regroup";
+				description = "The user and all friendly characters gain " + targetArmorGain + " armor";
+				image = SpriteBase.mainSpriteBase.cover;
+
+			}
 		}
 	}
 
@@ -746,8 +754,8 @@ public class Commander : EncounterEnemy
 			protected override void ExtenderConstructor()
 			{	
 				targetType = TargetType.SelectEnemy;
-				ammoCost = 4;
-				damage = 40;
+				staminaCost = 4;
+				damage = 20;
 				addedStipulationCard = new FocusFire();
 
 				name = "Prioritize";
@@ -820,7 +828,7 @@ public class Commander : EncounterEnemy
 		}
 
 	}
-
+	//currently unused
 	public class Flashbang : RangedCard
 	{
 		int noCoverStaminaDamageBonus = 1;
@@ -855,7 +863,7 @@ public class SemiAuto : RangedCard
 		name = "Semi Auto";
 		image = SpriteBase.mainSpriteBase.pistol;
 		targetType = TargetType.SelectEnemy;
-		damage = 30;
-		ammoCost = 2;
+		damage = 20;
+		ammoCost = 1;
 	}
 }

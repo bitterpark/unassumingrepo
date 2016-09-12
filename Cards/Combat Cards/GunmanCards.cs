@@ -15,8 +15,8 @@ public class GunmanCards
 		result.AddCards(typeof(Camo));
 		result.AddCards(typeof(Tripmine));
 		result.AddCards(typeof(LimbShot));
-		result.AddCards(typeof(DetonateAmmo));
 		result.AddCards(typeof(HollowPoint));
+		result.AddCards(typeof(PersonalSpace));
 
 		return result;
 	}
@@ -38,12 +38,9 @@ public class GunmanCards
 		{
 			name = "Prepared";
 			description = "Adds cards to your deck";
-			image = SpriteBase.mainSpriteBase.medal;
+			image = SpriteBase.mainSpriteBase.flamingBullet;
 
-			//addedCombatCards.Add(new Camo());
-			addedCombatCards.Add(new PersonalSpace());
-			//addedCombatCards.Add(new Pistolwhip());
-			//addedCombatCards.Add(new Tripmine());
+			addedCombatCards.Add(new DetonateAmmo());
 		}
 	}
 
@@ -55,10 +52,7 @@ public class GunmanCards
 			description = "Adds cards to your deck";
 			image = SpriteBase.mainSpriteBase.crosshair;
 
-			//addedCombatCards.Add(new LimbShot());
-			//addedCombatCards.Add(new LimbShot());
 			addedCombatCards.Add(new Headshot());
-			//addedCombatCards.Add(new DetonateAmmo());
 		}
 	}
 	public class Sprayer : PrepCard
@@ -69,9 +63,6 @@ public class GunmanCards
 			description = "Adds cards to your deck";
 			image = SpriteBase.mainSpriteBase.bullets;
 
-			//addedCombatCards.Add(new FullAuto());
-			//addedCombatCards.Add(new HollowPoint());
-			//addedCombatCards.Add(new TrickMags());
 			addedCombatCards.Add(new TrickMags());
 		}
 	}
@@ -87,23 +78,25 @@ public class TrickMags : EffectCard
 		staminaCost = 1;
 
 		name = "Trick Mags";
-		description = "Character's next ranged attack costs no ammo";
+		description = addedStipulationCard.description;
 		image = SpriteBase.mainSpriteBase.ammoBox;
 
 	}
 
 	public class ExtendedMag : CharacterStipulationCard
 	{
+		int ammoCostReduction = 1;
+
 		public ExtendedMag()
 		{
 			name = "Extended Mag";
 			image = SpriteBase.mainSpriteBase.bullets;
-			description = "Character's next ranged attack costs no ammo";
+			description = "Character's next ranged attack costs "+ammoCostReduction+" less ammo";
 		}
 
 		protected override void ExtenderSpecificActivation()
 		{
-			appliedToCharacter.SetRangedAttacksFree(true);
+			appliedToCharacter.ChangeRangedAttacksAmmoCostReduction(ammoCostReduction);
 			RangedCard.ERangedCardPlayed += UseUpCard;
 		}
 		void UseUpCard(CharacterGraphic cardPlayer,RangedCard playedCard)
@@ -115,7 +108,7 @@ public class TrickMags : EffectCard
 		protected override void ExtenderSpecificDeactivation()
 		{
 			RangedCard.ERangedCardPlayed -= UseUpCard;
-			appliedToCharacter.SetRangedAttacksFree(false);
+			appliedToCharacter.ChangeRangedAttacksAmmoCostReduction(-ammoCostReduction);
 		}
 	}
 }
@@ -129,7 +122,7 @@ public class Headshot : EffectCard
 		staminaCost = 1;
 
 		name = "Headshot";
-		description = "Play a Scope In card to the character";
+		description = addedStipulationCard.description;
 		image = SpriteBase.mainSpriteBase.skull;
 
 	}
@@ -174,13 +167,14 @@ public class Tripmine : EffectCard
 	int mineDamage;
 	protected override void ExtenderConstructor()
 	{
-		name = "Tripmine";
-		description = "Places a Trip Mine in the room";
-		image = SpriteBase.mainSpriteBase.bomb;
 		targetType = TargetType.None;
 		ammoCost = 1;
 		mineDamage = 40;
 		addedStipulationCard = new TripmineFriendly(mineDamage);
+		
+		name = "Tripmine";
+		description = addedStipulationCard.description;
+		image = SpriteBase.mainSpriteBase.bomb;
 	}
 }
 
@@ -190,7 +184,7 @@ public class Camo : EffectCard
 	{
 		targetType = TargetType.None;
 		staminaCost = 1;
-		userArmorGain = 30;
+		userArmorGain = 20;
 
 		name = "Camo";
 		description = "Gain " + userArmorGain + " armor";
@@ -222,7 +216,7 @@ public class Doubletap : RangedCard
 		description = "Always";
 		image = SpriteBase.mainSpriteBase.bullet;
 
-		damage = 30;
+		damage = 20;
 		ammoCost = 1;
 		targetType = TargetType.SelectEnemy;
 	}
@@ -237,7 +231,7 @@ public class LimbShot : RangedCard
 		image = SpriteBase.mainSpriteBase.arm;
 
 		staminaDamage = 2;
-		staminaCost = 2;
+		ammoCost = 1;
 		targetType = TargetType.SelectEnemy;
 	}
 }
@@ -252,7 +246,7 @@ public class DetonateAmmo : RangedCard
 		description = "If target has ammo, remove ammo and deal extra "+bonusDamage+" damage";
 		image = SpriteBase.mainSpriteBase.flamingBullet;
 
-		damage = 10;
+		damage = 20;
 		ammoCost = 2;
 		targetType = TargetType.SelectEnemy;
 	}
@@ -276,8 +270,7 @@ public class Pistolwhip : MeleeCard
 		image = SpriteBase.mainSpriteBase.pistol;
 		targetType = TargetType.SelectEnemy;
 
-		staminaCost = 2;
-		damage = 20;
+		damage = 10;
 	}
 }
 
@@ -287,7 +280,7 @@ public class PersonalSpace : MeleeCard
 	{
 		takeDamageCost = 10;
 		ammoCost = 1;
-		damage = 40;
+		damage = 30;
 		
 		name = "Personal Space";
 		description = "Too close for comfort (take "+takeDamageCost+" damage)";

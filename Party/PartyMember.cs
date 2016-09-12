@@ -186,30 +186,30 @@ public class PartyMember: Mercenary
 	{
 		if (mercClass == MercClass.Soldier)
 		{
-			healthMax = 60;
-			startArmor = 40;
-			stamina = 5;
+			healthMax = 100;
+			startArmor = 50;
+			stamina = 3;
 			ammo = 2;
 		}
 		if (mercClass == MercClass.Bandit)
 		{
-			healthMax = 60;
-			startArmor = 60;
-			stamina = 6;
+			healthMax = 100;
+			startArmor = 40;
+			stamina = 4;
 			ammo = 1;
 		}
 		if (mercClass == MercClass.Gunman)
 		{
-			healthMax = 60;
-			startArmor = 40;
+			healthMax = 100;
+			startArmor = 50;
 			stamina = 2;
-			ammo = 4;
+			ammo = 3;
 		}
 		if (mercClass == MercClass.Mercenary)
 		{
-			healthMax = 60;
-			startArmor = 70;
-			stamina = 4;
+			healthMax = 100;
+			startArmor = 80;
+			stamina = 2;
 			ammo = 2;
 		}
 	}

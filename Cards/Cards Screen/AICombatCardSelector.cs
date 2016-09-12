@@ -16,7 +16,7 @@ public class AICombatCardSelector : MonoBehaviour {
 		List<CombatCard> playableCards = SortOutPlayableEnemyCards(character);
 		if (playableCards.Count > 0)
 		{
-			playedCard = SelectPriorityCard(playableCards);
+			playedCard = SelectPriorityCard(playableCards, character);
 			playedCard.SetUserChar(character);
 			EnemyGraphic enemy = character as EnemyGraphic;
 			enemy.RemovePlayedCardFromHand(playedCard);
@@ -29,40 +29,44 @@ public class AICombatCardSelector : MonoBehaviour {
 		}
 	}
 	
-	CombatCard SelectPriorityCard(List<CombatCard> availableCards)
+	CombatCard SelectPriorityCard(List<CombatCard> availableCards, CharacterGraphic character)
 	{
 		CombatCard priorityCard=null;
-		int maxAmmoCost = 0;
+		
+		int maxStaminaCost = 0;
 		foreach (CombatCard card in availableCards)
 		{
-			if (card.ammoCost > maxAmmoCost)
+			int realCardStaminaCost = card.staminaCost;
+			if (card.useUpAllStamina)
+				realCardStaminaCost = character.GetStamina();
+			if (realCardStaminaCost > maxStaminaCost)
 			{
 				priorityCard = card;
-				maxAmmoCost = card.ammoCost;
+				maxStaminaCost = realCardStaminaCost;
 			}
 			else
 			{
-				if (card.ammoCost == maxAmmoCost)
+				if (realCardStaminaCost == maxStaminaCost)
 				{
 					if (Random.value > 0.5f)
 						priorityCard = card;
 				}
 			}
 		}
-		//If no ammo-based card was chosen, choose a stamina-based card instead
-		if (maxAmmoCost == 0)
+		//If no stamina-based card was chosen, choose an ammo-based card instead
+		if (priorityCard == null)
 		{
-			int maxStaminaCost = 0;
+			int maxAmmoCost = 0;
 			foreach (CombatCard card in availableCards)
 			{
-				if (card.staminaCost > maxStaminaCost)
+				if (card.ammoCost > maxAmmoCost)
 				{
 					priorityCard = card;
-					maxStaminaCost = card.staminaCost;
+					maxAmmoCost = card.ammoCost;
 				}
 				else
 				{
-					if (card.staminaCost == maxStaminaCost)
+					if (card.ammoCost == maxAmmoCost)
 					{
 						if (Random.value > 0.5f)
 							priorityCard = card;
@@ -70,6 +74,8 @@ public class AICombatCardSelector : MonoBehaviour {
 				}
 			}
 		}
+
+
 		return priorityCard;
 	}
 
@@ -83,7 +89,7 @@ public class AICombatCardSelector : MonoBehaviour {
 		{
 			foreach (CombatCard card in cardsInHand)
 			{
-				if (combatManager.CombatCardRequirementsMet(card) && character.CharacterMeetsCardRequirements(card))
+				if (combatManager.EligibleCombatCardType(card) && character.CharacterMeetsCardRequirements(card))
 					playableCards.Add(card);
 			}
 		}

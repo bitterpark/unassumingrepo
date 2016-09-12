@@ -267,7 +267,21 @@ public class MissionCharacterManager : MonoBehaviour, ICharacterResourceManipula
 		selectionArrow.GetComponent<RectTransform>().anchoredPosition = new Vector2(-10f, -20f);
 	}
 
-	public void GiveAllChractersTurns()
+
+	public void DoRoundStartForAllCharacters()
+	{
+		GiveAllCharactersTurns();
+		foreach (CharacterGraphic merc in mercGraphics)
+		{
+			merc.RoundStarted();
+		}
+		foreach (CharacterGraphic enemy in enemyGraphics)
+		{
+			enemy.RoundStarted();
+		}
+	}
+
+	public void GiveAllCharactersTurns()
 	{
 		GiveAllMercsTurns();
 		GiveAllEnemiesTurns();
@@ -294,11 +308,6 @@ public class MissionCharacterManager : MonoBehaviour, ICharacterResourceManipula
 		{
 			merc.RemoveTurn();
 		}
-	}
-
-	public void DoRoundStaminaRegen()
-	{
-		IncrementAllCharactersResource(CharacterGraphic.Resource.Stamina, staminaRegen);
 	}
 
 	public void ResetAllMercsResource(CharacterGraphic.Resource resource)

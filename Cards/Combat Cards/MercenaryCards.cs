@@ -40,6 +40,30 @@ public class MercenaryCards
 
 			addedCombatCards.Add(new SuicideCharge());
 		}
+
+		public class SuicideCharge : MeleeCard
+		{
+			protected override bool ExtenderPrerequisitesMet(CharacterGraphic user)
+			{
+				return userCharGraphic.GetArmor() > 0;
+			}
+
+			protected override void ExtenderConstructor()
+			{
+				targetType = TargetType.SelectEnemy;
+
+				name = "Suicide Charge";
+				description = "Spend all armor, do damage equal to armor spent";
+				image = SpriteBase.mainSpriteBase.skull;
+			}
+
+			protected override void ApplyPlayCosts()
+			{
+				takeDamageCost = userCharGraphic.GetArmor();
+				damage += takeDamageCost;
+				base.ApplyPlayCosts();
+			}
+		}
 	}
 	public class Unbreakable : PrepCard
 	{
@@ -49,7 +73,7 @@ public class MercenaryCards
 			description = "Adds cards to your deck";
 			image = SpriteBase.mainSpriteBase.armor;
 
-			addedCombatCards.Add(new PlanB());
+			addedCombatCards.Add(new LastStand());
 		}
 	}
 	public class Challenger : PrepCard
@@ -65,8 +89,7 @@ public class MercenaryCards
 	}
 }
 
-
-
+/*
 public class PlanB : EffectCard
 {
 	int bonusArmorPerStaminaPoint = 25;
@@ -74,27 +97,26 @@ public class PlanB : EffectCard
 	protected override void ExtenderConstructor()
 	{
 		targetType = TargetType.None;
+		usesUpAllStamina = true;
 
 		name = "Plan B";
 		description = "Spend all stamina, gain " + bonusArmorPerStaminaPoint+" armor per point of stamina";
 		image = SpriteBase.mainSpriteBase.lateralArrows;
 	}
 
-	protected override void ApplyPlayCosts()
+	protected override void ApplyEffects()
 	{
-		staminaCost = userCharGraphic.GetStamina();
-		userArmorGain = bonusArmorPerStaminaPoint * staminaCost;
-		base.ApplyPlayCosts();
+		userArmorGain = usedUpStaminaPoints * bonusArmorPerStaminaPoint;
+		base.ApplyEffects();
 	}
-}
+}*/
 
 public class Gambit : EffectCard
 {
 	protected override void ExtenderConstructor()
 	{
 		targetType = TargetType.None;
-		staminaCost = 1;
-		userArmorGain = 70;
+		userArmorGain = 50;
 		removeHealthCost = 10;
 		
 		name = "Gambit";
@@ -109,8 +131,8 @@ public class TakeCover : EffectCard
 	protected override void ExtenderConstructor()
 	{
 		targetType = TargetType.None;
-		staminaCost = 2;
-		userArmorGain = 40;
+		staminaCost = 1;
+		userArmorGain = 20;
 		
 		name = "Take Cover";
 		description = "Hit the deck (gain " + userArmorGain + " armor)";
@@ -119,17 +141,21 @@ public class TakeCover : EffectCard
 }
 
 
-
 public class LastStand : EffectCard
 {
+	protected override bool ExtenderPrerequisitesMet(CharacterGraphic user)
+	{
+		return user.GetMaxStamina() > 2;
+	}
+	
 	protected override void ExtenderConstructor()
 	{
 		targetType = TargetType.None;
-		takeDamageCost = 20;
-		userStaminaGain = 2;
+		maxStaminaCost = 2;
+		userArmorGain = 80;
 		
 		name = "Last Stand";
-		description = "Restore " + userStaminaGain + " stamina, take " + takeDamageCost + " damage";
+		description = "Remove "+maxStaminaCost+" max stamina, gain "+userArmorGain+" armor";
 		image = SpriteBase.mainSpriteBase.restSprite;
 	}
 }
@@ -140,10 +166,9 @@ public class ComeAtMe : EffectCard
 	{
 		targetType = TargetType.None;
 		addedStipulationCard = new Brawler();
-		staminaCost = 2;
 
 		name = "Come At Me";
-		description = "Play a Come At Me card to the character";
+		description = addedStipulationCard.description;
 		image = SpriteBase.mainSpriteBase.skull;
 
 	}
@@ -181,9 +206,8 @@ public class RunAndGun : MeleeCard
 {
 	protected override void ExtenderConstructor()
 	{
-		damage = 60;
+		damage = 30;
 		ammoCost = 1;
-		staminaCost = 2;
 		takeDamageCost=10;
 		targetType = TargetType.SelectEnemy;
 		
@@ -203,32 +227,14 @@ public class Overconfidence : MeleeCard
 	protected override void ExtenderConstructor()
 	{
 		targetType = TargetType.Strongest;
-		staminaCost = 2;
+		staminaCost = 1;
 		takeDamageCost = 10;
-		damage = 40;
+		damage = 30;
 
 		name = "Overconfidence";
-		description = "You can't die twice (targets strongest enemy, mercenary takes "+takeDamageCost+" damage)";
+		description = "You can't die twice (targets toughest enemy, mercenary takes "+takeDamageCost+" damage)";
 		image = SpriteBase.mainSpriteBase.skull;
 		
 	}
 }
-public class SuicideCharge : MeleeCard
-{
-	protected override void ExtenderConstructor()
-	{
-		damage = 10;
-		targetType = TargetType.SelectEnemy;
-		
-		name = "Suicide Charge";
-		description = "Spend all armor, do damage equal to armor spent";
-		image = SpriteBase.mainSpriteBase.skull;
-	}
 
-	protected override void ApplyPlayCosts()
-	{
-		takeDamageCost = userCharGraphic.GetArmor();
-		damage += takeDamageCost;
-		base.ApplyPlayCosts();
-	}
-}

@@ -13,7 +13,7 @@ public class CardsScreen : MonoBehaviour
 	public RewardCardDisplayer rewardDisplayer;
 	public RoomCardDisplayer roomChoiceDisplayer;
 	public MissionCharacterManager characterManager;
-	public PrepCardManager prepManager;
+	public PrepHandManager prepManager;
 	public ModeTextDisplayer modeTextDisplayer;
 	public CombatCardTargeter combatCardTargeter;
 	public AICombatCardSelector aiCardSelector;
@@ -38,7 +38,7 @@ public class CardsScreen : MonoBehaviour
 		roomChoiceDisplayer.EnableDisplayer(this, newEncounter);
 		characterManager.EnableCharacterManager(combatManager);
 		characterManager.SpawnMercsOnMissionStart(team);
-		prepManager.EnablePrepDisplayer(combatManager, characterManager, enemyHandObject, prepHandObject, uiToggler, modeTextDisplayer);
+		prepManager.EnablePrepDisplayer(combatManager, characterManager, uiToggler, modeTextDisplayer);
 		combatCardTargeter.EnableCombatCardTargeter(combatManager, characterManager, uiToggler, modeTextDisplayer);
 		aiCardSelector.EnableCombatCardSelector(combatManager);
 		uiToggler.EnableUIToggler(this,combatManager);
@@ -85,7 +85,7 @@ public class CardsScreen : MonoBehaviour
 
 	void BeginCombatMode(RoomCard selectedCard)
 	{
-		combatManager.StartCombat(selectedCard);
+		combatManager.SetupCombat(selectedCard);
 	}
 
 	public void CombatWon()

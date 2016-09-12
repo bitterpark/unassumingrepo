@@ -37,15 +37,15 @@ public class CombatCardTargeter : MonoBehaviour {
 		main = this;
 	}
 
-	public void CombatCardPlayStarted(CombatCardGraphic cardGraphic,CharacterGraphic cardPlayer)
+	public void CombatCardPlayStarted(ICombatCard cardObject,CharacterGraphic cardPlayer)
 	{
-		CombatCard playedCard = cardGraphic.GetAssignedCard();
+		CombatCard playedCard = cardObject.GetAssignedCard();
 		playedCard.SetUserChar(cardPlayer);
-		PlayerCardTargetAssignment(cardGraphic, cardPlayer);
+		PlayerCardTargetAssignment(cardObject, cardPlayer);
 	}
 
 	//Deprecated
-	IEnumerator SelectCardUserByPlayer(CombatCardGraphic playedCardGraphic)
+	IEnumerator SelectCardUserByPlayer(ICombatCard playedCardGraphic)
 	{
 		CombatCard playedCard = playedCardGraphic.GetAssignedCard();
 
@@ -89,14 +89,14 @@ public class CombatCardTargeter : MonoBehaviour {
 		}
 	}
 
-	void PlayerCardTargetAssignment(CombatCardGraphic cardGraphic,CharacterGraphic selectedCharacter)
+	void PlayerCardTargetAssignment(ICombatCard cardObject,CharacterGraphic selectedCharacter)
 	{
-		CombatCard playedCard = cardGraphic.GetAssignedCard();
+		CombatCard playedCard = cardObject.GetAssignedCard();
 		this.selectedCharacter = selectedCharacter;
 
 		if (playedCard.targetType == CombatCard.TargetType.SelectFriendly | playedCard.targetType == CombatCard.TargetType.SelectFriendlyOther)
 		{
-			StartCoroutine("SelectCardTargetCharacterByPlayer", cardGraphic);
+			StartCoroutine("SelectCardTargetCharacterByPlayer", cardObject);
 			return;
 		}
 
@@ -105,17 +105,17 @@ public class CombatCardTargeter : MonoBehaviour {
 			if (playedCard.GetType().BaseType == typeof(MeleeCard) && meleeCardTargetOverrideEnemy != null)
 			{
 				AssignCardTargets(playedCard, selectedCharacter);
-				combatManager.CombatCardPlayStarted(cardGraphic);
+				combatManager.CombatCardPlayStarted(cardObject);
 				return;
 			}
 			if (playedCard.GetType().BaseType == typeof(RangedCard) && rangedCardTargetOverrideEnemy != null)
 			{
 				AssignCardTargets(playedCard, selectedCharacter);
-				combatManager.CombatCardPlayStarted(cardGraphic);
+				combatManager.CombatCardPlayStarted(cardObject);
 				return;
 			}
 
-			StartCoroutine("SelectCardTargetCharacterByPlayer", cardGraphic);
+			StartCoroutine("SelectCardTargetCharacterByPlayer", cardObject);
 			return;
 		}
 		if (playedCard.targetType != CombatCard.TargetType.SelectFriendly
@@ -123,13 +123,13 @@ public class CombatCardTargeter : MonoBehaviour {
 			&& playedCard.targetType != CombatCard.TargetType.SelectEnemy)
 		{
 			AssignCardTargets(playedCard, selectedCharacter);
-			combatManager.CombatCardPlayStarted(cardGraphic);
+			combatManager.CombatCardPlayStarted(cardObject);
 		}
 	}
 
-	IEnumerator SelectCardTargetCharacterByPlayer(CombatCardGraphic playedCardGraphic)
+	IEnumerator SelectCardTargetCharacterByPlayer(ICombatCard playedCardObject)
 	{
-		CombatCard playedCard = playedCardGraphic.GetAssignedCard();
+		CombatCard playedCard = playedCardObject.GetAssignedCard();
 		
 		CharacterGraphic targetChar = null;
 		bool selectFriendly = false;
@@ -193,7 +193,7 @@ public class CombatCardTargeter : MonoBehaviour {
 		if (targetFound)
 		{
 			playedCard.targetChars.Add(targetChar);
-			combatManager.CombatCardPlayStarted(playedCardGraphic);
+			combatManager.CombatCardPlayStarted(playedCardObject);
 		}
 	}
 

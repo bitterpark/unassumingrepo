@@ -7,17 +7,45 @@ using System.Collections.Generic;
 public class PrepHandDisplayer : MonoBehaviour 
 {
 
-	public PrepCardGraphic prepCardPrefab;
+	public InteractablePrepCard prepCardPrefab;
+	public MercGraphic handOwner;
 
 	public Transform mainHandGroup;
 
-	public void DisplayPrepHand(List<PrepCard> cardsInHand)
+	enum PrepMode { SelectClassCard, SelectWeaponCard };
+	PrepMode currentPrepMode;
+
+	public void StartPrepHandDisplay()
+	{
+		DisplayPrepHand(handOwner.GetMercsClassPrepCards());
+		currentPrepMode = PrepMode.SelectClassCard;
+	}
+
+	public void PrepCardClicked(InteractablePrepCard clickedCardObject)
+	{
+		//cardGraphic.transform.SetParent(prepCardsDisplayArea, false);
+		clickedCardObject.PlayAssignedCard(handOwner);
+		TransferPrepMode();
+	}
+
+	void TransferPrepMode()
+	{
+		HidePrepHand();
+		if (currentPrepMode == PrepMode.SelectClassCard)
+		{
+			currentPrepMode = PrepMode.SelectWeaponCard;
+			DisplayPrepHand(handOwner.GetMercsWeaponPrepCards());
+		}
+			
+	}
+
+	void DisplayPrepHand(List<PrepCard> cardsInHand)
 	{
 		foreach (PrepCard card in cardsInHand)
 		{
-			PrepCardGraphic newCardGraphic = Instantiate(prepCardPrefab);
-			newCardGraphic.AssignCard(card);
-			newCardGraphic.transform.SetParent(mainHandGroup, false);
+			InteractablePrepCard newCardObject = Instantiate(prepCardPrefab);
+			newCardObject.AssignCard(card, this);
+			newCardObject.transform.SetParent(mainHandGroup, false);
 		}
 	}
 
@@ -36,4 +64,9 @@ public class PrepHandDisplayer : MonoBehaviour
 			card.GetComponent<Button>().interactable = interactable;
 		}
 	}
+
+	
+
+	
+
 }

@@ -5,6 +5,8 @@ using System.Collections.Generic;
 
 public class MercGraphic : CharacterGraphic
 {
+	public PrepHandDisplayer prepHandDisplayer;
+	
 	public Text classText;
 	Mercenary assignedMerc;
 
@@ -15,6 +17,16 @@ public class MercGraphic : CharacterGraphic
 		portrait.color = newChar.GetColor();
 		classText.text = newChar.GetClass();
 		assignedMerc = newChar;
+	}
+
+	public void StartPrepDisplay()
+	{
+		prepHandDisplayer.StartPrepHandDisplay();
+	}
+	
+	public void FinishPrepDisplay()
+	{
+		prepHandDisplayer.HidePrepHand();
 	}
 
 	public List<PrepCard> GetMercsWeaponPrepCards()
@@ -33,7 +45,7 @@ public class MercGraphic : CharacterGraphic
 	}
 	public override void GenerateCombatStartDeck()
 	{
-		int size = CombatManager.startingHandSize;
+		int size = 4;
 		currentCharacterDeck = new CombatDeck();
 		CombatCard[] startingDeckCards = assignedMerc.GetCombatDeck().DrawCards(size).ToArray();
 		currentCharacterDeck.AddCards(startingDeckCards);
@@ -42,14 +54,19 @@ public class MercGraphic : CharacterGraphic
 	}
 
 
-	public void TryDrawNewCardToHand()
+	public void TryDrawNewCardsToHand(int drawCount)
 	{
 		if (HasTurn())
 		{
 			handManager.HideDisplayedHand();
-			handManager.DrawCardsToHand(1);
+			handManager.DrawCardsToHand(drawCount);
 			handManager.DisplayHand(true);
 		}
+	}
+
+	public void DiscardMyHand()
+	{
+		handManager.DiscardCurrentHand();
 	}
 
 	public void HideMyHand()
@@ -72,7 +89,6 @@ public class MercGraphic : CharacterGraphic
 	public override void RemoveTurn()
 	{
 		base.RemoveTurn();
-		handManager.DiscardCurrentHand();
 		handManager.HideDisplayedHand();
 	}
 

@@ -3,9 +3,9 @@ using UnityEngine.UI;
 using System.Collections;
 using System.Collections.Generic;
 
-public class PrepCardManager : MonoBehaviour {
+public class PrepHandManager : MonoBehaviour {
 
-	public static PrepCardManager main;
+	public static PrepHandManager main;
 	
 	public Button beginCombatButton;
 	public Button characterPreppedButton;
@@ -19,20 +19,16 @@ public class PrepCardManager : MonoBehaviour {
 
 	CombatManager combatManager;
 	MissionCharacterManager characterManager;
-	HandDisplayer enemyHandObject;
-	PrepHandDisplayer prepHandObject;
 	ModeTextDisplayer modeTextDisplayer;
 	MissionUIToggler uiToggler;
 
 	CharacterGraphic selectedCharacter;
 
-	public void EnablePrepDisplayer(CombatManager combatManager, MissionCharacterManager characterManager, HandDisplayer enemyHandObject, PrepHandDisplayer prepHandObject,
+	public void EnablePrepDisplayer(CombatManager combatManager, MissionCharacterManager characterManager,
 		MissionUIToggler uiToggler,ModeTextDisplayer modeTextDisplayer)
 	{
 		this.combatManager = combatManager;
 		this.characterManager = characterManager;
-		this.prepHandObject = prepHandObject;
-		this.enemyHandObject = enemyHandObject;
 		this.modeTextDisplayer = modeTextDisplayer;
 		this.uiToggler = uiToggler;
 		main = this;
@@ -42,9 +38,18 @@ public class PrepCardManager : MonoBehaviour {
 	{
 		beginCombatButton.gameObject.SetActive(true);
 		beginCombatButton.onClick.AddListener(FinishCombatPrepPhase);
-		StartCoroutine("SelectNextCharacterToPrep");
-	}
 
+		List<CharacterGraphic> characters=characterManager.GetMercGraphics();
+
+		foreach (CharacterGraphic character in characters)
+		{
+			MercGraphic merc = character as MercGraphic;
+			merc.StartPrepDisplay();
+		}
+
+		//StartCoroutine("SelectNextCharacterToPrep");
+	}
+	/*
 	IEnumerator SelectNextCharacterToPrep()
 	{
 		CharacterGraphic targetChar = null;
@@ -77,7 +82,7 @@ public class PrepCardManager : MonoBehaviour {
 	}
 
 
-
+	/*
 	void CharacterSelectedForPrep(MercGraphic character)
 	{
 		characterPreppedButton.gameObject.SetActive(true);
@@ -95,66 +100,18 @@ public class PrepCardManager : MonoBehaviour {
 
 		currentPrepMode = PrepMode.SelectClassCard;
 		ShowSelectionOfPrepCards(character);
-	}
-
-	void ShowSelectionOfPrepCards(MercGraphic character)
-	{
-		HideAvailablePrepCards();
-		if (currentPrepMode == PrepMode.SelectClassCard)
-			prepHandObject.DisplayPrepHand(character.GetMercsClassPrepCards());
-		if (currentPrepMode == PrepMode.SelectWeaponCard)
-			prepHandObject.DisplayPrepHand(character.GetMercsWeaponPrepCards());
-	}
-
-	public void PlayPrepCard(PrepCardGraphic cardGraphic)
-	{
-		StartCoroutine("PrepCardPlaying", cardGraphic);
-	}
-
-	IEnumerator PrepCardPlaying(PrepCardGraphic cardGraphic)
-	{
-		prepHandObject.SetPrepHandInteractivity(false);
-		cardGraphic.transform.SetParent(prepCardsDisplayArea, false);
-		cardGraphic.PlayAssignedCard(selectedCharacter);
-		if (currentPrepMode == PrepMode.SelectClassCard)
-		{
-			TransferPrepFromCharacterCardToWeaponCard();
-		}
-		yield break;
-	}
-
-	void TransferPrepFromCharacterCardToWeaponCard()
-	{
-		currentPrepMode = PrepMode.SelectWeaponCard;
-		MercGraphic selectedMerc = selectedCharacter as MercGraphic;
-		ShowSelectionOfPrepCards(selectedMerc);
-	}
-
-	void CharacterPrepFinished()
-	{
-		characterPreppedButton.onClick.RemoveAllListeners();
-		characterPreppedButton.gameObject.SetActive(false);
-		beginCombatButton.gameObject.SetActive(true);
-		HideAvailablePrepCards();
-		HidePrepDisplayDeck();
-		selectedCharacter.RemoveTurn();
-		StartCoroutine("SelectNextCharacterToPrep");
-	}
-
-	void HideAvailablePrepCards()
-	{
-		prepHandObject.HidePrepHand();
-	}
-
-	void HidePrepDisplayDeck()
-	{
-		foreach (CardGraphic graphic in prepCardsDisplayArea.GetComponentsInChildren<CardGraphic>())
-			GameObject.Destroy(graphic.gameObject);
-	}
+	}*/
 
 	void FinishCombatPrepPhase()
 	{
-		StopCoroutine("SelectNextCharacterToPrep");
+		List<CharacterGraphic> characters=characterManager.GetMercGraphics();
+		
+		foreach (CharacterGraphic character in characters)
+		{
+			MercGraphic merc = character as MercGraphic;
+			merc.FinishPrepDisplay();
+		}
+		
 		modeTextDisplayer.HideCenterMessage();
 		beginCombatButton.onClick.RemoveAllListeners();
 		beginCombatButton.gameObject.SetActive(false);

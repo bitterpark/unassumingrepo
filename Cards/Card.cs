@@ -225,29 +225,22 @@ public class DefaultRangedPrepCard : PrepCard
 	}
 }
 
-public class ExamplePrepCard : PrepCard
-{
-	public ExamplePrepCard()
-	{
-		name = "example";
-		description = "111";
-		image = SpriteBase.mainSpriteBase.assaultRifle;
-
-		addedCombatCards.Add(new BurstFire());
-		addedCombatCards.Add(new BurstFire());
-		addedCombatCards.Add(new Hipfire());
-		addedCombatCards.Add(new Hipfire());
-	}
-}
-
 public abstract class CombatCard: Card
 {
 	public int damage=0;
+	public int damagePerStaminaPoint = 0;
 	public int staminaDamage=0;
 	public int unarmoredBonusDamage = 0;
-
+	
+	
+	
 	public int ammoCost=0;
 	public int staminaCost=0;
+	public int maxStaminaCost = 0;
+	public bool useUpAllStamina = false;
+
+	protected int usedUpStaminaPoints = 0;
+
 	public int removeHealthCost = 0;
 	public int takeDamageCost = 0;
 
@@ -291,6 +284,8 @@ public abstract class CombatCard: Card
 
 	public void PlayCard()
 	{
+		if (useUpAllStamina)
+			usedUpStaminaPoints = damagePerStaminaPoint * userCharGraphic.GetStamina();
 		ApplyPlayCosts();
 		CardPlayEvents();
 		if (userCharGraphic.GetHealth()>0)
@@ -321,10 +316,13 @@ public abstract class CombatCard: Card
 	{
 		damage=0;
 		staminaDamage=0;
+		damagePerStaminaPoint = 0;
 		unarmoredBonusDamage = 0;
+		usedUpStaminaPoints = 0;
 
 		ammoCost=0;
 		staminaCost=0;
+		maxStaminaCost = 0;
 		removeHealthCost = 0;
 		takeDamageCost = 0;
 
@@ -343,7 +341,9 @@ public abstract class CombatCard: Card
 
 	protected virtual void ApplyPlayCosts()
 	{
-		userCharGraphic.SubtractCardCostsFromResources(ammoCost,staminaCost,takeDamageCost,removeHealthCost);
+		if (useUpAllStamina)
+			usedUpStaminaPoints = userCharGraphic.GetStamina();
+		userCharGraphic.SubtractCardCostsFromResources(useUpAllStamina,ammoCost,staminaCost,maxStaminaCost,takeDamageCost,removeHealthCost);
 	}
 
 	protected virtual void ApplyEffects()
@@ -359,6 +359,8 @@ public abstract class CombatCard: Card
 		foreach (CharacterGraphic targetCharGraphic in targetChars)
 		{
 			int totalDamage = damage;
+			totalDamage += damagePerStaminaPoint * usedUpStaminaPoints;
+
 			if (targetCharGraphic.GetArmor() <= 0)
 				totalDamage += unarmoredBonusDamage;
 			targetCharGraphic.TakeDamage(totalDamage, ignoresArmor);

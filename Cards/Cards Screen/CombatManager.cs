@@ -6,7 +6,7 @@ public interface ICombatManager
 {
 	CombatManager.TurnStatus GetTurnStatus();
 	PlayerHandManager GetPlayerHandManager();
-	void TryPlayCombatCard(CombatCardGraphic card,CharacterGraphic cardPlayer);
+	bool TryPlayCombatCard(ICombatCard card,CharacterGraphic cardPlayer);
 	void PlaceRoomStipulationCard(RoomStipulationCard card);
 	void RemoveRoomStipulationCard(RoomStipulationCard card);
 }
@@ -30,9 +30,11 @@ public class CombatManager : MonoBehaviour,ICombatManager,ICombatRulesHandler {
 	public Transform centerPlayArea;
 	public Transform roomStipulationCardsGroup;
 
-	public const float cardPlayAnimationTime = 2.25f;
+	public const int enemyHandSize = 8;
+	public const int mercStartingHandSize = 4;
+	public const int mercExtraCardDrawPerTurn = 1;
 
-	public const int startingHandSize = 4;
+	public const float cardPlayAnimationTime = 2.25f;
 
 	public PlayerHandManager playerHandManager;
 
@@ -53,7 +55,7 @@ public class CombatManager : MonoBehaviour,ICombatManager,ICombatRulesHandler {
 	MissionCharacterManager characterManager;
 	
 	MissionUIToggler uiToggler;
-	PrepCardManager prepDisplayer;
+	PrepHandManager prepManager;
 	ModeTextDisplayer modeTextDisplayer;
 	CombatCardTargeter combatCardTargeter;
 	AICombatCardSelector aiCardSelector;
@@ -61,7 +63,7 @@ public class CombatManager : MonoBehaviour,ICombatManager,ICombatRulesHandler {
 	public void EnableCombatManager(CardsScreen cardsScreen,
 	MissionCharacterManager characterManager,
 	MissionUIToggler uiToggler,
-	PrepCardManager prepDisplayer,
+	PrepHandManager prepDisplayer,
 	ModeTextDisplayer modeTextDisplayer,
 	CombatCardTargeter combatCardTargeter,
 	AICombatCardSelector aiCardSelector)
@@ -69,14 +71,14 @@ public class CombatManager : MonoBehaviour,ICombatManager,ICombatRulesHandler {
 		this.cardsScreen=cardsScreen;
 		this.characterManager = characterManager;
 		this.uiToggler = uiToggler;
-		this.prepDisplayer = prepDisplayer;
+		this.prepManager = prepDisplayer;
 		this.modeTextDisplayer = modeTextDisplayer;
 		this.combatCardTargeter = combatCardTargeter;
 		this.aiCardSelector = aiCardSelector;
 		playerHandManager.EnableManager(characterManager);
 	}
 	
-	public void StartCombat(RoomCard playedRoom)
+	public void SetupCombat(RoomCard playedRoom)
 	{
 		EncounterEnemy[] enemies = playedRoom.GetEnemies();
 		uiToggler.SetAllowHandPeeking(true);
@@ -86,13 +88,16 @@ public class CombatManager : MonoBehaviour,ICombatManager,ICombatRulesHandler {
 		foreach (RoomStipulationCard card in randomRoomStipulationCards)
 			PlaceRoomStipulationCard(card);
 
-		prepDisplayer.BeginPrepCardsPhase();
+		playerHandManager.DrawCombatStartHand();
+		playerHandManager.SetPlayerHandInteractivity(false);
+		prepManager.BeginPrepCardsPhase();
 	}
 
 	public void FinishPrepCardsPhase()
 	{
-		characterManager.GiveAllChractersTurns();
-		EnablePlayerTurn();
+		characterManager.GiveAllCharactersTurns();
+		playerHandManager.SetPlayerHandInteractivity(true);
+		StartPlayerTurn();
 	}
 
 
@@ -111,24 +116,33 @@ public class CombatManager : MonoBehaviour,ICombatManager,ICombatRulesHandler {
 	}
 
 	//COMBAT STUFF START
-	void EnablePlayerTurn()
+	void StartPlayerTurn()
 	{
 		turnStatus = TurnStatus.Player;
 		uiToggler.EnableTurnoverButton();
-		playerHandManager.DrawCardsForActiveMercs();
+		playerHandManager.NewPlayerTurnStart();
 	}
 
-	public void TryPlayCombatCard(CombatCardGraphic cardGraphic,CharacterGraphic cardPlayer)
+	void AdvancePlayerTurn()
 	{
-		CombatCard playedCard = cardGraphic.GetAssignedCard();
-		if (CombatCardRequirementsMet(playedCard))
+		uiToggler.EnableTurnoverButton();
+		//playerHandManager.DrawCardsForActiveMercs(1);
+	}
+
+	public bool TryPlayCombatCard(ICombatCard cardObject,CharacterGraphic cardPlayer)
+	{
+		CombatCard playedCard = cardObject.GetAssignedCard();
+		if (EligibleCombatCardType(playedCard) && cardPlayer.CharacterMeetsCardRequirements(playedCard))
 		{
 			uiToggler.DisableTurnoverButton();
-			combatCardTargeter.CombatCardPlayStarted(cardGraphic, cardPlayer);
+			combatCardTargeter.CombatCardPlayStarted(cardObject, cardPlayer);
+			return true;
 		}
+		else
+			return false;
 	}
 
-	public void CombatCardPlayStarted(CombatCardGraphic playedCard)
+	public void CombatCardPlayStarted(ICombatCard playedCard)
 	{
 		StartCoroutine("CombatCardPlayed", playedCard);
 	}
@@ -160,7 +174,7 @@ public class CombatManager : MonoBehaviour,ICombatManager,ICombatRulesHandler {
 	}
 
 
-	public bool CombatCardRequirementsMet(CombatCard card)
+	public bool EligibleCombatCardType(CombatCard card)
 	{
 		if (card.cardType == CombatCard.CardType.Ranged_Attack && rangedAttacksAllowed)
 			return true;
@@ -170,28 +184,28 @@ public class CombatManager : MonoBehaviour,ICombatManager,ICombatRulesHandler {
 		return false;
 	}
 
-	IEnumerator CombatCardPlayed(CombatCardGraphic playedCardGraphic)
+	IEnumerator CombatCardPlayed(ICombatCard playedCardObject)
 	{
 		uiToggler.DisablePlayerActionsDuringCardPlay();
-		CombatCard playedCard = playedCardGraphic.GetAssignedCard();
+		CombatCard playedCard = playedCardObject.GetAssignedCard();
 		CharacterGraphic userGraphic = playedCard.GetUserChar();
 		
 		//Visualize card play
 		if (playedCard.targetType == CombatCard.TargetType.None)
-			PutCardToCharacter(playedCardGraphic, userGraphic);
+			PutCardToCharacter(playedCardObject, userGraphic);
 		if (playedCard.targetType == CombatCard.TargetType.AllEnemies || playedCard.targetType == CombatCard.TargetType.AllFriendlies)
-			PutCardToCenter(playedCardGraphic);
+			PutCardToCenter(playedCardObject);
 		if (playedCard.targetType != CombatCard.TargetType.None && playedCard.targetType != CombatCard.TargetType.AllEnemies
 			&& playedCard.targetType != CombatCard.TargetType.AllFriendlies)
 		{
 			CharacterGraphic targetGraphic = null;
 			targetGraphic = playedCard.targetChars[0];
-			PutCardToCharacter(playedCardGraphic, targetGraphic);
+			PutCardToCharacter(playedCardObject, targetGraphic);
 		}
 		//Actual effects
 		playedCard.PlayCard();
 		yield return new WaitForSeconds(cardPlayAnimationTime);
-		GameObject.Destroy(playedCardGraphic.gameObject);
+		GameObject.Destroy(playedCardObject.GetTransform().gameObject);
 
 		if (userGraphic.GetHealth() > 0)
 			userGraphic.TurnFinished();
@@ -222,7 +236,7 @@ public class CombatManager : MonoBehaviour,ICombatManager,ICombatRulesHandler {
 				foreach (CharacterGraphic mercGraphic in characterManager.GetMercGraphics())
 					if (mercGraphic.HasTurn())
 					{
-						EnablePlayerTurn();
+						AdvancePlayerTurn();
 						yield break;
 					}
 				EndPlayerTurn();
@@ -245,17 +259,18 @@ public class CombatManager : MonoBehaviour,ICombatManager,ICombatRulesHandler {
 
 	IEnumerator StartNewRound()
 	{
-		characterManager.DoRoundStaminaRegen();
-		if (ERoundIsOver != null) ERoundIsOver();
+		//characterManager.DoRoundStaminaRegen();
+		if (ERoundIsOver != null) 
+			ERoundIsOver();
 		characterManager.CleanupCharactersWhoDied();
 
 		if (!PlayerWonOrLost())
 		{
-			characterManager.GiveAllChractersTurns();
+			characterManager.DoRoundStartForAllCharacters();
 			modeTextDisplayer.DisplayCenterMessage("New round");
 			yield return new WaitForSeconds(cardPlayAnimationTime);
 			modeTextDisplayer.HideCenterMessage();
-			EnablePlayerTurn();
+			StartPlayerTurn();
 		}
 		yield break;
 	}
@@ -309,14 +324,15 @@ public class CombatManager : MonoBehaviour,ICombatManager,ICombatRulesHandler {
 		return newGraphic;
 	}
 	
-	public void PutCardToCenter(CardGraphic playedCardGraphic)
+	public void PutCardToCenter(ICombatCard playedCardObject)
 	{
-		playedCardGraphic.transform.SetParent(centerPlayArea, false);
+		playedCardObject.GetTransform().SetParent(centerPlayArea, false);
 	}
 
-	void PutCardToCharacter(CardGraphic playedCardGraphic, CharacterGraphic character)
+	void PutCardToCharacter(ICombatCard playedCardObject, CharacterGraphic character)
 	{
-		playedCardGraphic.transform.SetParent(character.appliedCardsGroup, false);
+		playedCardObject.GetTransform().SetParent(character.appliedCardsGroup, false);
+		playedCardObject.GetTransform().SetAsLastSibling();
 	}
 
 	public void EndTurnButtonPressed()

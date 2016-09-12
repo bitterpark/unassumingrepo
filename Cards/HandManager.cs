@@ -7,10 +7,17 @@ public class HandManager: MonoBehaviour{
 	public HandDisplayer handDisplayer;
 	List<CombatCard> cardsInHand = new List<CombatCard>();
 	CombatDeck assignedDeck;
+	CharacterGraphic handOwner;
 	
 	public void AssignDeck(CombatDeck deck)
 	{
 		assignedDeck = deck;
+	}
+
+	public void TryPlayCardInHand(ICombatCard cardObject)
+	{
+		if (CombatManager.main.TryPlayCombatCard(cardObject, handOwner))
+			RemoveCardFromHand(cardObject.GetAssignedCard());
 	}
 
 	public void DrawCardsToHand(int count)
@@ -36,23 +43,30 @@ public class HandManager: MonoBehaviour{
 
 	public void EnableHandDisplayer(CharacterGraphic handOwner)
 	{
-		handDisplayer.EnableHandDisplayer(handOwner);
+		this.handOwner = handOwner;
+		handDisplayer.EnableHandDisplayer(this);
 	}
 
+	/*
+	void RefreshHand(bool interactable)
+	{
+		HideDisplayedHand();
+		DisplayHand(interactable);
+	}*/
 
 	public void DisplayHand(bool interactable)
 	{
 		handDisplayer.DisplayHand(interactable, cardsInHand);
 	}
 
-	public void SetHandInteractivity(bool interactable)
-	{
-		handDisplayer.SetHandInteractivity(interactable);
-	}
-
 	public void HideDisplayedHand()
 	{
 		handDisplayer.HideDisplayedHand();
+	}
+
+	public void SetHandInteractivity(bool interactable)
+	{
+		handDisplayer.SetHandInteractivity(interactable);
 	}
 
 }

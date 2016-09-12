@@ -27,7 +27,7 @@ public class EnemyGraphic : CharacterGraphic
 	public virtual void StartedTurn()
 	{
 		handManager.DiscardCurrentHand();
-		handManager.DrawCardsToHand(CombatManager.startingHandSize);
+		handManager.DrawCardsToHand(CombatManager.enemyHandSize);
 	}
 
 	public List<CombatCard> GetCharacterHand()

@@ -6,28 +6,17 @@ using System.Collections.Generic;
 public class PrepCardGraphic : CardGraphic {
 
 	PrepCard assignedCard;
-	
+
 	public void AssignCard(PrepCard newCard)
+	{
+		AssignCard(newCard, false);
+	}
+
+	public void AssignCard(PrepCard newCard, bool showDescriptionTooltip)
 	{
 		base.UpdateBasicVisuals(newCard);
 		assignedCard = newCard;
-		GetComponent<Button>().onClick.AddListener(CardClicked);
-	}
-
-	public void SetInteractable(bool interactable)
-	{
-		GetComponent<Button>().interactable = interactable;
-	}
-
-	public void PlayAssignedCard(CharacterGraphic playToCharacter)
-	{
-		assignedCard.PlayCard(playToCharacter);
-	}
-
-	public void CardClicked()
-	{
-		if (GetComponent<Button>().IsInteractable())
-			PrepCardManager.main.PlayPrepCard(this);
+		description.raycastTarget = showDescriptionTooltip;
 	}
 
 	public void ShowAddedCombatCardsTooltip()

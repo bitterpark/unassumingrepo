@@ -11,7 +11,18 @@ public class PlayerHandManager : MonoBehaviour
 		this.characterManager = characterManager;
 	}
 
-	public void DrawCardsForActiveMercs()
+	public void DrawCombatStartHand()
+	{
+		DiscardAllHands();
+		DrawCardsForActiveMercs(CombatManager.mercStartingHandSize-CombatManager.mercExtraCardDrawPerTurn);
+	}
+
+	public void NewPlayerTurnStart()
+	{
+		DrawCardsForActiveMercs(CombatManager.mercExtraCardDrawPerTurn);
+	}
+
+	public void DrawCardsForActiveMercs(int drawCount)
 	{
 		ClearDisplayedHand();
 		List<CombatCard> playerHand = new List<CombatCard>();
@@ -19,10 +30,8 @@ public class PlayerHandManager : MonoBehaviour
 		foreach (CharacterGraphic character in characterManager.GetMercGraphics())
 		{
 			MercGraphic merc = character as MercGraphic;
-			merc.TryDrawNewCardToHand();
+			merc.TryDrawNewCardsToHand(drawCount);
 		}
-
-		//handDisplayer.DisplayHand(true, playerHand);
 	}
 
 	public void SetPlayerHandInteractivity(bool interactive)
@@ -42,5 +51,14 @@ public class PlayerHandManager : MonoBehaviour
 			merc.HideMyHand();
 		}
 	}
-	
+
+	public void DiscardAllHands()
+	{
+		foreach (CharacterGraphic character in characterManager.GetMercGraphics())
+		{
+			MercGraphic merc = character as MercGraphic;
+			merc.DiscardMyHand();
+		}
+	}
+
 }

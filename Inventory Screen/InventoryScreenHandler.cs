@@ -270,8 +270,7 @@ public class InventoryScreenHandler : MonoBehaviour
 		foreach (PrepCard card in selectedMember.GetClassPrepCards())
 		{
 			PrepCardGraphic newGraphic = Instantiate(prepCardPrefab);
-			newGraphic.AssignCard(card);
-			newGraphic.SetInteractable(false);
+			newGraphic.AssignCard(card,true);
 			newGraphic.transform.SetParent(prepCardsGroup, false);
 		}
 	}
@@ -293,8 +292,7 @@ public class InventoryScreenHandler : MonoBehaviour
 		foreach (CombatCard card in selectedMember.GetAllUsedCards())
 		{
 			CombatCardGraphic newGraphic = Instantiate(combatCardPrefab);
-			newGraphic.AssignCard(card);
-			newGraphic.SetInteractable(false);
+			newGraphic.AssignCard(card,true);
 			newGraphic.transform.SetParent(combatDeckGroup,false);
 		}
 	}

@@ -8,21 +8,21 @@ public interface HandDisplayingObject
 	void DisplayHand(bool interactable, List<CombatCard> cardsInHand);
 	void SetHandInteractivity(bool interactable);
 	void HideDisplayedHand();
-	List<CombatCardGraphic> GetHandGraphics();
+	List<InteractableCombatCard> GetHandGraphics();
 
 }
 
 public class HandDisplayer : MonoBehaviour,HandDisplayingObject {
 
-	public CombatCardGraphic combatCardPrefab;	
+	public InteractableCombatCard combatCardPrefab;	
 	public Transform mainHandGroup;
 
-	CharacterGraphic handOwner;
+	HandManager handManager;
 	int hoveredCardSiblingIndex = 0;
 
-	public void EnableHandDisplayer(CharacterGraphic owner)
+	public void EnableHandDisplayer(HandManager manager)
 	{
-		handOwner = owner;
+		handManager = manager;
 	}
 	
 
@@ -36,7 +36,7 @@ public class HandDisplayer : MonoBehaviour,HandDisplayingObject {
 
 	void AddNewCombatCardGraphic(CombatCard card, bool interactable)
 	{
-		CombatCardGraphic newCardGraphic = Instantiate(combatCardPrefab);
+		InteractableCombatCard newCardGraphic = Instantiate(combatCardPrefab);
 		newCardGraphic.AssignCard(card,this);
 		newCardGraphic.transform.SetParent(mainHandGroup, false);
 		newCardGraphic.GetComponent<Button>().interactable = interactable;
@@ -52,41 +52,40 @@ public class HandDisplayer : MonoBehaviour,HandDisplayingObject {
 
 	public void SetHandInteractivity(bool interactable)
 	{
-		foreach (CombatCardGraphic card in mainHandGroup.GetComponentsInChildren<CombatCardGraphic>())
+		foreach (InteractableCombatCard card in mainHandGroup.GetComponentsInChildren<InteractableCombatCard>())
 		{
 			card.GetComponent<Button>().interactable = interactable;
 		}
 	}
 
-	public List<CombatCardGraphic> GetHandGraphics()
+	public List<InteractableCombatCard> GetHandGraphics()
 	{
-		List<CombatCardGraphic> graphics = new List<CombatCardGraphic>();
-		foreach (CombatCardGraphic graphic in mainHandGroup.GetComponentsInChildren<CombatCardGraphic>())
+		List<InteractableCombatCard> graphics = new List<InteractableCombatCard>();
+		foreach (InteractableCombatCard graphic in mainHandGroup.GetComponentsInChildren<InteractableCombatCard>())
 			graphics.Add(graphic);
 		return graphics;
 	}
 
-	public void HandCardClicked(CombatCardGraphic cardGraphic)
+	public void HandCardClicked(ICombatCard cardGraphic)
 	{
-		CombatManager.main.TryPlayCombatCard(cardGraphic,handOwner);
+		handManager.TryPlayCardInHand(cardGraphic);
 	}
-
+	/*
 	public void HandCardHoverStart(CombatCardGraphic cardGraphic)
 	{
 		hoveredCardSiblingIndex = cardGraphic.transform.GetSiblingIndex();
 		mainHandGroup.GetComponent<ContentSizeFitter>().enabled = false;
 		mainHandGroup.GetComponent<HorizontalLayoutGroup>().enabled = false;
 		cardGraphic.transform.SetAsLastSibling();
-		cardGraphic.transform.localScale = new Vector3(1.3f, 1.3f, 1f);
+		cardGraphic.transform.localScale = new Vector3(1f, 1f, 1f);
 	}
 
 	public void HandCardHoverEnd(CombatCardGraphic cardGraphic)
 	{
-		cardGraphic.transform.localScale = new Vector3(1f, 1f, 1f);
+		cardGraphic.transform.localScale = new Vector3(0.75f, 0.75f, 0.75f);
 		cardGraphic.transform.SetSiblingIndex(hoveredCardSiblingIndex);
 		mainHandGroup.GetComponent<HorizontalLayoutGroup>().enabled = true;
 		mainHandGroup.GetComponent<ContentSizeFitter>().enabled = true;
-
-	}
+	}*/
 
 }

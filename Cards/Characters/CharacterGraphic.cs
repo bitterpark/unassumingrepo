@@ -38,10 +38,16 @@ public abstract class CharacterGraphic : MonoBehaviour {
 
 	int ammo = 0;
 	int stamina = 0;
+	int currentMaxStamina = 0;
 	int armor = 0;
+
+	bool canRegenStaminaNextRound = true;
+
 	bool meleeAttacksAreFree = false;
 	bool rangedAttacksAreFree = false;
 	bool rangedAttacksCostStamina = false;
+
+	int rangedAttacksAmmoCostReduction = 0;
 
 
 	public void AssignCharacter(Character newChar)
@@ -199,21 +205,50 @@ public abstract class CharacterGraphic : MonoBehaviour {
 	public void IncrementStamina(int delta)
 	{
 		StartCoroutine("AddFloatingTextToQueue", new FloatingTextInfo(delta, Resource.Stamina));
+		if (delta < 0)
+			canRegenStaminaNextRound = false;
 		SetStamina(stamina + delta);
 	}
 
 	public void SetStartStamina()
 	{
-		SetStamina(assignedCharacter.GetMaxStamina());
+		SetMaxStamina(assignedCharacter.GetMaxStamina());
+		RegenStamina();
+	}
+
+	void RegenStamina()
+	{
+		SetStamina(currentMaxStamina);
+	}
+
+	public int GetMaxStamina()
+	{
+		return currentMaxStamina;
+	}
+
+	public void IncrementMaxStamina(int delta)
+	{
+		SetMaxStamina(currentMaxStamina + delta);
+	}
+
+	public void SetMaxStamina(int newMaxStamina)
+	{
+		currentMaxStamina = Mathf.Max(newMaxStamina, 0);
+		UpdateStaminaText();
 	}
 
 	public void SetStamina(int newStamina)
 	{
 		stamina = newStamina;
 		if (stamina < 0) stamina = 0;
-		if (stamina > assignedCharacter.GetMaxStamina())
-			SetStartStamina();
-		staminaText.text = stamina.ToString() + "/" + assignedCharacter.GetMaxStamina();
+		if (stamina > currentMaxStamina)
+			stamina = currentMaxStamina;
+		UpdateStaminaText();
+	}
+
+	void UpdateStaminaText()
+	{
+		staminaText.text = stamina.ToString() + "/" + currentMaxStamina;
 	}
 
 	public void SetStartAmmo()
@@ -292,8 +327,6 @@ public abstract class CharacterGraphic : MonoBehaviour {
 		return hasTurn;
 	}
 
-	
-
 	public void GiveTurn()
 	{
 		SetTurnPossibility(true);
@@ -301,6 +334,14 @@ public abstract class CharacterGraphic : MonoBehaviour {
 	public virtual void RemoveTurn()
 	{
 		SetTurnPossibility(false);
+	}
+
+	public void RoundStarted()
+	{
+		if (canRegenStaminaNextRound)
+			RegenStamina();
+		else
+			canRegenStaminaNextRound = true;
 	}
 	public void TurnFinished()
 	{
@@ -325,9 +366,19 @@ public abstract class CharacterGraphic : MonoBehaviour {
 		rangedAttacksAreFree = free;
 	}
 
+	public void ChangeRangedAttacksAmmoCostReduction(int costReductionDelta)
+	{
+		rangedAttacksAmmoCostReduction = Mathf.Min(0, rangedAttacksAmmoCostReduction+costReductionDelta);
+	}
+
 	public void SetRangedAttacksCostStamina(bool costStamina)
 	{
 		rangedAttacksCostStamina = costStamina;
+	}
+
+	public bool CharacterMeetsCardRequirements(CombatCardGraphic cardGraphic)
+	{
+		return CharacterMeetsCardRequirements(cardGraphic.GetAssignedCard());
 	}
 
 	public bool CharacterMeetsCardRequirements(CombatCard card)
@@ -337,20 +388,25 @@ public abstract class CharacterGraphic : MonoBehaviour {
 		
 		int staminaReq = card.staminaCost;
 		int ammoReq = card.ammoCost;
-
+		
 		if (card.GetType().BaseType==typeof(MeleeCard) && meleeAttacksAreFree)
 			staminaReq = 0;
+		
 
 		if (card.GetType().BaseType == typeof(RangedCard))
 		{
 			if (rangedAttacksAreFree)
 				ammoReq = 0;
+
 			else
+			{
+				ammoReq = Mathf.Max(0,ammoReq-rangedAttacksAmmoCostReduction);
 				if (rangedAttacksCostStamina)
 				{
 					staminaReq += ammoReq;
 					ammoReq = 0;
 				}
+			}
 		}
 
 		if (GetStamina() < staminaReq)
@@ -363,10 +419,11 @@ public abstract class CharacterGraphic : MonoBehaviour {
 		return true;
 	}
 
-	public void SubtractCardCostsFromResources(int ammoCost, int staminaCost, int takeDamageCost, int removeHealthCost)
+	public void SubtractCardCostsFromResources(bool useUpStamina, int ammoCost, int staminaCost,int maxStaminaCost, int takeDamageCost, int removeHealthCost)
 	{
 		if (!rangedAttacksAreFree)
 		{
+			ammoCost = Mathf.Max(0,ammoCost-rangedAttacksAmmoCostReduction);
 			if (rangedAttacksCostStamina)
 			{
 				staminaCost += ammoCost;
@@ -374,12 +431,17 @@ public abstract class CharacterGraphic : MonoBehaviour {
 			}
 			IncrementAmmo(-ammoCost);
 		}
-		
-		if (!meleeAttacksAreFree)
-			IncrementStamina(-staminaCost);
 
+		if (!meleeAttacksAreFree)
+		{
+			if (useUpStamina)
+				IncrementStamina(-GetStamina());
+			else
+				IncrementStamina(-staminaCost);
+		}
 		TakeDamage(takeDamageCost);
 		TakeDamage(removeHealthCost, true);
+		IncrementMaxStamina(maxStaminaCost);
 	}
 
 	struct FloatingTextInfo
