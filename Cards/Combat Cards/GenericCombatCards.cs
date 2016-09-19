@@ -127,7 +127,7 @@ public class CrossFire : CharacterStipulationCard
 		SetLastsForRounds(1);
 
 		name = "Crossfire";
-		image = SpriteBase.mainSpriteBase.arm;
+		image = SpriteBase.mainSpriteBase.crosshair;
 		description = "For one round: character takes " + damagePerRangedAttack + " extra damage from every ranged attack ";
 	}
 
@@ -164,4 +164,135 @@ public class Smokescreen : EffectCard
 		image = SpriteBase.mainSpriteBase.cover;
 
 	}
+}
+
+public class FullBlock : CharacterStipulationCard
+{
+	public FullBlock()
+	{
+		name = "Full Block";
+		image = SpriteBase.mainSpriteBase.cover;
+		description = "Blocks one melee or ranged attack";
+	}
+
+	protected override void ExtenderSpecificActivation()
+	{
+		appliedToCharacter.SetRangedBlock(true);
+		appliedToCharacter.SetMeleeBlock(true);
+		appliedToCharacter.ERangedBlockAssigned += RemoveStipulationCard;
+		appliedToCharacter.EMeleeBlockAssigned += RemoveStipulationCard;
+		RangedCard.ERangedCardPlayed += TryTriggerBlock;
+		MeleeCard.EMeleeCardPlayed += TryTriggerBlock;
+	}
+
+	protected override void ExtenderSpecificDeactivation()
+	{
+		appliedToCharacter.SetRangedBlock(false);
+		appliedToCharacter.SetMeleeBlock(false);
+		appliedToCharacter.ERangedBlockAssigned -= RemoveStipulationCard;
+		appliedToCharacter.EMeleeBlockAssigned -= RemoveStipulationCard;
+		RangedCard.ERangedCardPlayed -= TryTriggerBlock;
+		MeleeCard.EMeleeCardPlayed -= TryTriggerBlock;
+	}
+
+	void TryTriggerBlock(CharacterGraphic cardPlayer, CombatCard playedCard)
+	{
+		if (playedCard.targetChars.Contains(appliedToCharacter) && !playedCard.ignoresBlocks)
+		{
+			playedCard.targetChars.Remove(appliedToCharacter);
+			RemoveStipulationCard();
+		}
+	}
+	void RemoveStipulationCard()
+	{
+		appliedToCharacter.RemoveCharacterStipulationCard(this);
+	}
+}
+
+public class MeleeBlock : CharacterStipulationCard
+{
+	public MeleeBlock()
+	{
+		name = "Melee Block";
+		image = SpriteBase.mainSpriteBase.arm;
+		description = "Blocks one melee attack";
+	}
+
+	protected override void ExtenderSpecificActivation()
+	{
+		appliedToCharacter.SetMeleeBlock(true);
+		appliedToCharacter.EMeleeBlockAssigned += RemoveStipulationCard;
+		MeleeCard.EMeleeCardPlayed += TryTriggerBlock;
+	}
+
+	protected override void ExtenderSpecificDeactivation()
+	{
+		appliedToCharacter.SetMeleeBlock(false);
+		appliedToCharacter.EMeleeBlockAssigned -= RemoveStipulationCard;
+		MeleeCard.EMeleeCardPlayed -= TryTriggerBlock;
+	}
+
+	void TryTriggerBlock(CharacterGraphic cardPlayer, MeleeCard playedCard)
+	{
+		if (playedCard.targetChars.Contains(appliedToCharacter) && !playedCard.ignoresBlocks)
+		{
+			playedCard.targetChars.Remove(appliedToCharacter);
+			RemoveStipulationCard();
+		}
+	}
+	void RemoveStipulationCard()
+	{
+		appliedToCharacter.RemoveCharacterStipulationCard(this);
+	}
+}
+
+public class RangeBlock : CharacterStipulationCard
+{
+
+	public RangeBlock()
+	{
+		name = "Range Block";
+		image = SpriteBase.mainSpriteBase.crosshair;
+		description = "Blocks one ranged attack";
+	}
+
+	protected override void ExtenderSpecificActivation()
+	{
+		appliedToCharacter.SetRangedBlock(true);
+		appliedToCharacter.ERangedBlockAssigned += RemoveStipulationCard;
+		RangedCard.ERangedCardPlayed += TryTriggerBlock;
+	}
+
+	protected override void ExtenderSpecificDeactivation()
+	{
+		appliedToCharacter.SetRangedBlock(false);
+		appliedToCharacter.ERangedBlockAssigned -= RemoveStipulationCard;
+		RangedCard.ERangedCardPlayed -= TryTriggerBlock;
+	}
+
+	void TryTriggerBlock(CharacterGraphic cardPlayer, RangedCard playedCard)
+	{
+		if (playedCard.targetChars.Contains(appliedToCharacter) && !playedCard.ignoresBlocks)
+		{
+			playedCard.targetChars.Remove(appliedToCharacter);
+			RemoveStipulationCard();
+		}
+	}
+	void RemoveStipulationCard()
+	{
+		appliedToCharacter.RemoveCharacterStipulationCard(this);
+	}
+}
+
+public class RangeBlockerPrep : PrepCard
+{
+	public RangeBlockerPrep()
+	{
+		placedStipulationCard = new RangeBlock();
+
+		name = "Range blocker";
+		description = "Play " + placedStipulationCard.name;
+		image = SpriteBase.mainSpriteBase.crosshair;
+	}
+
 }

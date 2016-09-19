@@ -697,7 +697,7 @@ public class Hardshell : EncounterEnemy
 			name = "Blocker";
 			image = SpriteBase.mainSpriteBase.armor;
 
-			description = "Add cards to your deck, play " + placedStipulationCard.name;
+			description = "Add cards to your deck, plays " + placedStipulationCard.name;
 		}
 
 		protected override void ExtenderSpecificActivation()
@@ -729,7 +729,7 @@ public class Hardshell : EncounterEnemy
 				image = SpriteBase.mainSpriteBase.armor;
 			}
 
-			protected override void ApplyEffects()
+			protected override void ApplyStatEffects()
 			{
 				userCharGraphic.TryPlaceCharacterStipulationCard(placedStipulationCard);
 			}

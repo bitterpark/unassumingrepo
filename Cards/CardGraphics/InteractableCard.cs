@@ -10,7 +10,6 @@ public abstract class InteractableCard: MonoBehaviour,IPointerEnterHandler,IPoin
 
 	protected void SetupButton()
 	{
-		//print("Interactable card button set up!");
 		GetComponent<Button>().onClick.AddListener(() =>CardClicked());
 	}
 
@@ -27,7 +26,9 @@ public abstract class InteractableCard: MonoBehaviour,IPointerEnterHandler,IPoin
 
 	protected virtual void MouseHoverStart()
 	{
+		
 		createdBigCardGraphic = CreateBigCardGraphic();
+		createdBigCardGraphic.transform.localScale = new Vector3(1.1f,1.1f,1f);
 		createdBigCardGraphic.transform.SetParent(transform.parent, false);
 		createdBigCardGraphic.transform.position = transform.position;
 		createdBigCardGraphic.transform.SetAsLastSibling();

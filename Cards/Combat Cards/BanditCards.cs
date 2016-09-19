@@ -7,14 +7,25 @@ public class BanditCards
 	public static CombatDeck GetClassCards()
 	{
 		CombatDeck result = new CombatDeck();
-
+		/*
 		result.AddCards(typeof(SuckerPunch));
-		result.AddCards(typeof(Roundhouse));
+		result.AddCards(typeof(Roundhouse),2);
 		result.AddCards(typeof(Kick));
-		result.AddCards(typeof(LightsOut));
+		result.AddCards(typeof(LightsOut),2);
 		result.AddCards(typeof(Throw));
 		result.AddCards(typeof(Execution));
 		result.AddCards(typeof(SprayNPray));
+		result.AddCards(typeof(Sidearm));
+		*/
+		//result.AddCards(typeof(GangUp));
+		//result.AddCards(typeof(NoRest));
+		//result.AddCards(typeof(RoughUp));
+		result.AddCards(typeof(SprayNPray));
+		result.AddCards(typeof(Roundhouse));
+		result.AddCards(typeof(Kick));
+		result.AddCards(typeof(LightsOut), 2);
+
+		
 
 		return result;
 	}
@@ -22,9 +33,10 @@ public class BanditCards
 	public static List<PrepCard> GetClassPrepCards()
 	{
 		List<PrepCard> result = new List<PrepCard>();
-		result.Add(new Enforcer());
-		result.Add(new Thug());
 		result.Add(new Muscle());
+		result.Add(new Powerhouse());
+		result.Add(new Thug());
+		//result.Add(new RangeBlockerPrep());
 
 
 		return result;
@@ -37,158 +49,194 @@ public class BanditCards
 			name = "Thug";
 			description = "Adds cards to your deck";
 			image = SpriteBase.mainSpriteBase.arm;
+		}	
+	}
 
-			addedCombatCards.Add(new GangUp());
+	public class StrengthInNumbers : CharacterStipulationCard
+	{
+		int maxStaminaCost = 1;
+
+		public StrengthInNumbers()
+		{
+			name = "Strength In Numbers";
+			image = SpriteBase.mainSpriteBase.arm;
+			description = "Spend" + maxStaminaCost + "max stamina, enemies targeted by melee attacks gain Gang Up";
 		}
 
-		public class GangUp : MeleeCard
+		protected override void ExtenderSpecificActivation()
 		{
-			protected override void ExtenderConstructor()
-			{
-				targetType = TargetType.SelectEnemy;
-				addedStipulationCard = new TagTeam();
-				//staminaCost = 4;
+			MeleeCard.EMeleeCardPlayed += TriggerEffect;
+			appliedToCharacter.IncrementMaxStamina(-maxStaminaCost);
+		}
 
-				name = "Gang Up";
-				description = "Play to a hostile character: "+addedStipulationCard.description;
-				image = SpriteBase.mainSpriteBase.cover;
+		void TriggerEffect(CharacterGraphic rangedCardPlayer, MeleeCard playedCard)
+		{
+			if (rangedCardPlayer == appliedToCharacter)
+				foreach (CharacterGraphic enemy in playedCard.targetChars)
+					enemy.TryPlaceCharacterStipulationCard(new CrossFire(false));
+		}
 
-			}
-
-			public class TagTeam : CharacterStipulationCard
-			{
-				int damagePerMeleeAttack = 10;
-
-				public TagTeam()
-				{
-					SetLastsForRounds(1);
-
-					name = "Tag Team";
-					image = SpriteBase.mainSpriteBase.arm;
-					description = "For one round: character takes " + damagePerMeleeAttack + " extra damage from every melee attack ";
-				}
-
-				protected override void ExtenderSpecificActivation()
-				{
-					MeleeCard.EMeleeCardPlayed += TriggerEffect;
-				}
-
-				void TriggerEffect(CharacterGraphic meleeCardPlayer, MeleeCard playedCard)
-				{
-					if (playedCard.targetChars.Contains(appliedToCharacter))
-						appliedToCharacter.TakeDamage(damagePerMeleeAttack);
-				}
-
-				protected override void ExtenderSpecificDeactivation()
-				{
-					MeleeCard.EMeleeCardPlayed -= TriggerEffect;
-				}
-			}
+		protected override void ExtenderSpecificDeactivation()
+		{
+			MeleeCard.EMeleeCardPlayed -= TriggerEffect;
 		}
 	}
+
+	public class GangUp : CharacterStipulationCard
+	{
+		int damagePerMeleeAttack = 10;
+
+		public GangUp()
+		{
+			SetLastsForRounds(1);
+
+			name = "Gang Up";
+			image = SpriteBase.mainSpriteBase.arm;
+			description = "For one round: character takes " + damagePerMeleeAttack + " extra damage from every melee attack ";
+		}
+
+		protected override void ExtenderSpecificActivation()
+		{
+			MeleeCard.EMeleeCardPlayed += TriggerEffect;
+		}
+
+		void TriggerEffect(CharacterGraphic meleeCardPlayer, MeleeCard playedCard)
+		{
+			if (playedCard.targetChars.Contains(appliedToCharacter))
+				appliedToCharacter.TakeDamage(damagePerMeleeAttack);
+		}
+
+		protected override void ExtenderSpecificDeactivation()
+		{
+			MeleeCard.EMeleeCardPlayed -= TriggerEffect;
+		}
+	}
+	/*
+	public class GangUp : MeleeCard
+	{
+		protected override void ExtenderConstructor()
+		{
+			targetType = TargetType.SelectEnemy;
+			addedStipulationCard = new TagTeam();
+			//staminaCost = 4;
+
+			name = "Gang Up";
+			description = "Play to a hostile character: " + addedStipulationCard.description;
+			image = SpriteBase.mainSpriteBase.cover;
+
+		}
+	}*/
 
 	public class Muscle : PrepCard
 	{
 		public Muscle()
 		{
+			placedStipulationCard=new CloseAndPersonal();
+			
 			name = "Muscle";
-			description = "Adds cards to your deck";
+			description = placedStipulationCard.description;
 			image = SpriteBase.mainSpriteBase.arm;
-
-			addedCombatCards.Add(new NoRest());
-		}
-
-		public class NoRest : EffectCard
-		{
-			protected override bool ExtenderPrerequisitesMet(CharacterGraphic user)
-			{
-				if (user.GetStamina() == 0)
-					return true;
-				else
-					return false;
-			}
-
-			int maxStaminaBonus = 2;
-
-			protected override void ExtenderConstructor()
-			{
-				name = "No Rest";
-				description = "If stamina is 0: gain "+maxStaminaBonus+" max stamina";
-				image = SpriteBase.mainSpriteBase.restSprite;
-				targetType = TargetType.None;
-
-			}
-
-			protected override void CardPlayEffects()
-			{
-				userCharGraphic.IncrementMaxStamina(maxStaminaBonus);
-			}
-			/*
-			public class SecondWind : CharacterStipulationCard
-			{
-				public SecondWind()
-				{
-					name = "Second Wind";
-					image = SpriteBase.mainSpriteBase.lightning;
-					description = "The character's next melee attack is free";
-				}
-
-				protected override void ExtenderSpecificActivation()
-				{
-					appliedToCharacter.SetMeleeAttacksFree(true);
-					MeleeCard.EMeleeCardPlayed += UseUpCard;
-				}
-
-				void UseUpCard(CharacterGraphic meleeCardPlayer, MeleeCard playedCard)
-				{
-					if (meleeCardPlayer == appliedToCharacter)
-					{
-						appliedToCharacter.RemoveCharacterStipulationCard(this);
-					}
-				}
-
-				protected override void ExtenderSpecificDeactivation()
-				{
-					MeleeCard.EMeleeCardPlayed -= UseUpCard;
-					appliedToCharacter.SetMeleeAttacksFree(false);
-				}
-			}*/
 		}
 	}
 
-	public class Enforcer : PrepCard
+	public class CloseAndPersonal : CharacterStipulationCard
 	{
-		public Enforcer()
-		{
-			name = "Enforcer";
-			description = "Adds cards to your deck";
-			image = SpriteBase.mainSpriteBase.crosshair;
+		int staminaGainPerAmmoPoint=2;
 
-			addedCombatCards.Add(new RoughUp());
+		public CloseAndPersonal()
+		{
+			name = "Close And Personal";
+			image = SpriteBase.mainSpriteBase.bullets;
+			description = "Spend all ammo, gain " + staminaGainPerAmmoPoint + " stamina per point of ammo";
 		}
 
-		public class RoughUp : MeleeCard
+		protected override void ExtenderSpecificActivation()
 		{
-			protected override bool ExtenderPrerequisitesMet(CharacterGraphic user)
-			{
-				return user.GetStamina() > 0;
-			}
-			
-			protected override void ExtenderConstructor()
-			{	
-				name = "Rough Up";
-				description = "Spend all stamina, remove equal stamina from target";
-				image = SpriteBase.mainSpriteBase.arm;
-				
-				targetType = TargetType.SelectEnemy;
-				useUpAllStamina = true;
-			}
+			int mercsAmmo = appliedToCharacter.GetAmmo();
+			int staminaIncrement = mercsAmmo * staminaGainPerAmmoPoint;
+			appliedToCharacter.IncrementStamina(staminaIncrement);
+			appliedToCharacter.SetAmmo(0);
+		}
+	}
+	/*
+	public class NoRest : EffectCard
+	{
+		protected override bool ExtenderPrerequisitesMet(CharacterGraphic user)
+		{
+			if (user.GetStamina() == 0)
+				return true;
+			else
+				return false;
+		}
 
-			protected override void ApplyEffects()
-			{
-				staminaDamage = usedUpStaminaPoints;
-				base.ApplyEffects();
-			}
+		int maxStaminaBonus = 2;
+
+		protected override void ExtenderConstructor()
+		{
+			name = "No Rest";
+			description = "If stamina is 0: gain " + maxStaminaBonus + " max stamina";
+			image = SpriteBase.mainSpriteBase.restSprite;
+			targetType = TargetType.None;
+
+		}
+
+		protected override void ApplyCardPlayEffects()
+		{
+			userCharGraphic.IncrementMaxStamina(maxStaminaBonus);
+		}
+	}*/
+
+	public class Powerhouse : PrepCard
+	{
+		public Powerhouse()
+		{
+			placedStipulationCard = new RoidRage();
+			
+			name = "Powerhouse";
+			image = SpriteBase.mainSpriteBase.arm;
+			description = placedStipulationCard.description;
+		}
+	}
+
+	public class RoidRage : CharacterStipulationCard
+	{
+		int tempStaminaGain = 4;
+		int maxStaminaCost = 2;
+		public RoidRage()
+		{
+			name = "Roid Rage";
+			image = SpriteBase.mainSpriteBase.lightning;
+			description = "Spend 2 max stamina, gain " + tempStaminaGain+" stamina";
+		}
+
+		protected override void ExtenderSpecificActivation()
+		{
+			appliedToCharacter.IncrementStamina(tempStaminaGain);
+			appliedToCharacter.IncrementMaxStamina(-maxStaminaCost);
+		}
+	}
+
+	public class RoughUp : MeleeCard
+	{
+		protected override bool ExtenderPrerequisitesMet(CharacterGraphic user)
+		{
+			return user.GetStamina() > 0;
+		}
+
+		protected override void ExtenderConstructor()
+		{
+			name = "Rough Up";
+			description = "Spend all stamina, remove equal stamina from target";
+			image = SpriteBase.mainSpriteBase.arm;
+
+			targetType = TargetType.SelectEnemy;
+			useUpAllStamina = true;
+		}
+
+		protected override void ApplyStatEffects()
+		{
+			staminaDamage = usedUpStaminaPoints;
+			base.ApplyStatEffects();
 		}
 	}
 }

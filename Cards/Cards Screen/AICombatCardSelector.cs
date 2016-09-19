@@ -17,9 +17,11 @@ public class AICombatCardSelector : MonoBehaviour {
 		if (playableCards.Count > 0)
 		{
 			playedCard = SelectPriorityCard(playableCards, character);
+			print("Setting AI card user char");
 			playedCard.SetUserChar(character);
 			EnemyGraphic enemy = character as EnemyGraphic;
-			enemy.RemovePlayedCardFromHand(playedCard);
+			//enemy.RemovePlayedCardFromHand(playedCard);
+			
 			return true;
 		}
 		else
@@ -28,7 +30,24 @@ public class AICombatCardSelector : MonoBehaviour {
 			return false;
 		}
 	}
-	
+
+	List<CombatCard> SortOutPlayableEnemyCards(CharacterGraphic character)
+	{
+		List<CombatCard> playableCards = new List<CombatCard>();
+		EnemyGraphic enemy = character as EnemyGraphic;
+		List<CombatCard> cardsInHand = enemy.GetCharacterHand();
+
+		if (cardsInHand.Count > 0)
+		{
+			foreach (CombatCard card in cardsInHand)
+			{
+				if (combatManager.EligibleCombatCardType(card) && character.CharacterMeetsCardRequirements(card))
+					playableCards.Add(card);
+			}
+		}
+		return playableCards;
+	}
+
 	CombatCard SelectPriorityCard(List<CombatCard> availableCards, CharacterGraphic character)
 	{
 		CombatCard priorityCard=null;
@@ -77,22 +96,5 @@ public class AICombatCardSelector : MonoBehaviour {
 
 
 		return priorityCard;
-	}
-
-	List<CombatCard> SortOutPlayableEnemyCards(CharacterGraphic character)
-	{
-		List<CombatCard> playableCards = new List<CombatCard>();
-		EnemyGraphic enemy = character as EnemyGraphic;
-		List<CombatCard> cardsInHand = enemy.GetCharacterHand();
-
-		if (cardsInHand.Count > 0)
-		{
-			foreach (CombatCard card in cardsInHand)
-			{
-				if (combatManager.EligibleCombatCardType(card) && character.CharacterMeetsCardRequirements(card))
-					playableCards.Add(card);
-			}
-		}
-		return playableCards;
 	}
 }

@@ -52,13 +52,13 @@ public class MissionUIToggler : MonoBehaviour {
 	public void DisablePlayerActionsDuringCardPlay()
 	{
 		PlayerHandManager handManager = CombatManager.main.GetPlayerHandManager();
-		handManager.SetPlayerHandInteractivity(false);
+		handManager.SetHandInteractivity(false);
 	}
 
 	public void ReenablePlayerActions()
 	{
 		PlayerHandManager handManager = CombatManager.main.GetPlayerHandManager();
-		handManager.SetPlayerHandInteractivity(true);
+		handManager.SetHandInteractivity(true);
 	}
 
 	public void EnableTurnoverButton()

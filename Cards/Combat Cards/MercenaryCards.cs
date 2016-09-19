@@ -7,14 +7,21 @@ public class MercenaryCards
 	public static CombatDeck GetClassCards()
 	{
 		CombatDeck result = new CombatDeck();
-
-		result.AddCards(typeof(TakeCover));
+		/*
+		result.AddCards(typeof(TakeCover),2);
 		result.AddCards(typeof(Hipfire));
 		result.AddCards(typeof(BurstFire));
-		result.AddCards(typeof(Overconfidence));
-		result.AddCards(typeof(RunAndGun));
+		result.AddCards(typeof(Overconfidence),2);
+		result.AddCards(typeof(RunAndGun),2);
 		result.AddCards(typeof(LastStand));
 		result.AddCards(typeof(Gambit));
+		*/
+		result.AddCards(typeof(BurstFire));
+		result.AddCards(typeof(SuicideCharge));
+		//result.AddCards(typeof(LastStand));
+		//result.AddCards(typeof(ComeAtMe));
+		result.AddCards(typeof(RunAndGun));
+		result.AddCards(typeof(TakeCover));
 
 		return result;
 	}
@@ -23,8 +30,9 @@ public class MercenaryCards
 	{
 		List<PrepCard> result = new List<PrepCard>();
 		result.Add(new Deathwish());
-		result.Add(new Unbreakable());
+		result.Add(new LastStand());
 		result.Add(new Challenger());
+		//result.Add(new RangeBlockerPrep());
 
 
 		return result;
@@ -34,58 +42,160 @@ public class MercenaryCards
 	{
 		public Deathwish()
 		{
+			placedStipulationCard = new AdrenalineJunkie();
+			
 			name = "Deathwish";
-			description = "Adds cards to your deck";
+			description = placedStipulationCard.description;
 			image = SpriteBase.mainSpriteBase.skull;
-
-			addedCombatCards.Add(new SuicideCharge());
-		}
-
-		public class SuicideCharge : MeleeCard
-		{
-			protected override bool ExtenderPrerequisitesMet(CharacterGraphic user)
-			{
-				return userCharGraphic.GetArmor() > 0;
-			}
-
-			protected override void ExtenderConstructor()
-			{
-				targetType = TargetType.SelectEnemy;
-
-				name = "Suicide Charge";
-				description = "Spend all armor, do damage equal to armor spent";
-				image = SpriteBase.mainSpriteBase.skull;
-			}
-
-			protected override void ApplyPlayCosts()
-			{
-				takeDamageCost = userCharGraphic.GetArmor();
-				damage += takeDamageCost;
-				base.ApplyPlayCosts();
-			}
 		}
 	}
-	public class Unbreakable : PrepCard
+
+	public class AdrenalineJunkie : CharacterStipulationCard
+	{	
+		public AdrenalineJunkie()
+		{
+			name = "Adrenaline Junkie";
+			image = SpriteBase.mainSpriteBase.lightning;
+			description = "At the start of every round, if armor is 0 gain Full Block";
+		}
+
+		protected override void ExtenderSpecificActivation()
+		{
+			CombatManager.ENewRoundStarted += TryAddFullBlock;
+		}
+
+		protected override void ExtenderSpecificDeactivation()
+		{
+			CombatManager.ENewRoundStarted -= TryAddFullBlock;
+		}
+
+		void TryAddFullBlock()
+		{
+			if (appliedToCharacter.GetArmor()==0)
+				appliedToCharacter.TryPlaceCharacterStipulationCard(new FullBlock());
+		}
+	}
+
+	public class LastStand : PrepCard
 	{
-		public Unbreakable()
+		public LastStand()
 		{
-			name = "Unbreakable";
-			description = "Adds cards to your deck";
-			image = SpriteBase.mainSpriteBase.armor;
-
-			addedCombatCards.Add(new LastStand());
+			placedStipulationCard = new DigIn();
+			
+			name = "Last Stand";
+			description = placedStipulationCard.description;
+			image = SpriteBase.mainSpriteBase.cover;
 		}
 	}
+
+	public class DigIn : CharacterStipulationCard
+	{
+		int armorPerPointOfMaxStamina = 40;
+		public DigIn()
+		{
+			name = "Dig In";
+			image = SpriteBase.mainSpriteBase.cover;
+			description = "Set max stamina to 0, gain " + armorPerPointOfMaxStamina + " armor per point of max stamina";
+		}
+
+		protected override void ExtenderSpecificActivation()
+		{
+			int mercsMaxStamina = appliedToCharacter.GetMaxStamina();
+			int armorIncrement = mercsMaxStamina * armorPerPointOfMaxStamina;
+			appliedToCharacter.SetMaxStamina(0);
+			appliedToCharacter.IncrementArmor(armorIncrement);
+		}
+	}
+
 	public class Challenger : PrepCard
 	{
 		public Challenger()
 		{
+			placedStipulationCard = new ComeAtMe();
+			
 			name = "Challenger";
-			description = "Adds cards to your deck";
+			description = placedStipulationCard.description;
 			image = SpriteBase.mainSpriteBase.arm;
-
-			addedCombatCards.Add(new ComeAtMe());
 		}
+	}
+}
+
+public class ComeAtMe : CharacterStipulationCard
+{
+	public ComeAtMe()
+	{
+		name = "Come At Me";
+		image = SpriteBase.mainSpriteBase.skull;
+		description = "At the start of every round, if armor is above 0 become Brawler";
+	}
+
+	protected override void ExtenderSpecificActivation()
+	{
+		CombatManager.ENewRoundStarted += TryAddBrawler;
+	}
+
+	protected override void ExtenderSpecificDeactivation()
+	{
+		CombatManager.ENewRoundStarted -= TryAddBrawler;
+	}
+
+	void TryAddBrawler()
+	{
+		if (appliedToCharacter.GetArmor() > 0)
+			appliedToCharacter.TryPlaceCharacterStipulationCard(new Brawler());
+	}
+}
+
+public class Brawler : CharacterStipulationCard
+{
+	public Brawler()
+	{
+		SetLastsForRounds(1);
+
+		name = "Brawler";
+		image = SpriteBase.mainSpriteBase.arm;
+		description = "For one round: all melee attacks played by enemies will only target this character";
+	}
+
+	protected override void ExtenderSpecificActivation()
+	{
+		CombatCardTargeter.main.SetNewMeleeTargetMerc(appliedToCharacter);
+		CombatCardTargeter.ENewMeleeTargetMercSet += RemoveCard;
+	}
+	void RemoveCard()
+	{
+		appliedToCharacter.RemoveCharacterStipulationCard(this);
+	}
+
+	protected override void ExtenderSpecificDeactivation()
+	{
+		CombatCardTargeter.main.ClearMeleeTargetMerc();
+		CombatCardTargeter.ENewMeleeTargetMercSet -= RemoveCard;
+	}
+}
+
+
+public class SuicideCharge : MeleeCard
+{
+	protected override bool ExtenderPrerequisitesMet(CharacterGraphic user)
+	{
+		return user.GetArmor() > 0;
+	}
+
+	protected override void ExtenderConstructor()
+	{
+		targetType = TargetType.SelectEnemy;
+
+		name = "Suicide Charge";
+		description = "Spend all armor, do damage equal to armor spent";
+		image = SpriteBase.mainSpriteBase.skull;
+	}
+
+	protected override void ApplyPlayCosts()
+	{
+		takeDamageCost = userCharGraphic.GetArmor();
+		damage += takeDamageCost;
+		base.ApplyPlayCosts();
 	}
 }
 
@@ -140,26 +250,28 @@ public class TakeCover : EffectCard
 	}
 }
 
-
+/*
 public class LastStand : EffectCard
 {
+	int maxStaminaReduction = 2;
+	
 	protected override bool ExtenderPrerequisitesMet(CharacterGraphic user)
 	{
-		return user.GetMaxStamina() > 2;
+		return user.GetMaxStamina() >= maxStaminaReduction;
 	}
 	
 	protected override void ExtenderConstructor()
 	{
 		targetType = TargetType.None;
-		maxStaminaCost = 2;
+		maxStaminaCost = maxStaminaReduction;
 		userArmorGain = 80;
 		
 		name = "Last Stand";
 		description = "Remove "+maxStaminaCost+" max stamina, gain "+userArmorGain+" armor";
 		image = SpriteBase.mainSpriteBase.restSprite;
 	}
-}
-
+}*/
+/*
 public class ComeAtMe : EffectCard
 {
 	protected override void ExtenderConstructor()
@@ -172,35 +284,7 @@ public class ComeAtMe : EffectCard
 		image = SpriteBase.mainSpriteBase.skull;
 
 	}
-
-	public class Brawler : CharacterStipulationCard
-	{
-		public Brawler()
-		{
-			SetLastsForRounds(1);
-
-			name = "Brawler";
-			image = SpriteBase.mainSpriteBase.arm;
-			description = "For one round: all melee attacks played by enemies will only target this character";
-		}
-
-		protected override void ExtenderSpecificActivation()
-		{
-			CombatCardTargeter.main.SetNewMeleeTargetMerc(appliedToCharacter);
-			CombatCardTargeter.ENewMeleeTargetMercSet += RemoveCard;
-		}
-		void RemoveCard()
-		{
-			appliedToCharacter.RemoveCharacterStipulationCard(this);
-		}
-
-		protected override void ExtenderSpecificDeactivation()
-		{
-			CombatCardTargeter.main.ClearMeleeTargetMerc();
-			CombatCardTargeter.ENewMeleeTargetMercSet -= RemoveCard;
-		}
-	}
-}
+}*/
 
 public class RunAndGun : MeleeCard
 {
@@ -208,7 +292,7 @@ public class RunAndGun : MeleeCard
 	{
 		damage = 30;
 		ammoCost = 1;
-		takeDamageCost=10;
+		takeDamageCost = 10;
 		targetType = TargetType.SelectEnemy;
 		
 		name = "Run And Gun";

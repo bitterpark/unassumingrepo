@@ -228,7 +228,7 @@ public class TripmineFriendly : RoomStipulationCard
 		damage = assignedDamage;
 		name = "Trip Mine";
 		image = SpriteBase.mainSpriteBase.bomb;
-		description = "When any enemy character plays a melee attack, they take " + damage + " damage and this card is removed";
+		description = "Melee block, attacker takes "+damage+" damage";
 	}
 
 	public override void ActivateCard()

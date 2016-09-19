@@ -84,7 +84,7 @@ public class CombatCardGraphic : CardGraphic, ICombatCard//, IPointerDownHandler
 		if (assignedCard.damagePerStaminaPoint > 0)
 		{
 			damagePerStaminaPoint.SetActive(true);
-			damagePerStaminaPoint.GetComponentInChildren<Text>().text = assignedCard.staminaDamage.ToString();
+			damagePerStaminaPoint.GetComponentInChildren<Text>().text = assignedCard.damagePerStaminaPoint.ToString();
 		}
 		else damagePerStaminaPoint.SetActive(false);
 	}

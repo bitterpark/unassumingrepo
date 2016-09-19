@@ -12,8 +12,6 @@ public class PrepHandManager : MonoBehaviour {
 
 	public Transform prepCardsDisplayArea;
 
-	public CombatCardGraphic combatCardPrefab;
-
 	enum PrepMode { SelectClassCard, SelectWeaponCard };
 	PrepMode currentPrepMode;
 

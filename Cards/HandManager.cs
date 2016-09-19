@@ -5,19 +5,38 @@ using System.Collections.Generic;
 public class HandManager: MonoBehaviour{
 
 	public HandDisplayer handDisplayer;
-	List<CombatCard> cardsInHand = new List<CombatCard>();
+	protected List<CombatCard> cardsInHand = new List<CombatCard>();
 	CombatDeck assignedDeck;
-	CharacterGraphic handOwner;
+	//CharacterGraphic handOwner;
 	
 	public void AssignDeck(CombatDeck deck)
 	{
 		assignedDeck = deck;
 	}
 
+	public void AddCardsToAssignedDeck(params CombatCard[] cards)
+	{
+		if (assignedDeck == null)
+			throw new System.Exception("Cannot add cards: assigned deck is null!");
+		assignedDeck.AddCards(cards);
+
+	}
+
+	public void RemoveCardsFromAssignedDeck(params CombatCard[] cards)
+	{
+		if (assignedDeck == null)
+			throw new System.Exception("Cannot remove cards: assigned deck is null!");
+		assignedDeck.RemoveCards(cards);
+
+	}
+
+
 	public void TryPlayCardInHand(ICombatCard cardObject)
 	{
-		if (CombatManager.main.TryPlayCombatCard(cardObject, handOwner))
-			RemoveCardFromHand(cardObject.GetAssignedCard());
+		CombatManager.main.StartCombatCardPlay(cardObject);
+		//CombatCardTargeter.main.try
+		//if (CombatManager.main.TryPlayCombatCard(cardObject, handOwner))
+			//RemoveCardFromHand(cardObject.GetAssignedCard());
 	}
 
 	public void DrawCardsToHand(int count)
@@ -28,6 +47,7 @@ public class HandManager: MonoBehaviour{
 	public void RemoveCardFromHand(CombatCard card)
 	{
 		cardsInHand.Remove(card);
+		assignedDeck.DiscardCards(card);
 	}
 
 	public void DiscardCurrentHand()
@@ -41,9 +61,9 @@ public class HandManager: MonoBehaviour{
 		return cardsInHand;
 	}
 
-	public void EnableHandDisplayer(CharacterGraphic handOwner)
+	public void EnableAttachedHandDisplayer()//CharacterGraphic handOwner)
 	{
-		this.handOwner = handOwner;
+		//this.handOwner = handOwner;
 		handDisplayer.EnableHandDisplayer(this);
 	}
 

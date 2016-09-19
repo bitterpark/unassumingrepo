@@ -170,17 +170,24 @@ public class IncomeReward : RewardCard
 
 public abstract class PrepCard : Card
 {
-	
 	protected List<CombatCard> addedCombatCards=new List<CombatCard>();
+	protected CharacterStipulationCard placedStipulationCard;
 
 	public void PlayCard(CharacterGraphic playToCharacter)
 	{
-		playToCharacter.AddCardsToCurrentDeck(addedCombatCards.ToArray());
+		if (addedCombatCards.Count>0)
+			playToCharacter.AddCardsToCurrentDeck(addedCombatCards.ToArray());
+		if (placedStipulationCard != null)
+			playToCharacter.TryPlaceCharacterStipulationCard(placedStipulationCard);
 	}
 
 	public List<CombatCard> GetAddedCombatCards()
 	{
 		return addedCombatCards;
+	}
+	public CharacterStipulationCard GetPlacedStipulationCard()
+	{
+		return placedStipulationCard;
 	}
 
 }
@@ -207,6 +214,7 @@ public class DefaultMeleePrepCard : PrepCard {
 		addedCombatCards.Add(new Jab());
 		addedCombatCards.Add(new Jab());
 		addedCombatCards.Add(new Smash());
+		addedCombatCards.Add(new Smash());
 
 	}
 }
@@ -220,6 +228,7 @@ public class DefaultRangedPrepCard : PrepCard
 		image = SpriteBase.mainSpriteBase.pipegun;
 
 		addedCombatCards.Add(new Hipfire());
+		addedCombatCards.Add(new Hipfire());
 		addedCombatCards.Add(new Sidearm());
 		addedCombatCards.Add(new Sidearm());
 	}
@@ -231,9 +240,7 @@ public abstract class CombatCard: Card
 	public int damagePerStaminaPoint = 0;
 	public int staminaDamage=0;
 	public int unarmoredBonusDamage = 0;
-	
-	
-	
+		
 	public int ammoCost=0;
 	public int staminaCost=0;
 	public int maxStaminaCost = 0;
@@ -245,6 +252,7 @@ public abstract class CombatCard: Card
 	public int takeDamageCost = 0;
 
 	public bool ignoresArmor = false;
+	public bool ignoresBlocks = false;
 
 	public StipulationCard addedStipulationCard = null;
 
@@ -287,15 +295,20 @@ public abstract class CombatCard: Card
 		if (useUpAllStamina)
 			usedUpStaminaPoints = damagePerStaminaPoint * userCharGraphic.GetStamina();
 		ApplyPlayCosts();
+		//bool cardIsBlocked = IsCardBlocked();
 		CardPlayEvents();
-		if (userCharGraphic.GetHealth()>0)
-			CardPlayEffects();
-		SetDefaultState();
+		if (userCharGraphic.GetHealth() > 0)
+			ApplyCardPlayEffects();
 	}
 
 	public void SetIgnoresArmor(bool ignoresArmor)
 	{
 		this.ignoresArmor = ignoresArmor;
+	}
+
+	public void SetIgnoresBlocks(bool ignoresBlocks)
+	{
+		this.ignoresBlocks = ignoresBlocks;
 	}
 
 	public void SetUserChar(CharacterGraphic userChar)
@@ -327,16 +340,45 @@ public abstract class CombatCard: Card
 		takeDamageCost = 0;
 
 		ignoresArmor = false;
+		ignoresBlocks = false;
 		userCharGraphic = null;
 		targetChars.Clear();
 		ExtenderConstructor();
 	}
 	protected abstract void ExtenderConstructor();
+	/*
+	bool IsCardBlocked()
+	{
+		System.Type playedCardType = GetType();
+		if (playedCardType == typeof(MeleeCard) | playedCardType == typeof(RangedCard))
+		{
 
-	protected virtual void CardPlayEffects()
+			if (ignoresBlocks)
+				return false;
+			else
+				return CheckIfAllTargetsBlocked();
+		}
+		else 
+			return false;
+	}
+
+	bool CheckIfAllTargetsBlocked()
+	{
+		foreach (CharacterGraphic target in new List<CharacterGraphic>(targetChars))
+		{
+			if (target.IsCardBlocked(this))
+				targetChars.Remove(target);
+		}
+		if (targetChars.Count > 0)
+			return false;
+		else
+			return true;
+	}
+	*/
+	protected virtual void ApplyCardPlayEffects()
 	{
 		TryAddStipulationCards();
-		ApplyEffects();
+		ApplyStatEffects();
 	}
 
 	protected virtual void ApplyPlayCosts()
@@ -346,7 +388,7 @@ public abstract class CombatCard: Card
 		userCharGraphic.SubtractCardCostsFromResources(useUpAllStamina,ammoCost,staminaCost,maxStaminaCost,takeDamageCost,removeHealthCost);
 	}
 
-	protected virtual void ApplyEffects()
+	protected virtual void ApplyStatEffects()
 	{
 		if (targetType != TargetType.None)
 		{
@@ -476,7 +518,7 @@ public class EffectCard : CombatCard
 
 	}
 
-	protected override void ApplyEffects()
+	protected override void ApplyStatEffects()
 	{
 		userCharGraphic.IncrementStamina(userStaminaGain);
 		userCharGraphic.IncrementAmmo(userAmmoGain);

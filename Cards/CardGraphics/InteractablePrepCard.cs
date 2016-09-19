@@ -12,8 +12,13 @@ public class InteractablePrepCard : InteractableCard {
 	{
 		SetupButton();
 		assignedCard = newCard;
-		GetComponent<PrepCardGraphic>().AssignCard(newCard);
+		GetComponent<PrepCardGraphic>().AssignCard(newCard,true);
 		this.assignedDisplayer = assignedDisplayer;
+	}
+
+	public void DescriptionClicked()
+	{
+		CardClicked();
 	}
 
 	protected override Transform CreateBigCardGraphic()

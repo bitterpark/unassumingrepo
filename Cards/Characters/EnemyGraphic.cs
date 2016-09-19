@@ -8,8 +8,9 @@ public class EnemyGraphic : CharacterGraphic
 	public override void GenerateCombatStartDeck()
 	{
 		currentCharacterDeck = new CombatDeck();
-		ApplyVariationCardsToBasicDeck(1);
 		handManager.AssignDeck(currentCharacterDeck);
+		ApplyVariationCardsToBasicDeck(1);
+		
 	}
 
 	void ApplyVariationCardsToBasicDeck(int count)
@@ -34,10 +35,10 @@ public class EnemyGraphic : CharacterGraphic
 	{
 		return handManager.GetHand();
 	}
-
+	/*
 	public void RemovePlayedCardFromHand(CombatCard card)
 	{
 		handManager.RemoveCardFromHand(card);
-	}
+	}*/
 
 }

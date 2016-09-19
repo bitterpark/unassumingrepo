@@ -37,7 +37,7 @@ public class InventoryScreenHandler : MonoBehaviour
 	public WeaponSlot weaponSlotPrefab;
 
 	public SlotItem slotItemPrefab;
-	public CombatCardGraphic combatCardPrefab;
+	public CombatCardGraphic visualCombatCardPrefab;
 	public PrepCardGraphic prepCardPrefab;
 	
 	
@@ -291,7 +291,7 @@ public class InventoryScreenHandler : MonoBehaviour
 	{
 		foreach (CombatCard card in selectedMember.GetAllUsedCards())
 		{
-			CombatCardGraphic newGraphic = Instantiate(combatCardPrefab);
+			CombatCardGraphic newGraphic = Instantiate(visualCombatCardPrefab);
 			newGraphic.AssignCard(card,true);
 			newGraphic.transform.SetParent(combatDeckGroup,false);
 		}

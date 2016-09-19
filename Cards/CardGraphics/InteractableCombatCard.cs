@@ -20,7 +20,12 @@ public class InteractableCombatCard :InteractableCard, ICombatCard
 		assignedCard = newCard;
 		SetupButton();
 		this.handDisplayer = handDisplayer;
-		GetComponent<CombatCardGraphic>().AssignCard(newCard,false);
+		GetComponent<CombatCardGraphic>().AssignCard(newCard,true);
+	}
+
+	public void DescriptionClicked()
+	{
+		CardClicked();
 	}
 
 	protected override Transform CreateBigCardGraphic()

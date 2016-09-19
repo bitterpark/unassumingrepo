@@ -225,7 +225,7 @@ public class Reload : EffectCard
 		targetType = TargetType.None;
 	}
 
-	protected override void ApplyEffects()
+	protected override void ApplyStatEffects()
 	{
 		userCharGraphic.SetStartAmmo();
 	}
@@ -820,7 +820,7 @@ public class Commander : EncounterEnemy
 
 			}
 
-			protected override void ApplyEffects()
+			protected override void ApplyStatEffects()
 			{
 				foreach (CharacterGraphic graphic in targetChars)
 					graphic.IncrementArmor(-damageToArmor);
@@ -844,9 +844,9 @@ public class Commander : EncounterEnemy
 			staminaDamage = 1;
 		}
 
-		protected override void CardPlayEffects()
+		protected override void ApplyCardPlayEffects()
 		{
-			base.CardPlayEffects();
+			base.ApplyCardPlayEffects();
 			foreach (CharacterGraphic graphic in targetChars)
 			{
 				if (graphic.GetArmor() == 0)

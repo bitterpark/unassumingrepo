@@ -46,6 +46,7 @@ public class MissionCharacterManager : MonoBehaviour, ICharacterResourceManipula
 	List<CharacterGraphic> enemyGraphics = new List<CharacterGraphic>();
 
 	CombatManager combatManager;
+	public PlayerHandManager playerHandManager;
 
 	public void EnableCharacterManager(CombatManager combatManager)
 	{
@@ -77,7 +78,7 @@ public class MissionCharacterManager : MonoBehaviour, ICharacterResourceManipula
 			merc.SetStartStamina();
 			merc.SetStartAmmo();
 			merc.GiveTurn();
-			merc.GenerateCombatStartDeck();
+			//merc.GenerateCombatStartDeck();
 		}
 	}
 
@@ -102,7 +103,7 @@ public class MissionCharacterManager : MonoBehaviour, ICharacterResourceManipula
 	public void AddMercenary(Mercenary newMerc)
 	{
 		MercGraphic newCharGraphic = Instantiate(mercGraphicPrefab);
-		newCharGraphic.AssignCharacter(newMerc);
+		newCharGraphic.AssignMerc(newMerc,playerHandManager);
 		newCharGraphic.transform.SetParent(mercsGroup, false);
 		mercGraphics.Add(newCharGraphic);
 		newCharGraphic.SetStartArmor();

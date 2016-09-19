@@ -10,13 +10,14 @@ public class MercGraphic : CharacterGraphic
 	public Text classText;
 	Mercenary assignedMerc;
 
-	public void AssignCharacter(Mercenary newChar)
+	public void AssignMerc(Mercenary newMerc,HandManager newHandManager)
 	{
-		base.AssignCharacter(newChar);
-		handManager.EnableHandDisplayer(this);
-		portrait.color = newChar.GetColor();
-		classText.text = newChar.GetClass();
-		assignedMerc = newChar;
+		base.AssignCharacter(newMerc);
+		//handManager.EnableAttachedHandDisplayer(this);
+		portrait.color = newMerc.GetColor();
+		classText.text = newMerc.GetClass();
+		assignedMerc = newMerc;
+		handManager = newHandManager;
 	}
 
 	public void StartPrepDisplay()
@@ -43,6 +44,7 @@ public class MercGraphic : CharacterGraphic
 	{
 		return currentCharacterDeck.GetDeckCards();
 	}
+	//deprecated
 	public override void GenerateCombatStartDeck()
 	{
 		int size = 4;
@@ -53,7 +55,7 @@ public class MercGraphic : CharacterGraphic
 		assignedMerc.GetCombatDeck().DiscardCards(startingDeckCards);
 	}
 
-
+	//deprecated
 	public void TryDrawNewCardsToHand(int drawCount)
 	{
 		if (HasTurn())
@@ -63,17 +65,17 @@ public class MercGraphic : CharacterGraphic
 			handManager.DisplayHand(true);
 		}
 	}
-
+	//deprecated
 	public void DiscardMyHand()
 	{
 		handManager.DiscardCurrentHand();
 	}
-
+	//deprecated
 	public void HideMyHand()
 	{
 		handManager.HideDisplayedHand();
 	}
-
+	//deprecated
 	public void SetMyHandInteractivity(bool interactive)
 	{
 		handManager.SetHandInteractivity(interactive);
@@ -89,7 +91,7 @@ public class MercGraphic : CharacterGraphic
 	public override void RemoveTurn()
 	{
 		base.RemoveTurn();
-		handManager.HideDisplayedHand();
+		//handManager.HideDisplayedHand();
 	}
 
 }

@@ -33,6 +33,10 @@ public abstract class CharacterGraphic : MonoBehaviour {
 
 	public delegate void TookDamageDeleg();
 	public event TookDamageDeleg ETookDamage;
+	public delegate void RangedBlockAssignedDeleg();
+	public event RangedBlockAssignedDeleg ERangedBlockAssigned;
+	public delegate void MeleeBlockAssignedDeleg();
+	public event MeleeBlockAssignedDeleg EMeleeBlockAssigned;
 
 	bool hasTurn = false;
 
@@ -46,6 +50,9 @@ public abstract class CharacterGraphic : MonoBehaviour {
 	bool meleeAttacksAreFree = false;
 	bool rangedAttacksAreFree = false;
 	bool rangedAttacksCostStamina = false;
+
+	public bool meleeBlockActive = false;
+	public bool rangedBlockActive = false;
 
 	int rangedAttacksAmmoCostReduction = 0;
 
@@ -75,10 +82,11 @@ public abstract class CharacterGraphic : MonoBehaviour {
 
 	public void AddCardsToCurrentDeck(params CombatCard[] cards)
 	{
-		currentCharacterDeck.AddCards(cards);
+		handManager.AddCardsToAssignedDeck(cards);
 	}
 	public void RemoveCardsFromCurrentDeck(params CombatCard[] cards)
 	{
+		
 		currentCharacterDeck.RemoveCards(cards);
 	}
 
@@ -88,9 +96,9 @@ public abstract class CharacterGraphic : MonoBehaviour {
 		return currentCharacterDeck.DrawCards(count,true);
 	}
 
-	public CombatDeck GetCurrentCombatDeck()
+	public CombatDeck GetCharactersCombatDeck()
 	{
-		return currentCharacterDeck;
+		return assignedCharacter.GetCombatDeck();//currentCharacterDeck;
 	}
 	
 
@@ -218,7 +226,8 @@ public abstract class CharacterGraphic : MonoBehaviour {
 
 	void RegenStamina()
 	{
-		SetStamina(currentMaxStamina);
+		if (stamina<currentMaxStamina)
+			SetStamina(currentMaxStamina);
 	}
 
 	public int GetMaxStamina()
@@ -240,9 +249,10 @@ public abstract class CharacterGraphic : MonoBehaviour {
 	public void SetStamina(int newStamina)
 	{
 		stamina = newStamina;
-		if (stamina < 0) stamina = 0;
-		if (stamina > currentMaxStamina)
-			stamina = currentMaxStamina;
+		if (stamina < 0) 
+			stamina = 0;
+		//if (stamina > currentMaxStamina)
+			//stamina = currentMaxStamina;
 		UpdateStaminaText();
 	}
 
@@ -366,6 +376,25 @@ public abstract class CharacterGraphic : MonoBehaviour {
 		rangedAttacksAreFree = free;
 	}
 
+	public void SetAllBlocks(bool active)
+	{
+		SetMeleeBlock(active);
+		SetRangedBlock(active);
+	}
+
+	public void SetMeleeBlock(bool active)
+	{
+		meleeBlockActive = active;
+		if (meleeBlockActive && EMeleeBlockAssigned != null)
+			EMeleeBlockAssigned();
+	}
+	public void SetRangedBlock(bool active)
+	{
+		rangedBlockActive = active;
+		if (rangedBlockActive && ERangedBlockAssigned != null)
+			ERangedBlockAssigned();
+	}
+
 	public void ChangeRangedAttacksAmmoCostReduction(int costReductionDelta)
 	{
 		rangedAttacksAmmoCostReduction = Mathf.Min(0, rangedAttacksAmmoCostReduction+costReductionDelta);
@@ -419,6 +448,21 @@ public abstract class CharacterGraphic : MonoBehaviour {
 		return true;
 	}
 
+	public void RemovePlayedCombatCardFromHand(CombatCard playedCard)
+	{
+		handManager.RemoveCardFromHand(playedCard);
+	}
+
+	public bool IsCardBlocked(CombatCard card)
+	{
+		if (card.GetType() == typeof(MeleeCard) && meleeBlockActive)
+			return true;
+		if (card.GetType() == typeof(RangedCard) && rangedBlockActive)
+			return true;
+
+		return false;
+	}
+
 	public void SubtractCardCostsFromResources(bool useUpStamina, int ammoCost, int staminaCost,int maxStaminaCost, int takeDamageCost, int removeHealthCost)
 	{
 		if (!rangedAttacksAreFree)
@@ -441,7 +485,7 @@ public abstract class CharacterGraphic : MonoBehaviour {
 		}
 		TakeDamage(takeDamageCost);
 		TakeDamage(removeHealthCost, true);
-		IncrementMaxStamina(maxStaminaCost);
+		IncrementMaxStamina(-maxStaminaCost);
 	}
 
 	struct FloatingTextInfo

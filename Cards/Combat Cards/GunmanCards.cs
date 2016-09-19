@@ -8,8 +8,9 @@ public class GunmanCards
 	{
 		CombatDeck result = new CombatDeck();
 
+		/*
 		result.AddCards(typeof(Pistolwhip));
-		result.AddCards(typeof(Hipfire));
+		result.AddCards(typeof(Hipfire),2);
 		result.AddCards(typeof(BurstFire));
 		result.AddCards(typeof(FullAuto));
 		result.AddCards(typeof(Camo));
@@ -17,6 +18,12 @@ public class GunmanCards
 		result.AddCards(typeof(LimbShot));
 		result.AddCards(typeof(HollowPoint));
 		result.AddCards(typeof(PersonalSpace));
+		*/
+		result.AddCards(typeof(DetonateAmmo));
+		result.AddCards(typeof(Hipfire));
+		result.AddCards(typeof(BurstFire));
+		result.AddCards(typeof(Tripmine));
+		result.AddCards(typeof(FullAuto));
 
 		return result;
 	}
@@ -24,23 +31,24 @@ public class GunmanCards
 	public static List<PrepCard> GetClassPrepCards()
 	{
 		List<PrepCard> result = new List<PrepCard>();
-		result.Add(new Sniper());
-		result.Add(new Sprayer());
-		result.Add(new Prepared());
+		//result.Add(new RangeBlockerPrep());
+		//result.Add(new Sniper());
+		//result.Add(new Sprayer());
+		//result.Add(new Prepared());
 
 
 		return result;
 	}
+
+	
 
 	public class Prepared : PrepCard
 	{
 		public Prepared()
 		{
 			name = "Prepared";
-			description = "Adds cards to your deck";
+			description = placedStipulationCard.description;
 			image = SpriteBase.mainSpriteBase.flamingBullet;
-
-			addedCombatCards.Add(new DetonateAmmo());
 		}
 	}
 
@@ -48,22 +56,82 @@ public class GunmanCards
 	{
 		public Sniper()
 		{
+			placedStipulationCard = new ScopeIn();
+			
 			name = "Sniper";
-			description = "Adds cards to your deck";
+			description = placedStipulationCard.description;
 			image = SpriteBase.mainSpriteBase.crosshair;
-
-			addedCombatCards.Add(new Headshot());
 		}
 	}
+
+	public class ScopeIn : CharacterStipulationCard
+	{
+		RangedCard affectedCard = null;
+
+		int maxStaminaCost = 1;
+
+		public ScopeIn()
+		{
+			name = "Scope In";
+			image = SpriteBase.mainSpriteBase.crosshair;
+			description = "Spend "+maxStaminaCost+" max stamina, character's ranged attacks ignore blocks";
+		}
+
+		protected override void ExtenderSpecificActivation()
+		{
+			appliedToCharacter.IncrementMaxStamina(-maxStaminaCost);
+			RangedCard.ERangedCardPlayed += TriggerCard;
+		}
+		void TriggerCard(CharacterGraphic cardPlayer, RangedCard playedCard)
+		{
+			if (cardPlayer == appliedToCharacter)
+			{
+				affectedCard = playedCard;
+				affectedCard.SetIgnoresBlocks(true);
+				//appliedToCharacter.RemoveCharacterStipulationCard(this);
+			}
+		}
+
+		protected override void ExtenderSpecificDeactivation()
+		{
+			//affectedCard.SetDefaultState();
+			RangedCard.ERangedCardPlayed -= TriggerCard;
+		}
+	}
+
 	public class Sprayer : PrepCard
 	{
+		int ammoPerPointOfMaxStamina = 1;
+		
 		public Sprayer()
 		{
+			placedStipulationCard = new TrickMags();
+
+			
 			name = "Sprayer";
-			description = "Adds cards to your deck";
+			description = placedStipulationCard.description;//"Reduce max stamina to 0, gain "+ammoPerPointOfMaxStamina+" ammo per point of max stamina";
 			image = SpriteBase.mainSpriteBase.bullets;
 
-			addedCombatCards.Add(new TrickMags());
+			//addedCombatCards.Add(new TrickMags());
+		}
+	}
+
+	public class TrickMags : CharacterStipulationCard
+	{
+		int ammoPerPointOfMaxStamina = 1;
+		public TrickMags()
+		{
+			name = "Trick Mags";
+			image = SpriteBase.mainSpriteBase.bullets;
+			description = "Set max stamina to 0, gain "+ammoPerPointOfMaxStamina+" ammo per point of max stamina";
+		}
+
+		protected override void ExtenderSpecificActivation()
+		{
+			int mercsMaxStamina = appliedToCharacter.GetMaxStamina();
+			int ammoIncrement = mercsMaxStamina * ammoPerPointOfMaxStamina;
+			appliedToCharacter.IncrementMaxStamina(-mercsMaxStamina);
+			appliedToCharacter.IncrementAmmo(ammoIncrement);
 		}
 	}
 
@@ -112,53 +180,19 @@ public class TrickMags : EffectCard
 		}
 	}
 }
-
+//deprecated
 public class Headshot : EffectCard
 {
 	protected override void ExtenderConstructor()
 	{
 		targetType = TargetType.None;
-		addedStipulationCard = new ScopeIn();
+		//addedStipulationCard = new ScopeIn();
 		staminaCost = 1;
 
 		name = "Headshot";
 		description = addedStipulationCard.description;
 		image = SpriteBase.mainSpriteBase.skull;
 
-	}
-
-	public class ScopeIn : CharacterStipulationCard
-	{
-		RangedCard affectedCard = null;
-		
-		public ScopeIn()
-		{
-			SetLastsForRounds(2);
-			
-			name = "Scope In";
-			image = SpriteBase.mainSpriteBase.crosshair;
-			description = "For two rounds: character's ranged attacks ignore armor";
-		}
-
-		protected override void ExtenderSpecificActivation()
-		{
-			RangedCard.ERangedCardPlayed += UseUpCard;
-		}
-		void UseUpCard(CharacterGraphic cardPlayer,RangedCard playedCard)
-		{
-			if (cardPlayer == appliedToCharacter)
-			{
-				affectedCard = playedCard;
-				affectedCard.SetIgnoresArmor(true);
-				appliedToCharacter.RemoveCharacterStipulationCard(this);
-			}
-		}
-
-		protected override void ExtenderSpecificDeactivation()
-		{
-			//affectedCard.SetDefaultState();
-			RangedCard.ERangedCardPlayed -= UseUpCard;
-		}
 	}
 }
 
@@ -169,7 +203,7 @@ public class Tripmine : EffectCard
 	{
 		targetType = TargetType.None;
 		ammoCost = 1;
-		mineDamage = 40;
+		mineDamage = 10;
 		addedStipulationCard = new TripmineFriendly(mineDamage);
 		
 		name = "Tripmine";

@@ -26,18 +26,19 @@ public class Encounter
 		List<System.Type> enemyTypesList = new List<System.Type>();
 		if (typeArgument == EncounterTypes.Wreckage)
 		{
-			enemyTypesList.Add(typeof(Bugzilla));
-			enemyTypesList.Add(typeof(Skitter));
-			enemyTypesList.Add(typeof(Stinger));
-			enemyTypesList.Add(typeof(Hardshell));
+			//enemyTypesList.Add(typeof(Bugzilla));
+			//enemyTypesList.Add(typeof(Skitter));
+			//enemyTypesList.Add(typeof(Stinger));
+			//enemyTypesList.Add(typeof(Hardshell));
 			enemyTypesList.Add(typeof(Puffer));
 		}
 		if (typeArgument == EncounterTypes.Ruins)
 		{
-			enemyTypesList.Add(typeof(ShockTrooper));
-			enemyTypesList.Add(typeof(Commander));
-			enemyTypesList.Add(typeof(HeavyGunner));
-			enemyTypesList.Add(typeof(Marksman));
+			enemyTypesList.Add(typeof(Puffer));
+			//enemyTypesList.Add(typeof(ShockTrooper));
+			//enemyTypesList.Add(typeof(Commander));
+			//enemyTypesList.Add(typeof(HeavyGunner));
+			//enemyTypesList.Add(typeof(Marksman));
 		}
 
 		return enemyTypesList;

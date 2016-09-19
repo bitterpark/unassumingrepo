@@ -7,16 +7,22 @@ public class SoldierCards
 	public static CombatDeck GetClassCards()
 	{
 		CombatDeck result = new CombatDeck();
-
+		/*
 		result.AddCards(typeof(Grenade));
 		result.AddCards(typeof(Diversion));
 		result.AddCards(typeof(MarkTarget));
 		result.AddCards(typeof(Sacrifice));
-		result.AddCards(typeof(Defillade));
+		result.AddCards(typeof(Defillade),2);
 		result.AddCards(typeof(Smokescreen));
 		result.AddCards(typeof(PickOff));
 		result.AddCards(typeof(BurstFire));
 		result.AddCards(typeof(Camaraderie));
+		*/
+		result.AddCards(typeof(Discretion));
+		//result.AddCards(typeof(ControlledBursts));
+		result.AddCards(typeof(AllForOne));
+		//result.AddCards(typeof(MarkTarget));
+		result.AddCards(typeof(Diversion));
 
 		return result;
 	}
@@ -24,9 +30,10 @@ public class SoldierCards
 	public static List<PrepCard> GetClassPrepCards()
 	{
 		List<PrepCard> result = new List<PrepCard>();
-		result.Add(new Saviour());
-		result.Add(new Commando());
-		result.Add(new Survivor());
+		result.Add(new Tactitian());
+		result.Add(new TriggerDiscipline());
+		//result.Add(new Survivor());
+		//result.Add(new RangeBlockerPrep());
 
 
 		return result;
@@ -42,105 +49,153 @@ public class SoldierCards
 
 			addedCombatCards.Add(new AllForOne());
 		}
-
-		public class AllForOne : EffectCard
-		{
-			protected override void ExtenderConstructor()
-			{
-				targetType = TargetType.SelectFriendly;
-				addedStipulationCard = new CoverFire();
-				staminaCost = 1;
-
-				name = "All For One";
-				description = "Play to a friendly character:"+addedStipulationCard.description;
-				image = SpriteBase.mainSpriteBase.cover;
-
-			}
-
-			public class CoverFire : CharacterStipulationCard
-			{
-				int armorGainPerRangedAttack = 20;
-
-				public CoverFire()
-				{
-					SetLastsForRounds(2);
-
-					name = "Cover Fire";
-					image = SpriteBase.mainSpriteBase.crosshair;
-					description = "For two rounds: gain " + armorGainPerRangedAttack + " armor for every friendly ranged attack";
-				}
-
-				protected override void ExtenderSpecificActivation()
-				{
-					RangedCard.ERangedCardPlayed += TriggerEffect;
-				}
-
-				void TriggerEffect(CharacterGraphic rangedCardPlayer, RangedCard playedCard)
-				{
-					if (rangedCardPlayer.GetType() == typeof(MercGraphic))
-						appliedToCharacter.IncrementArmor(armorGainPerRangedAttack);
-				}
-
-				protected override void ExtenderSpecificDeactivation()
-				{
-					RangedCard.ERangedCardPlayed -= TriggerEffect;
-				}
-			}
-		}
 	}
-	public class Commando : PrepCard
+
+	public class AllForOne : EffectCard
 	{
-		public Commando()
+		protected override void ExtenderConstructor()
 		{
-			name = "Commando";
-			description = "Adds cards to your deck";
-			image = SpriteBase.mainSpriteBase.medal;
+			targetType = TargetType.SelectFriendly;
+			addedStipulationCard = new CoverFire();
+			staminaCost = 1;
 
-			addedCombatCards.Add(new ControlledBursts());
+			name = "All For One";
+			description = "Play to a friendly character:" + addedStipulationCard.description;
+			image = SpriteBase.mainSpriteBase.cover;
+
 		}
 
-		public class ControlledBursts : EffectCard
+		public class CoverFire : CharacterStipulationCard
 		{
-			protected override void ExtenderConstructor()
+			int armorGainPerRangedAttack = 20;
+
+			public CoverFire()
 			{
-				targetType = TargetType.None;
-				addedStipulationCard = new TriggerDiscipline();
-				staminaCost = 1;
+				SetLastsForRounds(2);
 
-				name = "Controlled Bursts";
-				description = addedStipulationCard.description;
-				image = SpriteBase.mainSpriteBase.bullets;
-
+				name = "Cover Fire";
+				image = SpriteBase.mainSpriteBase.crosshair;
+				description = "For two rounds: gain " + armorGainPerRangedAttack + " armor for every friendly ranged attack";
 			}
 
-			public class TriggerDiscipline : CharacterStipulationCard
+			protected override void ExtenderSpecificActivation()
 			{
-				public TriggerDiscipline()
-				{
-					name = "Trigger Discipline";
-					image = SpriteBase.mainSpriteBase.crosshair;
-					description = "Character's next ranged attack costs stamina instead of ammo";
-				}
+				RangedCard.ERangedCardPlayed += TriggerEffect;
+			}
 
-				protected override void ExtenderSpecificActivation()
-				{
-					appliedToCharacter.SetRangedAttacksCostStamina(true);
-					RangedCard.ERangedCardPlayed += TriggerEffect;
-				}
-				void TriggerEffect(CharacterGraphic cardPlayer, RangedCard playedCard)
-				{
-					if (cardPlayer == appliedToCharacter)
-						appliedToCharacter.RemoveCharacterStipulationCard(this);
-				}
+			void TriggerEffect(CharacterGraphic rangedCardPlayer, RangedCard playedCard)
+			{
+				if (rangedCardPlayer.GetType() == typeof(MercGraphic))
+					appliedToCharacter.IncrementArmor(armorGainPerRangedAttack);
+			}
 
-				protected override void ExtenderSpecificDeactivation()
-				{
-					appliedToCharacter.SetRangedAttacksCostStamina(false);
-					RangedCard.ERangedCardPlayed -= TriggerEffect;
-				}
+			protected override void ExtenderSpecificDeactivation()
+			{
+				RangedCard.ERangedCardPlayed -= TriggerEffect;
 			}
 		}
 	}
+
+	public class Tactitian : PrepCard
+	{
+		public Tactitian()
+		{
+			placedStipulationCard = new MarkTarget();
+
+			name = "Tactician";
+			description = placedStipulationCard.description;
+			image = SpriteBase.mainSpriteBase.arrow;
+		}
+	}
+
+	public class MarkTarget : CharacterStipulationCard
+	{
+		int maxStaminaCost = 1;
+		
+		public MarkTarget()
+		{
+			name = "Mark Target";
+			image = SpriteBase.mainSpriteBase.crosshair;
+			description = "Spend"+maxStaminaCost+"max stamina, enemies targeted by ranged attacks gain Crossfire";
+		}
+
+		protected override void ExtenderSpecificActivation()
+		{
+			RangedCard.ERangedCardPlayed += TriggerEffect;
+			appliedToCharacter.IncrementMaxStamina(-maxStaminaCost);
+		}
+
+		void TriggerEffect(CharacterGraphic rangedCardPlayer, RangedCard playedCard)
+		{
+			if (rangedCardPlayer == appliedToCharacter)
+				foreach (CharacterGraphic enemy in playedCard.targetChars)
+					enemy.TryPlaceCharacterStipulationCard(new CrossFire(false));
+		}
+
+		protected override void ExtenderSpecificDeactivation()
+		{
+			RangedCard.ERangedCardPlayed -= TriggerEffect;
+		}
+	}
+
+	public class TriggerDiscipline : PrepCard
+	{
+		public TriggerDiscipline()
+		{
+			placedStipulationCard = new ControlledBursts();
+			
+			name = "Trigger Discipline";
+			description = "Adds cards to your deck";
+			image = SpriteBase.mainSpriteBase.crosshair;
+		}
+	}
+
+	public class ControlledBursts : CharacterStipulationCard
+	{
+		public ControlledBursts()
+		{
+			name = "Controlled Bursts";
+			image = SpriteBase.mainSpriteBase.bullets;
+			description = "Remove all ammo, ranged attacks costs stamina instead of ammo";
+		}
+
+		protected override void ExtenderSpecificActivation()
+		{
+			appliedToCharacter.SetRangedAttacksCostStamina(true);
+			RangedCard.ERangedCardPlayed += TriggerEffect;
+		}
+		void TriggerEffect(CharacterGraphic cardPlayer, RangedCard playedCard)
+		{
+			if (cardPlayer == appliedToCharacter)
+				appliedToCharacter.RemoveCharacterStipulationCard(this);
+		}
+
+		protected override void ExtenderSpecificDeactivation()
+		{
+			appliedToCharacter.SetRangedAttacksCostStamina(false);
+			RangedCard.ERangedCardPlayed -= TriggerEffect;
+		}
+	}
+	/*
+	public class ControlledBursts : EffectCard
+	{
+		protected override void ExtenderConstructor()
+		{
+			targetType = TargetType.None;
+			addedStipulationCard = new TriggerDiscipline();
+			staminaCost = 1;
+
+			name = "Controlled Bursts";
+			description = addedStipulationCard.description;
+			image = SpriteBase.mainSpriteBase.bullets;
+
+		}
+
+		
+	}*/
+
+
+
 	public class Survivor : PrepCard
 	{
 		public Survivor()
@@ -151,32 +206,32 @@ public class SoldierCards
 
 			addedCombatCards.Add(new Discretion());
 		}
+	}
 
-		public class Discretion : EffectCard
+	public class Discretion : EffectCard
+	{
+		int armorGainPerStaminaPoint = 30;
+
+		protected override bool ExtenderPrerequisitesMet(CharacterGraphic user)
 		{
-			int armorGainPerStaminaPoint = 30;
+			return user.GetStamina() > 0;
+		}
 
-			protected override bool ExtenderPrerequisitesMet(CharacterGraphic user)
-			{
-				return user.GetStamina()>0;
-			}
+		protected override void ExtenderConstructor()
+		{
+			targetType = TargetType.None;
+			useUpAllStamina = true;
 
-			protected override void ExtenderConstructor()
-			{
-				targetType = TargetType.None;
-				useUpAllStamina = true;
+			name = "Discretion";
+			description = "Better part of valor (spend all stamina, gain " + armorGainPerStaminaPoint + " armor per stamina point)";
+			image = SpriteBase.mainSpriteBase.cover;
 
-				name = "Discretion";
-				description = "Better part of valor (spend all stamina, gain " + userArmorGain + " armor per stamina point)";
-				image = SpriteBase.mainSpriteBase.cover;
+		}
 
-			}
-
-			protected override void ApplyEffects()
-			{
-				userArmorGain = usedUpStaminaPoints * armorGainPerStaminaPoint;
-				base.ApplyEffects();
-			}
+		protected override void ApplyStatEffects()
+		{
+			userArmorGain = usedUpStaminaPoints * armorGainPerStaminaPoint;
+			base.ApplyStatEffects();
 		}
 	}
 }
@@ -300,7 +355,7 @@ public class PickOff : RangedCard
 		damage = 30;
 	}
 }
-
+/*
 public class MarkTarget : RangedCard
 {
 	protected override void ExtenderConstructor()
@@ -315,25 +370,25 @@ public class MarkTarget : RangedCard
 		image = SpriteBase.mainSpriteBase.crosshair;	
 	}
 }
-
+*/
 public class Diversion : MeleeCard
 {
 	int damagePenalty = 20;
 
 	protected override void ExtenderConstructor()
 	{
-		name = "Diversion";
-		description = "Targets all enemies, take "+damagePenalty+" damage";
-		image = SpriteBase.mainSpriteBase.leg;
 		targetType = TargetType.AllEnemies;
-
 		staminaCost = 2;
 		staminaDamage = 1;
+		
+		name = "Diversion";
+		description = "Remove "+staminaDamage+" stamina from all enemies, take "+damagePenalty+" damage";
+		image = SpriteBase.mainSpriteBase.leg;
 	}
 
-	protected override void CardPlayEffects()
+	protected override void ApplyCardPlayEffects()
 	{
-		base.CardPlayEffects();
+		base.ApplyCardPlayEffects();
 		userCharGraphic.TakeDamage(damagePenalty);
 	}
 }

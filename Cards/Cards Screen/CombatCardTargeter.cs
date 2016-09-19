@@ -16,10 +16,13 @@ public class CombatCardTargeter : MonoBehaviour {
 	public delegate void SetRangedTargetEnemyDeleg();
 	public static event SetRangedTargetEnemyDeleg ENewRangedTargetEnemySet;
 
+	//public PlayerHandManager playerHandManager;
+
 	MissionCharacterManager characterManager;
 	ModeTextDisplayer modeTextDisplayer;
 	CombatManager combatManager;
 	MissionUIToggler uiToggler;
+	
 
 	CharacterGraphic meleeCardTargetOverrideMerc = null;
 	CharacterGraphic meleeCardTargetOverrideEnemy = null;
@@ -28,7 +31,8 @@ public class CombatCardTargeter : MonoBehaviour {
 
 	CharacterGraphic selectedCharacter;
 
-	public void EnableCombatCardTargeter(CombatManager cardsScreen, MissionCharacterManager characterManager, MissionUIToggler uiToggler, ModeTextDisplayer modeTextDisplayer)
+	public void EnableCombatCardTargeter(CombatManager cardsScreen, MissionCharacterManager characterManager
+		, MissionUIToggler uiToggler, ModeTextDisplayer modeTextDisplayer)
 	{
 		this.combatManager = cardsScreen;
 		this.characterManager = characterManager;
@@ -37,14 +41,14 @@ public class CombatCardTargeter : MonoBehaviour {
 		main = this;
 	}
 
-	public void CombatCardPlayStarted(ICombatCard cardObject,CharacterGraphic cardPlayer)
+	public void CombatCardPlayStarted(ICombatCard cardObject)
 	{
-		CombatCard playedCard = cardObject.GetAssignedCard();
-		playedCard.SetUserChar(cardPlayer);
-		PlayerCardTargetAssignment(cardObject, cardPlayer);
+		//CombatCard playedCard = cardObject.GetAssignedCard();
+		//playedCard.SetUserChar(cardPlayer);
+		//PlayerCardTargetAssignment(cardObject, cardPlayer);
+		StartCoroutine(SelectCardUserByPlayer(cardObject));
 	}
 
-	//Deprecated
 	IEnumerator SelectCardUserByPlayer(ICombatCard playedCardGraphic)
 	{
 		CombatCard playedCard = playedCardGraphic.GetAssignedCard();
@@ -76,7 +80,7 @@ public class CombatCardTargeter : MonoBehaviour {
 					}
 				}
 			}
-			yield return new WaitForEndOfFrame();
+			yield return new WaitForFixedUpdate();
 		}
 
 		characterManager.SetMercPortraitsEnabled(true);
@@ -84,6 +88,9 @@ public class CombatCardTargeter : MonoBehaviour {
 
 		if (characterFound)
 		{
+			while (Input.GetMouseButton(0))
+				yield return new WaitForFixedUpdate();
+			//playerHandManager.RemoveCardFromHand(playedCard);
 			playedCard.SetUserChar(cardUserChar);
 			PlayerCardTargetAssignment(playedCardGraphic,cardUserChar);
 		}
@@ -184,7 +191,7 @@ public class CombatCardTargeter : MonoBehaviour {
 						break;
 					}
 			}
-			yield return new WaitForEndOfFrame();
+			yield return new WaitForFixedUpdate();
 		}
 
 		if (selectFriendly)

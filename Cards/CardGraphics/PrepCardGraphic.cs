@@ -24,6 +24,12 @@ public class PrepCardGraphic : CardGraphic {
 		List<CombatCard> addedCombatCards=assignedCard.GetAddedCombatCards();
 		if (addedCombatCards.Count > 0)
 			TooltipManager.main.CreateTooltip("", transform, addedCombatCards.ToArray());
+		else
+		{
+			CharacterStipulationCard placedStipulationCard = assignedCard.GetPlacedStipulationCard();
+			if (placedStipulationCard!=null)
+				TooltipManager.main.CreateTooltip("", transform,placedStipulationCard);
+		}
 	}
 	public void StopShowingShowAddedCombatCardsTooltip()
 	{
