@@ -4,7 +4,6 @@ using System.Collections;
 
 public class InteractablePrepCard : InteractableCard {
 
-	public PrepCardGraphic bigCardPrefab;
 	PrepCard assignedCard;
 	PrepHandDisplayer assignedDisplayer;
 
@@ -19,13 +18,6 @@ public class InteractablePrepCard : InteractableCard {
 	public void DescriptionClicked()
 	{
 		CardClicked();
-	}
-
-	protected override Transform CreateBigCardGraphic()
-	{
-		PrepCardGraphic newBigCardGraphic = Instantiate(bigCardPrefab);
-		newBigCardGraphic.AssignCard(assignedCard);
-		return newBigCardGraphic.transform;
 	}
 
 	protected override void CardClicked()

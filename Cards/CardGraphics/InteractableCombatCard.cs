@@ -10,8 +10,6 @@ public interface ICombatCard
 
 public class InteractableCombatCard :InteractableCard, ICombatCard
 {
-
-	public CombatCardGraphic bigCardPrefab;
 	HandDisplayer handDisplayer;
 	CombatCard assignedCard;
 
@@ -26,13 +24,6 @@ public class InteractableCombatCard :InteractableCard, ICombatCard
 	public void DescriptionClicked()
 	{
 		CardClicked();
-	}
-
-	protected override Transform CreateBigCardGraphic()
-	{
-		CombatCardGraphic newBigCardGraphic = Instantiate(bigCardPrefab);
-		newBigCardGraphic.AssignCard(assignedCard);
-		return newBigCardGraphic.transform;
 	}
 
 	protected override void CardClicked()

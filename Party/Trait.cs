@@ -58,7 +58,7 @@ public abstract class Trait
 		{
 			case Skilltree.Fighter:
 			{
-				resultList.Add(new Dodge());
+				resultList.Add(new Avoidance());
 				resultList.Add(new Technique());
 				resultList.Add(new Deadeye());
 				//resultList.Add(new HitAndRun());
@@ -258,11 +258,11 @@ public class Fighter:Skill
 	public override void ActivatePerk(PartyMember member) {member.meleeHitchanceMod+=hitChanceDelta;}//member.meleeDamageMod+=meleeDamageChange;}
 	public override string GetMouseoverDescription () {return "Hits like a truck\n\n"+hitChanceDelta+" to melee hit chance";}//+meleeDamageChange+" to melee damage";}
 }*/
-public class Dodge:Skill
+public class Avoidance:Skill
 {	
 	//int meleeDamageChange=50;
 	float dodgeChanceDelta=0.1f;
-	public Dodge()
+	public Avoidance()
 	{
 		name="Avoidance";
 	}

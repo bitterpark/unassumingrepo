@@ -3,17 +3,21 @@ using System.Collections;
 using System.Collections.Generic;
 
 public class PlayerHandManager : HandManager
-{	
+{
+	public static PlayerHandManager main;
+	
 	const int startingHandSize = 6;
 	const int extraDrawPerTurn = 3;
 	const int maxHandSize = 10;
 	MissionCharacterManager characterManager;
+
 	//public HandManager commonHandManager;
 
 	public void EnableManager(MissionCharacterManager characterManager)
 	{
 		this.characterManager = characterManager;
 		EnableAttachedHandDisplayer();
+		main = this;
 	}
 
 	public void DrawCombatStartHand()
@@ -26,34 +30,45 @@ public class PlayerHandManager : HandManager
 
 	void CreateCombatStartDeck()
 	{
-		List<CombatCard> allCombatCards = new List<CombatCard>();
+		List<CombatCard> allCombatCards = GenericCombatCards.GetDefaultCommonDeckCards();//new List<CombatCard>();
+		/*
 		foreach (CharacterGraphic character in characterManager.GetMercGraphics())
 		{
 			MercGraphic merc = character as MercGraphic;
 			CombatDeck newDeck = merc.GetCharactersCombatDeck();
 			allCombatCards.AddRange(newDeck.GetDeckCards());
-		}
+		}*/
 
 		CombatDeck commonDeck = new CombatDeck();
 		commonDeck.AddCards(allCombatCards.ToArray());
 		AssignDeck(commonDeck);
 	}
 
-	void DrawNewCardsToCommonHand(int cardsCount)
+	public void DrawNewCardsToCommonHand(int cardsCount)
 	{
-		HideDisplayedHand();
-		DrawCardsToHand(cardsCount);
-		DisplayHand(true);
+		int newCardsDrawn = cardsCount;
+		if (cardsInHand.Count + newCardsDrawn > maxHandSize)
+			newCardsDrawn = maxHandSize - cardsInHand.Count;
+
+		if (newCardsDrawn > 0)
+		{
+			HideDisplayedHand();
+			DrawCardsToHand(newCardsDrawn);
+			DisplayHand(true);
+		}
 	}
 
 	public void NewPlayerTurnStart()
 	{
-		int newCardsDrawn = extraDrawPerTurn;
-		if (cardsInHand.Count + newCardsDrawn > maxHandSize)
-			newCardsDrawn = maxHandSize - cardsInHand.Count;
-		
-		if (newCardsDrawn>0)
-			DrawNewCardsToCommonHand(extraDrawPerTurn);
+		DrawNewCardsToCommonHand(extraDrawPerTurn);
+	}
+
+	public void DiscardLeftmostCards(int discardCount)
+	{
+		HideDisplayedHand();
+		DiscardCardsFromHand(discardCount, true);
+		DisplayHand(true);
+
 	}
 
 	//deprecated

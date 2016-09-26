@@ -17,7 +17,11 @@ public class AICombatCardSelector : MonoBehaviour {
 		if (playableCards.Count > 0)
 		{
 			playedCard = SelectPriorityCard(playableCards, character);
-			print("Setting AI card user char");
+			if (playedCard == null)
+				throw new System.Exception("SelectPriorityCard failed to return a card!");
+			if (playedCard == null)
+				throw new System.Exception("character is null!");
+			//print("Setting AI card user char");
 			playedCard.SetUserChar(character);
 			EnemyGraphic enemy = character as EnemyGraphic;
 			//enemy.RemovePlayedCardFromHand(playedCard);
@@ -50,9 +54,11 @@ public class AICombatCardSelector : MonoBehaviour {
 
 	CombatCard SelectPriorityCard(List<CombatCard> availableCards, CharacterGraphic character)
 	{
-		CombatCard priorityCard=null;
-		
-		int maxStaminaCost = 0;
+		CombatCard priorityCard = availableCards[0];
+		int maxStaminaCost = priorityCard.staminaCost;
+		if (priorityCard.useUpAllStamina)
+			maxStaminaCost = character.GetStamina();
+
 		foreach (CombatCard card in availableCards)
 		{
 			int realCardStaminaCost = card.staminaCost;

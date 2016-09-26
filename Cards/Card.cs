@@ -215,7 +215,7 @@ public class DefaultMeleePrepCard : PrepCard {
 		addedCombatCards.Add(new Jab());
 		addedCombatCards.Add(new Smash());
 		addedCombatCards.Add(new Smash());
-
+		addedCombatCards.Add(new Roundhouse());
 	}
 }
 
@@ -231,6 +231,7 @@ public class DefaultRangedPrepCard : PrepCard
 		addedCombatCards.Add(new Hipfire());
 		addedCombatCards.Add(new Sidearm());
 		addedCombatCards.Add(new Sidearm());
+		addedCombatCards.Add(new DoubleTap());
 	}
 }
 
@@ -239,6 +240,7 @@ public abstract class CombatCard: Card
 	public int damage=0;
 	public int damagePerStaminaPoint = 0;
 	public int staminaDamage=0;
+	public int ammoDamage = 0;
 	public int unarmoredBonusDamage = 0;
 		
 	public int ammoCost=0;
@@ -329,6 +331,7 @@ public abstract class CombatCard: Card
 	{
 		damage=0;
 		staminaDamage=0;
+		ammoDamage = 0;
 		damagePerStaminaPoint = 0;
 		unarmoredBonusDamage = 0;
 		usedUpStaminaPoints = 0;
@@ -407,6 +410,7 @@ public abstract class CombatCard: Card
 				totalDamage += unarmoredBonusDamage;
 			targetCharGraphic.TakeDamage(totalDamage, ignoresArmor);
 			targetCharGraphic.IncrementStamina(-staminaDamage);
+			targetCharGraphic.IncrementAmmo(-ammoDamage);
 		}
 	}
 
@@ -425,7 +429,10 @@ public abstract class CombatCard: Card
 				if (targetType == TargetType.None)
 					userCharGraphic.TryPlaceCharacterStipulationCard(card);
 				else
-					targetChars[0].TryPlaceCharacterStipulationCard(card);
+				{
+					foreach (CharacterGraphic targetChar in targetChars)
+						targetChar.TryPlaceCharacterStipulationCard(card);
+				}
 			}
 		}
 	}
@@ -525,6 +532,7 @@ public class EffectCard : CombatCard
 		userCharGraphic.IncrementArmor(userArmorGain);
 		if (targetType != TargetType.None)
 		{
+			base.ApplyStatEffects();
 			foreach (CharacterGraphic targetChar in targetChars)
 			{
 				targetChar.IncrementStamina(targetStaminaGain);

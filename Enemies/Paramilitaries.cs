@@ -2,6 +2,20 @@
 using System.Collections;
 using System.Collections.Generic;
 
+public class Paramilitaries
+{
+	public static List<System.Type> GetAllEnemyTypes()
+	{
+		List<System.Type> enemyTypesList = new List<System.Type>();
+		enemyTypesList.Add(typeof(ShockTrooper));
+		enemyTypesList.Add(typeof(Commander));
+		enemyTypesList.Add(typeof(HeavyGunner));
+		enemyTypesList.Add(typeof(Marksman));
+
+		return enemyTypesList;
+	}
+}
+
 public class Marksman : EncounterEnemy
 {
 	protected override void CommonConstructor()
@@ -161,17 +175,16 @@ public class Marksman : EncounterEnemy
 
 		protected override void ExtenderConstructor()
 		{
-			targetType = TargetType.None;
+			targetType = TargetType.SelectFriendly;
 			staminaCost = 1;
-			trapDamage = 20;
-			addedStipulationCard = new Tripmine(trapDamage);
+			addedStipulationCard = new MeleeBlock();
 
 			name = "Booby Trap";
-			description = addedStipulationCard.description;
+			description = "Friendly target gains melee block";
 			image = SpriteBase.mainSpriteBase.bomb;
 			
 		}
-
+		/*
 		public class Tripmine : CharacterStipulationCard
 		{
 			int damage;
@@ -201,7 +214,7 @@ public class Marksman : EncounterEnemy
 			{
 				MeleeCard.EMeleeCardPlayed -= EffectTriggered;
 			}
-		}
+		}*/
 	}
 }
 //currently unused
@@ -350,7 +363,7 @@ public class HeavyGunner : EncounterEnemy
 		public SupportGunner()
 		{
 			name = "Support Gunner";
-			image = SpriteBase.mainSpriteBase.armor;
+			image = SpriteBase.mainSpriteBase.cover;
 
 			description = "Add cards to your deck";
 
@@ -375,16 +388,16 @@ public class HeavyGunner : EncounterEnemy
 		{
 			protected override void ExtenderConstructor()
 			{
-				targetType = TargetType.None;
+				targetType = TargetType.SelectFriendlyOther;
 				staminaCost = 2;
-				addedStipulationCard = new FireSupportStipulation();
+				addedStipulationCard = new FullBlock();
 
 				name = "Fire Support";
-				description = addedStipulationCard.description;//"Play a Killzone to the character";
-				image = SpriteBase.mainSpriteBase.armor;
+				description = "Selected friendly gains full block";//"Play a Killzone to the character";
+				image = SpriteBase.mainSpriteBase.cover;
 
 			}
-
+			/*
 			public class FireSupportStipulation : CharacterStipulationCard
 			{
 				int friendlyArmorGain = 10;
@@ -412,7 +425,7 @@ public class HeavyGunner : EncounterEnemy
 				{
 					RangedCard.ERangedCardPlayed -= EffectTriggered;
 				}
-			}
+			}*/
 		}
 	}
 
@@ -473,6 +486,7 @@ public class ShockTrooper : EncounterEnemy
 
 		variationCards.Add(new Flanker());
 		variationCards.Add(new Blitzer());
+		//variationCards.Add(new Interference());
 	}
 	
 	protected override void NormalConstructor()
@@ -493,7 +507,7 @@ public class ShockTrooper : EncounterEnemy
 		stamina = 9;
 		ammo = 4;
 
-		variationCards.Add(new Interference());
+		
 	}
 
 	public class Flanker : EnemyVariationCard
@@ -506,6 +520,50 @@ public class ShockTrooper : EncounterEnemy
 			description = "Add cards to your deck";
 
 			addedCombatCards.Add(new Flanking());
+			addedCombatCards.Add(new Shock());
+		}
+
+		public class Shock : EffectCard
+		{
+			protected override void ExtenderConstructor()
+			{
+				staminaCost = 2;
+				targetType = TargetType.SelectFriendlyOther;
+				addedStipulationCard = new MeleeBlock();
+
+				name = "Shock";
+				description = "Another friendly character gains melee block";
+				image = SpriteBase.mainSpriteBase.lightning;
+			}
+			/*
+			public class ShockStipulation : CharacterStipulationCard
+			{
+				int meleeAttackPenaltyDamage = 30;
+
+				public ShockStipulation()
+				{
+					SetLastsForRounds(2);
+					
+					name = "Shock";
+					image = SpriteBase.mainSpriteBase.lightning;
+					description = "For one round: when an enemy plays a melee attack against any ally, deal " + meleeAttackPenaltyDamage+" damage";
+				}
+
+				protected override void ExtenderSpecificActivation()
+				{
+					MeleeCard.EMeleeCardPlayed += TriggerEffect;
+				}
+				void TriggerEffect( CharacterGraphic cardPlayer, MeleeCard card)
+				{
+					if (!card.targetChars.Contains(appliedToCharacter))
+						cardPlayer.TakeDamage(meleeAttackPenaltyDamage);
+				}
+
+				protected override void ExtenderSpecificDeactivation()
+				{
+					MeleeCard.EMeleeCardPlayed -= TriggerEffect;
+				}
+			}*/
 		}
 
 		public class Flanking : MeleeCard
@@ -589,7 +647,7 @@ public class ShockTrooper : EncounterEnemy
 			}
 		}
 	}
-
+	/*
 	public class Interference : EnemyVariationCard
 	{
 		public Interference()
@@ -601,64 +659,19 @@ public class ShockTrooper : EncounterEnemy
 
 			addedCombatCards.Add(new Shock());
 		}
-
-		public class Shock : EffectCard
-		{
-			protected override void ExtenderConstructor()
-			{
-				staminaCost = 3;
-				targetType = TargetType.None;
-				addedStipulationCard = new ShockStipulation();
-				
-				name = "Shock";
-				description = addedStipulationCard.description;
-				image = SpriteBase.mainSpriteBase.lightning;
-
-				
-			}
-
-			public class ShockStipulation : CharacterStipulationCard
-			{
-				int meleeAttackPenaltyDamage = 30;
-
-				public ShockStipulation()
-				{
-					SetLastsForRounds(2);
-					
-					name = "Shock";
-					image = SpriteBase.mainSpriteBase.lightning;
-					description = "For one round: when an enemy plays a melee attack against any ally, deal " + meleeAttackPenaltyDamage+" damage";
-				}
-
-				protected override void ExtenderSpecificActivation()
-				{
-					MeleeCard.EMeleeCardPlayed += TriggerEffect;
-				}
-				void TriggerEffect( CharacterGraphic cardPlayer, MeleeCard card)
-				{
-					if (!card.targetChars.Contains(appliedToCharacter))
-						cardPlayer.TakeDamage(meleeAttackPenaltyDamage);
-				}
-
-				protected override void ExtenderSpecificDeactivation()
-				{
-					MeleeCard.EMeleeCardPlayed -= TriggerEffect;
-				}
-			}
-		}
-	}
+	}*/
 
 	public class SmokeGrenade : EffectCard
 	{
 		protected override void ExtenderConstructor()
 		{
-			name = "Smoke Grenade";
-			description = "Gain "+userArmorGain+" armor";
-			image = SpriteBase.mainSpriteBase.lightning;
-
-			userArmorGain = 20;
 			ammoCost = 1;
 			targetType = TargetType.None;
+			addedStipulationCard = new RangeBlock();
+			
+			name = "Smoke Grenade";
+			description = "Gain ranged block";
+			image = SpriteBase.mainSpriteBase.lightning;
 		}
 	}
 }

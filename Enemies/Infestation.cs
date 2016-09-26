@@ -1,7 +1,21 @@
 ﻿using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
 
 public class Infestation {
+
+	public static List<System.Type> GetAllEnemyTypes()
+	{
+		List<System.Type> enemyTypesList = new List<System.Type>();
+		//enemyTypesList.Add(typeof(Bugzilla));
+		//enemyTypesList.Add(typeof(Skitter));
+		//enemyTypesList.Add(typeof(Stinger));
+		enemyTypesList.Add(typeof(Hardshell));
+		//enemyTypesList.Add(typeof(Puffer));
+
+		return enemyTypesList;
+	}
+
 
 }
 
@@ -147,7 +161,7 @@ public class Bugzilla : EncounterEnemy
 		basicCombatDeck.AddCards(typeof(Throwdown));
 
 		variationCards.Add(new Meatshield());
-		//variationCards.Add(new Rage());
+		variationCards.Add(new Rage());
 		variationCards.Add(new Dominance());
 	}
 	
@@ -164,7 +178,7 @@ public class Bugzilla : EncounterEnemy
 		health = 360;
 		stamina = 4;
 	}
-	//currently unused
+
 	public class Rage : EnemyVariationCard
 	{
 		public Rage()
@@ -174,30 +188,29 @@ public class Bugzilla : EncounterEnemy
 			name = "Rage";
 			image = SpriteBase.mainSpriteBase.lightning;
 
-			description = "Set stamina to 0, add cards to your deck";
+			description = "Add cards to your deck";
 
 			addedCombatCards.Add(new Enrage());
-			addedCombatCards.Add(new Gore());
-			addedCombatCards.Add(new Charge());
+			//addedCombatCards.Add(new Gore());
+			//addedCombatCards.Add(new Charge());
+
 		}
 
-		protected override void ExtenderSpecificActivation()
-		{
-			appliedToCharacter.SetStamina(0);
-		}
-
+		//unused
 		public class Enrage : EffectCard
 		{
 			protected override void ExtenderConstructor()
 			{
 				targetType = TargetType.None;
-				userStaminaGain = 2;
-				
+				staminaCost = 2;
+				addedStipulationCard = new FullBlock();
+
 				name = "Enrage";
-				description = "Gain "+userStaminaGain+" stamina";
-				image = SpriteBase.mainSpriteBase.skull;
+				description = "Gain full block";
+				image = SpriteBase.mainSpriteBase.lightning;
 			}
 		}
+		//unused
 		public class Charge : MeleeCard
 		{
 			protected override void ExtenderConstructor()
@@ -210,6 +223,7 @@ public class Bugzilla : EncounterEnemy
 				targetType = TargetType.AllEnemies;
 			}
 		}
+		//unused
 		public class Gore : MeleeCard
 		{
 			protected override void ExtenderConstructor()
@@ -379,12 +393,12 @@ public class Stinger : EncounterEnemy
 			{
 				damage = 20;
 				ammoCost = 2;
-				ignoresArmor = true;
+				ignoresBlocks = true;
 				targetType = TargetType.SelectEnemy;
 
 				name = "Venom";
 				image = SpriteBase.mainSpriteBase.droplet;
-				description = "Ignores armor";
+				description = "Ignores blocks";
 			}
 		}
 	}
@@ -456,6 +470,7 @@ public class Puffer : EncounterEnemy
 
 		variationCards.Add(new Spread());
 		variationCards.Add(new Direct());
+		variationCards.Add(new Screener());
 	}
 	
 	protected override void NormalConstructor()
@@ -527,6 +542,18 @@ public class Puffer : EncounterEnemy
 		}
 	}
 
+	public class Screener : EnemyVariationCard
+	{
+		public Screener()
+		{
+			name = "Screener";
+			image = SpriteBase.mainSpriteBase.cover;
+
+			description = "Add cards to your deck";
+			addedCombatCards.Add(new Smokescreen());
+		}
+	}
+
 	public class Inflate : EffectCard
 	{
 		protected override bool ExtenderPrerequisitesMet(CharacterGraphic user)
@@ -553,7 +580,7 @@ public class Hardshell : EncounterEnemy
 {
 	protected override void CommonConstructor()
 	{
-		variationCards.Add(new TurtleUp());
+		//variationCards.Add(new TurtleUp());
 		variationCards.Add(new Warrior());
 	}
 	
@@ -562,7 +589,7 @@ public class Hardshell : EncounterEnemy
 		name = "Hardshell";
 		health = 70;
 		armor = 120;
-		stamina = 3;
+		stamina = 0;//3;
 
 		
 	}
@@ -610,17 +637,18 @@ public class Hardshell : EncounterEnemy
 				{
 					name = "Harden";
 					image = SpriteBase.mainSpriteBase.cover;
-					description = "Until damaged: gain " + armorGainPerRound + " armor per round";
+					description = "Until damaged: gain full block every round";
 				}
 
 				protected override void ExtenderSpecificActivation()
 				{
+					GainBlock();
 					appliedToCharacter.ETookDamage += RemoveCard;
-					CombatManager.ERoundIsOver += GainArmor;
+					CombatManager.ERoundIsOver += GainBlock;
 				}
-				void GainArmor()
+				void GainBlock()
 				{
-					appliedToCharacter.IncrementArmor(armorGainPerRound);
+					appliedToCharacter.TryPlaceCharacterStipulationCard(new FullBlock());
 				}
 				void RemoveCard()
 				{
@@ -630,7 +658,7 @@ public class Hardshell : EncounterEnemy
 				protected override void ExtenderSpecificDeactivation()
 				{
 					appliedToCharacter.ETookDamage -= RemoveCard;
-					CombatManager.ERoundIsOver -= GainArmor;
+					CombatManager.ERoundIsOver -= GainBlock;
 				}
 			}
 		}
@@ -748,7 +776,7 @@ public class Hardshell : EncounterEnemy
 			{
 				CombatCardTargeter.main.SetNewMeleeTargetEnemy(appliedToCharacter);
 				CombatCardTargeter.ENewMeleeTargetEnemySet += RemoveCard;
-				appliedToCharacter.ETookDamage += CheckIfCharacterHasArmor;
+				appliedToCharacter.ETookArmorDamage += CheckIfCharacterHasArmor;
 			}
 
 			void CheckIfCharacterHasArmor()
@@ -765,7 +793,7 @@ public class Hardshell : EncounterEnemy
 			{
 				CombatCardTargeter.main.ClearMeleeTargetEnemy();
 				CombatCardTargeter.ENewMeleeTargetEnemySet -= RemoveCard;
-				appliedToCharacter.ETookDamage -= CheckIfCharacterHasArmor;
+				appliedToCharacter.ETookArmorDamage -= CheckIfCharacterHasArmor;
 			}
 		}
 	}

@@ -289,8 +289,8 @@ public class AssaultRifle : Weapon
 		itemCost = 250;
 
 		addedCombatCards = new List<CombatCard>();
-		addedCombatCards.Add(new BurstFire());
-		addedCombatCards.Add(new BurstFire());
+		addedCombatCards.Add(new DoubleTap());
+		addedCombatCards.Add(new DoubleTap());
 		addedCombatCards.Add(new FullAuto());
 	}
 }

@@ -16,12 +16,11 @@ public class MercenaryCards
 		result.AddCards(typeof(LastStand));
 		result.AddCards(typeof(Gambit));
 		*/
-		result.AddCards(typeof(BurstFire));
 		result.AddCards(typeof(SuicideCharge));
-		//result.AddCards(typeof(LastStand));
-		//result.AddCards(typeof(ComeAtMe));
-		result.AddCards(typeof(RunAndGun));
-		result.AddCards(typeof(TakeCover));
+		result.AddCards(typeof(Diversion));
+		result.AddCards(typeof(ToughAsNails));
+		result.AddCards(typeof(Gambit));
+		result.AddCards(typeof(CoveringFire));
 
 		return result;
 	}
@@ -56,17 +55,17 @@ public class MercenaryCards
 		{
 			name = "Adrenaline Junkie";
 			image = SpriteBase.mainSpriteBase.lightning;
-			description = "At the start of every round, if armor is 0 gain Full Block";
+			description = "Every time armor reaches 0 gain Full Block";
 		}
 
 		protected override void ExtenderSpecificActivation()
 		{
-			CombatManager.ENewRoundStarted += TryAddFullBlock;
+			appliedToCharacter.ETookArmorDamage += TryAddFullBlock;
 		}
 
 		protected override void ExtenderSpecificDeactivation()
 		{
-			CombatManager.ENewRoundStarted -= TryAddFullBlock;
+			appliedToCharacter.ETookArmorDamage -= TryAddFullBlock;
 		}
 
 		void TryAddFullBlock()
@@ -122,36 +121,45 @@ public class MercenaryCards
 
 public class ComeAtMe : CharacterStipulationCard
 {
+	CharacterStipulationCard brawlerCard = new Brawler();
+	
 	public ComeAtMe()
 	{
 		name = "Come At Me";
 		image = SpriteBase.mainSpriteBase.skull;
-		description = "At the start of every round, if armor is above 0 become Brawler";
+		description = "While armor is above 0, gain Brawler";
 	}
 
 	protected override void ExtenderSpecificActivation()
 	{
-		CombatManager.ENewRoundStarted += TryAddBrawler;
+		TryAddBrawler();
+		appliedToCharacter.EGainedArmor += TryAddBrawler;
+		appliedToCharacter.ETookArmorDamage += TryRemoveBrawler;
 	}
 
 	protected override void ExtenderSpecificDeactivation()
 	{
-		CombatManager.ENewRoundStarted -= TryAddBrawler;
+		appliedToCharacter.EGainedArmor -= TryAddBrawler;
+		appliedToCharacter.ETookArmorDamage -= TryRemoveBrawler;
 	}
 
 	void TryAddBrawler()
 	{
 		if (appliedToCharacter.GetArmor() > 0)
-			appliedToCharacter.TryPlaceCharacterStipulationCard(new Brawler());
+			appliedToCharacter.TryPlaceCharacterStipulationCard(brawlerCard);
 	}
+	void TryRemoveBrawler()
+	{
+		if (appliedToCharacter.GetArmor() == 0)
+			appliedToCharacter.RemoveCharacterStipulationCard(brawlerCard);
+	}
+
 }
 
 public class Brawler : CharacterStipulationCard
 {
 	public Brawler()
 	{
-		SetLastsForRounds(1);
-
 		name = "Brawler";
 		image = SpriteBase.mainSpriteBase.arm;
 		description = "For one round: all melee attacks played by enemies will only target this character";
@@ -221,12 +229,61 @@ public class PlanB : EffectCard
 	}
 }*/
 
+public class Diversion : MeleeCard
+{
+	int damagePenalty = 20;
+
+	protected override void ExtenderConstructor()
+	{
+		targetType = TargetType.AllEnemies;
+		staminaCost = 2;
+		staminaDamage = 1;
+
+		name = "Diversion";
+		description = "Remove " + staminaDamage + " stamina from all enemies, take " + damagePenalty + " damage";
+		image = SpriteBase.mainSpriteBase.leg;
+	}
+
+	protected override void ApplyCardPlayEffects()
+	{
+		base.ApplyCardPlayEffects();
+		userCharGraphic.TakeDamage(damagePenalty);
+	}
+}
+
+public class ToughAsNails : EffectCard
+{
+	int armorGainPerStaminaPoint = 30;
+
+	protected override bool ExtenderPrerequisitesMet(CharacterGraphic user)
+	{
+		return (user.GetStamina() > 0 && user.GetArmor()==0);
+	}
+
+	protected override void ExtenderConstructor()
+	{
+		targetType = TargetType.None;
+		useUpAllStamina = true;
+
+		name = "Tough As Nails";
+		description = "If armor is 0: spend all stamina, gain " + armorGainPerStaminaPoint + " armor per stamina point";
+		image = SpriteBase.mainSpriteBase.cover;
+
+	}
+
+	protected override void ApplyStatEffects()
+	{
+		userArmorGain = usedUpStaminaPoints * armorGainPerStaminaPoint;
+		base.ApplyStatEffects();
+	}
+}
+
 public class Gambit : EffectCard
 {
 	protected override void ExtenderConstructor()
 	{
 		targetType = TargetType.None;
-		userArmorGain = 50;
+		userArmorGain = 60;
 		removeHealthCost = 10;
 		
 		name = "Gambit";
@@ -236,19 +293,7 @@ public class Gambit : EffectCard
 	}
 }
 
-public class TakeCover : EffectCard
-{
-	protected override void ExtenderConstructor()
-	{
-		targetType = TargetType.None;
-		staminaCost = 1;
-		userArmorGain = 20;
-		
-		name = "Take Cover";
-		description = "Hit the deck (gain " + userArmorGain + " armor)";
-		image = SpriteBase.mainSpriteBase.cover;
-	}
-}
+
 
 /*
 public class LastStand : EffectCard
@@ -285,7 +330,7 @@ public class ComeAtMe : EffectCard
 
 	}
 }*/
-
+/*
 public class RunAndGun : MeleeCard
 {
 	protected override void ExtenderConstructor()
@@ -299,12 +344,27 @@ public class RunAndGun : MeleeCard
 		description = "Bread and butter (Take " + takeDamageCost + " damage)";
 		image = SpriteBase.mainSpriteBase.lateralArrows;
 	}
-}
+}*/
 
 //Smash
 //Jab
 //Kick
 //Second Wind
+
+public class CoveringFire : EffectCard
+{
+	protected override void ExtenderConstructor()
+	{
+		targetType = TargetType.SelectFriendlyOther;
+		staminaCost = 1;
+		addedStipulationCard = new RangeBlock();
+
+		name = "Covering Fire";
+		description = "Selected friendly character gains range block";
+		image = SpriteBase.mainSpriteBase.skull;
+
+	}
+}
 
 public class Overconfidence : MeleeCard
 {

@@ -24,22 +24,12 @@ public class Encounter
 	static List<System.Type> GetEnemyTypesForEncounterType(EncounterTypes typeArgument)
 	{
 		List<System.Type> enemyTypesList = new List<System.Type>();
+
 		if (typeArgument == EncounterTypes.Wreckage)
-		{
-			//enemyTypesList.Add(typeof(Bugzilla));
-			//enemyTypesList.Add(typeof(Skitter));
-			//enemyTypesList.Add(typeof(Stinger));
-			//enemyTypesList.Add(typeof(Hardshell));
-			enemyTypesList.Add(typeof(Puffer));
-		}
+			enemyTypesList = Infestation.GetAllEnemyTypes();
+
 		if (typeArgument == EncounterTypes.Ruins)
-		{
-			enemyTypesList.Add(typeof(Puffer));
-			//enemyTypesList.Add(typeof(ShockTrooper));
-			//enemyTypesList.Add(typeof(Commander));
-			//enemyTypesList.Add(typeof(HeavyGunner));
-			//enemyTypesList.Add(typeof(Marksman));
-		}
+			enemyTypesList = Paramilitaries.GetAllEnemyTypes();
 
 		return enemyTypesList;
 	}

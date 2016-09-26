@@ -19,6 +19,7 @@ public abstract class CharacterGraphic : MonoBehaviour {
 	public Image background;
 
 	public Transform appliedCardsGroup;
+	public Transform stipulationCardsGroup;
 
 	bool floatingTextIsOut = false;
 
@@ -30,9 +31,15 @@ public abstract class CharacterGraphic : MonoBehaviour {
 
 	public enum Resource {Health,Armor,Stamina,Ammo};
 
+	public delegate void GainedArmorDeleg();
+	public event GainedArmorDeleg EGainedArmor;
 
 	public delegate void TookDamageDeleg();
 	public event TookDamageDeleg ETookDamage;
+	public delegate void TookArmorDamageDeleg();
+	public event TookArmorDamageDeleg ETookArmorDamage;
+	public delegate void TookHealthDamageDeleg();
+	public event TookHealthDamageDeleg ETookHealthDamage;
 	public delegate void RangedBlockAssignedDeleg();
 	public event RangedBlockAssignedDeleg ERangedBlockAssigned;
 	public delegate void MeleeBlockAssignedDeleg();
@@ -140,11 +147,15 @@ public abstract class CharacterGraphic : MonoBehaviour {
 					damageToHealth = 0;
 				int damageToArmor = damage - damageToHealth;
 				IncrementArmor(-damageToArmor);
+				if (ETookArmorDamage != null)
+					ETookArmorDamage();
 			}
 		}
 		if (damageToHealth > 0)
 		{
 			IncrementHealth(-damageToHealth);
+			if (ETookHealthDamage != null)
+				ETookHealthDamage();
 		}
 		if (ETookDamage != null && GetHealth()>0)
 			ETookDamage();
@@ -190,6 +201,8 @@ public abstract class CharacterGraphic : MonoBehaviour {
 	{
 		StartCoroutine("AddFloatingTextToQueue", new FloatingTextInfo(delta, Resource.Armor));
 		SetArmor(armor + delta);
+		if (delta > 0 && EGainedArmor != null)
+			EGainedArmor();
 	}
 
 	public void SetStartArmor()
@@ -210,24 +223,31 @@ public abstract class CharacterGraphic : MonoBehaviour {
 		return stamina;
 	}
 
+	public void RemoveAllStamina()
+	{
+		IncrementStamina(-stamina);
+	}
+
 	public void IncrementStamina(int delta)
 	{
 		StartCoroutine("AddFloatingTextToQueue", new FloatingTextInfo(delta, Resource.Stamina));
-		if (delta < 0)
-			canRegenStaminaNextRound = false;
+		//if (delta < 0)
+			//canRegenStaminaNextRound = false;
 		SetStamina(stamina + delta);
 	}
 
 	public void SetStartStamina()
 	{
 		SetMaxStamina(assignedCharacter.GetMaxStamina());
-		RegenStamina();
+		SetStamina(0);
+		//RegenStamina();
 	}
 
 	void RegenStamina()
 	{
-		if (stamina<currentMaxStamina)
-			SetStamina(currentMaxStamina);
+		if (stamina < currentMaxStamina)
+			IncrementStamina(1);
+			//SetStamina(currentMaxStamina);
 	}
 
 	public int GetMaxStamina()
@@ -263,7 +283,8 @@ public abstract class CharacterGraphic : MonoBehaviour {
 
 	public void SetStartAmmo()
 	{
-		SetAmmo(assignedCharacter.GetStartAmmo());
+		//SetAmmo(assignedCharacter.GetStartAmmo());
+		SetAmmo(0);
 	}
 
 	public void IncrementAmmo(int delta) 
@@ -304,7 +325,7 @@ public abstract class CharacterGraphic : MonoBehaviour {
 
 		CharStipulationCardGraphic cardGraphic = Instantiate(stipulationCardPrefab);
 		cardGraphic.AssignCard(playedCard);
-		cardGraphic.transform.SetParent(appliedCardsGroup, false);
+		cardGraphic.transform.SetParent(stipulationCardsGroup, false);
 		cardGraphic.transform.SetAsFirstSibling();
 		playedCard.ActivateCard(this);
 		activeStipulationCards.Add(playedCard);
@@ -313,7 +334,7 @@ public abstract class CharacterGraphic : MonoBehaviour {
 	public void RemoveCharacterStipulationCard(CharacterStipulationCard removedCard)
 	{
 		removedCard.DeactivateCard();
-		foreach (CharStipulationCardGraphic graphic in appliedCardsGroup.GetComponentsInChildren<CharStipulationCardGraphic>())
+		foreach (CharStipulationCardGraphic graphic in stipulationCardsGroup.GetComponentsInChildren<CharStipulationCardGraphic>())
 		{
 			if (graphic.assignedCard == removedCard)
 			{
@@ -415,7 +436,12 @@ public abstract class CharacterGraphic : MonoBehaviour {
 		if (!hasTurn)
 			return false;
 		
-		int staminaReq = card.staminaCost;
+		int staminaReq;
+		if (card.useUpAllStamina)
+			staminaReq = 1;
+		else
+			staminaReq = card.staminaCost;
+
 		int ammoReq = card.ammoCost;
 		
 		if (card.GetType().BaseType==typeof(MeleeCard) && meleeAttacksAreFree)
@@ -450,7 +476,7 @@ public abstract class CharacterGraphic : MonoBehaviour {
 
 	public void RemovePlayedCombatCardFromHand(CombatCard playedCard)
 	{
-		handManager.RemoveCardFromHand(playedCard);
+		handManager.DiscardCardFromHand(playedCard);
 	}
 
 	public bool IsCardBlocked(CombatCard card)

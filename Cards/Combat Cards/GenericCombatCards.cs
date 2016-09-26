@@ -1,5 +1,307 @@
 ﻿using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
+
+public class GenericCombatCards
+{
+	public static List<CombatCard> GetDefaultCommonDeckCards()
+	{
+		List<CombatCard> cards = new List<CombatCard>();
+
+		cards.Add(new Charge());
+		cards.Add(new Charge());
+		cards.Add(new Dodge());
+		cards.Add(new Dodge());
+		cards.Add(new DrawABead());
+		cards.Add(new DrawABead());
+		cards.Add(new MakeDistance());
+		cards.Add(new MakeDistance());
+		cards.Add(new Defillade());
+		cards.Add(new Defillade());
+		cards.Add(new StayLow());
+		cards.Add(new Blitz());
+		cards.Add(new Blitz());
+		cards.Add(new Aim());
+		cards.Add(new Aim());
+		cards.Add(new FullCover());
+		cards.Add(new FullCover());
+		cards.Add(new Flank());
+		cards.Add(new Suppress());
+		cards.Add(new SuicideRush());
+		cards.Add(new SetUp());
+		cards.Add(new SetUp());
+		cards.Add(new TakeCover());
+		cards.Add(new TakeCover());
+		cards.Add(new ScopeIn());
+		cards.Add(new ScopeIn());
+		cards.Add(new RunInterference());
+		cards.Add(new RunInterference());
+		cards.Add(new CoverFire());
+		cards.Add(new CoverFire());
+		cards.Add(new Distraction());
+		cards.Add(new Distraction());
+
+
+		return cards;
+	}
+}
+
+
+
+//Default common deck cards
+public class Charge : EffectCard
+{
+	protected override void ExtenderConstructor()
+	{
+		targetType = TargetType.None;
+		userStaminaGain = 1;
+
+		name = "Charge";
+		description = "Gain "+userStaminaGain+" melee power";
+		image = SpriteBase.mainSpriteBase.arrow;
+	}
+}
+
+public class DrawABead : EffectCard
+{
+	protected override void ExtenderConstructor()
+	{
+		targetType = TargetType.None;
+		userAmmoGain = 1;
+
+		name = "Draw a Bead";
+		description = "Gain " + userAmmoGain + " ranged power";
+		image = SpriteBase.mainSpriteBase.crosshair;
+	}
+}
+public class Dodge : EffectCard
+{
+	protected override void ExtenderConstructor()
+	{
+		targetType = TargetType.None;
+		userArmorGain = 10;
+
+		name = "Dodge";
+		description = "Gain " + userArmorGain + " armor";
+		image = SpriteBase.mainSpriteBase.lateralArrows;
+	}
+}
+
+public class MakeDistance: EffectCard
+{
+	protected override void ExtenderConstructor()
+	{
+		targetType = TargetType.None;
+		staminaCost = 1;
+		addedStipulationCard = new MeleeBlock();
+
+		name = "Make Distance";
+		description = "Gain melee block";
+		image = SpriteBase.mainSpriteBase.arrow;
+	}
+}
+
+public class Defillade : EffectCard
+{
+	protected override void ExtenderConstructor()
+	{
+		targetType = TargetType.None;
+		ammoCost = 1;
+		addedStipulationCard = new RangeBlock();
+
+		name = "Defillade";
+		description = "Gain ranged block";
+		image = SpriteBase.mainSpriteBase.rock;
+	}
+}
+
+public class StayLow : EffectCard
+{
+	protected override void ExtenderConstructor()
+	{
+		targetType = TargetType.None;
+		ammoCost = 1;
+		staminaCost = 1;
+		addedStipulationCard = new FullBlock();
+
+		name = "Stay Low";
+		description = "Gain full block";
+		image = SpriteBase.mainSpriteBase.restSprite;
+	}
+}
+
+public class Blitz : EffectCard
+{
+	protected override void ExtenderConstructor()
+	{
+		targetType = TargetType.None;
+		userStaminaGain = 2;
+
+		name = "Blitz";
+		description = "Gain " + userStaminaGain + " melee power";
+		image = SpriteBase.mainSpriteBase.lightning;
+	}
+}
+public class Aim : EffectCard
+{
+	protected override void ExtenderConstructor()
+	{
+		targetType = TargetType.None;
+		userAmmoGain = 2;
+
+		name = "Aim";
+		description = "Gain " + userAmmoGain + " ranged power";
+		image = SpriteBase.mainSpriteBase.crosshair;
+	}
+}
+public class FullCover : EffectCard
+{
+	protected override void ExtenderConstructor()
+	{
+		targetType = TargetType.None;
+		userArmorGain = 20;
+
+		name = "Full Cover";
+		description = "Gain " + userArmorGain + " armor";
+		image = SpriteBase.mainSpriteBase.cover;
+	}
+}
+
+public class Flank : EffectCard
+{
+	protected override void ExtenderConstructor()
+	{
+		targetType = TargetType.SelectEnemy;
+		staminaDamage = 1;
+
+		name = "Flank";
+		description = "Target loses " + staminaDamage + " melee power";
+		image = SpriteBase.mainSpriteBase.lateralArrows;
+	}
+}
+public class Suppress : EffectCard
+{
+	protected override void ExtenderConstructor()
+	{
+		targetType = TargetType.SelectEnemy;
+		ammoDamage = 1;
+
+		name = "Suppress";
+		description = "Target loses " + ammoDamage + " ranged power";
+		image = SpriteBase.mainSpriteBase.flamingBullet;
+	}
+}
+
+public class SuicideRush : EffectCard
+{
+	protected override void ExtenderConstructor()
+	{
+		targetType = TargetType.None;
+		takeDamageCost = 30;
+		userStaminaGain = 1;
+
+
+		name = "Suicide Rush";
+		description = "Spend "+takeDamageCost+" armor, gain "+userStaminaGain+" stamina";
+		image = SpriteBase.mainSpriteBase.skull;
+	}
+}
+public class SetUp : EffectCard
+{
+	protected override void ExtenderConstructor()
+	{
+		targetType = TargetType.None;
+		staminaCost = 1;
+		userAmmoGain = 1;
+		
+		name = "Set Up";
+		description = "Spend " + staminaCost + " melee power, gain " + userAmmoGain + " ranged power";
+		image = SpriteBase.mainSpriteBase.rock;
+	}
+}
+public class TakeCover : EffectCard
+{
+	protected override void ExtenderConstructor()
+	{
+		targetType = TargetType.None;
+		userArmorGain = 40;
+		staminaCost = 1;
+
+		name = "Take Cover";
+		description = "Spend " + staminaCost + " melee power, gain " + userArmorGain + " armor";
+		image = SpriteBase.mainSpriteBase.cover;
+	}
+}
+
+public class ScopeIn : EffectCard
+{
+	float ammoPerStaminaPoint = 0.5f;
+
+	protected override bool ExtenderPrerequisitesMet(CharacterGraphic user)
+	{
+		return user.GetStamina() > 1;
+	}
+	
+	protected override void ExtenderConstructor()
+	{
+		targetType = TargetType.None;
+		useUpAllStamina = true;
+
+		name = "Scope In";
+		description = "Spend all melee power, gain " + 1 + " ranged power per 2 melee power";
+		image = SpriteBase.mainSpriteBase.crosshair;
+	}
+
+	protected override void ApplyStatEffects()
+	{
+		base.ApplyStatEffects();
+		int rangedPowerGain = Mathf.RoundToInt(usedUpStaminaPoints * ammoPerStaminaPoint);
+		userCharGraphic.IncrementAmmo(rangedPowerGain);
+
+	}
+}
+
+public class RunInterference : EffectCard
+{
+	protected override void ExtenderConstructor()
+	{
+		targetType = TargetType.SelectFriendlyOther;
+		staminaCost = 2;
+		targetAmmoGain = 1;
+
+
+		name = "Run Interference";
+		description = "Spend " + staminaCost + " melee power, target gains " + targetAmmoGain + " ranged power";
+		image = SpriteBase.mainSpriteBase.lightning;
+	}
+}
+public class CoverFire : EffectCard
+{
+	protected override void ExtenderConstructor()
+	{
+		targetType = TargetType.SelectFriendlyOther;
+		ammoCost = 1;
+		targetStaminaGain = 2;
+
+		name = "Cover Fire";
+		description = "Spend " + staminaCost + " ranged power, target gains " + userAmmoGain + " melee power";
+		image = SpriteBase.mainSpriteBase.bullets;
+	}
+}
+public class Distraction : EffectCard
+{
+	protected override void ExtenderConstructor()
+	{
+		targetType = TargetType.SelectFriendlyOther;
+		takeDamageCost = 30;
+		targetArmorGain = 30;
+
+		name = "Distraction";
+		description = "Take " + takeDamageCost + " damage, target gains " + targetArmorGain + " armor";
+		image = SpriteBase.mainSpriteBase.fire;
+	}
+}
+//
 
 public class Smash : MeleeCard
 {
@@ -58,11 +360,11 @@ public class Throw : RangedCard
 	}
 }
 
-public class BurstFire : RangedCard
+public class DoubleTap : RangedCard
 {
 	protected override void ExtenderConstructor()
 	{
-		name = "Burst Fire";
+		name = "Double Tap";
 		description = "Walk the shots";
 		image = SpriteBase.mainSpriteBase.bullets;
 
@@ -157,14 +459,15 @@ public class Smokescreen : EffectCard
 	{
 		targetType = TargetType.AllFriendlies;
 		ammoCost = 2;
-		targetArmorGain = 30;
+		addedStipulationCard = new RangeBlock();
 
 		name = "Smokescreen";
-		description = "The user and all friendly characters gain " + targetArmorGain + " armor";
-		image = SpriteBase.mainSpriteBase.cover;
+		description = "The user and all friendly characters gain a ranged block";
+		image = SpriteBase.mainSpriteBase.cloud;
 
 	}
 }
+
 
 public class FullBlock : CharacterStipulationCard
 {

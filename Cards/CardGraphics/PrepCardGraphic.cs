@@ -3,8 +3,10 @@ using UnityEngine.UI;
 using System.Collections;
 using System.Collections.Generic;
 
-public class PrepCardGraphic : CardGraphic {
+public class PrepCardGraphic : CardGraphic, IBigCardSpawnable 
+{
 
+	public PrepCardGraphic bigCardPrefab;
 	PrepCard assignedCard;
 
 	public void AssignCard(PrepCard newCard)
@@ -17,6 +19,13 @@ public class PrepCardGraphic : CardGraphic {
 		base.UpdateBasicVisuals(newCard);
 		assignedCard = newCard;
 		description.raycastTarget = showDescriptionTooltip;
+	}
+
+	public Transform CreateBigCardGraphic()
+	{
+		PrepCardGraphic newBigCardGraphic = Instantiate(bigCardPrefab);
+		newBigCardGraphic.AssignCard(assignedCard);
+		return newBigCardGraphic.transform;
 	}
 
 	public void ShowAddedCombatCardsTooltip()

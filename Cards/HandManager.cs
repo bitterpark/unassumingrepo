@@ -6,7 +6,7 @@ public class HandManager: MonoBehaviour{
 
 	public HandDisplayer handDisplayer;
 	protected List<CombatCard> cardsInHand = new List<CombatCard>();
-	CombatDeck assignedDeck;
+	protected CombatDeck assignedDeck;
 	//CharacterGraphic handOwner;
 	
 	public void AssignDeck(CombatDeck deck)
@@ -44,17 +44,48 @@ public class HandManager: MonoBehaviour{
 		cardsInHand.AddRange(assignedDeck.DrawCards(count, true));
 	}
 
-	public void RemoveCardFromHand(CombatCard card)
+	public void DiscardCardsFromHand(int count, bool startFromLeftmost)
+	{
+		if (startFromLeftmost)
+			DiscardLeftmostHandCards(count);
+		else
+			DiscardRightmostHandCards(count);
+	}
+
+	void DiscardLeftmostHandCards(int discardCount)
+	{
+		for (int i = 0; i < discardCount; i++)
+		{
+			if (cardsInHand.Count > 0)
+				DiscardCardFromHand(cardsInHand[0]);
+			else
+				break;
+		}
+	}
+	void DiscardRightmostHandCards(int discardCount)
+	{
+		for (int i = 0; i < discardCount; i++)
+		{
+			if (cardsInHand.Count > 0)
+				DiscardCardFromHand(cardsInHand[cardsInHand.Count-1]);
+			else
+				break;
+		}
+	}
+
+	public void DiscardCurrentHand()
+	{
+		foreach (CombatCard card in new List<CombatCard>(cardsInHand))
+			DiscardCardFromHand(card);
+	}
+
+	public void DiscardCardFromHand(CombatCard card)
 	{
 		cardsInHand.Remove(card);
 		assignedDeck.DiscardCards(card);
 	}
 
-	public void DiscardCurrentHand()
-	{
-		assignedDeck.DiscardCards(cardsInHand.ToArray());
-		cardsInHand.Clear();
-	}
+	
 
 	public List<CombatCard> GetHand()
 	{

@@ -21,7 +21,7 @@ public class GunmanCards
 		*/
 		result.AddCards(typeof(DetonateAmmo));
 		result.AddCards(typeof(Hipfire));
-		result.AddCards(typeof(BurstFire));
+		result.AddCards(typeof(DoubleTap));
 		result.AddCards(typeof(Tripmine));
 		result.AddCards(typeof(FullAuto));
 
@@ -32,8 +32,8 @@ public class GunmanCards
 	{
 		List<PrepCard> result = new List<PrepCard>();
 		//result.Add(new RangeBlockerPrep());
-		//result.Add(new Sniper());
-		//result.Add(new Sprayer());
+		result.Add(new Sniper());
+		result.Add(new Sprayer());
 		//result.Add(new Prepared());
 
 
@@ -66,7 +66,7 @@ public class GunmanCards
 
 	public class ScopeIn : CharacterStipulationCard
 	{
-		RangedCard affectedCard = null;
+		//RangedCard affectedCard = null;
 
 		int maxStaminaCost = 1;
 
@@ -86,8 +86,9 @@ public class GunmanCards
 		{
 			if (cardPlayer == appliedToCharacter)
 			{
-				affectedCard = playedCard;
-				affectedCard.SetIgnoresBlocks(true);
+				playedCard.SetIgnoresBlocks(true);
+				//affectedCard = playedCard;
+				//affectedCard.SetIgnoresBlocks(true);
 				//appliedToCharacter.RemoveCharacterStipulationCard(this);
 			}
 		}
@@ -136,7 +137,7 @@ public class GunmanCards
 	}
 
 }
-
+/*
 public class TrickMags : EffectCard
 {
 	protected override void ExtenderConstructor()
@@ -179,7 +180,7 @@ public class TrickMags : EffectCard
 			appliedToCharacter.ChangeRangedAttacksAmmoCostReduction(-ammoCostReduction);
 		}
 	}
-}
+}*/
 //deprecated
 public class Headshot : EffectCard
 {
@@ -201,13 +202,12 @@ public class Tripmine : EffectCard
 	int mineDamage;
 	protected override void ExtenderConstructor()
 	{
-		targetType = TargetType.None;
+		targetType = TargetType.SelectFriendly;
 		ammoCost = 1;
-		mineDamage = 10;
-		addedStipulationCard = new TripmineFriendly(mineDamage);
+		addedStipulationCard = new MeleeBlock();
 		
 		name = "Tripmine";
-		description = addedStipulationCard.description;
+		description = "Selected friendly character gains melee block";
 		image = SpriteBase.mainSpriteBase.bomb;
 	}
 }

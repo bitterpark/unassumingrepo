@@ -7,12 +7,7 @@ public class TooltipManager : MonoBehaviour
 	public static TooltipManager main;
 	
 	public Tooltip tooltipPrefab;
-	static Tooltip activeTooltip=null;
-	
-	void Start() 
-	{
-		main=this;
-	}
+	public static Tooltip activeTooltip=null;
 
 	public void CreateItemTooltip(InventoryItem item, Transform parent)
 	{
@@ -41,12 +36,14 @@ public class TooltipManager : MonoBehaviour
 	public void CreateTooltip(string tooltipText, Transform tooltipParent, CombatCard[] displayCards)
 	{
 		StopAllTooltips();
+
 		activeTooltip = Instantiate(tooltipPrefab);
 		activeTooltip.DisplayValuesAndCombatCards(tooltipText, tooltipParent, displayCards);
 	}
 	public void CreateTooltip(string tooltipText, Transform tooltipParent, RewardCard[] displayCards)
 	{
 		StopAllTooltips();
+
 		activeTooltip = Instantiate(tooltipPrefab);
 		activeTooltip.DisplayValuesAndRewardCards(tooltipText, tooltipParent, displayCards);
 	}
@@ -54,6 +51,7 @@ public class TooltipManager : MonoBehaviour
 	public void CreateTooltip(string tooltipText, Transform tooltipParent, params Card[] displayCards)
 	{
 		StopAllTooltips();
+
 		activeTooltip = Instantiate(tooltipPrefab);
 		activeTooltip.DisplayValuesAndVisualCards(tooltipText, tooltipParent, displayCards);
 	}
@@ -61,13 +59,25 @@ public class TooltipManager : MonoBehaviour
 	public void CreateTooltip(string tooltipText, Transform tooltipParent)
 	{
 		StopAllTooltips();
+
 		activeTooltip=Instantiate(tooltipPrefab);
-		activeTooltip.AssignDisplayValues(tooltipText,tooltipParent);
+		activeTooltip.DisplayText(tooltipText, tooltipParent);
 	}	
 	
 	public void StopAllTooltips() 
 	{
 		if (activeTooltip!=null) 
 			GameObject.Destroy(activeTooltip.gameObject);
+	}
+
+	public void TooltipDestroyed(Tooltip tooltip)
+	{
+		if (tooltip == activeTooltip)
+			activeTooltip = null;
+	}
+
+	void Start()
+	{
+		main = this;
 	}
 }

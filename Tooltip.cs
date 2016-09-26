@@ -29,7 +29,7 @@ public class Tooltip : MonoBehaviour
 		{
 			AddCombatCard(card);
 		}
-		AssignDisplayValues(text, tooltipParent);
+		DisplayText(text, tooltipParent);
 	}
 
 	public void DisplayValuesAndRewardCards(string text, Transform tooltipParent, RewardCard[] displayCards)
@@ -40,7 +40,7 @@ public class Tooltip : MonoBehaviour
 		{
 			AddRewardCard(card);
 		}
-		AssignDisplayValues(text, tooltipParent);
+		DisplayText(text, tooltipParent);
 	}
 
 	public void DisplayValuesAndVisualCards(string text, Transform tooltipParent, Card[] displayCards)
@@ -51,10 +51,10 @@ public class Tooltip : MonoBehaviour
 		{
 			AddVisualCard(card);
 		}
-		AssignDisplayValues(text, tooltipParent);
+		DisplayText(text, tooltipParent);
 	}
 
-	public void AssignDisplayValues(string text, Transform tooltipParent)
+	public void DisplayText(string text, Transform tooltipParent)
 	{
 		SetupTextComponent(text);
 		SetPositionAndSortOrder(tooltipParent,text);
@@ -65,13 +65,18 @@ public class Tooltip : MonoBehaviour
 	{
 		GetComponent<Canvas>().worldCamera = Camera.main;
 		widthMeasuringText.text = text;
+		//transform.position = tooltipParent.position;
+		//Transform parentsCanvasTransform = tooltipParent.GetComponentInParent<Canvas>().transform;
 		transform.SetParent(tooltipParent, false);
 
 		Canvas.ForceUpdateCanvases();
+		if (transform.parent == null)
+			throw new System.Exception("Parent is null!");
 		SetWidth();
 		SetHorizontalPositionToLeftOrRight();
 		ClampVerticalPositionToScreen();
-		
+		//transform.localScale = new Vector3(1 / transform.parent.localScale.x, 1 / transform.parent.localScale.y, 1);
+
 		GetComponent<Canvas>().enabled = true;
 		GetComponent<Canvas>().overrideSorting = true;
 		GetComponent<Canvas>().sortingOrder = 100;
@@ -88,7 +93,7 @@ public class Tooltip : MonoBehaviour
 	void SetHorizontalPositionToLeftOrRight()
 	{
 		RectTransform.Edge tooltipSide;
-		
+
 		float newX = transform.parent.position.x + (transform.parent.GetComponent<RectTransform>().rect.width) + tooltipWidth + horizontalOffsetFromParentEdge;
 		if (Camera.main.WorldToScreenPoint(new Vector3(newX, transform.parent.position.y, 0)).x > Screen.width)
 			tooltipSide = RectTransform.Edge.Left;
@@ -143,6 +148,11 @@ public class Tooltip : MonoBehaviour
 		cardGraphic.AssignCard(addedCard);
 		cardGraphic.GetComponent<Image>().raycastTarget = false;
 		cardGraphic.transform.SetParent(cardsDisplayGroup, false);
+	}
+
+	public void OnDestroy()
+	{
+		TooltipManager.main.TooltipDestroyed(this);
 	}
 
 }

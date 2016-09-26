@@ -19,13 +19,11 @@ public class BanditCards
 		*/
 		//result.AddCards(typeof(GangUp));
 		//result.AddCards(typeof(NoRest));
-		//result.AddCards(typeof(RoughUp));
-		result.AddCards(typeof(SprayNPray));
-		result.AddCards(typeof(Roundhouse));
+		result.AddCards(typeof(MobMentality));
+		result.AddCards(typeof(SuckerPunch));
 		result.AddCards(typeof(Kick));
-		result.AddCards(typeof(LightsOut), 2);
-
-		
+		result.AddCards(typeof(SprayNPray));
+		result.AddCards(typeof(LightsOut));
 
 		return result;
 	}
@@ -46,8 +44,10 @@ public class BanditCards
 	{
 		public Thug()
 		{
+			placedStipulationCard = new StrengthInNumbers();
+			
 			name = "Thug";
-			description = "Adds cards to your deck";
+			description = placedStipulationCard.description;
 			image = SpriteBase.mainSpriteBase.arm;
 		}	
 	}
@@ -242,6 +242,27 @@ public class BanditCards
 }
 
 
+public class MobMentality : EffectCard
+{
+	protected override void ExtenderConstructor()
+	{
+		targetType = TargetType.SelectFriendlyOther;
+		useUpAllStamina = true;
+		addedStipulationCard = new MeleeBlock();
+
+		name = "Mob Mentality";
+		description = "Remove all stamina from self and friendly target, both gain melee block";
+		image = SpriteBase.mainSpriteBase.cover;
+
+	}
+
+	protected override void ApplyCardPlayEffects()
+	{
+		base.ApplyCardPlayEffects();
+		userCharGraphic.TryPlaceCharacterStipulationCard(new MeleeBlock());
+		targetChars[0].RemoveAllStamina();
+	}
+}
 
 public class SuckerPunch : MeleeCard
 {
@@ -262,13 +283,14 @@ public class LightsOut : MeleeCard
 {
 	protected override void ExtenderConstructor()
 	{
-		name = "Lights Out";
-		description = "Remove "+staminaDamage+" stamina from target";
-		image = SpriteBase.mainSpriteBase.leg;
 		targetType = TargetType.SelectEnemy;
 
 		staminaCost = 4;
 		staminaDamage = 4;
+
+		name = "Lights Out";
+		description = "Remove " + staminaDamage + " stamina from target";
+		image = SpriteBase.mainSpriteBase.leg;
 	}
 }
 
@@ -307,10 +329,10 @@ public class Kick : MeleeCard
 	protected override void ExtenderConstructor()
 	{
 		name = "Kick";
-		description = "Guard break (ignores armor)";
+		description = "Guard break (ignores blocks)";
 		image = SpriteBase.mainSpriteBase.leg;
 		targetType = TargetType.SelectEnemy;
-		ignoresArmor = true;
+		ignoresBlocks = true;
 
 		staminaCost = 4;
 		damage = 30;

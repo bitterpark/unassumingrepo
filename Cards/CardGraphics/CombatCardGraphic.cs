@@ -3,7 +3,7 @@ using UnityEngine.UI;
 using System.Collections;
 using UnityEngine.EventSystems;
 
-public class CombatCardGraphic : CardGraphic, ICombatCard//, IPointerDownHandler
+public class CombatCardGraphic : CardGraphic, ICombatCard, IBigCardSpawnable//, IPointerDownHandler
 {
 
 	public GameObject staminaCost;
@@ -15,6 +15,8 @@ public class CombatCardGraphic : CardGraphic, ICombatCard//, IPointerDownHandler
 	public Color effectCardColor;
 	public Color rangedCardColor;
 	public Color meleeCardColor;
+
+	public CombatCardGraphic bigCardPrefab;
 
 	CombatCard assignedCard;
 
@@ -35,6 +37,13 @@ public class CombatCardGraphic : CardGraphic, ICombatCard//, IPointerDownHandler
 		ShowDamage();
 
 		description.raycastTarget = showStipulationCardTooltip;
+	}
+
+	public Transform CreateBigCardGraphic()
+	{
+		CombatCardGraphic newBigCardGraphic = Instantiate(bigCardPrefab);
+		newBigCardGraphic.AssignCard(assignedCard);
+		return newBigCardGraphic.transform;
 	}
 
 	void SetColor()

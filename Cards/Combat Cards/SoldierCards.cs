@@ -18,12 +18,12 @@ public class SoldierCards
 		result.AddCards(typeof(BurstFire));
 		result.AddCards(typeof(Camaraderie));
 		*/
-		result.AddCards(typeof(Discretion));
-		//result.AddCards(typeof(ControlledBursts));
+		result.AddCards(typeof(TakeCover));
+		result.AddCards(typeof(Sacrifice));
 		result.AddCards(typeof(AllForOne));
-		//result.AddCards(typeof(MarkTarget));
-		result.AddCards(typeof(Diversion));
-
+		result.AddCards(typeof(Smokescreen));
+		result.AddCards(typeof(Regroup));
+		
 		return result;
 	}
 
@@ -37,18 +37,6 @@ public class SoldierCards
 
 
 		return result;
-	}
-
-	public class Saviour : PrepCard
-	{
-		public Saviour()
-		{
-			name = "Saviour";
-			description = "Adds cards to your deck";
-			image = SpriteBase.mainSpriteBase.cover;
-
-			addedCombatCards.Add(new AllForOne());
-		}
 	}
 
 	public class AllForOne : EffectCard
@@ -145,7 +133,7 @@ public class SoldierCards
 			placedStipulationCard = new ControlledBursts();
 			
 			name = "Trigger Discipline";
-			description = "Adds cards to your deck";
+			description = placedStipulationCard.description;
 			image = SpriteBase.mainSpriteBase.crosshair;
 		}
 	}
@@ -162,18 +150,19 @@ public class SoldierCards
 		protected override void ExtenderSpecificActivation()
 		{
 			appliedToCharacter.SetRangedAttacksCostStamina(true);
-			RangedCard.ERangedCardPlayed += TriggerEffect;
+			//RangedCard.ERangedCardPlayed += TriggerEffect;
 		}
+		/*
 		void TriggerEffect(CharacterGraphic cardPlayer, RangedCard playedCard)
 		{
 			if (cardPlayer == appliedToCharacter)
 				appliedToCharacter.RemoveCharacterStipulationCard(this);
-		}
+		}*/
 
 		protected override void ExtenderSpecificDeactivation()
 		{
 			appliedToCharacter.SetRangedAttacksCostStamina(false);
-			RangedCard.ERangedCardPlayed -= TriggerEffect;
+			//RangedCard.ERangedCardPlayed -= TriggerEffect;
 		}
 	}
 	/*
@@ -195,7 +184,7 @@ public class SoldierCards
 	}*/
 
 
-
+	//deprecated
 	public class Survivor : PrepCard
 	{
 		public Survivor()
@@ -204,39 +193,26 @@ public class SoldierCards
 			description = "Adds cards to your deck";
 			image = SpriteBase.mainSpriteBase.skull;
 
-			addedCombatCards.Add(new Discretion());
+			addedCombatCards.Add(new TakeCover());
 		}
 	}
 
-	public class Discretion : EffectCard
+	public class TakeCover : EffectCard
 	{
-		int armorGainPerStaminaPoint = 30;
-
-		protected override bool ExtenderPrerequisitesMet(CharacterGraphic user)
-		{
-			return user.GetStamina() > 0;
-		}
-
 		protected override void ExtenderConstructor()
 		{
 			targetType = TargetType.None;
-			useUpAllStamina = true;
+			staminaCost = 2;
+			addedStipulationCard = new FullBlock();
 
-			name = "Discretion";
-			description = "Better part of valor (spend all stamina, gain " + armorGainPerStaminaPoint + " armor per stamina point)";
+			name = "Take Cover";
+			description = "Gain full block";
 			image = SpriteBase.mainSpriteBase.cover;
-
-		}
-
-		protected override void ApplyStatEffects()
-		{
-			userArmorGain = usedUpStaminaPoints * armorGainPerStaminaPoint;
-			base.ApplyStatEffects();
 		}
 	}
 }
 
-
+/*
 public class Defillade : EffectCard
 {
 	protected override void ExtenderConstructor()
@@ -249,8 +225,32 @@ public class Defillade : EffectCard
 		description = "Gain " + userArmorGain + " armor";
 		image = SpriteBase.mainSpriteBase.rock;
 	}
-}
+}*/
 
+public class Regroup : EffectCard
+{
+	protected override bool ExtenderPrerequisitesMet(CharacterGraphic user)
+	{
+		return user.GetStamina()>0;
+	}
+	
+	protected override void ExtenderConstructor()
+	{
+		targetType = TargetType.None;
+		useUpAllStamina = true;
+
+		name = "Regroup";
+		description = "Spend all stamina, draw an extra card per point of stamina";
+		image = SpriteBase.mainSpriteBase.lateralArrows;
+	}
+
+	protected override void ApplyCardPlayEffects()
+	{
+		int newCardsCount = usedUpStaminaPoints;
+		base.ApplyCardPlayEffects();
+		PlayerHandManager.main.DrawNewCardsToCommonHand(newCardsCount);
+	}
+}
 
 /*
 public class BoundingOverwatch : EffectCard
@@ -371,24 +371,3 @@ public class MarkTarget : RangedCard
 	}
 }
 */
-public class Diversion : MeleeCard
-{
-	int damagePenalty = 20;
-
-	protected override void ExtenderConstructor()
-	{
-		targetType = TargetType.AllEnemies;
-		staminaCost = 2;
-		staminaDamage = 1;
-		
-		name = "Diversion";
-		description = "Remove "+staminaDamage+" stamina from all enemies, take "+damagePenalty+" damage";
-		image = SpriteBase.mainSpriteBase.leg;
-	}
-
-	protected override void ApplyCardPlayEffects()
-	{
-		base.ApplyCardPlayEffects();
-		userCharGraphic.TakeDamage(damagePenalty);
-	}
-}
